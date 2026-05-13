@@ -145,12 +145,14 @@
 
 创建任务参数至少包含：
 
-- 输入图片 fileKey。
+- 输入图片 `inputFileId`，来源于 `/uploads/confirm` 返回的 `fileId`。
 - 拼豆规格：`MM_2_6` 或 `MM_5`。
 - 输出尺寸。
 - 难度。
 - 色卡。
 - 风格。
+
+> 当前联调口径：客户端先调用 `/uploads/presign` 获取 `fileKey` 并直传对象存储，再调用 `/uploads/confirm` 换取后端文件记录 `fileId`；创建 AI 拼豆任务时传 `inputFileId`，不得直接传预签名阶段的 `fileKey`。
 
 ## 商城接口
 
@@ -158,6 +160,7 @@
 |---|---|---|
 | GET | `/products` | 商品列表 |
 | GET | `/products/{productId}` | 商品详情 |
+| POST | `/products` | 发布玩家二手或定制商品骨架，要求 18+ 实名 |
 | GET | `/cart` | 购物车 |
 | POST | `/cart/items` | 加入购物车 |
 | PATCH | `/cart/items/{itemId}` | 修改数量 |
@@ -179,6 +182,8 @@
 | POST | `/orders/{orderId}/cancel` | 取消订单 |
 | POST | `/payments` | 创建支付单 |
 | GET | `/payments/{paymentId}` | 查询支付状态 |
+| POST | `/payments/callbacks/wechat` | 微信支付回调 |
+| POST | `/payments/callbacks/alipay` | 支付宝支付回调 |
 | POST | `/refunds` | 申请退款 |
 
 支付渠道：
@@ -211,6 +216,12 @@
 
 后台接口使用 `/api/v1/admin` 前缀，必须使用后台账号鉴权。
 
+后台认证：
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/admin/auth/login` | 后台账号登录，返回后台 access token |
+
 后台覆盖：
 
 - 用户管理。
@@ -222,4 +233,3 @@
 - AI 任务。
 - 风控记录。
 - 运营配置。
-

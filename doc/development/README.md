@@ -10,12 +10,17 @@
 4. `05-api-contract.md`：接口约定和错误规范。
 5. `06-data-model.md`：核心数据对象、状态和关系。
 6. 按职责阅读：
+   - UI 设计：`11-ui-style-guide.md`
    - Android：`03-android-client.md`
+   - Android 任务书：`12-frontend-android-task-brief.md`
    - 后端：`04-backend-services.md`
+   - 后端任务书：`13-backend-service-task-brief.md`
    - AI：`07-ai-pattern-generation.md`
+   - AI Provider 选型：`15-ai-pattern-provider-selection.md`
    - 商城支付：`08-commerce-payment.md`
    - 安全合规：`09-security-compliance.md`
    - 测试验收：`10-testing-acceptance.md`
+   - 前后端协作：`14-frontend-backend-collaboration.md`
 
 ## 文档边界
 
@@ -49,6 +54,11 @@
 | `08-commerce-payment.md` | 商品、订单、支付、退款、库存和玩家交易 |
 | `09-security-compliance.md` | 隐私、权限、未成年人、审核、备案、版权 |
 | `10-testing-acceptance.md` | 测试范围、验收标准、上线检查 |
+| `11-ui-style-guide.md` | 年轻女性友好、轻卡通可爱、拼豆质感 UI 方向 |
+| `12-frontend-android-task-brief.md` | Android 前端可转交任务书 |
+| `13-backend-service-task-brief.md` | Spring Boot 后端可转交任务书 |
+| `14-frontend-backend-collaboration.md` | 前后端联调、冻结、文档同步和验收规则 |
+| `15-ai-pattern-provider-selection.md` | AI 拼豆图 Provider 选型、Agent 边界、提示词和降级策略 |
 
 ## 协作规则
 
@@ -57,4 +67,3 @@
 - Android 与后端联调前必须冻结当前接口版本。
 - 支付和 AI 任务必须支持服务端追踪，不依赖客户端单点状态。
 - 内容审核、举报、账号注销和隐私说明是上线前置条件。
-

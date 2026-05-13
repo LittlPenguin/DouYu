@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:douyu_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: true
+  data:
+    redis:
+      repositories:
+        enabled: false
+management:
+  health:
+    redis:
+      enabled: false
+douyu:
+  jwt:
+    issuer: douyu-test
+    secret: test-secret-test-secret-test-secret-test-secret
+    access-token-ttl: PT2H
+    refresh-token-ttl: P30D
+  sms:
+    stub-code: "123456"
+  admin:
+    bootstrap-username: admin
+    bootstrap-password: admin123
