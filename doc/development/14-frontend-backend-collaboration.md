@@ -166,3 +166,94 @@ Android 与后端联调前必须冻结当前接口版本。冻结内容包括：
 4. 前端运行 `.\gradlew.bat :app:assembleDebug` 和 `.\gradlew.bat :app:testDebugUnitTest`。
 5. 后端运行 `mvn test` 或后端 README 中声明的等价命令。
 6. 项目负责人确认“已接真实接口清单”和“仍为 Stub/Mock 清单”。
+
+## 后端第一阶段联调交付说明
+
+更新日期：2026-05-14。
+
+后端工程路径：`D:\Studio\SpellBean\doyu-server`。
+
+### 本地启动
+
+推荐使用 `dev` profile 启动完整后端：
+
+```powershell
+cd D:\Studio\SpellBean\doyu-server
+.\start-dev.bat
+```
+
+`start-dev.bat` 等价于：
+
+```powershell
+docker compose up -d postgres redis
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+`dev` profile 需要本机 PostgreSQL 和 Redis。项目已提供 Docker Compose：
+
+- PostgreSQL: `localhost:5432`，数据库 `douyu`，账号 `douyu`。
+- Redis: `localhost:6379`。
+
+如果只运行自动化测试，不需要启动 PostgreSQL/Redis：
+
+```powershell
+cd D:\Studio\SpellBean\doyu-server
+mvn test
+```
+
+### 前端联调地址
+
+- API Base URL: `http://localhost:8080/api/v1`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- 健康检查: `http://localhost:8080/actuator/health`
+
+Swagger/OpenAPI 已暴露当前所有后端 Controller 中的 `/api/v1` 接口，并配置 Bearer Auth。Android 联调时，普通接口使用用户登录返回的 `accessToken`，后台接口使用 `/api/v1/admin/auth/login` 返回的后台 token。
+
+### 测试登录规则
+
+- 测试手机号可使用任意手机号格式，建议固定使用 `13800000001`、`13800000002` 等。
+- 短信验证码固定为 `123456`。
+- 新用户登录必须传 `ageGroup`：
+  - `AGE_16_17`：服务端返回用户 `isMinor=true`。
+  - `AGE_18_PLUS`：服务端返回成年用户。
+- 后台测试账号：`admin / admin123`，仅 `dev/test` 默认配置使用。
+
+### 上传与 AI 任务冻结口径
+
+前端必须按以下链路联调：
+
+1. `POST /api/v1/uploads/presign`
+   - 返回 `fileKey`、`uploadUrl`、`headers`、`expiresIn`。
+2. 客户端按 `uploadUrl` 和 `headers` 执行对象存储直传。
+   - 当前后端为 OSS Stub，不校验真实对象存储结果。
+3. `POST /api/v1/uploads/confirm`
+   - 请求传第 1 步返回的 `fileKey`。
+   - 返回 `fileId`、`fileKey`、`auditStatus`。
+4. `POST /api/v1/patterns/jobs`
+   - 必须传 `inputFileId`，值来自第 3 步返回的 `fileId`。
+   - 不得把 `fileKey` 直接传给 `inputFileId`。
+
+### Stub Provider 清单
+
+| 能力 | 当前状态 | 联调说明 |
+|---|---|---|
+| 短信 | Stub Provider | 验证码固定 `123456`，不发送真实短信 |
+| OSS/对象存储 | Stub Provider | 返回占位 `uploadUrl`，字段按真实预签名直传设计 |
+| AI 拼豆 | Stub Provider | 创建任务后返回可轮询的占位成功结果、图纸 ID 和材料清单 |
+| 微信支付 | Stub Provider | 返回占位 App 拉起参数，回调接口只验证业务幂等骨架 |
+| 支付宝支付 | Stub Provider | 返回占位 App 拉起参数，回调接口只验证业务幂等骨架 |
+
+### 支付风险边界
+
+当前后端支付不是正式微信/支付宝支付。前端可以联调订单、支付单、支付状态查询和回调后的状态变化，但不能把当前实现当成生产支付能力。
+
+正式接入前后端至少还需要补齐：
+
+- 微信/支付宝官方渠道接入。
+- 支付回调验签。
+- 支付金额与服务端订单应付金额校验。
+- 商户订单号、支付单号、渠道交易号一致性校验。
+- 回调重放、重复通知、乱序通知处理。
+- 主动查询支付渠道订单状态。
+- 对账、退款渠道调用和退款回调验签。

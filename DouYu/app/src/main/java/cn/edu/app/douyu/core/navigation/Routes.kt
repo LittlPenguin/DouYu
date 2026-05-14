@@ -1,13 +1,15 @@
 package cn.edu.app.douyu.core.navigation
 
 enum class BottomTab(
-    val route: String,
-    val label: String
+    val route: String, val label: String
 ) {
     COMMUNITY("community", "社区"),
-    AI("ai", "AI 拼图"),
     COMMERCE("commerce", "商城"),
-    MESSAGE("message", "消息"),
+    AI("ai", "AI 拼图"),
+    MESSAGE(
+        "message",
+        "消息"
+    ),
     PROFILE("profile", "我的")
 }
 

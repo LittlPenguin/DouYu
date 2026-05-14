@@ -49,7 +49,7 @@ fun CommunityFeedScreen(navController: NavHostController) {
                 TagChip("新手教程", color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.24f))
             }
             repo.feed().items.forEach { post ->
-                PostCard(post, onClick = { navController.navigate(AppRoute.postDetail(post.id)) })
+                PostCard(post, onClick = { navController.navigate(AppRoute.postDetail(post.postId)) })
             }
             PageStatePreviewRow()
         }
@@ -64,7 +64,7 @@ private fun PostCard(post: Post, onClick: () -> Unit) {
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(post.author.nickname, style = MaterialTheme.typography.titleMedium)
-                Text("#${post.topic}", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                Text(post.topicNames.joinToString(prefix = "#", separator = " #"), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
             }
             if (post.status == ContentStatus.REVIEWING) {
                 TagChip("审核中", color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f))
@@ -129,7 +129,7 @@ fun PostDetailScreen(navController: NavHostController, postId: String) {
         DoyuPage(padding) {
             PostCard(post, onClick = {})
             SectionHeader("评论")
-            repo.comments(postId).forEach {
+            repo.comments(postId).items.forEach {
                 DoyuCard {
                     Text(it.author.nickname, style = MaterialTheme.typography.titleMedium)
                     Text(it.content, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -152,9 +152,9 @@ fun PostCreateScreen(navController: NavHostController) {
             }
             DoyuCard {
                 SectionHeader("图片与图纸")
-                DoyuOutlinedButton("添加图片 fileKey", onClick = { navController.navigate(AppRoute.IMAGE_SELECT) }, icon = Icons.Filled.AddPhotoAlternate, modifier = Modifier.fillMaxWidth())
+                DoyuOutlinedButton("添加图片并确认 fileId", onClick = { navController.navigate(AppRoute.IMAGE_SELECT) }, icon = Icons.Filled.AddPhotoAlternate, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(10.dp))
-                Text("发布后可能进入审核中，审核通过才会公开展示。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("发布接口使用 mediaFileIds；图片先走 /uploads/presign、直传、/uploads/confirm，发布后可能进入审核中。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             DoyuPrimaryButton("提交发布", onClick = {}, modifier = Modifier.fillMaxWidth())
             PageStateView(UiState.Reviewing)

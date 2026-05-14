@@ -21,6 +21,7 @@
    - 安全合规：`09-security-compliance.md`
    - 测试验收：`10-testing-acceptance.md`
    - 前后端协作：`14-frontend-backend-collaboration.md`
+   - 阶段状态：`16-phase-one-status.md`
 
 ## 文档边界
 
@@ -59,6 +60,7 @@
 | `13-backend-service-task-brief.md` | Spring Boot 后端可转交任务书 |
 | `14-frontend-backend-collaboration.md` | 前后端联调、冻结、文档同步和验收规则 |
 | `15-ai-pattern-provider-selection.md` | AI 拼豆图 Provider 选型、Agent 边界、提示词和降级策略 |
+| `16-phase-one-status.md` | 第一阶段当前完成内容、剩余任务、联调验收和风险 |
 
 ## 协作规则
 

@@ -11,7 +11,7 @@ class MockRepositoryTest {
     @Test
     fun mockRepositoriesExposeCoreMvpData() {
         assertFalse(MockCommunityRepository().feed().items.isEmpty())
-        assertFalse(MockPatternRepository().history().isEmpty())
+        assertFalse(MockPatternRepository().history().items.isEmpty())
         assertFalse(MockCommerceRepository().products().items.isEmpty())
     }
 

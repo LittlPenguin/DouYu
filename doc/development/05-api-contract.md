@@ -86,6 +86,19 @@
 | POST | `/uploads/presign` | 获取预签名上传 URL |
 | POST | `/uploads/confirm` | 确认上传完成 |
 
+`/uploads/presign` 联调返回字段：
+
+- `fileKey`
+- `uploadUrl`
+- `headers`
+- `expiresIn`
+
+`/uploads/confirm` 联调返回字段：
+
+- `fileId`
+- `fileKey`
+- `auditStatus`
+
 上传用途枚举：
 
 - `AVATAR`
@@ -192,6 +205,8 @@
 - `ALIPAY_APP`
 
 客户端不得传最终订单金额，金额由服务端根据商品、SKU、库存、优惠和运费计算。
+
+> 当前联调口径：微信和支付宝支付仍是服务端 Stub Provider，不是正式支付能力。正式上线前必须补齐渠道验签、支付金额校验、订单号/支付单号/渠道交易号一致性校验、回调重放与重复通知处理、主动查询和对账。
 
 ## 消息接口
 

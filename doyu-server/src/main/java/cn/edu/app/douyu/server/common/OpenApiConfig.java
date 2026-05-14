@@ -13,7 +13,16 @@ public class OpenApiConfig {
     @Bean
     OpenAPI douyuOpenApi() {
         return new OpenAPI()
-                .info(new Info().title("豆屿 Doyu API").version("v1"))
+                .info(new Info()
+                        .title("豆屿 Doyu API")
+                        .version("v1")
+                        .description("""
+                                第一阶段 Android 联调 API。所有业务接口统一使用 /api/v1 前缀和 Bearer JWT 鉴权。
+
+                                Stub Provider: 短信验证码固定为 123456；OSS 预签名返回占位 uploadUrl；AI 拼豆任务返回占位图纸和材料清单；微信支付、支付宝支付仅返回占位 App 拉起参数并提供回调幂等骨架。
+
+                                当前支付不是正式微信/支付宝支付。正式上线前必须补齐渠道验签、金额校验、订单号校验、回调重放处理、主动查询和对账。
+                                """))
                 .components(new Components().addSecuritySchemes("bearerAuth",
                         new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)

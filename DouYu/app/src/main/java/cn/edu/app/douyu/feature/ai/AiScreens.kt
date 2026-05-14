@@ -49,7 +49,7 @@ fun AiHomeScreen(navController: NavHostController) {
                 Spacer(Modifier.height(8.dp))
                 Text("处理中 ${job.progress}% · 高峰期会展示排队进度", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                DoyuOutlinedButton("查看任务进度", onClick = { navController.navigate(AppRoute.aiProgress(job.id)) }, icon = Icons.Filled.Pending, modifier = Modifier.fillMaxWidth())
+                DoyuOutlinedButton("查看任务进度", onClick = { navController.navigate(AppRoute.aiProgress(job.jobId)) }, icon = Icons.Filled.Pending, modifier = Modifier.fillMaxWidth())
             }
             DoyuCard {
                 SectionHeader("新手友好参数")
@@ -85,7 +85,9 @@ fun ImageSelectScreen(navController: NavHostController) {
             }
             DoyuCard {
                 SectionHeader("上传前会处理")
-                Text("后续会接入裁剪、方向修正、压缩、清晰度和主体大小检查。当前 MVP 先打通页面边界。")
+                Text("联调顺序固定：Photo Picker/拍照 -> /uploads/presign -> 直传对象存储或 Stub 上传 URL -> /uploads/confirm 返回 fileId。")
+                Spacer(Modifier.height(8.dp))
+                Text("创建 AI 任务时只传 inputFileId，不直接传 fileKey。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             PageStateView(UiState.WeakNetwork)
         }
@@ -101,6 +103,10 @@ fun AiParamsScreen(navController: NavHostController) {
             ParamSection("难度", listOf("新手", "普通", "进阶"))
             ParamSection("色卡", listOf("豆屿通用 48 色", "低饱和新手色", "已有材料优先"))
             ParamSection("风格", listOf("还原", "可爱", "二次元", "低色数", "头像图标"))
+            DoyuCard {
+                Text("将用已确认的 fileId 创建任务", style = MaterialTheme.typography.titleMedium)
+                Text("POST /patterns/jobs 请求包含 inputFileId、beadSize、targetSize、difficulty、paletteId、style。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             DoyuPrimaryButton("创建 AI 任务", onClick = { navController.navigate(AppRoute.aiProgress("job_001")) }, icon = Icons.Filled.AutoAwesome, modifier = Modifier.fillMaxWidth())
         }
     }
@@ -126,7 +132,7 @@ private fun ParamSection(title: String, options: List<String>) {
 
 @Composable
 fun AiProgressScreen(navController: NavHostController, jobId: String) {
-    val job = repo.history().firstOrNull { it.id == jobId } ?: repo.featuredJob()
+    val job = repo.job(jobId)
     Scaffold(topBar = { DoyuTopBar("生成进度", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             DoyuCard {
@@ -140,9 +146,13 @@ fun AiProgressScreen(navController: NavHostController, jobId: String) {
             }
             DoyuCard {
                 Text("服务端状态为准", style = MaterialTheme.typography.titleMedium)
-                Text("客户端后续会轮询 `/api/v1/patterns/jobs/{jobId}`，成功后展示图纸结果。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("客户端轮询 GET /api/v1/patterns/jobs/{jobId}，按 PENDING/PROCESSING/SUCCEEDED/FAILED/REJECTED/CANCELED 展示。取消使用 POST /patterns/jobs/{jobId}/cancel。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            DoyuPrimaryButton("查看图纸结果", onClick = { navController.navigate(AppRoute.patternResult(job.patternId ?: "pattern_001")) }, modifier = Modifier.fillMaxWidth())
+            if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
+                DoyuPrimaryButton("查看图纸结果", onClick = { navController.navigate(AppRoute.patternResult(job.patternId)) }, modifier = Modifier.fillMaxWidth())
+            } else {
+                DoyuOutlinedButton("继续查询任务状态", onClick = {}, modifier = Modifier.fillMaxWidth())
+            }
         }
     }
 }
@@ -210,21 +220,40 @@ private fun PatternSummary(pattern: PatternAsset) {
 fun PatternHistoryScreen(navController: NavHostController) {
     Scaffold(topBar = { DoyuTopBar("生成记录", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            repo.history().forEach { job ->
+            repo.history().items.forEach { job ->
                 DoyuCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
                             Text(job.inputName, style = MaterialTheme.typography.titleMedium)
-                            Text("${job.beadSize} · ${job.difficulty} · ${job.style}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${job.inputFileId} · ${job.beadSize} · ${job.difficulty} · ${job.style}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        TagChip(if (job.status == PatternJobStatus.SUCCEEDED) "已完成" else "处理中")
+                        TagChip(statusLabel(job.status))
                     }
                     Spacer(Modifier.height(10.dp))
-                    DoyuOutlinedButton("查看", onClick = { navController.navigate(AppRoute.patternResult(job.patternId ?: "pattern_001")) }, modifier = Modifier.fillMaxWidth())
+                    DoyuOutlinedButton(
+                        "查看",
+                        onClick = {
+                            if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
+                                navController.navigate(AppRoute.patternResult(job.patternId))
+                            } else {
+                                navController.navigate(AppRoute.aiProgress(job.jobId))
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
     }
+}
+
+private fun statusLabel(status: PatternJobStatus): String = when (status) {
+    PatternJobStatus.PENDING -> "排队中"
+    PatternJobStatus.PROCESSING -> "处理中"
+    PatternJobStatus.SUCCEEDED -> "已完成"
+    PatternJobStatus.FAILED -> "失败"
+    PatternJobStatus.REJECTED -> "审核拒绝"
+    PatternJobStatus.CANCELED -> "已取消"
 }

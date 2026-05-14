@@ -22,7 +22,7 @@ fun MessageListScreen(navController: NavHostController) {
     Scaffold(topBar = { DoyuTopBar("消息") }) { padding ->
         DoyuPage(padding) {
             SectionHeader("通知")
-            repo.notifications().forEach {
+            repo.notifications().items.forEach {
                 DoyuCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -34,9 +34,9 @@ fun MessageListScreen(navController: NavHostController) {
                 }
             }
             SectionHeader("私信")
-            repo.conversations().forEach {
+            repo.conversations().items.forEach {
                 DoyuCard {
-                    Surface(onClick = { navController.navigate(AppRoute.conversation(it.id)) }) {
+                    Surface(onClick = { navController.navigate(AppRoute.conversation(it.conversationId)) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             BeadCluster(38.dp)
                             Spacer(Modifier.width(10.dp))
@@ -55,7 +55,7 @@ fun MessageListScreen(navController: NavHostController) {
 
 @Composable
 fun ConversationScreen(navController: NavHostController, conversationId: String) {
-    val conversation = repo.conversations().firstOrNull { it.id == conversationId }
+    val conversation = repo.conversations().items.firstOrNull { it.conversationId == conversationId }
     Scaffold(topBar = { DoyuTopBar(conversation?.peerName ?: "会话", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             conversation?.riskHint?.let {
@@ -64,7 +64,7 @@ fun ConversationScreen(navController: NavHostController, conversationId: String)
                     Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            repo.chat(conversationId).forEach {
+            repo.chat(conversationId).items.forEach {
                 DoyuCard(modifier = Modifier.fillMaxWidth(if (it.mine) 0.86f else 1f)) {
                     Text(it.senderName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     Text(it.content)

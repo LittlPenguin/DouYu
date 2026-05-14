@@ -21,6 +21,26 @@
 | Moderation | 内容审核、举报、处罚 |
 | Admin | 管理后台接口 |
 
+## 本地开发启动
+
+后端工程路径：`D:\Studio\SpellBean\doyu-server`。
+
+Windows 本地推荐使用启动脚本：
+
+```powershell
+cd D:\Studio\SpellBean\doyu-server
+.\start-dev.bat
+```
+
+脚本等价于：
+
+```powershell
+docker compose up -d postgres redis
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+`dev` profile 使用 Docker Compose 中的 PostgreSQL 16 和 Redis 7。Spring Boot 4 当前使用的 Flyway 需要在 Maven 中包含 `org.flywaydb:flyway-database-postgresql`，否则连接 PostgreSQL 16 时会在启动阶段报 `Unsupported Database: PostgreSQL 16.x`。
+
 ## 鉴权与账号
 
 认证方式：
@@ -211,4 +231,3 @@ Feed 第一版采用规则排序：
 - 运营位和话题管理。
 
 后台操作必须记录操作人、时间、对象、前后状态和原因。
-

@@ -28,8 +28,8 @@ private data class TabUi(val tab: BottomTab, val icon: ImageVector)
 
 private val tabItems = listOf(
     TabUi(BottomTab.COMMUNITY, Icons.Filled.Groups),
-    TabUi(BottomTab.AI, Icons.Filled.AutoAwesome),
     TabUi(BottomTab.COMMERCE, Icons.Filled.Storefront),
+    TabUi(BottomTab.AI, Icons.Filled.AutoAwesome),
     TabUi(BottomTab.MESSAGE, Icons.Filled.ChatBubble),
     TabUi(BottomTab.PROFILE, Icons.Filled.Person)
 )

@@ -39,6 +39,7 @@ Android 最低版本建议：
 | API | REST + JSON |
 | 鉴权 | JWT access token + refresh token |
 | 数据库 | PostgreSQL |
+| 数据库迁移 | Flyway，PostgreSQL 运行时需包含 `flyway-database-postgresql` |
 | 缓存 | Redis |
 | 队列 | 云消息队列、RabbitMQ 或 RocketMQ，初始化时选择一种 |
 | ORM | MyBatis 或 Spring Data JPA，初始化时二选一后保持一致 |
@@ -102,4 +103,3 @@ Android 最低版本建议：
 - 文档和实现字段保持同名。
 - 废弃字段先保留兼容，再在下一个大版本移除。
 - 影响客户端的接口变更必须先更新 `05-api-contract.md`。
-

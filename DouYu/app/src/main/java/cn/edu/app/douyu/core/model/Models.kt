@@ -1,20 +1,59 @@
 package cn.edu.app.douyu.core.model
 
 import cn.edu.app.douyu.core.network.PageResponse
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class ContentStatus { REVIEWING, VISIBLE, SELF_VISIBLE, REJECTED, DELETED }
+
+@Serializable
+enum class AuditStatus { REVIEWING, APPROVED, REJECTED }
+
+@Serializable
+enum class UploadUsage { AVATAR, POST_IMAGE, POST_VIDEO, AI_INPUT, PATTERN_OUTPUT, PRODUCT_IMAGE, TRADE_IMAGE }
+
+@Serializable
 enum class PatternJobStatus { PENDING, PROCESSING, SUCCEEDED, FAILED, REJECTED, CANCELED }
+
+@Serializable
 enum class BeadSize { MM_2_6, MM_5 }
+
+@Serializable
 enum class PatternDifficulty { BEGINNER, NORMAL, ADVANCED }
+
+@Serializable
 enum class PatternStyle { RESTORE, CUTE, ANIME, LOW_COLOR, ICON }
+
+@Serializable
 enum class ProductType { SELF_OPERATED, PLAYER_SECOND_HAND, PLAYER_CUSTOM_SERVICE }
+
+@Serializable
 enum class ProductStatus { DRAFT, ON_SALE, OFF_SALE, SOLD_OUT, DELETED }
+
+@Serializable
+enum class SkuStatus { ON_SALE, OFF_SALE, SOLD_OUT, DELETED }
+
+@Serializable
+enum class SellerType { PLATFORM, PLAYER }
+
+@Serializable
+enum class OrderType { SELF_OPERATED, PLAYER_TRADE, CUSTOM_SERVICE }
+
+@Serializable
 enum class OrderStatus { CREATED, WAITING_PAYMENT, PAID, FULFILLING, SHIPPED, COMPLETED, CANCELED, REFUNDING, REFUNDED }
+
+@Serializable
 enum class PaymentChannel { WECHAT_APP, ALIPAY_APP }
+
+@Serializable
 enum class PaymentStatus { CREATED, PROCESSING, SUCCEEDED, FAILED, CLOSED }
 
+@Serializable
+enum class NotificationType { SYSTEM, COMMENT, LIKE, FAVORITE, FOLLOW, ORDER, AI_TASK, REPORT }
+
+@Serializable
 data class UserProfile(
-    val id: String,
+    val userId: String,
     val nickname: String,
     val avatarUrl: String?,
     val bio: String,
@@ -24,6 +63,7 @@ data class UserProfile(
     val followerCount: Int
 )
 
+@Serializable
 data class AuthSession(
     val accessToken: String,
     val refreshToken: String,
@@ -31,18 +71,73 @@ data class AuthSession(
     val user: UserProfile
 )
 
-data class SmsCodeRequest(val phone: String)
-data class SmsLoginRequest(val phone: String, val code: String)
-data class UploadPresignRequest(val usage: String, val fileName: String, val mimeType: String)
-data class UploadPresign(val uploadUrl: String, val fileKey: String, val headers: Map<String, String>, val expiresIn: Long)
+@Serializable
+data class TokenPair(
+    val accessToken: String,
+    val refreshToken: String,
+    val expiresIn: Long
+)
 
+@Serializable
+data class SmsCodeRequest(val phone: String)
+
+@Serializable
+data class SmsLoginRequest(val phone: String, val code: String)
+
+@Serializable
+data class RefreshTokenRequest(val refreshToken: String)
+
+@Serializable
+data class UploadPresignRequest(
+    val usage: UploadUsage,
+    val fileName: String,
+    val mimeType: String,
+    val sizeBytes: Long? = null
+)
+
+@Serializable
+data class UploadPresign(
+    val uploadUrl: String,
+    val fileKey: String,
+    val headers: Map<String, String>,
+    val expiresIn: Long
+)
+
+@Serializable
+data class UploadConfirmRequest(
+    val fileKey: String,
+    val usage: UploadUsage,
+    val mimeType: String,
+    val sizeBytes: Long,
+    val width: Int? = null,
+    val height: Int? = null
+)
+
+@Serializable
+data class FileAsset(
+    val fileId: String,
+    val ownerId: String,
+    val usage: UploadUsage,
+    val storageKey: String,
+    val mimeType: String,
+    val sizeBytes: Long,
+    val width: Int? = null,
+    val height: Int? = null,
+    val auditStatus: AuditStatus,
+    val publicUrl: String? = null
+)
+
+@Serializable
 data class Post(
-    val id: String,
+    val postId: String,
+    val authorId: String,
     val author: UserProfile,
     val title: String,
     val content: String,
+    val mediaFileIds: List<String>,
     val mediaColors: List<Long>,
-    val topic: String,
+    val topicIds: List<String>,
+    val topicNames: List<String>,
     val linkedPatternId: String?,
     val status: ContentStatus,
     val likeCount: Int,
@@ -50,18 +145,53 @@ data class Post(
     val commentCount: Int
 )
 
+@Serializable
+data class CreatePostRequest(
+    val title: String,
+    val content: String,
+    val mediaFileIds: List<String>,
+    val topicIds: List<String> = emptyList(),
+    val linkedPatternId: String? = null
+)
+
+@Serializable
 data class Comment(
-    val id: String,
+    val commentId: String,
+    val postId: String,
+    val authorId: String,
     val author: UserProfile,
+    val parentId: String? = null,
     val content: String,
     val status: ContentStatus
 )
 
+@Serializable
+data class CreateCommentRequest(
+    val content: String,
+    val parentId: String? = null
+)
+
+@Serializable
+data class CreatePatternJobRequest(
+    val inputFileId: String,
+    val beadSize: BeadSize,
+    val targetSize: String,
+    val difficulty: PatternDifficulty,
+    val paletteId: String,
+    val style: PatternStyle
+)
+
+@Serializable
 data class PatternJob(
-    val id: String,
+    val jobId: String,
+    val userId: String,
+    val inputFileId: String,
     val inputName: String,
     val beadSize: BeadSize,
+    val targetSize: String,
     val difficulty: PatternDifficulty,
+    val paletteId: String,
+    val paletteName: String,
     val style: PatternStyle,
     val status: PatternJobStatus,
     val progress: Int,
@@ -69,109 +199,226 @@ data class PatternJob(
     val patternId: String?
 )
 
+@Serializable
 data class PatternAsset(
-    val id: String,
+    val patternId: String,
+    val jobId: String,
+    val ownerId: String,
     val title: String,
+    val previewFileId: String? = null,
+    val gridFileId: String? = null,
+    val colorMapFileId: String? = null,
+    val pdfFileId: String? = null,
     val beadSize: BeadSize,
     val widthCells: Int,
     val heightCells: Int,
     val totalBeads: Int,
     val paletteName: String,
+    val status: ContentStatus,
     val colorStats: List<PaletteColorCount>,
     val materials: List<MaterialSuggestion>
 )
 
+@Serializable
 data class PaletteColorCount(
     val colorCode: String,
     val displayName: String,
     val hex: Long,
-    val beadCount: Int
+    val beadCount: Int,
+    val productSkuId: String? = null
 )
 
+@Serializable
 data class MaterialSuggestion(
+    val productId: String,
+    val skuId: String,
     val name: String,
     val quantity: String,
     val priceCent: Int,
+    val availableStock: Int
+) {
     val inStock: Boolean
+        get() = availableStock > 0
+}
+
+@Serializable
+data class ProductSku(
+    val skuId: String,
+    val productId: String,
+    val specName: String,
+    val priceCent: Int,
+    val availableStock: Int,
+    val status: SkuStatus
 )
 
+@Serializable
 data class Product(
-    val id: String,
+    val productId: String,
     val type: ProductType,
+    val sellerId: String?,
     val title: String,
     val description: String,
-    val category: String,
+    val categoryId: String,
+    val categoryName: String,
     val status: ProductStatus,
-    val priceCent: Int,
-    val stock: Int,
+    val auditStatus: AuditStatus,
+    val skus: List<ProductSku>,
     val swatchColor: Long
-)
+) {
+    val priceCent: Int
+        get() = skus.minOfOrNull { it.priceCent } ?: 0
 
+    val availableStock: Int
+        get() = skus.sumOf { it.availableStock }
+}
+
+@Serializable
 data class CartItem(
-    val id: String,
+    val itemId: String,
+    val productId: String,
+    val skuId: String,
     val product: Product,
+    val sku: ProductSku,
     val quantity: Int
-)
+) {
+    val lineAmountCent: Int
+        get() = sku.priceCent * quantity
+}
 
+@Serializable
 data class Cart(
     val items: List<CartItem>
 ) {
     val payableAmountCent: Int
-        get() = items.sumOf { it.product.priceCent * it.quantity }
+        get() = items.sumOf { it.lineAmountCent }
 }
 
+@Serializable
+data class AddCartItemRequest(
+    val productId: String,
+    val skuId: String,
+    val quantity: Int
+)
+
+@Serializable
+data class UpdateCartItemRequest(val quantity: Int)
+
+@Serializable
+data class CreateOrderRequest(
+    val itemIds: List<String>,
+    val addressId: String,
+    val remark: String? = null
+)
+
+@Serializable
+data class OrderItem(
+    val orderItemId: String,
+    val productId: String,
+    val skuId: String,
+    val title: String,
+    val specName: String,
+    val priceCent: Int,
+    val quantity: Int
+) {
+    val lineAmountCent: Int
+        get() = priceCent * quantity
+}
+
+@Serializable
 data class Order(
-    val id: String,
+    val orderId: String,
+    val buyerId: String,
+    val sellerType: SellerType,
+    val sellerId: String?,
+    val orderType: OrderType,
     val status: OrderStatus,
-    val items: List<CartItem>,
+    val totalAmountCent: Int,
     val payableAmountCent: Int,
+    val items: List<OrderItem>,
     val addressSnapshot: String
 )
 
+@Serializable
 data class Payment(
-    val id: String,
+    val paymentId: String,
     val orderId: String,
     val channel: PaymentChannel,
     val status: PaymentStatus,
-    val amountCent: Int
+    val amountCent: Int,
+    val payParams: Map<String, String>,
+    val channelTradeNo: String? = null,
+    val paidAt: String? = null
 )
 
+@Serializable
 data class CreatePaymentRequest(val orderId: String, val channel: PaymentChannel)
 
+@Serializable
 data class NotificationMessage(
-    val id: String,
+    val notificationId: String,
+    val type: NotificationType,
     val title: String,
     val content: String,
     val unread: Boolean
 )
 
+@Serializable
+data class MarkNotificationsReadRequest(val notificationIds: List<String>)
+
+@Serializable
 data class Conversation(
-    val id: String,
+    val conversationId: String,
+    val peerUserId: String,
     val peerName: String,
     val lastMessage: String,
     val unreadCount: Int,
     val riskHint: String?
 )
 
+@Serializable
 data class ChatMessage(
-    val id: String,
+    val messageId: String,
+    val conversationId: String,
+    val senderId: String,
     val senderName: String,
     val content: String,
     val mine: Boolean
 )
 
+@Serializable
+data class SendMessageRequest(val content: String)
+
+@Serializable
+data class CheckinStatus(
+    val userId: String,
+    val checkedInToday: Boolean,
+    val continuousDays: Int
+)
+
+@Serializable
+data class Badge(
+    val badgeId: String,
+    val name: String,
+    val description: String,
+    val achieved: Boolean
+)
+
+@Serializable
 data class RewardSummary(
+    val userId: String,
     val level: Int,
     val exp: Int,
     val nextLevelExp: Int,
     val checkinToday: Boolean
 )
 
+@Serializable
 data class DashboardData(
     val user: UserProfile,
     val reward: RewardSummary,
     val patternCount: Int,
-    val orderCount: Int
+    val orderCount: Int,
+    val badges: List<Badge>
 )
 
 data class HomeFeed(

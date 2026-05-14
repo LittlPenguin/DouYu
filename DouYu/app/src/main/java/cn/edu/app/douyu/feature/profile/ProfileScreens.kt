@@ -57,6 +57,15 @@ fun ProfileScreen(navController: NavHostController) {
                 ProfileAction("我的订单", Icons.AutoMirrored.Filled.ReceiptLong) { }
                 ProfileAction("签到与等级", Icons.Filled.WorkspacePremium) { }
             }
+            DoyuCard {
+                val checkin = repo.checkinStatus()
+                SectionHeader("签到与徽章")
+                Text("今日签到：${if (checkin.checkedInToday) "已签到" else "未签到"} · 连续 ${checkin.continuousDays} 天", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(10.dp))
+                repo.badges().forEach {
+                    Text("${it.name} · ${if (it.achieved) "已获得" else "未获得"}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
             DoyuOutlinedButton("登录页占位", onClick = { navController.navigate(AppRoute.LOGIN) }, modifier = Modifier.fillMaxWidth())
         }
     }
@@ -93,7 +102,7 @@ fun MyPatternsScreen(navController: NavHostController) {
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(it.title, style = MaterialTheme.typography.titleMedium)
-                            Text("${it.widthCells} x ${it.heightCells} · ${it.totalBeads} 颗", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${it.patternId} · ${it.widthCells} x ${it.heightCells} · ${it.totalBeads} 颗", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }

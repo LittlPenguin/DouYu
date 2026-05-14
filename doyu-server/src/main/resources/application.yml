@@ -21,10 +21,6 @@ management:
       exposure:
         include: health,info,metrics
 
-springdoc:
-  swagger-ui:
-    path: /swagger-ui/index.html
-
 mybatis:
   configuration:
     map-underscore-to-camel-case: true

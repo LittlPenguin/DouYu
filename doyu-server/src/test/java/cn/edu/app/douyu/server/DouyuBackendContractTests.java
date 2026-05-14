@@ -7,8 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.Set;
+import java.util.TreeSet;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -30,6 +35,70 @@ class DouyuBackendContractTests {
 
     @Autowired
     ObjectMapper objectMapper;
+
+    @Autowired
+    RequestMappingHandlerMapping requestMappingHandlerMapping;
+
+    @Test
+    void openApiDocsExposeApiV1EndpointsAndUploadPatternContractFields() throws Exception {
+        mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk());
+
+        String docs = mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi", notNullValue()))
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth", notNullValue()))
+                .andExpect(jsonPath("$.info.description", org.hamcrest.Matchers.containsString("Stub Provider")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode paths = objectMapper.readTree(docs).path("paths");
+        Set<String> documentedApiPaths = new TreeSet<>();
+        paths.fieldNames().forEachRemaining(path -> {
+            if (path.startsWith("/api/v1")) {
+                documentedApiPaths.add(path);
+            }
+        });
+        Set<String> mappedApiPaths = new TreeSet<>();
+        for (RequestMappingInfo info : requestMappingHandlerMapping.getHandlerMethods().keySet()) {
+            for (String pattern : info.getPathPatternsCondition().getPatternValues()) {
+                if (pattern.startsWith("/api/v1")) {
+                    mappedApiPaths.add(pattern.replaceAll("\\{([^}/]+)}", "{$1}"));
+                }
+            }
+        }
+
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/sms-code")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/uploads/presign")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/uploads/confirm")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/patterns/jobs")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/payments/callbacks/wechat")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/admin/auth/login")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(documentedApiPaths).containsAll(mappedApiPaths);
+
+        String token = login("13800000000", "AGE_18_PLUS");
+        JsonNode presign = postJsonWithToken("/api/v1/uploads/presign", token, """
+                {"usage":"AI_INPUT","mimeType":"image/png","sizeBytes":2048,"fileName":"input.png"}
+                """);
+        JsonNode presignData = presign.path("data");
+        org.assertj.core.api.Assertions.assertThat(presignData.hasNonNull("fileKey")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(presignData.hasNonNull("uploadUrl")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(presignData.hasNonNull("headers")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(presignData.hasNonNull("expiresIn")).isTrue();
+
+        JsonNode confirmed = postJsonWithToken("/api/v1/uploads/confirm", token, """
+                {"fileKey":"%s","usage":"AI_INPUT","mimeType":"image/png","sizeBytes":2048,"width":120,"height":120}
+                """.formatted(presignData.path("fileKey").asText()));
+        JsonNode confirmData = confirmed.path("data");
+        org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("fileId")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("fileKey")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("auditStatus")).isTrue();
+
+        JsonNode created = postJsonWithToken("/api/v1/patterns/jobs", token, """
+                {"inputFileId":"%s","beadSize":"MM_2_6","targetSize":"SMALL","difficulty":"BEGINNER","paletteId":"default","style":"CUTE"}
+                """.formatted(confirmData.path("fileId").asText()));
+        org.assertj.core.api.Assertions.assertThat(created.at("/data/inputFileId").asText()).isEqualTo(confirmData.path("fileId").asText());
+    }
 
     @Test
     void smsLoginRefreshAndLogoutUseUnifiedResponseAndRevokeRefreshToken() throws Exception {
