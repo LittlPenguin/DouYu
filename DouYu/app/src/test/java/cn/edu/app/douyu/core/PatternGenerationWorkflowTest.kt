@@ -18,7 +18,7 @@ class PatternGenerationWorkflowTest {
         val calls = mutableListOf<String>()
         val uploadApi = FakeUploadApi(calls)
         val patternApi = FakePatternApi(calls)
-        val transport = UploadTransport { presign, _ ->
+        val transport = UploadTransport { presign, _, _ ->
             calls += "put:${presign.fileKey}"
         }
 

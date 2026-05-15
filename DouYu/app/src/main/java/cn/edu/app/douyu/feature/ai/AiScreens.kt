@@ -22,13 +22,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import android.graphics.BitmapFactory
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.model.PatternAsset
 import cn.edu.app.douyu.core.model.PatternJobStatus
+import cn.edu.app.douyu.core.model.UploadConfirmRequest
+import cn.edu.app.douyu.core.model.UploadPresignRequest
+import cn.edu.app.douyu.core.model.UploadUsage
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.data.safeCallOrNull
+import cn.edu.app.douyu.core.network.requireSuccess
+import kotlinx.coroutines.launch
 
 private val repo = DoyuAppContainer.patternRepository
 
@@ -109,6 +115,8 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
     var uploadState by remember { mutableStateOf(UploadState.IDLE) }
     var uploadProgress by remember { mutableFloatStateOf(0f) }
     var uploadedFileId by remember { mutableStateOf<String?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
@@ -179,17 +187,56 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                             DoyuPrimaryButton(
                                 if (uploadState == UploadState.FAILED) "重试上传" else "上传并继续",
                                 onClick = {
+                                    val uri = selectedUri ?: return@DoyuPrimaryButton
                                     uploadState = UploadState.UPLOADING
                                     uploadProgress = 0f
-                                    // Simulate upload — replace with real API call
-                                    simulateUpload(
-                                        onProgress = { uploadProgress = it },
-                                        onComplete = { fileId ->
-                                            uploadedFileId = fileId
+                                    scope.launch {
+                                        try {
+                                            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                                ?: throw IllegalStateException("无法读取图片")
+                                            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+                                            val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+                                            val fileName = "upload_${System.currentTimeMillis()}.jpg"
+
+                                            val uploadApi = DoyuAppContainer.apiClient.uploadApi
+                                            val transport = DoyuAppContainer.uploadTransport
+
+                                            val presign = requireSuccess(
+                                                uploadApi.presign(
+                                                    UploadPresignRequest(
+                                                        usage = UploadUsage.AI_INPUT,
+                                                        fileName = fileName,
+                                                        mimeType = mimeType,
+                                                        sizeBytes = bytes.size.toLong()
+                                                    )
+                                                )
+                                            )
+
+                                            transport.upload(presign, bytes) { progress ->
+                                                uploadProgress = progress * 0.9f
+                                            }
+
+                                            val file = requireSuccess(
+                                                uploadApi.confirm(
+                                                    UploadConfirmRequest(
+                                                        fileKey = presign.fileKey,
+                                                        usage = UploadUsage.AI_INPUT,
+                                                        mimeType = mimeType,
+                                                        sizeBytes = bytes.size.toLong(),
+                                                        width = options.outWidth.takeIf { it > 0 },
+                                                        height = options.outHeight.takeIf { it > 0 }
+                                                    )
+                                                )
+                                            )
+
+                                            uploadProgress = 1f
+                                            uploadedFileId = file.fileId
                                             uploadState = UploadState.SUCCESS
-                                        },
-                                        onError = { uploadState = UploadState.FAILED }
-                                    )
+                                        } catch (e: Exception) {
+                                            uploadState = UploadState.FAILED
+                                        }
+                                    }
                                 },
                                 icon = Icons.Filled.CloudUpload,
                                 modifier = Modifier.weight(1f)
@@ -239,34 +286,13 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
             }
 
             DoyuCard {
-                SectionHeader("上传前会处理")
-                Text("联调顺序固定：Photo Picker/拍照 -> /uploads/presign -> 直传对象存储或 Stub 上传 URL -> /uploads/confirm 返回 fileId。")
+                SectionHeader("上传流程")
+                Text("Photo Picker/拍照 -> /uploads/presign -> 直传对象存储 -> /uploads/confirm 返回 fileId。")
                 Spacer(Modifier.height(8.dp))
                 Text("创建 AI 任务时只传 inputFileId，不直接传 fileKey。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
-}
-
-/**
- * Simulate upload with progress. Replace with real API integration.
- */
-private fun simulateUpload(
-    onProgress: (Float) -> Unit,
-    onComplete: (String) -> Unit,
-    onError: () -> Unit
-) {
-    Thread {
-        try {
-            for (i in 1..10) {
-                Thread.sleep(200)
-                onProgress(i / 10f)
-            }
-            onComplete("file_stub_${System.currentTimeMillis()}")
-        } catch (e: Exception) {
-            onError()
-        }
-    }.start()
 }
 
 @Preview

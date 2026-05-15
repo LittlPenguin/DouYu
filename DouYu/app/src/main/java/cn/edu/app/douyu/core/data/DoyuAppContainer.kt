@@ -15,6 +15,11 @@ object DoyuAppContainer {
 
     val authSessionManager = AuthSessionManager(apiClient.authApi, tokenStore)
 
+    val uploadTransport: UploadTransport = OkHttpUploadTransport()
+    val patternGenerationWorkflow = PatternGenerationWorkflow(
+        apiClient.uploadApi, apiClient.patternApi, uploadTransport
+    )
+
     val communityRepository: CommunityRepository = RealCommunityRepository(apiClient.communityApi)
     val patternRepository: PatternRepository = RealPatternRepository(apiClient.patternApi)
     val commerceRepository: CommerceRepository = RealCommerceRepository(

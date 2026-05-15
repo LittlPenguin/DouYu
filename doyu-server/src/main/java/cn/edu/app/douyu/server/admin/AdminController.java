@@ -14,6 +14,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,73 +68,105 @@ public class AdminController {
     @Operation(summary = "用户列表")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/users")
-    PageResult<Map<String, Object>> users(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = userRepository.findAll().stream()
+    PageResult<Map<String, Object>> users(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String keyword) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<UserEntity> result;
+        if (keyword != null && !keyword.isBlank()) {
+            result = userRepository.findByNicknameContainingIgnoreCase(keyword, pageable);
+        } else {
+            result = userRepository.findAll(pageable);
+        }
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(e -> toModel(e)).map(authService::userView).toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        return PageResult.of(items, page, size, result.getTotalElements());
     }
 
     @Operation(summary = "帖子列表")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/posts")
-    PageResult<Map<String, Object>> posts(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = postRepository.findAll().stream()
+    PageResult<Map<String, Object>> posts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String keyword) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<PostEntity> result;
+        if (keyword != null && !keyword.isBlank()) {
+            result = postRepository.findByContentContainingIgnoreCase(keyword, pageable);
+        } else {
+            result = postRepository.findAll(pageable);
+        }
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(p -> mapOf("postId", p.getId(), "status", p.getStatus(), "content", p.getContent())).toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        return PageResult.of(items, page, size, result.getTotalElements());
     }
 
     @Operation(summary = "评论列表")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/comments")
     PageResult<Map<String, Object>> comments(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = commentRepository.findAll().stream()
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<CommentEntity> result = commentRepository.findAll(pageable);
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(c -> mapOf("commentId", c.getId(), "status", c.getStatus(), "content", c.getContent())).toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        return PageResult.of(items, page, size, result.getTotalElements());
     }
 
     @Operation(summary = "商品列表")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/products")
     PageResult<Map<String, Object>> products(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = productRepository.findAll().stream()
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<ProductEntity> result = productRepository.findAll(pageable);
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(p -> mapOf("productId", p.getId(), "type", p.getType(), "title", p.getTitle(), "status", p.getStatus())).toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        return PageResult.of(items, page, size, result.getTotalElements());
     }
 
     @Operation(summary = "订单列表")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/orders")
     PageResult<Map<String, Object>> orders(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = orderRepository.findAll().stream()
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<OrderEntity> result = orderRepository.findAll(pageable);
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(o -> mapOf("orderId", o.getId(), "buyerId", o.getBuyerId(), "status", o.getStatus(), "payableAmountCent", o.getPayableAmountCent())).toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        return PageResult.of(items, page, size, result.getTotalElements());
     }
 
     @Operation(summary = "支付记录列表")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/payments")
     PageResult<Map<String, Object>> payments(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = paymentRepository.findAll().stream()
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<PaymentEntity> result = paymentRepository.findAll(pageable);
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(p -> mapOf("paymentId", p.getId(), "orderId", p.getOrderId(), "status", p.getStatus(), "amountCent", p.getAmountCent())).toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        return PageResult.of(items, page, size, result.getTotalElements());
     }
 
     @Operation(summary = "AI 任务列表")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/patterns/jobs")
     PageResult<Map<String, Object>> patternJobs(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = patternJobRepository.findAll().stream()
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<PatternJobEntity> result = patternJobRepository.findAll(pageable);
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(j -> mapOf("jobId", j.getId(), "userId", j.getUserId(), "status", j.getStatus())).toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        return PageResult.of(items, page, size, result.getTotalElements());
     }
 
     @Operation(summary = "举报列表")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/reports")
     PageResult<Map<String, Object>> reports(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = reportRepository.findAllByOrderByCreatedAtDesc().stream()
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<ReportEntity> result = reportRepository.findAll(pageable);
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(this::reportView).toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        return PageResult.of(items, page, size, result.getTotalElements());
     }
 
     @Operation(summary = "处理举报")
@@ -256,14 +292,16 @@ public class AdminController {
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/operation-logs")
     PageResult<Map<String, Object>> logs(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = adminLogRepository.findAllByOrderByCreatedAtDesc().stream()
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<AdminOperationLogEntity> result = adminLogRepository.findAll(pageable);
+        List<Map<String, Object>> items = result.getContent().stream()
                 .map(log -> mapOf("logId", log.getId(), "adminId", log.getAdminId(), "action", log.getAction(),
                         "targetType", log.getTargetType(), "targetId", log.getTargetId(),
                         "beforeState", log.getBeforeState() == null ? "" : log.getBeforeState(),
                         "afterState", log.getAfterState() == null ? "" : log.getAfterState(),
                         "reason", log.getReason() == null ? "" : log.getReason()))
                 .toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        return PageResult.of(items, page, size, result.getTotalElements());
     }
 
     private Map<String, Object> reportView(ReportEntity report) {
@@ -290,12 +328,6 @@ public class AdminController {
     private User toModel(UserEntity e) {
         return new User(e.getId(), e.getPhone(), e.getNickname(), e.getAvatarFileId(), e.getBio(),
                 e.getAgeGroup(), e.isMinor(), e.getRealNameStatus(), e.getAccountStatus(), e.getCreatedAt(), e.getUpdatedAt());
-    }
-
-    private <T> List<T> slice(List<T> items, int page, int size) {
-        int from = Math.max(0, (page - 1) * size);
-        int to = Math.min(items.size(), from + size);
-        return from >= items.size() ? List.of() : items.subList(from, to);
     }
 
     private Map<String, Object> mapOf(Object... values) {

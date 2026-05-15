@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,23 +35,27 @@ import java.util.Set;
 @RequestMapping("/api/v1")
 public class PaymentController {
     private static final Set<String> CHANNELS = Set.of("WECHAT_APP", "ALIPAY_APP");
+    private static final Duration CALLBACK_MAX_AGE = Duration.ofMinutes(10);
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final SkuRepository skuRepository;
     private final IdempotencyRecordRepository idempotencyRepository;
+    private final PaymentCallbackVerifier callbackVerifier;
     private final IdGenerator idGenerator;
     private final ObjectMapper objectMapper;
 
     public PaymentController(PaymentRepository paymentRepository, OrderRepository orderRepository,
                              OrderItemRepository orderItemRepository, SkuRepository skuRepository,
                              IdempotencyRecordRepository idempotencyRepository,
+                             PaymentCallbackVerifier callbackVerifier,
                              IdGenerator idGenerator, ObjectMapper objectMapper) {
         this.paymentRepository = paymentRepository;
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.skuRepository = skuRepository;
         this.idempotencyRepository = idempotencyRepository;
+        this.callbackVerifier = callbackVerifier;
         this.idGenerator = idGenerator;
         this.objectMapper = objectMapper;
     }
@@ -119,15 +124,17 @@ public class PaymentController {
     @Operation(summary = "微信支付回调")
     @ApiResponse(responseCode = "200", description = "处理成功")
     @PostMapping("/payments/callbacks/wechat")
-    Map<String, Object> wechatCallback(@Valid @RequestBody PaymentCallbackRequest request) {
-        return callback(request);
+    Map<String, Object> wechatCallback(@RequestHeader(value = "X-Signature", required = false) String signature,
+                                       @Valid @RequestBody PaymentCallbackRequest request) {
+        return callback("WECHAT_APP", signature, request);
     }
 
     @Operation(summary = "支付宝支付回调")
     @ApiResponse(responseCode = "200", description = "处理成功")
     @PostMapping("/payments/callbacks/alipay")
-    Map<String, Object> alipayCallback(@Valid @RequestBody PaymentCallbackRequest request) {
-        return callback(request);
+    Map<String, Object> alipayCallback(@RequestHeader(value = "X-Signature", required = false) String signature,
+                                       @Valid @RequestBody PaymentCallbackRequest request) {
+        return callback("ALIPAY_APP", signature, request);
     }
 
     @Operation(summary = "申请退款")
@@ -167,12 +174,29 @@ public class PaymentController {
         return response;
     }
 
-    private Map<String, Object> callback(PaymentCallbackRequest request) {
+    private Map<String, Object> callback(String channel, String signature, PaymentCallbackRequest request) {
+        // 1. 验签
+        if (!callbackVerifier.verify(channel, request.toString(), signature)) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "回调签名验证失败");
+        }
         PaymentEntity payment = requirePayment(request.paymentId());
+        // 2. 幂等：同一 channelTradeNo 不重复处理
         if (payment.getChannelTradeNo() != null && payment.getChannelTradeNo().equals(request.channelTradeNo())) {
             return paymentView(payment);
         }
+        // 3. 渠道一致性校验
+        if (!channel.equals(payment.getChannel())) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "回调渠道与支付单不一致");
+        }
+        // 4. 时间窗口防重放（回调时间与支付单创建时间差不超过 10 分钟）
         Instant now = Instant.now();
+        if (request.callbackTime() != null) {
+            Duration age = Duration.between(payment.getCreatedAt(), request.callbackTime());
+            if (age.isNegative() || age.compareTo(CALLBACK_MAX_AGE) > 0) {
+                throw new BizException(ErrorCode.INVALID_ARGUMENT, "回调时间超出有效窗口");
+            }
+        }
+        // 5. 处理失败回调
         if (!request.paid()) {
             payment.setStatus("FAILED");
             payment.setChannelTradeNo(request.channelTradeNo());
@@ -180,6 +204,11 @@ public class PaymentController {
             paymentRepository.save(payment);
             return paymentView(payment);
         }
+        // 6. 金额校验：回调金额必须与支付单一致
+        if (request.amountCent() != null && request.amountCent() != payment.getAmountCent()) {
+            throw new BizException(ErrorCode.CONFLICT, "回调金额与支付单不一致");
+        }
+        // 7. 成功处理
         payment.setStatus("SUCCEEDED");
         payment.setChannelTradeNo(request.channelTradeNo());
         payment.setPaidAt(now);
@@ -232,7 +261,8 @@ public class PaymentController {
     public record CreatePaymentRequest(@NotBlank String orderId, @NotBlank String channel) {
     }
 
-    public record PaymentCallbackRequest(@NotBlank String paymentId, @NotBlank String channelTradeNo, boolean paid) {
+    public record PaymentCallbackRequest(@NotBlank String paymentId, @NotBlank String channelTradeNo,
+                                         boolean paid, Integer amountCent, Instant callbackTime) {
     }
 
     public record RefundRequest(@NotBlank String orderId, @NotBlank String paymentId, @Positive int amountCent, @NotBlank String reason) {

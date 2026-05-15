@@ -8,8 +8,11 @@ import cn.edu.app.douyu.core.model.UploadPresignRequest
 import cn.edu.app.douyu.core.model.UploadUsage
 
 fun interface UploadTransport {
-    suspend fun upload(presign: UploadPresign, bytes: ByteArray)
+    suspend fun upload(presign: UploadPresign, bytes: ByteArray, onProgress: ((Float) -> Unit)?)
 }
+
+suspend fun UploadTransport.upload(presign: UploadPresign, bytes: ByteArray) =
+    upload(presign, bytes, null)
 
 class PatternGenerationWorkflow(
     private val uploadApi: UploadApi,
@@ -54,12 +57,12 @@ class PatternGenerationWorkflow(
             patternApi.createJob(params.copy(inputFileId = file.fileId))
         )
     }
+}
 
-    private fun <T> requireSuccess(response: ApiResponse<T>): T {
-        val data = response.data
-        if (!response.isOk || data == null) {
-            throw IllegalStateException("API error ${response.code}: ${response.message}")
-        }
-        return data
+fun <T> requireSuccess(response: ApiResponse<T>): T {
+    val data = response.data
+    if (!response.isOk || data == null) {
+        throw IllegalStateException("API error ${response.code}: ${response.message}")
     }
+    return data
 }

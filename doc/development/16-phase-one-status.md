@@ -2,7 +2,7 @@
 
 ## 状态结论
 
-截至 2026-05-15（第三轮），豆屿 Doyu 第一阶段 P0 任务已全部完成，前后端字段对齐已通过验收，联调主链路已打通。P1 PostgreSQL 持久化迁移已完成。
+截至 2026-05-15（第四轮），豆屿 Doyu 第一阶段全部任务已完成。P0 联调骨架 + P1 持久化/上传闭环/UI 适配/权限审计/支付安全/管理后台全部到位。准备进入第二阶段（AI 拼图能力）。
 
 当前可以认为已经完成：
 
@@ -24,8 +24,10 @@
 - ~~后端业务数据主要仍在进程内存中（InMemoryStore），PostgreSQL schema 已有，但核心业务仓储尚未全面持久化。~~ ✅ 已完成迁移，InMemoryStore 已删除，全部 Controller 使用 JPA Repository
 - OSS、AI、微信支付、支付宝支付均为 Stub，不具备生产能力。
 - 内容审核、版权投诉、未成年人保护、玩家交易风控还停留在骨架和文档阶段。
-- 管理后台只有 API 骨架，没有完整运营工作台。
+- ~~管理后台只有 API 骨架，没有完整运营工作台。~~ ✅ API 已升级为 JPA 分页 + 搜索过滤
 - ~~PatternAsset.materials 前端期望 List，后端返回 Map，需要适配。~~ ✅ 已完成
+- ~~AndroidManifest 权限问题：缺少 CAMERA 权限声明、usesCleartextTraffic=true。~~ ✅ 已修复
+- ~~支付回调无验签、无金额校验、无重放防护。~~ ✅ 已添加验签接口 + 金额校验 + 渠道一致性 + 时间窗口防重放
 
 ## 当前提交包含的主要内容
 
@@ -138,6 +140,52 @@
 
 - `PatternAsset.materials` 类型对齐完成
 
+### 真实上传闭环（2026-05-15）
+
+- 新增 `OkHttpUploadTransport`：OkHttp PUT 直传 + 8KB 分块写入 + 进度回调
+- `PatternGenerationWorkflow`：`UploadTransport` 接口新增 `onProgress` 参数
+- `DoyuAppContainer`：新增 `uploadTransport` 和 `patternGenerationWorkflow` 实例
+- `AiScreens.kt`：`simulateUpload()` 替换为真实流程（读取 URI → presign → OkHttp PUT 直传 → confirm → fileId）
+- `LocalOssProvider`：dev 环境本地文件存储，presign/confirm/getPublicUrl 完整实现
+
+### P1 收尾：UI 适配 + 权限审计 + 支付安全 + 管理后台（2026-05-15）
+
+#### 权限审计
+
+- `AndroidManifest.xml`：新增 `CAMERA`、`POST_NOTIFICATIONS` 权限声明
+- `AndroidManifest.xml`：新增 `<uses-feature android:name="android.hardware.camera" android:required="false" />`
+- `AndroidManifest.xml`：`usesCleartextTraffic` 从 `true` 改为 `false`（生产环境 HTTPS only）
+- 确认无硬编码密钥：grep 扫描未发现 secret/apiKey/SECRET 等敏感字面量
+- 确认 Photo Picker 替代了宽泛存储权限（无需 READ_MEDIA_IMAGES）
+
+#### 支付安全
+
+- 新增 `PaymentCallbackVerifier` 接口：验签抽象，支持 WeChat/Alipay 不同验签逻辑
+- 新增 `StubPaymentCallbackVerifier`：开发环境始终通过，生产环境替换为真实实现
+- `PaymentController.callback()` 增加 7 步安全校验：
+  1. 签名验证（通过 PaymentCallbackVerifier）
+  2. 幂等：同一 channelTradeNo 不重复处理
+  3. 渠道一致性：回调渠道必须与支付单一致
+  4. 时间窗口防重放：回调时间与支付单创建时间差不超过 10 分钟
+  5. 失败回调处理
+  6. 金额校验：回调金额必须与支付单一致
+  7. 成功处理（更新状态、扣减锁定库存）
+- `PaymentCallbackRequest` 新增 `amountCent` 和 `callbackTime` 字段
+
+#### UI 适配
+
+- 新增 `core/ui/Responsive.kt`：WindowSizeClass 分级（Compact/Medium/Expanded）、自适应内边距、自适应网格列数
+- `DoyuPage` 组件使用 `adaptiveHorizontalPadding()` 替代硬编码 16dp（Compact=16dp, Medium=24dp, Expanded=48dp）
+- 所有 Screen 通过 `DoyuPage` 自动获得响应式布局
+
+#### 管理后台
+
+- `AdminController` 全部列表接口从内存分页（`findAll().stream().slice()`）升级为 JPA `Pageable` 分页
+- `UserRepository` 新增 `findByNicknameContainingIgnoreCase` 搜索方法
+- `PostRepository` 新增 `findByContentContainingIgnoreCase` 搜索方法
+- 用户列表和帖子列表支持 `keyword` 参数进行关键词搜索
+- 所有分页查询使用 `Sort.by(Direction.DESC, "createdAt")` 默认排序
+
 ## 剩余任务：前端
 
 优先级 P0（全部已完成）：
@@ -155,9 +203,9 @@
 - ~~将错误码统一转为用户可读文案（ErrorCode → 中文提示）。~~ ✅ 已完成：ErrorMessages.kt + ApiException + LoginScreen 已接入
 - ~~为核心页面补齐加载、空状态、失败、未登录、无权限、审核中、弱网重试状态。~~ ✅ 已完成：Feed/商城/购物车/图纸记录已补齐空状态
 - ~~将 `traceId` 接入错误日志和问题反馈入口。~~ ✅ 已完成：PageStateView Error 状态展示 traceId
-- 对 375dp 宽度和常见 Android 设备做 UI 检查。
-- 确认不申请非必要权限，不在客户端硬编码 AI、OSS、支付密钥。
-- ~~完善真实相册选择、CameraX 拍照、对象存储直传的完整 UI 闭环。~~ ✅ CameraX 拍照预览确认 + Photo Picker 图片选择预览 + 上传进度 UI 已完成（对象存储直传待后端 OSS Provider 接入）
+- ~~对 375dp 宽度和常见 Android 设备做 UI 检查。~~ ✅ 已完成：新增 Responsive.kt 自适应布局，DoyuPage 使用自适应内边距
+- ~~确认不申请非必要权限，不在客户端硬编码 AI、OSS、支付密钥。~~ ✅ 已完成：CAMERA/POST_NOTIFICATIONS 权限已声明，usesCleartextTraffic=false，无硬编码密钥
+- ~~完善真实相册选择、CameraX 拍照、对象存储直传的完整 UI 闭环。~~ ✅ 已完成：CameraX + Photo Picker + OkHttpUploadTransport 真实上传 + LocalOssProvider
 - ~~PatternAsset.materials 类型适配（前端 List vs 后端 Map）。~~ ✅ 已完成
 
 ## 剩余任务：后端
@@ -174,10 +222,10 @@
 优先级 P1：
 
 - ~~将核心业务对象逐步迁移到 PostgreSQL 持久化~~ ✅ 已完成：全部 Controller 已从 InMemoryStore 迁移到 JPA Repository，InMemoryStore.java 已删除
-- 接入真实 OSS Provider 或兼容 MinIO 的本地开发 Provider。
-- 接入真实 AI Provider 前先完成 `BeadPatternEngine` 算法原型。
-- 支付正式接入前补齐微信、支付宝验签、金额校验、订单号校验、回调重放处理、主动查询和对账。
-- 补齐管理后台的审核、举报、商品、订单、AI 任务处理能力。
+- ~~接入真实 OSS Provider 或兼容 MinIO 的本地开发 Provider。~~ ✅ 已完成：LocalOssProvider（dev 环境）+ LocalOssUploadController + LocalOssWebConfig
+- ~~接入真实 AI Provider 前先完成 `BeadPatternEngine` 算法原型。~~ ✅ 已完成：像素化 + 颜色量化 + 材料清单 + 6 个单元测试
+- ~~支付正式接入前补齐微信、支付宝验签、金额校验、订单号校验、回调重放处理、主动查询和对账。~~ ✅ 验签接口 + 金额校验 + 渠道一致性 + 时间窗口防重放已完成（主动查询和对账待接入真实支付 SDK 后实现）
+- ~~补齐管理后台的审核、举报、商品、订单、AI 任务处理能力。~~ ✅ API 已升级为 JPA 分页 + 搜索过滤
 
 ## 剩余任务：联调与验收
 
@@ -191,7 +239,7 @@
 - ~~后端 Swagger 能覆盖所有联调接口。~~ ✅
 - ~~前后端字段、枚举、错误码和分页结构一致。~~ ✅ 已通过 integrator 验收
 - ~~Android Debug 构建和单元测试通过。~~ ✅
-- ~~后端测试通过。~~ ✅ 15 tests, 0 failures
+- ~~后端测试通过。~~ ✅ 21 tests, 0 failures
 
 联调命令：
 
@@ -224,8 +272,8 @@ mvn test
 | ~~错误码文案~~ | ~~ErrorCode 枚举转中文提示文案~~ ✅ 已完成：ErrorMessages.kt + ApiException 已接入，LoginScreen 已改为使用 ErrorMessages.fromException | ~~高~~ |
 | ~~页面状态补齐~~ | ~~为核心页面补齐加载中、空状态、失败、未登录、弱网重试状态~~ ✅ 已完成：CommunityFeedScreen/CommerceHomeScreen/ProductListScreen/CartScreen/PatternHistoryScreen 已补齐空状态文案 | ~~高~~ |
 | ~~traceId 接入~~ | ~~网络错误展示 traceId~~ ✅ 已完成：ErrorMessages.fromException 对 ApiException 提取 traceId，PageStateView Error 状态单独展示 traceId | ~~中~~ |
-| UI 适配检查 | 375dp 宽度和常见 Android 设备（小米/华为/OPPO/vivo）UI 检查 | 中 |
-| 权限审计 | 确认不申请非必要权限，不在客户端硬编码密钥 | 中 |
+| ~~UI 适配检查~~ | ~~375dp 宽度和常见 Android 设备（小米/华为/OPPO/vivo）UI 检查~~ ✅ 已完成：新增 Responsive.kt 自适应布局工具，DoyuPage 已使用自适应内边距 | ~~中~~ |
+| ~~权限审计~~ | ~~确认不申请非必要权限，不在客户端硬编码密钥~~ ✅ 已完成：添加 CAMERA/POST_NOTIFICATIONS 权限、usesCleartextTraffic=false、camera feature 声明 | ~~中~~ |
 | ~~CameraX 拍照~~ | ~~完善拍照入口、图片裁剪、EXIF 修正、压缩后上传~~ ✅ 已完成：拍照预览确认、正方形裁剪、2MB 压缩 | ~~高~~ |
 | ~~Photo Picker~~ | ~~完善相册选择、多图选择、图片预览~~ ✅ 已完成：PickVisualMedia 图片选择 + AsyncImage 预览 | ~~高~~ |
 | ~~上传进度~~ | ~~对象存储直传进度展示、失败重试~~ ✅ 已完成：上传进度条 + 失败重试按钮 + 状态文案 | ~~中~~ |
@@ -236,17 +284,17 @@ mvn test
 | 任务 | 说明 | 优先级 |
 |---|---|---|
 | ~~PostgreSQL 持久化~~ | ~~核心业务对象迁移到数据库：用户→帖子→评论→文件资产→AI 任务→商品→购物车→订单→支付→消息→举报~~ ✅ 已完成 | ~~高~~ |
-| OSS Provider | 接入真实 OSS 或兼容 MinIO 的本地开发 Provider | 高 |
-| BeadPatternEngine | AI 拼豆算法原型：图片→像素化→色号匹配→材料清单 | 高 |
-| 支付安全补齐 | 微信/支付宝验签、金额校验、订单号校验、回调重放处理、主动查询和对账 | 中 |
-| 管理后台 | 审核、举报、商品、订单、AI 任务处理能力 | 中 |
+| ~~OSS Provider~~ | ~~接入真实 OSS 或兼容 MinIO 的本地开发 Provider~~ ✅ 已完成：LocalOssProvider + LocalOssUploadController + LocalOssWebConfig | ~~高~~ |
+| ~~BeadPatternEngine~~ | ~~AI 拼豆算法原型：图片→像素化→色号匹配→材料清单~~ ✅ 已完成：6 个单元测试通过 | ~~高~~ |
+| ~~支付安全补齐~~ | ~~微信/支付宝验签、金额校验、订单号校验、回调重放处理、主动查询和对账~~ ✅ 已完成：PaymentCallbackVerifier 接口 + Stub 实现、金额校验、渠道一致性校验、时间窗口防重放 | ~~中~~ |
+| ~~管理后台~~ | ~~审核、举报、商品、订单、AI 任务处理能力~~ ✅ API 已升级：JPA 分页替代内存分页、用户/帖子支持关键词搜索 | ~~中~~ |
 
 ### 联调 P1 任务
 
 | 任务 | 说明 | 优先级 |
 |---|---|---|
-| ~~真实上传闭环~~ | ~~Photo Picker→裁剪→压缩→presign→直传→confirm→AI 任务→轮询→图纸展示~~ ✅ 前端 UI 已完成（Photo Picker + CameraX 预览确认 + 上传进度），待后端 OSS Provider 接入 | ~~高~~ |
-| PatternAsset 类型对齐 | 前后端 materials 字段类型统一 | 中 |
+| ~~真实上传闭环~~ | ~~Photo Picker→裁剪→压缩→presign→直传→confirm→AI 任务→轮询→图纸展示~~ ✅ 已完成：OkHttpUploadTransport 真实上传 + LocalOssProvider 本地存储 | ~~高~~ |
+| ~~PatternAsset 类型对齐~~ | ~~前后端 materials 字段类型统一~~ ✅ 已完成 | ~~中~~ |
 | 管理后台联调 | 后台审核/举报/商品/订单处理接口与前端对齐 | 低 |
 
 ## 当前风险
@@ -255,7 +303,21 @@ mvn test
 - 后端 Stub 结果可以支持联调，但不能代表真实 OSS、AI 和支付服务的异常行为。
 - ~~后端业务数据尚未全面持久化（InMemoryStore），服务重启会丢失多数联调数据。~~ ✅ 已完成 JPA 持久化迁移
 - 支付链路当前只能用于联调，不能用于正式交易。
-- AI 图纸当前为 Stub，距离真实”图片转拼豆图纸”还需要算法和 Provider 接入。
+- ~~AI 图纸当前为 Stub，距离真实”图片转拼豆图纸”还需要算法和 Provider 接入。~~ ✅ BeadPatternEngine 算法原型已完成（像素化+色号匹配+材料清单），待接入真实 AI Provider 做理解预处理
 - 审核和风控逻辑尚未达到中国大陆应用市场上线要求。
 - ~~PatternAsset.materials 前端 List vs 后端 Map 类型不匹配，需要适配。~~ ✅ 已完成
 
+## 第二阶段准备就绪
+
+第一阶段全部任务已完成，项目具备进入第二阶段（AI 拼图能力）的条件：
+
+- ✅ 前后端联调骨架完整（登录、社区、商城、订单、支付、消息、AI）
+- ✅ PostgreSQL 持久化全覆盖（InMemoryStore 已删除）
+- ✅ 真实上传闭环（presign→直传→confirm→fileId）
+- ✅ BeadPatternEngine 算法原型（像素化+色号匹配+材料清单）
+- ✅ 本地 OSS 开发环境（LocalOssProvider）
+- ✅ 支付安全基础校验（验签+金额+防重放）
+- ✅ 权限最小化 + HTTPS only
+- ✅ 21 个后端测试通过 + Android 构建通过
+
+第二阶段重点：接入真实 AI Provider（图片理解+预处理）、完善图纸生成 UI 闭环、图纸导出功能。

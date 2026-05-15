@@ -8,13 +8,13 @@
 
 客户端权限必须最小化。
 
-| 权限 | 用途 | 策略 |
-|---|---|---|
-| 相机 | 拍照生成拼豆图、发帖、头像 | 使用时申请 |
-| 相册 | 选择图片 | 优先 Photo Picker |
-| 通知 | 订单、评论、AI 完成提醒 | 用户触发场景后申请 |
-| 网络 | 访问 API、上传、支付 | 必需 |
-| 存储 | 保存导出图纸 | 优先系统分享和媒体选择器，避免广泛权限 |
+| 权限 | 用途 | 策略 | P1 状态 |
+|---|---|---|---|
+| 相机 | 拍照生成拼豆图、发帖、头像 | 使用时申请 | ✅ 已在 AndroidManifest 声明 CAMERA + uses-feature required=false |
+| 相册 | 选择图片 | 优先 Photo Picker | ✅ 已使用 Photo Picker，无需 READ_MEDIA_IMAGES |
+| 通知 | 订单、评论、AI 完成提醒 | 用户触发场景后申请 | ✅ 已在 AndroidManifest 声明 POST_NOTIFICATIONS |
+| 网络 | 访问 API、上传、支付 | 必需 | ✅ usesCleartextTraffic=false（HTTPS only） |
+| 存储 | 保存导出图纸 | 优先系统分享和媒体选择器，避免广泛权限 | ✅ 未申请广泛存储权限 |
 
 隐私政策必须说明：
 

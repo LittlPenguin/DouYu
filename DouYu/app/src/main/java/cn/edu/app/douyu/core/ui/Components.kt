@@ -318,14 +318,15 @@ fun DoyuPage(
     contentPadding: PaddingValues,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val horizontalPadding = adaptiveHorizontalPadding()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(
-            start = 16.dp,
+            start = horizontalPadding,
             top = contentPadding.calculateTopPadding() + 12.dp,
-            end = 16.dp,
+            end = horizontalPadding,
             bottom = contentPadding.calculateBottomPadding() + 20.dp
         ),
         verticalArrangement = Arrangement.spacedBy(14.dp)
