@@ -8,7 +8,8 @@ import java.time.Duration;
 public record DouyuProperties(
         Jwt jwt,
         Sms sms,
-        Admin admin
+        Admin admin,
+        Storage storage
 ) {
     public record Jwt(
             String issuer,
@@ -22,5 +23,8 @@ public record DouyuProperties(
     }
 
     public record Admin(String bootstrapUsername, String bootstrapPassword) {
+    }
+
+    public record Storage(String localPath, String baseUrl) {
     }
 }

@@ -1,5 +1,6 @@
 package cn.edu.app.douyu.feature.ai
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -7,16 +8,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.model.PatternAsset
 import cn.edu.app.douyu.core.model.PatternJobStatus
@@ -96,41 +101,172 @@ private fun ImageSelectScreenPreview() { ImageSelectScreenContent(navController 
 @Composable
 fun ImageSelectScreen(navController: NavHostController) { ImageSelectScreenContent(navController) }
 
+private enum class UploadState { IDLE, UPLOADING, SUCCESS, FAILED }
+
 @Composable
 private fun ImageSelectScreenContent(navController: NavHostController?) {
+    var selectedUri by remember { mutableStateOf<Uri?>(null) }
+    var uploadState by remember { mutableStateOf(UploadState.IDLE) }
+    var uploadProgress by remember { mutableFloatStateOf(0f) }
+    var uploadedFileId by remember { mutableStateOf<String?>(null) }
+
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
-            navController?.navigate(AppRoute.AI_PARAMS)
+            selectedUri = uri
+            uploadState = UploadState.IDLE
         }
     }
+
+    // Listen for captured URI from camera
+    val savedStateHandle = navController?.currentBackStackEntry?.savedStateHandle
+    LaunchedEffect(savedStateHandle) {
+        val capturedUriStr = savedStateHandle?.get<String>("captured_uri")
+        if (capturedUriStr != null) {
+            selectedUri = Uri.parse(capturedUriStr)
+            uploadState = UploadState.IDLE
+            savedStateHandle.remove<String>("captured_uri")
+        }
+    }
+
     Scaffold(topBar = { DoyuTopBar("选择图片", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            DoyuCard {
-                Text("选择一张图片，AI 会帮你转成拼豆图纸。", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(16.dp))
-                DoyuPrimaryButton(
-                    text = "从相册选择",
-                    onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                    icon = Icons.Filled.PhotoLibrary,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(10.dp))
-                DoyuOutlinedButton(
-                    "拍照",
-                    onClick = { navController?.navigate(AppRoute.CAMERA_CAPTURE) },
-                    icon = Icons.Filled.PhotoCamera,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            if (selectedUri == null) {
+                // No image selected yet — show selection options
+                DoyuCard {
+                    Text("选择一张图片，AI 会帮你转成拼豆图纸。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(16.dp))
+                    DoyuPrimaryButton(
+                        text = "从相册选择",
+                        onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                        icon = Icons.Filled.PhotoLibrary,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    DoyuOutlinedButton(
+                        "拍照",
+                        onClick = { navController?.navigate(AppRoute.CAMERA_CAPTURE) },
+                        icon = Icons.Filled.PhotoCamera,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            } else {
+                // Image selected — show preview
+                DoyuCard {
+                    SectionHeader("已选图片")
+                    Spacer(Modifier.height(8.dp))
+                    AsyncImage(
+                        model = selectedUri,
+                        contentDescription = "选中图片预览",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        DoyuOutlinedButton(
+                            "重新选择",
+                            onClick = {
+                                selectedUri = null
+                                uploadState = UploadState.IDLE
+                                uploadedFileId = null
+                            },
+                            icon = Icons.Filled.Refresh,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (uploadState == UploadState.IDLE || uploadState == UploadState.FAILED) {
+                            DoyuPrimaryButton(
+                                if (uploadState == UploadState.FAILED) "重试上传" else "上传并继续",
+                                onClick = {
+                                    uploadState = UploadState.UPLOADING
+                                    uploadProgress = 0f
+                                    // Simulate upload — replace with real API call
+                                    simulateUpload(
+                                        onProgress = { uploadProgress = it },
+                                        onComplete = { fileId ->
+                                            uploadedFileId = fileId
+                                            uploadState = UploadState.SUCCESS
+                                        },
+                                        onError = { uploadState = UploadState.FAILED }
+                                    )
+                                },
+                                icon = Icons.Filled.CloudUpload,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
+                // Upload progress/status
+                if (uploadState == UploadState.UPLOADING) {
+                    DoyuCard {
+                        Text("上传中...", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = { uploadProgress },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "已上传 ${(uploadProgress * 100).toInt()}%",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                if (uploadState == UploadState.FAILED) {
+                    DoyuCard {
+                        Text("上传失败", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+                        Spacer(Modifier.height(4.dp))
+                        Text("请检查网络后重试", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+
+                if (uploadState == UploadState.SUCCESS) {
+                    DoyuCard {
+                        Text("上传完成", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(4.dp))
+                        Text("fileId: ${uploadedFileId ?: "..."}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    DoyuPrimaryButton(
+                        "继续设置参数",
+                        onClick = { navController?.navigate(AppRoute.AI_PARAMS) },
+                        icon = Icons.AutoMirrored.Filled.ArrowForward,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
+
             DoyuCard {
                 SectionHeader("上传前会处理")
                 Text("联调顺序固定：Photo Picker/拍照 -> /uploads/presign -> 直传对象存储或 Stub 上传 URL -> /uploads/confirm 返回 fileId。")
                 Spacer(Modifier.height(8.dp))
                 Text("创建 AI 任务时只传 inputFileId，不直接传 fileKey。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            PageStateView(UiState.WeakNetwork)
         }
     }
+}
+
+/**
+ * Simulate upload with progress. Replace with real API integration.
+ */
+private fun simulateUpload(
+    onProgress: (Float) -> Unit,
+    onComplete: (String) -> Unit,
+    onError: () -> Unit
+) {
+    Thread {
+        try {
+            for (i in 1..10) {
+                Thread.sleep(200)
+                onProgress(i / 10f)
+            }
+            onComplete("file_stub_${System.currentTimeMillis()}")
+        } catch (e: Exception) {
+            onError()
+        }
+    }.start()
 }
 
 @Preview
@@ -329,6 +465,11 @@ private fun PatternHistoryScreenContent(navController: NavHostController?) {
                         )
                     }
                 }
+                is UiState.Empty -> EmptyContent(
+                    "还没有生成过图纸",
+                    "选择一张图片，开始生成你的第一张拼豆图纸吧！",
+                    showRetry = false
+                )
                 else -> PageStateView(historyState)
             }
         }

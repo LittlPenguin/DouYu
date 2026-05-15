@@ -8,3 +8,8 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+douyu:
+  storage:
+    local-path: ${DOUYU_STORAGE_PATH:./doyu-storage}
+    base-url: ${DOUYU_STORAGE_BASE_URL:http://localhost:8080}

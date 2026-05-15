@@ -1,14 +1,16 @@
 package cn.edu.app.douyu.server.upload.oss;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 /**
- * Stub OSS Provider，用于开发和联调。
+ * Stub OSS Provider，用于测试环境。
  * 返回占位 URL，不实际调用对象存储。
  */
 @Component
+@Profile("test")
 public class StubOssProvider implements OssProvider {
 
     @Override

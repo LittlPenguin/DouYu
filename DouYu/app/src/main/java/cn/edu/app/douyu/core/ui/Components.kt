@@ -202,6 +202,21 @@ fun PageStateView(
             showRetry = false
         }
         is UiState.Error -> {
+            val traceMarker = "\ntraceId: "
+            if (state.message.contains(traceMarker)) {
+                val parts = state.message.split(traceMarker, limit = 2)
+                title = "加载失败"
+                message = parts[0]
+                showRetry = true
+                EmptyContent(title, message, modifier, showRetry, onRetry)
+                Text(
+                    "traceId: ${parts[1]}",
+                    color = DoyuTextMuted,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+                return
+            }
             title = "加载失败"
             message = state.message
             showRetry = true

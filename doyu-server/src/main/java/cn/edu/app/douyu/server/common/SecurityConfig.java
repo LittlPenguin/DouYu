@@ -41,7 +41,8 @@ public class SecurityConfig {
                                 "/api/v1/payments/callbacks/**",
                                 "/api/v1/posts/feed",
                                 "/api/v1/products",
-                                "/api/v1/products/*"
+                                "/api/v1/products/*",
+                                "/uploads/**"
                         ).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated())

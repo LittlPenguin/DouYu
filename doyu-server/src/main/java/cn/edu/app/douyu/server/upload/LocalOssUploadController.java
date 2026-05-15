@@ -1,0 +1,40 @@
+package cn.edu.app.douyu.server.upload;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+/**
+ * 本地 OSS 文件上传端点。
+ * 接收客户端上传的文件并存储到本地 temp 目录。
+ */
+@RestController
+@Profile("dev")
+public class LocalOssUploadController {
+
+    private final Path uploadDir;
+
+    public LocalOssUploadController(@Value("${douyu.storage.local-path:./doyu-storage}") String localDir) {
+        this.uploadDir = Paths.get(localDir, "uploads").toAbsolutePath().normalize();
+    }
+
+    @PutMapping("/uploads/temp/**")
+    ResponseEntity<Void> upload(@RequestBody byte[] data) throws IOException {
+        String uri = ((org.springframework.web.context.request.ServletRequestAttributes)
+                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes())
+                .getRequest().getRequestURI();
+        String fileKey = uri.substring("/uploads/temp/".length());
+        Path target = uploadDir.resolve("temp").resolve(fileKey);
+        Files.createDirectories(target.getParent());
+        Files.write(target, data);
+        return ResponseEntity.ok().build();
+    }
+}

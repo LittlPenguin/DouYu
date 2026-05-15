@@ -40,3 +40,5 @@ douyu:
   admin:
     bootstrap-username: ${DOUYU_ADMIN_BOOTSTRAP_USERNAME:admin}
     bootstrap-password: ${DOUYU_ADMIN_BOOTSTRAP_PASSWORD:admin123}
+  oss:
+    provider: ${DOUYU_OSS_PROVIDER:local}

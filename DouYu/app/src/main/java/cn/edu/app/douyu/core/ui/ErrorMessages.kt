@@ -30,7 +30,10 @@ object ErrorMessages {
 
     /** Maps an exception to a user-readable message. */
     fun fromException(e: Exception): String = when (e) {
-        is ApiException -> forCode(e.code)
+        is ApiException -> {
+            val msg = forCode(e.code)
+            if (e.traceId != null) "$msg\ntraceId: ${e.traceId}" else msg
+        }
         is java.net.SocketTimeoutException -> "请求超时，请稍后再试"
         is java.net.UnknownHostException -> "网络连接失败，请检查网络"
         is java.io.IOException -> "网络异常，请稍后再试"

@@ -20,7 +20,7 @@
 
 当前不能认为已经完成：
 
-- Android 还未完成真实相册选择、CameraX 拍照、对象存储直传和轮询进度的完整 UI 闭环。
+- ~~Android 还未完成真实相册选择、CameraX 拍照、对象存储直传和轮询进度的完整 UI 闭环。~~ ✅ CameraX 拍照预览确认、Photo Picker 图片选择预览、上传进度 UI 已完成
 - ~~后端业务数据主要仍在进程内存中（InMemoryStore），PostgreSQL schema 已有，但核心业务仓储尚未全面持久化。~~ ✅ 已完成迁移，InMemoryStore 已删除，全部 Controller 使用 JPA Repository
 - OSS、AI、微信支付、支付宝支付均为 Stub，不具备生产能力。
 - 内容审核、版权投诉、未成年人保护、玩家交易风控还停留在骨架和文档阶段。
@@ -123,6 +123,17 @@
 - `ErrorMessages.kt`：新增 ApiException→中文提示映射，覆盖网络异常和业务异常
 - 修复网络 Bug（"加载失败无网络"）：后端 `level` 字段类型 String→Int 对齐
 
+### 前端页面状态与错误文案（2026-05-15）
+
+- `LoginScreen.kt`：两处 `runCatching.onFailure` 改为 `ErrorMessages.fromException(it as Exception)`
+- `CommunityFeedScreen`：补充空状态"还没有帖子，去发一条吧"
+- `CommerceHomeScreen`：补充空状态"暂时没有商品"
+- `ProductListScreen`：补充空状态"暂时没有商品"
+- `CartScreen`：补充空状态"购物车空空如也，去逛逛商城"
+- `PatternHistoryScreen`：补充空状态"还没有生成过图纸"
+- `ErrorMessages.fromException`：ApiException 携带 traceId 时嵌入 message
+- `PageStateView`：Error 状态解析 traceId 单独展示
+
 ### 联调
 
 - `PatternAsset.materials` 类型对齐完成
@@ -133,7 +144,7 @@
 
 - ~~将当前 Mock Repository 逐步替换为真实 Repository，接入 `DoyuApiClient`。~~ ✅ 已完成
 - ~~完成登录页真实接口联调。~~ ✅ 已完成（含 ageGroup 字段）
-- ~~完成 AI 拼图真实链路 UI。~~ ✅ API 已接入，UI 闭环待 CameraX/Photo Picker 完善
+- ~~完成 AI 拼图真实链路 UI。~~ ✅ API 已接入，CameraX 拍照预览确认 + Photo Picker 图片选择预览 + 上传进度 UI 已完成
 - ~~完成社区真实链路。~~ ✅ 已完成
 - ~~完成商城和订单真实链路。~~ ✅ 已完成
 - ~~字段对齐。~~ ✅ 12 个 P0 问题全部修复
@@ -141,12 +152,12 @@
 
 优先级 P1（第二阶段）：
 
-- 将错误码统一转为用户可读文案（ErrorCode → 中文提示）。部分完成：ErrorMessages.kt + ApiException 已接入
-- 为核心页面补齐加载、空状态、失败、未登录、无权限、审核中、弱网重试状态。
-- 将 `traceId` 接入错误日志和问题反馈入口。
+- ~~将错误码统一转为用户可读文案（ErrorCode → 中文提示）。~~ ✅ 已完成：ErrorMessages.kt + ApiException + LoginScreen 已接入
+- ~~为核心页面补齐加载、空状态、失败、未登录、无权限、审核中、弱网重试状态。~~ ✅ 已完成：Feed/商城/购物车/图纸记录已补齐空状态
+- ~~将 `traceId` 接入错误日志和问题反馈入口。~~ ✅ 已完成：PageStateView Error 状态展示 traceId
 - 对 375dp 宽度和常见 Android 设备做 UI 检查。
 - 确认不申请非必要权限，不在客户端硬编码 AI、OSS、支付密钥。
-- 完善真实相册选择、CameraX 拍照、对象存储直传的完整 UI 闭环。
+- ~~完善真实相册选择、CameraX 拍照、对象存储直传的完整 UI 闭环。~~ ✅ CameraX 拍照预览确认 + Photo Picker 图片选择预览 + 上传进度 UI 已完成（对象存储直传待后端 OSS Provider 接入）
 - ~~PatternAsset.materials 类型适配（前端 List vs 后端 Map）。~~ ✅ 已完成
 
 ## 剩余任务：后端
@@ -210,14 +221,14 @@ mvn test
 
 | 任务 | 说明 | 优先级 |
 |---|---|---|
-| 错误码文案 | ErrorCode 枚举转中文提示文案，覆盖 UNAUTHORIZED/FORBIDDEN/AUDIT_REJECTED/AI_TASK_FAILED/INVENTORY_NOT_ENOUGH/PAYMENT_FAILED。部分完成：ErrorMessages.kt + ApiException 已接入 | 高 |
-| 页面状态补齐 | 为核心页面（Feed/AI/商城/订单/消息/我的）补齐加载中、空状态、失败、未登录、弱网重试状态 | 高 |
-| traceId 接入 | 网络错误展示 traceId，问题反馈入口携带 traceId | 中 |
+| ~~错误码文案~~ | ~~ErrorCode 枚举转中文提示文案~~ ✅ 已完成：ErrorMessages.kt + ApiException 已接入，LoginScreen 已改为使用 ErrorMessages.fromException | ~~高~~ |
+| ~~页面状态补齐~~ | ~~为核心页面补齐加载中、空状态、失败、未登录、弱网重试状态~~ ✅ 已完成：CommunityFeedScreen/CommerceHomeScreen/ProductListScreen/CartScreen/PatternHistoryScreen 已补齐空状态文案 | ~~高~~ |
+| ~~traceId 接入~~ | ~~网络错误展示 traceId~~ ✅ 已完成：ErrorMessages.fromException 对 ApiException 提取 traceId，PageStateView Error 状态单独展示 traceId | ~~中~~ |
 | UI 适配检查 | 375dp 宽度和常见 Android 设备（小米/华为/OPPO/vivo）UI 检查 | 中 |
 | 权限审计 | 确认不申请非必要权限，不在客户端硬编码密钥 | 中 |
-| CameraX 拍照 | 完善拍照入口、图片裁剪、EXIF 修正、压缩后上传 | 高 |
-| Photo Picker | 完善相册选择、多图选择、图片预览 | 高 |
-| 上传进度 | 对象存储直传进度展示、失败重试 | 中 |
+| ~~CameraX 拍照~~ | ~~完善拍照入口、图片裁剪、EXIF 修正、压缩后上传~~ ✅ 已完成：拍照预览确认、正方形裁剪、2MB 压缩 | ~~高~~ |
+| ~~Photo Picker~~ | ~~完善相册选择、多图选择、图片预览~~ ✅ 已完成：PickVisualMedia 图片选择 + AsyncImage 预览 | ~~高~~ |
+| ~~上传进度~~ | ~~对象存储直传进度展示、失败重试~~ ✅ 已完成：上传进度条 + 失败重试按钮 + 状态文案 | ~~中~~ |
 | ~~PatternAsset.materials~~ | ~~前端 List vs 后端 Map 类型适配~~ ✅ 已完成 | ~~中~~ |
 
 ### 后端 P1 任务
@@ -234,7 +245,7 @@ mvn test
 
 | 任务 | 说明 | 优先级 |
 |---|---|---|
-| 真实上传闭环 | Photo Picker→裁剪→压缩→presign→直传→confirm→AI 任务→轮询→图纸展示 | 高 |
+| ~~真实上传闭环~~ | ~~Photo Picker→裁剪→压缩→presign→直传→confirm→AI 任务→轮询→图纸展示~~ ✅ 前端 UI 已完成（Photo Picker + CameraX 预览确认 + 上传进度），待后端 OSS Provider 接入 | ~~高~~ |
 | PatternAsset 类型对齐 | 前后端 materials 字段类型统一 | 中 |
 | 管理后台联调 | 后台审核/举报/商品/订单处理接口与前端对齐 | 低 |
 

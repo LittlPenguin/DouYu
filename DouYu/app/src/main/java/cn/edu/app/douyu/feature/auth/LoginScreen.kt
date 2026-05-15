@@ -65,7 +65,7 @@ fun LoginScreenContent(navController: NavHostController?) {
                                     error = null
                                     scope.launch {
                                         runCatching { DoyuAppContainer.apiClient.authApi.sendSmsCode(SmsCodeRequest(phone)) }
-                                            .onFailure { error = it.message }
+                                            .onFailure { error = ErrorMessages.fromException(it as Exception) }
                                         sending = false
                                     }
                                 }
@@ -91,7 +91,7 @@ fun LoginScreenContent(navController: NavHostController?) {
                                     navController?.navigate(BottomTab.PROFILE.route) {
                                         popUpTo(BottomTab.PROFILE.route) { inclusive = true }
                                     }
-                                }.onFailure { error = it.message }
+                                }.onFailure { error = ErrorMessages.fromException(it as Exception) }
                                 logging = false
                             }
                         }

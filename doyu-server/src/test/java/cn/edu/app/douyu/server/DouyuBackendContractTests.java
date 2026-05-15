@@ -95,7 +95,7 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("auditStatus")).isTrue();
 
         JsonNode created = postJsonWithToken("/api/v1/patterns/jobs", token, """
-                {"inputFileId":"%s","beadSize":"MM_2_6","targetSize":"SMALL","difficulty":"BEGINNER","paletteId":"default","style":"CUTE"}
+                {"inputFileId":"%s","beadSize":"MM_2_6","targetSize":"16x16","difficulty":"BEGINNER","paletteId":"default","style":"CUTE"}
                 """.formatted(confirmData.path("fileId").asText()));
         org.assertj.core.api.Assertions.assertThat(created.at("/data/inputFileId").asText()).isEqualTo(confirmData.path("fileId").asText());
     }
@@ -166,7 +166,7 @@ class DouyuBackendContractTests {
         String fileId = confirmedFile(token, "AI_INPUT");
 
         JsonNode created = postJsonWithToken("/api/v1/patterns/jobs", token, """
-                {"inputFileId":"%s","beadSize":"MM_2_6","targetSize":"SMALL","difficulty":"BEGINNER","paletteId":"default","style":"CUTE"}
+                {"inputFileId":"%s","beadSize":"MM_2_6","targetSize":"16x16","difficulty":"BEGINNER","paletteId":"default","style":"CUTE"}
                 """.formatted(fileId));
         String jobId = created.at("/data/jobId").asText();
 

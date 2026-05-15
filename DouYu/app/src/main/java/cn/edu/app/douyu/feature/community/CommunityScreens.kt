@@ -64,6 +64,11 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                 is UiState.Success -> state.data.items.forEach { post ->
                     PostCard(post, onClick = { navController?.navigate(AppRoute.postDetail(post.postId)) })
                 }
+                is UiState.Empty -> EmptyContent(
+                    "还没有帖子",
+                    "去发一条吧，成为豆屿第一位分享者！",
+                    showRetry = false
+                )
                 else -> PageStateView(feedState)
             }
             PageStatePreviewRow()

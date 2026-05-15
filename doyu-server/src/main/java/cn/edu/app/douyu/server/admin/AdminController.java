@@ -145,19 +145,111 @@ public class AdminController {
         report.setStatus(request.status());
         report.setUpdatedAt(now);
         reportRepository.save(report);
-        AdminOperationLogEntity log = new AdminOperationLogEntity();
-        log.setId(idGenerator.next("alog"));
-        log.setAdminId(adminId);
-        log.setAction("PROCESS_REPORT");
-        log.setTargetType("REPORT");
-        log.setTargetId(report.getId());
-        log.setBeforeState(beforeState);
-        log.setAfterState(report.getStatus());
-        log.setReason(request.reason());
-        log.setCreatedAt(now);
-        log.setUpdatedAt(now);
-        adminLogRepository.save(log);
+        writeLog(adminId, "PROCESS_REPORT", "REPORT", report.getId(), beforeState, report.getStatus(), request.reason(), now);
         return reportView(report);
+    }
+
+    @Operation(summary = "审核帖子")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "审核成功"), @ApiResponse(responseCode = "404", description = "帖子不存在") })
+    @PostMapping("/posts/{postId}/audit")
+    Map<String, Object> auditPost(Authentication authentication, @PathVariable String postId, @Valid @RequestBody AuditRequest request) {
+        String adminId = CurrentUser.adminId(authentication);
+        PostEntity post = postRepository.findById(postId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "帖子不存在"));
+        String beforeState = post.getStatus();
+        Instant now = Instant.now();
+        post.setStatus(request.approved() ? "PUBLISHED" : "REJECTED");
+        post.setUpdatedAt(now);
+        postRepository.save(post);
+        writeLog(adminId, "AUDIT_POST", "POST", postId, beforeState, post.getStatus(), request.reason(), now);
+        return mapOf("postId", postId, "status", post.getStatus());
+    }
+
+    @Operation(summary = "审核评论")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "审核成功"), @ApiResponse(responseCode = "404", description = "评论不存在") })
+    @PostMapping("/comments/{commentId}/audit")
+    Map<String, Object> auditComment(Authentication authentication, @PathVariable String commentId, @Valid @RequestBody AuditRequest request) {
+        String adminId = CurrentUser.adminId(authentication);
+        CommentEntity comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "评论不存在"));
+        String beforeState = comment.getStatus();
+        Instant now = Instant.now();
+        comment.setStatus(request.approved() ? "PUBLISHED" : "REJECTED");
+        comment.setUpdatedAt(now);
+        commentRepository.save(comment);
+        writeLog(adminId, "AUDIT_COMMENT", "COMMENT", commentId, beforeState, comment.getStatus(), request.reason(), now);
+        return mapOf("commentId", commentId, "status", comment.getStatus());
+    }
+
+    @Operation(summary = "审核商品")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "审核成功"), @ApiResponse(responseCode = "404", description = "商品不存在") })
+    @PostMapping("/products/{productId}/audit")
+    Map<String, Object> auditProduct(Authentication authentication, @PathVariable String productId, @Valid @RequestBody AuditRequest request) {
+        String adminId = CurrentUser.adminId(authentication);
+        ProductEntity product = productRepository.findById(productId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "商品不存在"));
+        String beforeState = product.getAuditStatus();
+        Instant now = Instant.now();
+        product.setAuditStatus(request.approved() ? "PASS" : "REJECTED");
+        if (!request.approved()) {
+            product.setStatus("OFFLINE");
+        }
+        product.setUpdatedAt(now);
+        productRepository.save(product);
+        writeLog(adminId, "AUDIT_PRODUCT", "PRODUCT", productId, beforeState, product.getAuditStatus(), request.reason(), now);
+        return mapOf("productId", productId, "auditStatus", product.getAuditStatus(), "status", product.getStatus());
+    }
+
+    @Operation(summary = "管理用户状态")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "操作成功"), @ApiResponse(responseCode = "404", description = "用户不存在") })
+    @PostMapping("/users/{userId}/status")
+    Map<String, Object> manageUser(Authentication authentication, @PathVariable String userId, @Valid @RequestBody UserStatusRequest request) {
+        String adminId = CurrentUser.adminId(authentication);
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
+        String beforeState = user.getAccountStatus();
+        Instant now = Instant.now();
+        user.setAccountStatus(request.status());
+        user.setUpdatedAt(now);
+        userRepository.save(user);
+        writeLog(adminId, "MANAGE_USER", "USER", userId, beforeState, user.getAccountStatus(), request.reason(), now);
+        return mapOf("userId", userId, "accountStatus", user.getAccountStatus());
+    }
+
+    @Operation(summary = "重试 AI 任务")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "重试成功"), @ApiResponse(responseCode = "404", description = "任务不存在"), @ApiResponse(responseCode = "409", description = "任务状态不允许重试") })
+    @PostMapping("/patterns/jobs/{jobId}/retry")
+    Map<String, Object> retryPatternJob(Authentication authentication, @PathVariable String jobId) {
+        String adminId = CurrentUser.adminId(authentication);
+        PatternJobEntity job = patternJobRepository.findById(jobId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "AI 任务不存在"));
+        if (!"FAILED".equals(job.getStatus()) && !"CANCELED".equals(job.getStatus())) {
+            throw new BizException(ErrorCode.CONFLICT, "仅失败或已取消的任务可重试");
+        }
+        String beforeState = job.getStatus();
+        Instant now = Instant.now();
+        job.setStatus("PENDING");
+        job.setFailureReason(null);
+        job.setUpdatedAt(now);
+        patternJobRepository.save(job);
+        writeLog(adminId, "RETRY_PATTERN_JOB", "PATTERN_JOB", jobId, beforeState, "PENDING", null, now);
+        return mapOf("jobId", jobId, "status", "PENDING");
+    }
+
+    @Operation(summary = "取消 AI 任务")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "取消成功"), @ApiResponse(responseCode = "404", description = "任务不存在") })
+    @PostMapping("/patterns/jobs/{jobId}/cancel")
+    Map<String, Object> cancelPatternJob(Authentication authentication, @PathVariable String jobId) {
+        String adminId = CurrentUser.adminId(authentication);
+        PatternJobEntity job = patternJobRepository.findById(jobId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "AI 任务不存在"));
+        String beforeState = job.getStatus();
+        Instant now = Instant.now();
+        job.setStatus("CANCELED");
+        job.setUpdatedAt(now);
+        patternJobRepository.save(job);
+        writeLog(adminId, "CANCEL_PATTERN_JOB", "PATTERN_JOB", jobId, beforeState, "CANCELED", null, now);
+        return mapOf("jobId", jobId, "status", "CANCELED");
     }
 
     @Operation(summary = "运营日志列表")
@@ -177,6 +269,22 @@ public class AdminController {
     private Map<String, Object> reportView(ReportEntity report) {
         return mapOf("reportId", report.getId(), "reporterId", report.getReporterId(), "targetType", report.getTargetType(),
                 "targetId", report.getTargetId(), "reason", report.getReason(), "status", report.getStatus());
+    }
+
+    private void writeLog(String adminId, String action, String targetType, String targetId,
+                          String beforeState, String afterState, String reason, Instant now) {
+        AdminOperationLogEntity log = new AdminOperationLogEntity();
+        log.setId(idGenerator.next("alog"));
+        log.setAdminId(adminId);
+        log.setAction(action);
+        log.setTargetType(targetType);
+        log.setTargetId(targetId);
+        log.setBeforeState(beforeState);
+        log.setAfterState(afterState);
+        log.setReason(reason);
+        log.setCreatedAt(now);
+        log.setUpdatedAt(now);
+        adminLogRepository.save(log);
     }
 
     private User toModel(UserEntity e) {
@@ -199,4 +307,8 @@ public class AdminController {
     }
 
     public record ProcessRequest(@NotBlank String status, String reason) {}
+
+    public record AuditRequest(boolean approved, String reason) {}
+
+    public record UserStatusRequest(@NotBlank String status, String reason) {}
 }

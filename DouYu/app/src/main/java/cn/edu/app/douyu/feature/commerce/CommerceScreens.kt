@@ -63,6 +63,11 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                 is UiState.Success -> state.data.items.take(2).forEach { product ->
                     ProductCard(product, onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) })
                 }
+                is UiState.Empty -> EmptyContent(
+                    "暂时没有商品",
+                    "商品正在上架中，先去逛逛社区吧。",
+                    showRetry = false
+                )
                 else -> PageStateView(productsState)
             }
             DoyuCard {
@@ -101,6 +106,11 @@ private fun ProductListScreenContent(navController: NavHostController?) {
                 is UiState.Success -> state.data.items.forEach { product ->
                     ProductCard(product, onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) })
                 }
+                is UiState.Empty -> EmptyContent(
+                    "暂时没有商品",
+                    "该分类暂无商品，看看其他分类吧。",
+                    showRetry = false
+                )
                 else -> PageStateView(productsState)
             }
         }
@@ -227,6 +237,11 @@ private fun CartScreenContent(navController: NavHostController?) {
     }) { padding ->
         DoyuPage(padding) {
             when (val state = cartState) {
+                is UiState.Empty -> EmptyContent(
+                    "购物车空空如也",
+                    "去逛逛商城，挑选心仪的拼豆材料吧。",
+                    showRetry = false
+                )
                 is UiState.Success -> {
                     val cart = state.data
                     cart.items.forEach {
