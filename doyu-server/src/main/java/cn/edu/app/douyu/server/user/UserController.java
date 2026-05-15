@@ -1,9 +1,15 @@
 package cn.edu.app.douyu.server.user;
 
 import cn.edu.app.douyu.server.auth.AuthService;
+import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
-import cn.edu.app.douyu.server.common.InMemoryStore;
+import cn.edu.app.douyu.server.common.ErrorCode;
+import cn.edu.app.douyu.server.common.IdGenerator;
 import cn.edu.app.douyu.server.common.Models.User;
+import cn.edu.app.douyu.server.common.entity.FollowEntity;
+import cn.edu.app.douyu.server.common.entity.FollowRepository;
+import cn.edu.app.douyu.server.common.entity.UserEntity;
+import cn.edu.app.douyu.server.common.entity.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -27,11 +33,16 @@ import java.util.Map;
 @RequestMapping("/api/v1/users")
 public class UserController {
     private final AuthService authService;
-    private final InMemoryStore store;
+    private final UserRepository userRepository;
+    private final FollowRepository followRepository;
+    private final IdGenerator idGenerator;
 
-    public UserController(AuthService authService, InMemoryStore store) {
+    public UserController(AuthService authService, UserRepository userRepository,
+                          FollowRepository followRepository, IdGenerator idGenerator) {
         this.authService = authService;
-        this.store = store;
+        this.userRepository = userRepository;
+        this.followRepository = followRepository;
+        this.idGenerator = idGenerator;
     }
 
     @Operation(summary = "获取当前用户资料")
@@ -52,14 +63,14 @@ public class UserController {
     @PatchMapping("/me")
     Map<String, Object> updateMe(Authentication authentication, @RequestBody UpdateProfileRequest request) {
         String userId = CurrentUser.userId(authentication);
-        User user = authService.requireUser(userId);
-        User updated = new User(user.id(), user.phone(),
-                request.nickname() == null ? user.nickname() : request.nickname(),
-                request.avatarFileId() == null ? user.avatarFileId() : request.avatarFileId(),
-                request.bio() == null ? user.bio() : request.bio(),
-                user.ageGroup(), user.isMinor(), user.realNameStatus(), user.accountStatus(), user.createdAt(), Instant.now());
-        store.users.put(userId, updated);
-        return authService.userView(updated);
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
+        if (request.nickname() != null) user.setNickname(request.nickname());
+        if (request.avatarFileId() != null) user.setAvatarFileId(request.avatarFileId());
+        if (request.bio() != null) user.setBio(request.bio());
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
+        return authService.userView(toModel(user));
     }
 
     @Operation(summary = "获取用户公开资料")
@@ -82,7 +93,9 @@ public class UserController {
     Map<String, Object> follow(Authentication authentication, @PathVariable String userId) {
         String currentUserId = CurrentUser.userId(authentication);
         authService.requireUser(userId);
-        store.follows.add(currentUserId + ":" + userId);
+        Instant now = Instant.now();
+        followRepository.findByUserIdAndTargetUserId(currentUserId, userId).orElseGet(() ->
+                followRepository.save(new FollowEntity(idGenerator.next("flw"), currentUserId, userId, now, now)));
         return Map.of("followed", true);
     }
 
@@ -94,7 +107,7 @@ public class UserController {
     @DeleteMapping("/{userId}/follow")
     Map<String, Object> unfollow(Authentication authentication, @PathVariable String userId) {
         String currentUserId = CurrentUser.userId(authentication);
-        store.follows.remove(currentUserId + ":" + userId);
+        followRepository.deleteByUserIdAndTargetUserId(currentUserId, userId);
         return Map.of("followed", false);
     }
 
@@ -106,11 +119,18 @@ public class UserController {
     @PostMapping("/real-name")
     Map<String, Object> realName(Authentication authentication, @Valid @RequestBody RealNameRequest request) {
         String userId = CurrentUser.userId(authentication);
-        User user = authService.requireUser(userId);
-        User updated = new User(user.id(), user.phone(), user.nickname(), user.avatarFileId(), user.bio(),
-                user.ageGroup(), user.isMinor(), "VERIFIED", user.accountStatus(), user.createdAt(), Instant.now());
-        store.users.put(userId, updated);
-        return Map.of("realNameStatus", updated.realNameStatus());
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
+        user.setRealNameStatus("VERIFIED");
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
+        return Map.of("realNameStatus", user.getRealNameStatus());
+    }
+
+    private User toModel(UserEntity entity) {
+        return new User(entity.getId(), entity.getPhone(), entity.getNickname(), entity.getAvatarFileId(),
+                entity.getBio(), entity.getAgeGroup(), entity.isMinor(), entity.getRealNameStatus(),
+                entity.getAccountStatus(), entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
     public record UpdateProfileRequest(String nickname, String avatarFileId, String bio) {

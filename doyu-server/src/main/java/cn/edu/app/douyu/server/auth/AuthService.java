@@ -4,10 +4,14 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.DouyuProperties;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.InMemoryStore;
-import cn.edu.app.douyu.server.common.Models.RefreshTokenRecord;
 import cn.edu.app.douyu.server.common.Models.User;
 import cn.edu.app.douyu.server.common.TokenService;
+import cn.edu.app.douyu.server.common.entity.FollowRepository;
+import cn.edu.app.douyu.server.common.entity.RefreshTokenEntity;
+import cn.edu.app.douyu.server.common.entity.RefreshTokenRepository;
+import cn.edu.app.douyu.server.common.entity.RewardAccountRepository;
+import cn.edu.app.douyu.server.common.entity.UserEntity;
+import cn.edu.app.douyu.server.common.entity.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -20,14 +24,22 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AuthService {
-    private final InMemoryStore store;
+    private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final FollowRepository followRepository;
+    private final RewardAccountRepository rewardAccountRepository;
     private final IdGenerator idGenerator;
     private final TokenService tokenService;
     private final DouyuProperties properties;
-    private final Map<String, String> smsCodes = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> smsCodes = new ConcurrentHashMap<>();
 
-    public AuthService(InMemoryStore store, IdGenerator idGenerator, TokenService tokenService, DouyuProperties properties) {
-        this.store = store;
+    public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
+                       FollowRepository followRepository, RewardAccountRepository rewardAccountRepository,
+                       IdGenerator idGenerator, TokenService tokenService, DouyuProperties properties) {
+        this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.followRepository = followRepository;
+        this.rewardAccountRepository = rewardAccountRepository;
         this.idGenerator = idGenerator;
         this.tokenService = tokenService;
         this.properties = properties;
@@ -42,68 +54,67 @@ public class AuthService {
         if (!expected.equals(request.code())) {
             throw new BizException(ErrorCode.UNAUTHORIZED, "验证码错误");
         }
-        User user = store.userByPhone(request.phone()).orElseGet(() -> createUser(request));
-        if ("BANNED".equals(user.accountStatus()) || "CANCELED".equals(user.accountStatus())) {
+        UserEntity user = userRepository.findByPhone(request.phone()).orElseGet(() -> createUser(request));
+        if ("BANNED".equals(user.getAccountStatus()) || "CANCELED".equals(user.getAccountStatus())) {
             throw new BizException(ErrorCode.FORBIDDEN, "账号状态不可登录");
         }
-        return tokenPayload(user);
+        return tokenPayload(toModel(user));
     }
 
     public Map<String, Object> refresh(String refreshToken) {
         String hash = hash(refreshToken);
-        RefreshTokenRecord record = store.refreshTokensByHash.get(hash);
-        if (record == null || record.revoked() || record.expiresAt().isBefore(Instant.now())) {
+        RefreshTokenEntity record = refreshTokenRepository.findByTokenHash(hash)
+                .orElse(null);
+        if (record == null || record.isRevoked() || record.getExpiresAt().isBefore(Instant.now())) {
             throw new BizException(ErrorCode.UNAUTHORIZED, "refresh token 已失效");
         }
-        User user = store.users.get(record.userId());
+        UserEntity user = userRepository.findById(record.getUserId()).orElse(null);
         if (user == null) {
             throw new BizException(ErrorCode.UNAUTHORIZED, "用户不存在");
         }
         return Map.of(
-                "accessToken", tokenService.accessToken(user.id(), "USER"),
+                "accessToken", tokenService.accessToken(user.getId(), "USER"),
                 "refreshToken", refreshToken,
                 "expiresIn", properties.jwt().accessTokenTtl().toSeconds(),
-                "user", userView(user)
+                "user", userView(toModel(user))
         );
     }
 
     public void logout(String userId, String refreshToken) {
         String hash = hash(refreshToken);
-        RefreshTokenRecord record = store.refreshTokensByHash.get(hash);
-        if (record != null && record.userId().equals(userId)) {
-            store.refreshTokensByHash.put(hash, new RefreshTokenRecord(record.id(), record.userId(), record.tokenHash(), true, record.expiresAt()));
-        }
+        refreshTokenRepository.findByTokenHash(hash).ifPresent(record -> {
+            if (record.getUserId().equals(userId)) {
+                record.setRevoked(true);
+                refreshTokenRepository.save(record);
+            }
+        });
     }
 
     public Map<String, Object> cancelAccount(String userId) {
-        User user = requireUser(userId);
-        User updated = new User(user.id(), user.phone(), user.nickname(), user.avatarFileId(), user.bio(), user.ageGroup(),
-                user.isMinor(), user.realNameStatus(), "CANCELING", user.createdAt(), Instant.now());
-        store.users.put(userId, updated);
-        store.refreshTokensByHash.replaceAll((hash, token) -> token.userId().equals(userId)
-                ? new RefreshTokenRecord(token.id(), token.userId(), token.tokenHash(), true, token.expiresAt())
-                : token);
-        return Map.of("accountStatus", updated.accountStatus());
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
+        user.setAccountStatus("CANCELING");
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
+        return Map.of("accountStatus", user.getAccountStatus());
     }
 
     public User requireUser(String userId) {
-        User user = store.users.get(userId);
-        if (user == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "用户不存在");
-        }
-        return user;
+        UserEntity entity = userRepository.findById(userId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
+        return toModel(entity);
     }
 
     public Map<String, Object> userView(User user) {
-        long following = store.follows.stream().filter(k -> k.startsWith(user.id() + ":")).count();
-        long followers = store.follows.stream().filter(k -> k.endsWith(":" + user.id())).count();
-        var reward = store.rewards.get(user.id());
+        long following = followRepository.countByUserId(user.id());
+        long followers = followRepository.countByTargetUserId(user.id());
+        var reward = rewardAccountRepository.findByUserId(user.id()).orElse(null);
         Map<String, Object> view = new java.util.LinkedHashMap<>();
         view.put("userId", user.id());
         view.put("nickname", user.nickname() == null ? "" : user.nickname());
         view.put("avatarUrl", user.avatarFileId() == null ? "" : user.avatarFileId());
         view.put("bio", user.bio() == null ? "" : user.bio());
-        view.put("level", reward != null ? reward.levelCode() : "LV1");
+        view.put("level", reward != null ? reward.getLevel() : 1);
         view.put("isMinor", user.isMinor());
         view.put("followingCount", (int) following);
         view.put("followerCount", (int) followers);
@@ -114,30 +125,37 @@ public class AuthService {
         return view;
     }
 
-    private User createUser(AuthController.SmsLoginRequest request) {
+    private UserEntity createUser(AuthController.SmsLoginRequest request) {
         if (!"AGE_16_17".equals(request.ageGroup()) && !"AGE_18_PLUS".equals(request.ageGroup())) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "ageGroup 仅支持 AGE_16_17 或 AGE_18_PLUS");
         }
         Instant now = Instant.now();
-        User user = new User(idGenerator.next("usr"), request.phone(),
+        UserEntity user = new UserEntity(idGenerator.next("usr"), request.phone(),
                 request.nickname() == null || request.nickname().isBlank() ? "豆友" : request.nickname(),
                 null, "", request.ageGroup(), "AGE_16_17".equals(request.ageGroup()), "UNVERIFIED", "ACTIVE", now, now);
-        store.users.put(user.id(), user);
-        store.userIdByPhone.put(user.phone(), user.id());
-        return user;
+        return userRepository.save(user);
     }
 
     private Map<String, Object> tokenPayload(User user) {
         String refreshToken = "rt_" + UUID.randomUUID().toString().replace("-", "");
         String hash = hash(refreshToken);
-        store.refreshTokensByHash.put(hash, new RefreshTokenRecord(idGenerator.next("rt"), user.id(), hash, false,
-                Instant.now().plus(properties.jwt().refreshTokenTtl())));
+        Instant now = Instant.now();
+        RefreshTokenEntity entity = new RefreshTokenEntity(
+                idGenerator.next("rt"), user.id(), hash, false,
+                now.plus(properties.jwt().refreshTokenTtl()), now, now);
+        refreshTokenRepository.save(entity);
         return Map.of(
                 "accessToken", tokenService.accessToken(user.id(), "USER"),
                 "refreshToken", refreshToken,
                 "expiresIn", properties.jwt().accessTokenTtl().toSeconds(),
                 "user", userView(user)
         );
+    }
+
+    private User toModel(UserEntity entity) {
+        return new User(entity.getId(), entity.getPhone(), entity.getNickname(), entity.getAvatarFileId(),
+                entity.getBio(), entity.getAgeGroup(), entity.isMinor(), entity.getRealNameStatus(),
+                entity.getAccountStatus(), entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
     private String maskPhone(String phone) {

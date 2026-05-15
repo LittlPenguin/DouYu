@@ -4,9 +4,7 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.InMemoryStore;
-import cn.edu.app.douyu.server.common.Models.Comment;
-import cn.edu.app.douyu.server.common.Models.Post;
+import cn.edu.app.douyu.server.common.entity.*;
 import cn.edu.app.douyu.server.common.PageResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,18 +24,35 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Tag(name = "社区", description = "帖子 CRUD、点赞、收藏、评论、举报")
 @RestController
 @RequestMapping("/api/v1")
 public class CommunityController {
-    private final InMemoryStore store;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final LikeRepository likeRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final UserRepository userRepository;
+    private final FollowRepository followRepository;
+    private final RewardAccountRepository rewardAccountRepository;
     private final IdGenerator idGenerator;
 
-    public CommunityController(InMemoryStore store, IdGenerator idGenerator) {
-        this.store = store;
+    public CommunityController(PostRepository postRepository, CommentRepository commentRepository,
+                               LikeRepository likeRepository, FavoriteRepository favoriteRepository,
+                               UserRepository userRepository, FollowRepository followRepository,
+                               RewardAccountRepository rewardAccountRepository, IdGenerator idGenerator) {
+        this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
+        this.likeRepository = likeRepository;
+        this.favoriteRepository = favoriteRepository;
+        this.userRepository = userRepository;
+        this.followRepository = followRepository;
+        this.rewardAccountRepository = rewardAccountRepository;
         this.idGenerator = idGenerator;
     }
 
@@ -45,7 +60,8 @@ public class CommunityController {
     @ApiResponse(responseCode = "200", description = "成功")
     @GetMapping("/posts/feed")
     PageResult<Map<String, Object>> feed(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.visiblePosts().stream().map(this::postView).toList();
+        List<PostEntity> visible = postRepository.findByStatusOrderByPinnedDescCreatedAtDesc("VISIBLE");
+        List<Map<String, Object>> items = visible.stream().map(this::postView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
@@ -57,15 +73,12 @@ public class CommunityController {
     @GetMapping("/posts/following")
     PageResult<Map<String, Object>> following(Authentication authentication, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         String userId = CurrentUser.userId(authentication);
-        List<String> followed = store.follows.stream()
-                .filter(key -> key.startsWith(userId + ":"))
-                .map(key -> key.substring((userId + ":").length()))
-                .toList();
-        List<Map<String, Object>> items = store.visiblePosts().stream()
-                .filter(post -> followed.contains(post.authorId()))
-                .map(this::postView)
-                .toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
+        List<String> followed = followRepository.findByUserId(userId).stream()
+                .map(FollowEntity::getTargetUserId).toList();
+        List<PostEntity> items = followed.isEmpty() ? List.of()
+                : postRepository.findByAuthorIdInAndStatusOrderByCreatedAtDesc(followed, "VISIBLE");
+        List<Map<String, Object>> views = items.stream().map(this::postView).toList();
+        return PageResult.of(slice(views, page, size), page, size, views.size());
     }
 
     @Operation(summary = "发布帖子", description = "发布新帖子，进入审核状态")
@@ -77,12 +90,11 @@ public class CommunityController {
     @PostMapping("/posts")
     Map<String, Object> createPost(Authentication authentication, @Valid @RequestBody PostRequest request) {
         String userId = CurrentUser.userId(authentication);
-        Post post = new Post(idGenerator.next("post"), userId, request.title(), request.content(),
-                request.mediaFileIds() == null ? List.of() : request.mediaFileIds(),
-                request.topicIds() == null ? List.of() : request.topicIds(),
-                request.linkedPatternId(),
-                "REVIEWING", 0, 0, 0, false, Instant.now());
-        store.posts.put(post.id(), post);
+        Instant now = Instant.now();
+        PostEntity post = new PostEntity(idGenerator.next("post"), userId, request.title(), request.content(),
+                joinList(request.mediaFileIds()), joinList(request.topicIds()), request.linkedPatternId(),
+                "REVIEWING", 0, 0, 0, false, now, now);
+        postRepository.save(post);
         return postView(post);
     }
 
@@ -106,18 +118,18 @@ public class CommunityController {
     @PatchMapping("/posts/{postId}")
     Map<String, Object> updatePost(Authentication authentication, @PathVariable String postId, @RequestBody PostRequest request) {
         String userId = CurrentUser.userId(authentication);
-        Post post = requirePost(postId);
-        if (!post.authorId().equals(userId)) {
+        PostEntity post = requirePost(postId);
+        if (!post.getAuthorId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN, "只能编辑自己的帖子");
         }
-        Post updated = new Post(post.id(), post.authorId(), request.title() == null ? post.title() : request.title(),
-                request.content() == null ? post.content() : request.content(),
-                request.mediaFileIds() == null ? post.mediaFileIds() : request.mediaFileIds(),
-                request.topicIds() == null ? post.topicIds() : request.topicIds(),
-                request.linkedPatternId() == null ? post.linkedPatternId() : request.linkedPatternId(),
-                "REVIEWING", post.likeCount(), post.favoriteCount(), post.commentCount(), post.pinned(), post.createdAt());
-        store.posts.put(postId, updated);
-        return postView(updated);
+        if (request.title() != null) post.setTitle(request.title());
+        if (request.content() != null) post.setContent(request.content());
+        if (request.mediaFileIds() != null) post.setMediaFileIds(joinList(request.mediaFileIds()));
+        if (request.topicIds() != null) post.setTopicIds(joinList(request.topicIds()));
+        if (request.linkedPatternId() != null) post.setLinkedPatternId(request.linkedPatternId());
+        post.setStatus("REVIEWING");
+        postRepository.save(post);
+        return postView(post);
     }
 
     @Operation(summary = "删除帖子")
@@ -130,13 +142,12 @@ public class CommunityController {
     @DeleteMapping("/posts/{postId}")
     Map<String, Object> deletePost(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
-        Post post = requirePost(postId);
-        if (!post.authorId().equals(userId)) {
+        PostEntity post = requirePost(postId);
+        if (!post.getAuthorId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN, "只能删除自己的帖子");
         }
-        store.posts.put(postId, new Post(post.id(), post.authorId(), post.title(), post.content(),
-                post.mediaFileIds(), post.topicIds(), post.linkedPatternId(),
-                "DELETED", post.likeCount(), post.favoriteCount(), post.commentCount(), post.pinned(), post.createdAt()));
+        post.setStatus("DELETED");
+        postRepository.save(post);
         return Map.of("deleted", true);
     }
 
@@ -148,12 +159,13 @@ public class CommunityController {
     })
     @PostMapping("/posts/{postId}/like")
     Map<String, Object> like(Authentication authentication, @PathVariable String postId) {
-        CurrentUser.userId(authentication);
-        Post post = requirePost(postId);
-        store.likes.add(CurrentUser.userId(authentication) + ":POST:" + postId);
-        store.posts.put(postId, new Post(post.id(), post.authorId(), post.title(), post.content(),
-                post.mediaFileIds(), post.topicIds(), post.linkedPatternId(),
-                post.status(), post.likeCount() + 1, post.favoriteCount(), post.commentCount(), post.pinned(), post.createdAt()));
+        String userId = CurrentUser.userId(authentication);
+        PostEntity post = requirePost(postId);
+        Instant now = Instant.now();
+        likeRepository.findByUserIdAndTargetTypeAndTargetId(userId, "POST", postId).orElseGet(() ->
+                likeRepository.save(new LikeEntity(idGenerator.next("like"), userId, "POST", postId, now, now)));
+        post.setLikeCount((int) likeRepository.countByTargetTypeAndTargetId("POST", postId));
+        postRepository.save(post);
         return Map.of("liked", true);
     }
 
@@ -165,7 +177,12 @@ public class CommunityController {
     @DeleteMapping("/posts/{postId}/like")
     Map<String, Object> unlike(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
-        store.likes.remove(userId + ":POST:" + postId);
+        likeRepository.deleteByUserIdAndTargetTypeAndTargetId(userId, "POST", postId);
+        PostEntity post = postRepository.findById(postId).orElse(null);
+        if (post != null) {
+            post.setLikeCount((int) likeRepository.countByTargetTypeAndTargetId("POST", postId));
+            postRepository.save(post);
+        }
         return Map.of("liked", false);
     }
 
@@ -178,11 +195,12 @@ public class CommunityController {
     @PostMapping("/posts/{postId}/favorite")
     Map<String, Object> favorite(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
-        Post post = requirePost(postId);
-        store.favorites.add(userId + ":POST:" + postId);
-        store.posts.put(postId, new Post(post.id(), post.authorId(), post.title(), post.content(),
-                post.mediaFileIds(), post.topicIds(), post.linkedPatternId(),
-                post.status(), post.likeCount(), post.favoriteCount() + 1, post.commentCount(), post.pinned(), post.createdAt()));
+        PostEntity post = requirePost(postId);
+        Instant now = Instant.now();
+        favoriteRepository.findByUserIdAndTargetTypeAndTargetId(userId, "POST", postId).orElseGet(() ->
+                favoriteRepository.save(new FavoriteEntity(idGenerator.next("fav"), userId, "POST", postId, now, now)));
+        post.setFavoriteCount((int) favoriteRepository.countByTargetTypeAndTargetId("POST", postId));
+        postRepository.save(post);
         return Map.of("favorited", true);
     }
 
@@ -194,7 +212,12 @@ public class CommunityController {
     @DeleteMapping("/posts/{postId}/favorite")
     Map<String, Object> unfavorite(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
-        store.favorites.remove(userId + ":POST:" + postId);
+        favoriteRepository.deleteByUserIdAndTargetTypeAndTargetId(userId, "POST", postId);
+        PostEntity post = postRepository.findById(postId).orElse(null);
+        if (post != null) {
+            post.setFavoriteCount((int) favoriteRepository.countByTargetTypeAndTargetId("POST", postId));
+            postRepository.save(post);
+        }
         return Map.of("favorited", false);
     }
 
@@ -206,10 +229,8 @@ public class CommunityController {
     @GetMapping("/posts/{postId}/comments")
     PageResult<Map<String, Object>> comments(@PathVariable String postId, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         requirePost(postId);
-        List<Map<String, Object>> items = store.comments.values().stream()
-                .filter(comment -> comment.postId().equals(postId) && !"DELETED".equals(comment.status()))
-                .map(this::commentView)
-                .toList();
+        List<CommentEntity> entities = commentRepository.findByPostIdAndStatusNotOrderByCreatedAtAsc(postId, "DELETED");
+        List<Map<String, Object>> items = entities.stream().map(this::commentView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
@@ -223,12 +244,13 @@ public class CommunityController {
     @PostMapping("/posts/{postId}/comments")
     Map<String, Object> comment(Authentication authentication, @PathVariable String postId, @Valid @RequestBody CommentRequest request) {
         String userId = CurrentUser.userId(authentication);
-        Post post = requirePost(postId);
-        Comment comment = new Comment(idGenerator.next("cmt"), postId, userId, request.parentId(), request.content(), "REVIEWING", Instant.now());
-        store.comments.put(comment.id(), comment);
-        store.posts.put(postId, new Post(post.id(), post.authorId(), post.title(), post.content(),
-                post.mediaFileIds(), post.topicIds(), post.linkedPatternId(),
-                post.status(), post.likeCount(), post.favoriteCount(), post.commentCount() + 1, post.pinned(), post.createdAt()));
+        PostEntity post = requirePost(postId);
+        Instant now = Instant.now();
+        CommentEntity comment = new CommentEntity(idGenerator.next("cmt"), postId, userId, request.parentId(),
+                request.content(), "REVIEWING", now, now);
+        commentRepository.save(comment);
+        post.setCommentCount((int) commentRepository.countByPostIdAndStatusNot(postId, "DELETED"));
+        postRepository.save(post);
         return commentView(comment);
     }
 
@@ -242,86 +264,83 @@ public class CommunityController {
     @DeleteMapping("/comments/{commentId}")
     Map<String, Object> deleteComment(Authentication authentication, @PathVariable String commentId) {
         String userId = CurrentUser.userId(authentication);
-        Comment comment = store.comments.get(commentId);
-        if (comment == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "评论不存在");
-        }
-        if (!comment.authorId().equals(userId)) {
+        CommentEntity comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "评论不存在"));
+        if (!comment.getAuthorId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN, "只能删除自己的评论");
         }
-        store.comments.put(commentId, new Comment(comment.id(), comment.postId(), comment.authorId(), comment.parentId(), comment.content(), "DELETED", comment.createdAt()));
+        comment.setStatus("DELETED");
+        commentRepository.save(comment);
         return Map.of("deleted", true);
     }
 
-    private Post requirePost(String postId) {
-        Post post = store.posts.get(postId);
-        if (post == null || "DELETED".equals(post.status())) {
+    private PostEntity requirePost(String postId) {
+        PostEntity post = postRepository.findById(postId).orElse(null);
+        if (post == null || "DELETED".equals(post.getStatus())) {
             throw new BizException(ErrorCode.NOT_FOUND, "帖子不存在");
         }
         return post;
     }
 
-    private Map<String, Object> postView(Post post) {
+    private Map<String, Object> postView(PostEntity post) {
         Map<String, Object> view = new java.util.LinkedHashMap<>();
-        view.put("postId", post.id());
-        view.put("authorId", post.authorId());
-        view.put("author", authorInfo(post.authorId()));
-        view.put("title", post.title() == null ? "" : post.title());
-        view.put("content", post.content());
-        view.put("mediaFileIds", post.mediaFileIds() == null ? List.of() : post.mediaFileIds());
+        view.put("postId", post.getId());
+        view.put("authorId", post.getAuthorId());
+        view.put("author", authorInfo(post.getAuthorId()));
+        view.put("title", post.getTitle() == null ? "" : post.getTitle());
+        view.put("content", post.getContent());
+        view.put("mediaFileIds", splitList(post.getMediaFileIds()));
         view.put("mediaColors", List.of());
-        view.put("topicIds", post.topicIds() == null ? List.of() : post.topicIds());
+        view.put("topicIds", splitList(post.getTopicIds()));
         view.put("topicNames", List.of());
-        view.put("linkedPatternId", post.linkedPatternId());
-        view.put("status", post.status());
-        view.put("likeCount", post.likeCount());
-        view.put("favoriteCount", post.favoriteCount());
-        view.put("commentCount", post.commentCount());
+        view.put("linkedPatternId", post.getLinkedPatternId());
+        view.put("status", post.getStatus());
+        view.put("likeCount", post.getLikeCount());
+        view.put("favoriteCount", post.getFavoriteCount());
+        view.put("commentCount", post.getCommentCount());
+        view.put("createdAt", post.getCreatedAt().toString());
+        view.put("updatedAt", post.getUpdatedAt().toString());
         return view;
     }
 
     private Map<String, Object> authorInfo(String userId) {
-        return store.users.values().stream()
-                .filter(u -> u.id().equals(userId))
-                .findFirst()
-                .map(u -> {
-                    long following = store.follows.stream().filter(k -> k.startsWith(userId + ":")).count();
-                    long followers = store.follows.stream().filter(k -> k.endsWith(":" + userId)).count();
-                    var reward = store.rewards.get(userId);
-                    Map<String, Object> m = new java.util.LinkedHashMap<>();
-                    m.put("userId", u.id());
-                    m.put("nickname", u.nickname() == null ? "" : u.nickname());
-                    m.put("avatarUrl", u.avatarFileId() == null ? "" : u.avatarFileId());
-                    m.put("bio", u.bio() == null ? "" : u.bio());
-                    m.put("level", reward != null ? reward.levelCode() : "LV1");
-                    m.put("isMinor", u.isMinor());
-                    m.put("followingCount", (int) following);
-                    m.put("followerCount", (int) followers);
-                    return (Map<String, Object>) m;
-                })
-                .orElseGet(() -> {
-                    Map<String, Object> m = new java.util.LinkedHashMap<>();
-                    m.put("userId", userId);
-                    m.put("nickname", "");
-                    m.put("avatarUrl", "");
-                    m.put("bio", "");
-                    m.put("level", "LV1");
-                    m.put("isMinor", false);
-                    m.put("followingCount", 0);
-                    m.put("followerCount", 0);
-                    return m;
-                });
+        return userRepository.findById(userId).map(u -> {
+            long following = followRepository.countByUserId(userId);
+            long followers = followRepository.countByTargetUserId(userId);
+            var reward = rewardAccountRepository.findByUserId(userId).orElse(null);
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("userId", u.getId());
+            m.put("nickname", u.getNickname() == null ? "" : u.getNickname());
+            m.put("avatarUrl", u.getAvatarFileId() == null ? "" : u.getAvatarFileId());
+            m.put("bio", u.getBio() == null ? "" : u.getBio());
+            m.put("level", reward != null ? reward.getLevel() : 1);
+            m.put("isMinor", u.isMinor());
+            m.put("followingCount", (int) following);
+            m.put("followerCount", (int) followers);
+            return (Map<String, Object>) m;
+        }).orElseGet(() -> {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("userId", userId);
+            m.put("nickname", "");
+            m.put("avatarUrl", "");
+            m.put("bio", "");
+            m.put("level", 1);
+            m.put("isMinor", false);
+            m.put("followingCount", 0);
+            m.put("followerCount", 0);
+            return m;
+        });
     }
 
-    private Map<String, Object> commentView(Comment comment) {
+    private Map<String, Object> commentView(CommentEntity comment) {
         Map<String, Object> view = new java.util.LinkedHashMap<>();
-        view.put("commentId", comment.id());
-        view.put("postId", comment.postId());
-        view.put("authorId", comment.authorId());
-        view.put("author", authorInfo(comment.authorId()));
-        view.put("parentId", comment.parentId());
-        view.put("content", comment.content());
-        view.put("status", comment.status());
+        view.put("commentId", comment.getId());
+        view.put("postId", comment.getPostId());
+        view.put("authorId", comment.getAuthorId());
+        view.put("author", authorInfo(comment.getAuthorId()));
+        view.put("parentId", comment.getParentId());
+        view.put("content", comment.getContent());
+        view.put("status", comment.getStatus());
         return view;
     }
 
@@ -329,6 +348,15 @@ public class CommunityController {
         int from = Math.max(0, (page - 1) * size);
         int to = Math.min(items.size(), from + size);
         return from >= items.size() ? List.of() : items.subList(from, to);
+    }
+
+    private String joinList(List<String> list) {
+        return list == null || list.isEmpty() ? null : String.join(",", list);
+    }
+
+    private List<String> splitList(String csv) {
+        if (csv == null || csv.isBlank()) return List.of();
+        return Arrays.asList(csv.split(","));
     }
 
     public record PostRequest(String title, @NotBlank String content,

@@ -5,11 +5,12 @@
 ## 阅读顺序
 
 1. `../豆屿App商业技术执行计划.md`：产品目标、商业闭环、阶段计划。
-2. `01-tech-stack.md`：固定技术栈和选型边界。
-3. `02-architecture.md`：总体架构和主链路。
-4. `05-api-contract.md`：接口约定和错误规范。
-5. `06-data-model.md`：核心数据对象、状态和关系。
-6. 按职责阅读：
+2. `LeadersPrompt.md`：团队领导提示词规则、计划驱动开发、文档同步纪律。
+3. `01-tech-stack.md`：固定技术栈和选型边界。
+4. `02-architecture.md`：总体架构和主链路。
+5. `05-api-contract.md`：接口约定和错误规范。
+6. `06-data-model.md`：核心数据对象、状态和关系。
+7. 按职责阅读：
    - UI 设计：`11-ui-style-guide.md`
    - Android：`03-android-client.md`
    - Android 任务书：`12-frontend-android-task-brief.md`
@@ -61,6 +62,7 @@
 | `14-frontend-backend-collaboration.md` | 前后端联调、冻结、文档同步和验收规则 |
 | `15-ai-pattern-provider-selection.md` | AI 拼豆图 Provider 选型、Agent 边界、提示词和降级策略 |
 | `16-phase-one-status.md` | 第一阶段当前完成内容、剩余任务、联调验收和风险 |
+| `LeadersPrompt.md` | 团队领导提示词规则、计划驱动开发、文档同步纪律 |
 
 ## 协作规则
 

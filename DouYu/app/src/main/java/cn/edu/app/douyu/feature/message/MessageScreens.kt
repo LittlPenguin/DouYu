@@ -15,10 +15,9 @@ import androidx.navigation.NavHostController
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
+import cn.edu.app.douyu.core.data.safeCallToState
 
 private val repo = DoyuAppContainer.messageRepository
-
-private inline fun <T> safeCall(block: () -> T): T? = try { block() } catch (_: Exception) { null }
 
 @Preview
 @Composable
@@ -32,31 +31,41 @@ private fun MessageListScreenContent(navController: NavHostController?) {
     Scaffold(topBar = { DoyuTopBar("消息") }) { padding ->
         DoyuPage(padding) {
             SectionHeader("通知")
-            (safeCall { repo.notifications() }?.items ?: emptyList()).forEach {
-                DoyuCard {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(it.title, style = MaterialTheme.typography.titleMedium)
-                            Text(it.content, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val notificationsState = safeCallToState { repo.notifications() }
+            when (val ns = notificationsState) {
+                is UiState.Success -> ns.data.items.forEach {
+                    DoyuCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(it.title, style = MaterialTheme.typography.titleMedium)
+                                Text(it.content, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            if (it.unread) BeadDot(MaterialTheme.colorScheme.primary, size = 12.dp)
                         }
-                        if (it.unread) BeadDot(MaterialTheme.colorScheme.primary, size = 12.dp)
                     }
                 }
+                is UiState.Empty -> PageStateView(UiState.Empty)
+                else -> PageStateView(notificationsState)
             }
             SectionHeader("私信")
-            (safeCall { repo.conversations() }?.items ?: emptyList()).forEach {
-                DoyuCard {
-                    Surface(onClick = { navController?.navigate(AppRoute.conversation(it.conversationId)) }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            BeadCluster(38.dp)
-                            Spacer(Modifier.width(10.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text("会话 ${it.conversationId}", style = MaterialTheme.typography.titleMedium)
-                                Text("${it.userAId} ↔ ${it.userBId}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val conversationsState = safeCallToState { repo.conversations() }
+            when (val cs = conversationsState) {
+                is UiState.Success -> cs.data.items.forEach {
+                    DoyuCard {
+                        Surface(onClick = { navController?.navigate(AppRoute.conversation(it.conversationId)) }) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                BeadCluster(38.dp)
+                                Spacer(Modifier.width(10.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text("会话 ${it.conversationId}", style = MaterialTheme.typography.titleMedium)
+                                    Text("${it.userAId} ↔ ${it.userBId}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             }
                         }
                     }
                 }
+                is UiState.Empty -> PageStateView(UiState.Empty)
+                else -> PageStateView(conversationsState)
             }
         }
     }
@@ -73,11 +82,16 @@ fun ConversationScreen(navController: NavHostController, conversationId: String)
 private fun ConversationScreenContent(navController: NavHostController?, conversationId: String) {
     Scaffold(topBar = { DoyuTopBar("会话", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            (safeCall { repo.chat(conversationId) }?.items ?: emptyList()).forEach {
-                DoyuCard(modifier = Modifier.fillMaxWidth(if (it.mine) 0.86f else 1f)) {
-                    Text(it.senderName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    Text(it.content)
+            val chatState = safeCallToState { repo.chat(conversationId) }
+            when (val cs = chatState) {
+                is UiState.Success -> cs.data.items.forEach {
+                    DoyuCard(modifier = Modifier.fillMaxWidth(if (it.mine) 0.86f else 1f)) {
+                        Text(it.senderName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Text(it.content)
+                    }
                 }
+                is UiState.Empty -> PageStateView(UiState.Empty)
+                else -> PageStateView(chatState)
             }
             DoyuCard {
                 OutlinedTextField(value = "", onValueChange = {}, label = { Text("输入私信") }, modifier = Modifier.fillMaxWidth())

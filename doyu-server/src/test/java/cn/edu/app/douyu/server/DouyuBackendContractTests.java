@@ -175,7 +175,8 @@ class DouyuBackendContractTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status", equalTo("SUCCEEDED")))
                 .andExpect(jsonPath("$.data.patternId", notNullValue()))
-                .andExpect(jsonPath("$.data.materials.totalBeads", equalTo(256)));
+                .andExpect(jsonPath("$.data.progress", equalTo(1.0)))
+                .andExpect(jsonPath("$.data.patternAsset.materials.totalBeads", equalTo(256)));
     }
 
     @Test
@@ -195,6 +196,8 @@ class DouyuBackendContractTests {
         String orderId = first.at("/data/orderId").asText();
 
         org.assertj.core.api.Assertions.assertThat(second.at("/data/orderId").asText()).isEqualTo(orderId);
+        org.assertj.core.api.Assertions.assertThat(first.at("/data/addressSnapshot").isObject()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(first.at("/data/status").asText()).isEqualTo("WAITING_PAYMENT");
 
         // Add another cart item with huge quantity for inventory test
         JsonNode cartAdd2 = postJsonWithToken("/api/v1/cart/items", token, """
@@ -292,7 +295,9 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.postId", equalTo(postId)))
-                .andExpect(jsonPath("$.data.status", equalTo("REVIEWING")));
+                .andExpect(jsonPath("$.data.status", equalTo("REVIEWING")))
+                .andExpect(jsonPath("$.data.createdAt", notNullValue()))
+                .andExpect(jsonPath("$.data.author.userId", notNullValue()));
 
         mockMvc.perform(post("/api/v1/posts/{postId}/like", postId)
                         .header("Authorization", "Bearer " + token))
@@ -359,12 +364,16 @@ class DouyuBackendContractTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.checkedToday", equalTo(true)))
                 .andExpect(jsonPath("$.data.alreadyChecked", equalTo(false)))
+                .andExpect(jsonPath("$.data.streakDays", equalTo(1)))
+                .andExpect(jsonPath("$.data.rewardPoints", equalTo(5)))
                 .andExpect(jsonPath("$.data.points", equalTo(5)));
 
         mockMvc.perform(post("/api/v1/checkins")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.alreadyChecked", equalTo(true)));
+                .andExpect(jsonPath("$.data.alreadyChecked", equalTo(true)))
+                .andExpect(jsonPath("$.data.streakDays", equalTo(1)))
+                .andExpect(jsonPath("$.data.rewardPoints", equalTo(0)));
 
         mockMvc.perform(get("/api/v1/checkins/status")
                         .header("Authorization", "Bearer " + token))
@@ -442,6 +451,39 @@ class DouyuBackendContractTests {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+
+        // Malformed JSON body → 400 INVALID_ARGUMENT
+        mockMvc.perform(post("/api/v1/auth/sms-code")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{invalid json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+
+        // Missing required field (blank phone) → 400 INVALID_ARGUMENT
+        mockMvc.perform(post("/api/v1/auth/sms-code")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"phone":""}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+
+        // Nonexistent order → 404 NOT_FOUND
+        mockMvc.perform(get("/api/v1/orders/nonexistent_order")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
+
+        // Nonexistent comment → 404 NOT_FOUND
+        mockMvc.perform(delete("/api/v1/comments/nonexistent_comment")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
+
+        // Verify all error responses have traceId
+        mockMvc.perform(get("/api/v1/users/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.traceId", notNullValue()));
     }
 
     @Test

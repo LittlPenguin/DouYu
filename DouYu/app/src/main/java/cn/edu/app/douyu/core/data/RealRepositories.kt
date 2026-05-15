@@ -2,15 +2,19 @@ package cn.edu.app.douyu.core.data
 
 import cn.edu.app.douyu.core.model.*
 import cn.edu.app.douyu.core.network.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
 private fun <T> apiCall(block: suspend () -> ApiResponse<T>): T {
-    val response = runBlocking { block() }
+    val response = runBlocking(Dispatchers.IO) { block() }
     if (!response.isOk) {
-        throw IllegalStateException("API error ${response.code}: ${response.message}")
+        throw ApiException(response.code, response.message, response.traceId)
     }
-    return response.data ?: throw IllegalStateException("API returned null data")
+    @Suppress("UNCHECKED_CAST")
+    return response.data ?: (Unit as T)
 }
+
+class ApiException(val code: String, override val message: String, val traceId: String?) : RuntimeException("$code: $message")
 
 class RealCommunityRepository(private val api: CommunityApi) : CommunityRepository {
     override fun feed(): PageResponse<Post> = apiCall { api.feed() }

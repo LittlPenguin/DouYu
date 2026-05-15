@@ -165,7 +165,7 @@ interface MessageApi {
     ): ApiResponse<PageResponse<NotificationMessage>>
 
     @POST("/api/v1/messages/notifications/read")
-    suspend fun markNotificationsRead(): ApiResponse<Unit>
+    suspend fun markNotificationsRead(@Body request: MarkNotificationsReadRequest): ApiResponse<Unit>
 
     @GET("/api/v1/messages/conversations")
     suspend fun conversations(

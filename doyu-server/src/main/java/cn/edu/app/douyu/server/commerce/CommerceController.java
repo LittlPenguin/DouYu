@@ -5,12 +5,9 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.InMemoryStore;
-import cn.edu.app.douyu.server.common.Models.CartItem;
-import cn.edu.app.douyu.server.common.Models.Product;
-import cn.edu.app.douyu.server.common.Models.Sku;
 import cn.edu.app.douyu.server.common.Models.User;
 import cn.edu.app.douyu.server.common.PageResult;
+import cn.edu.app.douyu.server.common.entity.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -37,21 +34,28 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1")
 public class CommerceController {
-    private final InMemoryStore store;
+    private final ProductRepository productRepository;
+    private final SkuRepository skuRepository;
+    private final CartItemRepository cartItemRepository;
     private final IdGenerator idGenerator;
     private final AuthService authService;
 
-    public CommerceController(InMemoryStore store, IdGenerator idGenerator, AuthService authService) {
-        this.store = store;
+    public CommerceController(ProductRepository productRepository, SkuRepository skuRepository,
+                              CartItemRepository cartItemRepository, IdGenerator idGenerator, AuthService authService) {
+        this.productRepository = productRepository;
+        this.skuRepository = skuRepository;
+        this.cartItemRepository = cartItemRepository;
         this.idGenerator = idGenerator;
         this.authService = authService;
     }
 
-    @Operation(summary = "商品列表", description = "获取已上架商品列表（公开接口）")
+    @Operation(summary = "商品列表")
     @ApiResponse(responseCode = "200", description = "成功")
     @GetMapping("/products")
     PageResult<Map<String, Object>> products(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.listedProducts().stream().map(store::productView).toList();
+        List<Map<String, Object>> items = productRepository.findByStatusNot("DELETED").stream()
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .map(this::productView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
@@ -62,14 +66,12 @@ public class CommerceController {
     })
     @GetMapping("/products/{productId}")
     Map<String, Object> product(@PathVariable String productId) {
-        Product product = store.products.get(productId);
-        if (product == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "商品不存在");
-        }
-        return store.productView(product);
+        ProductEntity product = productRepository.findById(productId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "商品不存在"));
+        return productView(product);
     }
 
-    @Operation(summary = "发布玩家商品", description = "发布玩家二手或定制商品，要求 18+ 实名")
+    @Operation(summary = "发布玩家商品")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "发布成功"),
             @ApiResponse(responseCode = "400", description = "参数错误"),
@@ -85,11 +87,30 @@ public class CommerceController {
             throw new BizException(ErrorCode.FORBIDDEN, "玩家卖家和定制服务发布必须 18+ 实名");
         }
         Instant now = Instant.now();
-        Product product = new Product(idGenerator.next("prod"), request.type(), userId, request.title(), request.description(), "player", "DRAFT", "NEED_MANUAL_REVIEW", now);
-        store.products.put(product.id(), product);
-        Sku sku = new Sku(idGenerator.next("sku"), product.id(), request.sku().specName(), request.sku().priceCent(), request.sku().stock(), 0, "ON_SALE");
-        store.skus.put(sku.id(), sku);
-        return store.productView(product);
+        ProductEntity product = new ProductEntity();
+        product.setId(idGenerator.next("prod"));
+        product.setType(request.type());
+        product.setSellerId(userId);
+        product.setTitle(request.title());
+        product.setDescription(request.description());
+        product.setCategoryId("player");
+        product.setStatus("DRAFT");
+        product.setAuditStatus("NEED_MANUAL_REVIEW");
+        product.setCreatedAt(now);
+        product.setUpdatedAt(now);
+        productRepository.save(product);
+        SkuEntity sku = new SkuEntity();
+        sku.setId(idGenerator.next("sku"));
+        sku.setProductId(product.getId());
+        sku.setSpecName(request.sku().specName());
+        sku.setPriceCent(request.sku().priceCent());
+        sku.setStock(request.sku().stock());
+        sku.setLockedStock(0);
+        sku.setStatus("ON_SALE");
+        sku.setCreatedAt(now);
+        sku.setUpdatedAt(now);
+        skuRepository.save(sku);
+        return productView(product);
     }
 
     @Operation(summary = "购物车")
@@ -100,21 +121,18 @@ public class CommerceController {
     @GetMapping("/cart")
     Map<String, Object> cart(Authentication authentication) {
         String userId = CurrentUser.userId(authentication);
-        List<Map<String, Object>> items = store.cartItems.values().stream()
-                .filter(item -> item.userId().equals(userId))
-                .map(item -> {
-                    Sku sku = store.skus.get(item.skuId());
-                    Product product = sku != null ? store.products.get(sku.productId()) : null;
-                    Map<String, Object> itemData = new java.util.LinkedHashMap<>();
-                    itemData.put("itemId", item.id());
-                    itemData.put("skuId", item.skuId());
-                    itemData.put("sku", store.skuView(sku));
-                    itemData.put("productId", sku != null ? sku.productId() : "");
-                    itemData.put("product", product != null ? Map.of("title", product.title(), "imageUrl", "") : Map.of());
-                    itemData.put("quantity", item.quantity());
-                    return itemData;
-                })
-                .toList();
+        List<Map<String, Object>> items = cartItemRepository.findByUserId(userId).stream().map(item -> {
+            SkuEntity sku = skuRepository.findById(item.getSkuId()).orElse(null);
+            ProductEntity product = sku != null ? productRepository.findById(sku.getProductId()).orElse(null) : null;
+            Map<String, Object> itemData = new java.util.LinkedHashMap<>();
+            itemData.put("itemId", item.getId());
+            itemData.put("skuId", item.getSkuId());
+            itemData.put("sku", sku != null ? skuView(sku) : Map.of());
+            itemData.put("productId", sku != null ? sku.getProductId() : "");
+            itemData.put("product", product != null ? Map.of("title", product.getTitle(), "imageUrl", "") : Map.of());
+            itemData.put("quantity", item.getQuantity());
+            return itemData;
+        }).toList();
         return Map.of("items", items);
     }
 
@@ -128,21 +146,30 @@ public class CommerceController {
     @PostMapping("/cart/items")
     Map<String, Object> addCart(Authentication authentication, @Valid @RequestBody CartItemRequest request) {
         String userId = CurrentUser.userId(authentication);
-        Sku sku = requireSku(request.skuId());
-        Product product = store.products.get(sku.productId());
-        if (!"SELF_OPERATED".equals(product.type())) {
+        SkuEntity sku = skuRepository.findById(request.skuId())
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "SKU 不存在"));
+        ProductEntity product = productRepository.findById(sku.getProductId()).orElse(null);
+        if (product != null && !"SELF_OPERATED".equals(product.getType())) {
             throw new BizException(ErrorCode.CONFLICT, "玩家商品不支持加入标准购物车");
         }
-        String key = userId + ":" + sku.id();
-        CartItem existing = store.cartItems.values().stream()
-                .filter(item -> (item.userId() + ":" + item.skuId()).equals(key))
-                .findFirst()
-                .orElse(null);
-        CartItem item = existing == null
-                ? new CartItem(idGenerator.next("cart"), userId, sku.id(), request.quantity())
-                : new CartItem(existing.id(), userId, sku.id(), existing.quantity() + request.quantity());
-        store.cartItems.put(item.id(), item);
-        return Map.of("itemId", item.id(), "quantity", item.quantity());
+        Instant now = Instant.now();
+        CartItemEntity existing = cartItemRepository.findByUserIdAndSkuId(userId, sku.getId()).orElse(null);
+        CartItemEntity item;
+        if (existing == null) {
+            item = new CartItemEntity();
+            item.setId(idGenerator.next("cart"));
+            item.setUserId(userId);
+            item.setSkuId(sku.getId());
+            item.setQuantity(request.quantity());
+            item.setCreatedAt(now);
+            item.setUpdatedAt(now);
+        } else {
+            item = existing;
+            item.setQuantity(existing.getQuantity() + request.quantity());
+            item.setUpdatedAt(now);
+        }
+        cartItemRepository.save(item);
+        return Map.of("itemId", item.getId(), "quantity", item.getQuantity());
     }
 
     @Operation(summary = "修改购物车数量")
@@ -154,10 +181,11 @@ public class CommerceController {
     @PatchMapping("/cart/items/{itemId}")
     Map<String, Object> updateCart(Authentication authentication, @PathVariable String itemId, @Valid @RequestBody UpdateCartRequest request) {
         String userId = CurrentUser.userId(authentication);
-        CartItem item = requireCartItem(userId, itemId);
-        CartItem updated = new CartItem(item.id(), item.userId(), item.skuId(), request.quantity());
-        store.cartItems.put(itemId, updated);
-        return Map.of("itemId", updated.id(), "quantity", updated.quantity());
+        CartItemEntity item = requireCartItem(userId, itemId);
+        item.setQuantity(request.quantity());
+        item.setUpdatedAt(Instant.now());
+        cartItemRepository.save(item);
+        return Map.of("itemId", item.getId(), "quantity", item.getQuantity());
     }
 
     @Operation(summary = "移除购物车商品")
@@ -170,24 +198,44 @@ public class CommerceController {
     Map<String, Object> deleteCart(Authentication authentication, @PathVariable String itemId) {
         String userId = CurrentUser.userId(authentication);
         requireCartItem(userId, itemId);
-        store.cartItems.remove(itemId);
+        cartItemRepository.deleteById(itemId);
         return Map.of("deleted", true);
     }
 
-    private Sku requireSku(String skuId) {
-        Sku sku = store.skus.get(skuId);
-        if (sku == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "SKU 不存在");
-        }
-        return sku;
-    }
-
-    private CartItem requireCartItem(String userId, String itemId) {
-        CartItem item = store.cartItems.get(itemId);
-        if (item == null || !item.userId().equals(userId)) {
+    private CartItemEntity requireCartItem(String userId, String itemId) {
+        CartItemEntity item = cartItemRepository.findById(itemId).orElse(null);
+        if (item == null || !item.getUserId().equals(userId)) {
             throw new BizException(ErrorCode.NOT_FOUND, "购物车项不存在");
         }
         return item;
+    }
+
+    private Map<String, Object> productView(ProductEntity product) {
+        List<SkuEntity> productSkus = skuRepository.findByProductId(product.getId());
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("productId", product.getId());
+        view.put("type", product.getType());
+        view.put("sellerId", product.getSellerId());
+        view.put("title", product.getTitle());
+        view.put("description", product.getDescription());
+        view.put("categoryId", product.getCategoryId());
+        view.put("categoryName", product.getCategoryId());
+        view.put("status", product.getStatus());
+        view.put("auditStatus", product.getAuditStatus());
+        view.put("skus", productSkus.stream().map(this::skuView).toList());
+        view.put("swatchColor", 0xFF6B8E7B);
+        return view;
+    }
+
+    private Map<String, Object> skuView(SkuEntity sku) {
+        return Map.of(
+                "skuId", sku.getId(),
+                "productId", sku.getProductId(),
+                "specName", sku.getSpecName(),
+                "priceCent", sku.getPriceCent(),
+                "stock", sku.getAvailableStock(),
+                "status", sku.getStatus()
+        );
     }
 
     private <T> List<T> slice(List<T> items, int page, int size) {

@@ -120,10 +120,14 @@ object MockData {
         PaletteColorCount("B06", "雾蓝", 0xFF9FC7EA, 64, "sku_bead_b06")
     )
 
-    val materials = listOf(
-        MaterialSuggestion("product_001", "sku_001_basic", "2.6mm 常用色补充包", "1 套", 2990, 128),
-        MaterialSuggestion("product_002", "sku_002_board", "透明小方板", "2 块", 1280, 76),
-        MaterialSuggestion("product_003", "sku_003_paper", "离型纸", "1 包", 690, 38)
+    val patternMaterials = PatternMaterials(
+        totalBeads = 530,
+        colors = listOf(
+            PatternColorEntry("A01", "奶油白", 248, "sku_bead_a01"),
+            PatternColorEntry("P12", "豆沙粉", 136, "sku_bead_p12"),
+            PatternColorEntry("G08", "薄荷绿", 82, "sku_bead_g08"),
+            PatternColorEntry("B06", "雾蓝", 64, "sku_bead_b06")
+        )
     )
 
     val patterns = listOf(
@@ -143,7 +147,7 @@ object MockData {
             paletteName = "豆屿通用 48 色",
             status = ContentStatus.VISIBLE,
             colorStats = colors,
-            materials = materials
+            materials = patternMaterials
         ),
         PatternAsset(
             patternId = "pattern_002",
@@ -161,7 +165,7 @@ object MockData {
             paletteName = "新手低色数",
             status = ContentStatus.VISIBLE,
             colorStats = colors.take(3),
-            materials = materials.take(2)
+            materials = PatternMaterials(412, patternMaterials.colors.take(3))
         )
     )
 

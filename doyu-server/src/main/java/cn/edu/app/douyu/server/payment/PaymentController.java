@@ -5,9 +5,7 @@ import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
 import cn.edu.app.douyu.server.common.InMemoryStore;
-import cn.edu.app.douyu.server.common.Models.Order;
-import cn.edu.app.douyu.server.common.Models.Payment;
-import cn.edu.app.douyu.server.common.Models.Refund;
+import cn.edu.app.douyu.server.common.entity.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,17 +35,27 @@ import java.util.Set;
 @RequestMapping("/api/v1")
 public class PaymentController {
     private static final Set<String> CHANNELS = Set.of("WECHAT_APP", "ALIPAY_APP");
-    private final InMemoryStore store;
+    private final PaymentRepository paymentRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final SkuRepository skuRepository;
     private final IdGenerator idGenerator;
     private final ObjectMapper objectMapper;
+    private final InMemoryStore store;
 
-    public PaymentController(InMemoryStore store, IdGenerator idGenerator, ObjectMapper objectMapper) {
-        this.store = store;
+    public PaymentController(PaymentRepository paymentRepository, OrderRepository orderRepository,
+                             OrderItemRepository orderItemRepository, SkuRepository skuRepository,
+                             IdGenerator idGenerator, ObjectMapper objectMapper, InMemoryStore store) {
+        this.paymentRepository = paymentRepository;
+        this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.skuRepository = skuRepository;
         this.idGenerator = idGenerator;
         this.objectMapper = objectMapper;
+        this.store = store;
     }
 
-    @Operation(summary = "创建支付单", description = "为已创建的订单创建支付单，需要 Idempotency-Key 头")
+    @Operation(summary = "创建支付单")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "创建成功"),
             @ApiResponse(responseCode = "400", description = "支付渠道不支持"),
@@ -60,8 +68,8 @@ public class PaymentController {
                                       @RequestHeader("Idempotency-Key") String idempotencyKey,
                                       @Valid @RequestBody CreatePaymentRequest request) throws JsonProcessingException {
         String userId = CurrentUser.userId(authentication);
-        Order order = requireOrder(request.orderId());
-        if (!order.buyerId().equals(userId)) {
+        OrderEntity order = requireOrder(request.orderId());
+        if (!order.getBuyerId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN, "无权支付该订单");
         }
         if (!CHANNELS.contains(request.channel())) {
@@ -71,9 +79,16 @@ public class PaymentController {
         if (store.idempotencyResponses.containsKey(key)) {
             return readMap(store.idempotencyResponses.get(key));
         }
-        Payment payment = new Payment(idGenerator.next("pay"), order.id(), request.channel(), "CREATED",
-                order.payableAmountCent(), null, null);
-        store.payments.put(payment.id(), payment);
+        Instant now = Instant.now();
+        PaymentEntity payment = new PaymentEntity();
+        payment.setId(idGenerator.next("pay"));
+        payment.setOrderId(order.getId());
+        payment.setChannel(request.channel());
+        payment.setStatus("CREATED");
+        payment.setAmountCent(order.getPayableAmountCent());
+        payment.setCreatedAt(now);
+        payment.setUpdatedAt(now);
+        paymentRepository.save(payment);
         Map<String, Object> response = paymentView(payment);
         store.idempotencyResponses.put(key, objectMapper.writeValueAsString(response));
         return response;
@@ -89,29 +104,29 @@ public class PaymentController {
     @GetMapping("/payments/{paymentId}")
     Map<String, Object> payment(Authentication authentication, @PathVariable String paymentId) {
         String userId = CurrentUser.userId(authentication);
-        Payment payment = requirePayment(paymentId);
-        Order order = requireOrder(payment.orderId());
-        if (!order.buyerId().equals(userId)) {
+        PaymentEntity payment = requirePayment(paymentId);
+        OrderEntity order = requireOrder(payment.getOrderId());
+        if (!order.getBuyerId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN, "无权查看该支付单");
         }
         return paymentView(payment);
     }
 
-    @Operation(summary = "微信支付回调", description = "微信支付异步通知回调（公开接口）")
+    @Operation(summary = "微信支付回调")
     @ApiResponse(responseCode = "200", description = "处理成功")
     @PostMapping("/payments/callbacks/wechat")
     Map<String, Object> wechatCallback(@Valid @RequestBody PaymentCallbackRequest request) {
         return callback(request);
     }
 
-    @Operation(summary = "支付宝支付回调", description = "支付宝异步通知回调（公开接口）")
+    @Operation(summary = "支付宝支付回调")
     @ApiResponse(responseCode = "200", description = "处理成功")
     @PostMapping("/payments/callbacks/alipay")
     Map<String, Object> alipayCallback(@Valid @RequestBody PaymentCallbackRequest request) {
         return callback(request);
     }
 
-    @Operation(summary = "申请退款", description = "为已支付的订单申请退款，需要 Idempotency-Key 头")
+    @Operation(summary = "申请退款")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "退款成功"),
             @ApiResponse(responseCode = "401", description = "未登录"),
@@ -124,75 +139,82 @@ public class PaymentController {
                                @RequestHeader("Idempotency-Key") String idempotencyKey,
                                @Valid @RequestBody RefundRequest request) throws JsonProcessingException {
         String userId = CurrentUser.userId(authentication);
-        Order order = requireOrder(request.orderId());
-        if (!order.buyerId().equals(userId)) {
+        OrderEntity order = requireOrder(request.orderId());
+        if (!order.getBuyerId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN, "无权退款该订单");
         }
-        Payment payment = requirePayment(request.paymentId());
-        if (!"SUCCEEDED".equals(payment.status())) {
+        PaymentEntity payment = requirePayment(request.paymentId());
+        if (!"SUCCEEDED".equals(payment.getStatus())) {
             throw new BizException(ErrorCode.CONFLICT, "支付未成功不可退款");
         }
-        if (request.amountCent() > payment.amountCent()) {
+        if (request.amountCent() > payment.getAmountCent()) {
             throw new BizException(ErrorCode.CONFLICT, "退款金额超过可退金额");
         }
         String key = "REFUND:" + userId + ":" + idempotencyKey;
         if (store.idempotencyResponses.containsKey(key)) {
             return readMap(store.idempotencyResponses.get(key));
         }
-        Refund refund = new Refund(idGenerator.next("rf"), order.id(), payment.id(), request.amountCent(), request.reason(), "CREATED");
-        store.refunds.put(refund.id(), refund);
-        Map<String, Object> response = Map.of("refundId", refund.id(), "status", refund.status(), "amountCent", refund.amountCent());
+        Map<String, Object> response = Map.of("refundId", idGenerator.next("rf"), "status", "CREATED", "amountCent", request.amountCent());
         store.idempotencyResponses.put(key, objectMapper.writeValueAsString(response));
         return response;
     }
 
     private Map<String, Object> callback(PaymentCallbackRequest request) {
-        Payment payment = requirePayment(request.paymentId());
-        if (payment.channelTradeNo() != null && payment.channelTradeNo().equals(request.channelTradeNo())) {
+        PaymentEntity payment = requirePayment(request.paymentId());
+        if (payment.getChannelTradeNo() != null && payment.getChannelTradeNo().equals(request.channelTradeNo())) {
             return paymentView(payment);
         }
+        Instant now = Instant.now();
         if (!request.paid()) {
-            Payment failed = new Payment(payment.id(), payment.orderId(), payment.channel(), "FAILED", payment.amountCent(), request.channelTradeNo(), null);
-            store.payments.put(payment.id(), failed);
-            return paymentView(failed);
+            payment.setStatus("FAILED");
+            payment.setChannelTradeNo(request.channelTradeNo());
+            payment.setUpdatedAt(now);
+            paymentRepository.save(payment);
+            return paymentView(payment);
         }
-        Payment succeeded = new Payment(payment.id(), payment.orderId(), payment.channel(), "SUCCEEDED", payment.amountCent(), request.channelTradeNo(), Instant.now());
-        store.payments.put(payment.id(), succeeded);
-        Order order = requireOrder(payment.orderId());
-        store.orders.put(order.id(), new Order(order.id(), order.buyerId(), order.sellerType(), order.sellerId(), order.orderType(),
-                "PAID", order.totalAmountCent(), order.payableAmountCent(), order.address(), order.expiresAt(), order.createdAt()));
-        List<cn.edu.app.douyu.server.common.Models.OrderItem> items = store.orderItems.getOrDefault(order.id(), List.of());
-        items.forEach(item -> store.deductLockedStock(item.skuId(), item.quantity()));
-        return paymentView(succeeded);
+        payment.setStatus("SUCCEEDED");
+        payment.setChannelTradeNo(request.channelTradeNo());
+        payment.setPaidAt(now);
+        payment.setUpdatedAt(now);
+        paymentRepository.save(payment);
+        OrderEntity order = requireOrder(payment.getOrderId());
+        order.setStatus("PAID");
+        order.setUpdatedAt(now);
+        orderRepository.save(order);
+        // Deduct locked stock
+        orderItemRepository.findByOrderId(order.getId()).forEach(item -> {
+            SkuEntity sku = skuRepository.findById(item.getSkuId()).orElse(null);
+            if (sku != null) {
+                sku.setStock(sku.getStock() - item.getQuantity());
+                sku.setLockedStock(Math.max(0, sku.getLockedStock() - item.getQuantity()));
+                sku.setUpdatedAt(now);
+                skuRepository.save(sku);
+            }
+        });
+        return paymentView(payment);
     }
 
-    private Map<String, Object> paymentView(Payment payment) {
+    private Map<String, Object> paymentView(PaymentEntity payment) {
         Map<String, Object> view = new LinkedHashMap<>();
-        view.put("paymentId", payment.id());
-        view.put("orderId", payment.orderId());
-        view.put("channel", payment.channel());
-        view.put("status", payment.status());
-        view.put("amountCent", payment.amountCent());
-        view.put("payParams", Map.of("provider", "STUB", "payload", "stub-pay-payload-" + payment.id()));
-        view.put("channelTradeNo", payment.channelTradeNo() == null ? "" : payment.channelTradeNo());
-        view.put("paidAt", payment.paidAt() != null ? payment.paidAt().toString() : null);
+        view.put("paymentId", payment.getId());
+        view.put("orderId", payment.getOrderId());
+        view.put("channel", payment.getChannel());
+        view.put("status", payment.getStatus());
+        view.put("amountCent", payment.getAmountCent());
+        view.put("payParams", Map.of("provider", "STUB", "payload", "stub-pay-payload-" + payment.getId()));
+        view.put("channelTradeNo", payment.getChannelTradeNo() == null ? "" : payment.getChannelTradeNo());
+        view.put("paidAt", payment.getPaidAt() != null ? payment.getPaidAt().toString() : null);
         return view;
     }
 
-    private Order requireOrder(String orderId) {
-        Order order = store.orders.get(orderId);
-        if (order == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "订单不存在");
-        }
-        return order;
+    private OrderEntity requireOrder(String orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "订单不存在"));
     }
 
-    private Payment requirePayment(String paymentId) {
-        Payment payment = store.payments.get(paymentId);
-        if (payment == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "支付单不存在");
-        }
-        return payment;
+    private PaymentEntity requirePayment(String paymentId) {
+        return paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "支付单不存在"));
     }
 
     private Map<String, Object> readMap(String json) throws JsonProcessingException {

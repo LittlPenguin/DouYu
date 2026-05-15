@@ -15,14 +15,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import cn.edu.app.douyu.core.data.DoyuAppContainer
+import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.Cart
 import cn.edu.app.douyu.core.model.Product
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
 
 private val repo = DoyuAppContainer.commerceRepository
-
-private inline fun <T> safeCall(block: () -> T): T? = try { block() } catch (_: Exception) { null }
 
 
 @Preview
@@ -59,10 +58,12 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                 )
             }
             SectionHeader("推荐商品")
-            (safeCall { repo.products() }?.items ?: emptyList()).take(2).forEach { product ->
-                ProductCard(
-                    product,
-                    onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) })
+            val productsState = safeCallToState { repo.products() }
+            when (val state = productsState) {
+                is UiState.Success -> state.data.items.take(2).forEach { product ->
+                    ProductCard(product, onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) })
+                }
+                else -> PageStateView(productsState)
             }
             DoyuCard {
                 Text("玩家市场", style = MaterialTheme.typography.titleMedium)
@@ -95,10 +96,12 @@ private fun ProductListScreenContent(navController: NavHostController?) {
                 TagChip("工具")
                 TagChip("色卡")
             }
-            (safeCall { repo.products() }?.items ?: emptyList()).forEach { product ->
-                ProductCard(
-                    product,
-                    onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) })
+            val productsState = safeCallToState { repo.products() }
+            when (val state = productsState) {
+                is UiState.Success -> state.data.items.forEach { product ->
+                    ProductCard(product, onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) })
+                }
+                else -> PageStateView(productsState)
             }
         }
     }
@@ -113,49 +116,55 @@ fun ProductDetailScreen(navController: NavHostController, productId: String) { P
 
 @Composable
 private fun ProductDetailScreenContent(navController: NavHostController?, productId: String) {
-    val product = safeCall { repo.product(productId) }
+    val productState = safeCallToState { repo.product(productId) }
     Scaffold(topBar = {
         DoyuTopBar(
             "商品详情", canGoBack = true, onBack = { navController?.popBackStack() })
     }) { padding ->
         DoyuPage(padding) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(190.dp)
-                    .background(Color(product?.swatchColor ?: 0xFFF6A6B2), RoundedCornerShape(28.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                BeadPattern(Modifier.size(120.dp))
+            when (val state = productState) {
+                is UiState.Success -> {
+                    val product = state.data
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(190.dp)
+                            .background(Color(product.swatchColor), RoundedCornerShape(28.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        BeadPattern(Modifier.size(120.dp))
+                    }
+                    DoyuCard {
+                        Text(product.title, style = MaterialTheme.typography.headlineSmall)
+                        Spacer(Modifier.height(8.dp))
+                        Text(product.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            formatPriceCent(product.priceCent),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Text(
+                            "库存 ${product.availableStock} · SKU ${product.skus.firstOrNull()?.skuId.orEmpty()} · 发货地以后端商品详情为准",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    DoyuCard {
+                        Text("购买说明", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "客户端只展示服务端返回金额，不允许编辑最终订单金额。支付结果以服务端订单状态为准。",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    DoyuPrimaryButton(
+                        "加入购物车",
+                        onClick = { navController?.navigate(AppRoute.CART) },
+                        icon = Icons.Filled.AddShoppingCart,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                else -> PageStateView(productState)
             }
-            DoyuCard {
-                Text(product?.title ?: "商品", style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.height(8.dp))
-                Text(product?.description ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    formatPriceCent(product?.priceCent ?: 0),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    "库存 ${product?.availableStock ?: 0} · SKU ${product?.skus?.firstOrNull()?.skuId.orEmpty()} · 发货地以后端商品详情为准",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            DoyuCard {
-                Text("购买说明", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "客户端只展示服务端返回金额，不允许编辑最终订单金额。支付结果以服务端订单状态为准。",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            DoyuPrimaryButton(
-                "加入购物车",
-                onClick = { navController?.navigate(AppRoute.CART) },
-                icon = Icons.Filled.AddShoppingCart,
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }
@@ -211,47 +220,53 @@ fun CartScreen(navController: NavHostController) { CartScreenContent(navControll
 
 @Composable
 private fun CartScreenContent(navController: NavHostController?) {
-    val cart = safeCall { repo.cart() } ?: Cart(emptyList())
+    val cartState = safeCallToState { repo.cart() }
     Scaffold(topBar = {
         DoyuTopBar(
             "购物车", canGoBack = true, onBack = { navController?.popBackStack() })
     }) { padding ->
         DoyuPage(padding) {
-            cart.items.forEach {
-                DoyuCard {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        BeadDot(Color(it.product?.swatchColor ?: 0xFFF6A6B2), size = 32.dp)
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(it.product?.title ?: "商品", style = MaterialTheme.typography.titleMedium)
+            when (val state = cartState) {
+                is UiState.Success -> {
+                    val cart = state.data
+                    cart.items.forEach {
+                        DoyuCard {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                BeadDot(Color(it.product?.swatchColor ?: 0xFFF6A6B2), size = 32.dp)
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(it.product?.title ?: "商品", style = MaterialTheme.typography.titleMedium)
+                                    Text(
+                                        "${it.sku?.specName ?: ""} · 数量 x${it.quantity}",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(formatPriceCent(it.lineAmountCent), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    DoyuCard {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                "${it.sku?.specName ?: ""} · 数量 x${it.quantity}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                "应付金额",
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                formatPriceCent(cart.payableAmountCent),
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.titleLarge
                             )
                         }
-                        Text(formatPriceCent(it.lineAmountCent), fontWeight = FontWeight.Bold)
                     }
-                }
-            }
-            DoyuCard {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "应付金额",
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        formatPriceCent(cart.payableAmountCent),
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.titleLarge
+                    DoyuPrimaryButton(
+                        "去确认订单",
+                        onClick = { navController?.navigate(AppRoute.ORDER_CONFIRM) },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
+                else -> PageStateView(cartState)
             }
-            DoyuPrimaryButton(
-                "去确认订单",
-                onClick = { navController?.navigate(AppRoute.ORDER_CONFIRM) },
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }
@@ -265,39 +280,45 @@ fun OrderConfirmScreen(navController: NavHostController) { OrderConfirmScreenCon
 
 @Composable
 private fun OrderConfirmScreenContent(navController: NavHostController?) {
-    val order = safeCall { repo.order() }
+    val orderState = safeCallToState { repo.order() }
     Scaffold(topBar = {
         DoyuTopBar(
             "确认订单", canGoBack = true, onBack = { navController?.popBackStack() })
     }) { padding ->
         DoyuPage(padding) {
-            DoyuCard {
-                Text("收货信息", style = MaterialTheme.typography.titleMedium)
-                Text(order?.addressSnapshot ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            DoyuCard {
-                Text("订单商品", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(10.dp))
-                (order?.items ?: emptyList()).forEach {
-                    Row(Modifier.fillMaxWidth()) {
-                        Text("${it.title} ${it.specName}", modifier = Modifier.weight(1f))
-                        Text("x${it.quantity}")
+            when (val state = orderState) {
+                is UiState.Success -> {
+                    val order = state.data
+                    DoyuCard {
+                        Text("收货信息", style = MaterialTheme.typography.titleMedium)
+                        Text(order.addressSnapshot ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    DoyuCard {
+                        Text("订单商品", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(10.dp))
+                        order.items.forEach {
+                            Row(Modifier.fillMaxWidth()) {
+                                Text("${it.title} ${it.specName}", modifier = Modifier.weight(1f))
+                                Text("x${it.quantity}")
+                            }
+                        }
+                    }
+                    DoyuCard {
+                        Text("支付规则", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "支付 SDK 当前为占位封装。客户端拉起后展示确认中，最终以服务端订单状态为准。",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    DoyuPrimaryButton(
+                        "创建支付单 ${formatPriceCent(order.payableAmountCent)}",
+                        onClick = { navController?.navigate(AppRoute.paymentResult(order.orderId)) },
+                        icon = Icons.Filled.Payments,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
+                else -> PageStateView(orderState)
             }
-            DoyuCard {
-                Text("支付规则", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "支付 SDK 当前为占位封装。客户端拉起后展示确认中，最终以服务端订单状态为准。",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            DoyuPrimaryButton(
-                "创建支付单 ${formatPriceCent(order?.payableAmountCent ?: 0)}",
-                onClick = { order?.let { navController?.navigate(AppRoute.paymentResult(it.orderId)) } },
-                icon = Icons.Filled.Payments,
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }
@@ -311,8 +332,8 @@ fun PaymentResultScreen(navController: NavHostController, orderId: String) { Pay
 
 @Composable
 private fun PaymentResultScreenContent(navController: NavHostController?, orderId: String) {
-    val order = safeCall { repo.order() }
-    val payment = safeCall { repo.payment(orderId) }
+    val orderState = safeCallToState { repo.order() }
+    val paymentState = safeCallToState { repo.payment(orderId) }
     Scaffold(topBar = {
         DoyuTopBar(
             "支付结果", canGoBack = true, onBack = { navController?.popBackStack() })
@@ -333,12 +354,16 @@ private fun PaymentResultScreenContent(navController: NavHostController?, orderI
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(10.dp))
+                val orderStatus = (orderState as? UiState.Success)?.data?.status?.name ?: "查询中"
+                val payment = (paymentState as? UiState.Success)?.data
                 Text(
-                    "GET /orders/{orderId}: ${order?.status ?: "查询中"} · GET /payments/{paymentId}: ${payment?.paymentId ?: ""} ${payment?.status ?: ""}",
+                    "GET /orders/{orderId}: $orderStatus · GET /payments/{paymentId}: ${payment?.paymentId ?: ""} ${payment?.status ?: ""}",
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
             }
+            if (orderState is UiState.Error) PageStateView(orderState)
+            if (paymentState is UiState.Error) PageStateView(paymentState)
             DoyuOutlinedButton(
                 "重新查询服务端状态", onClick = {}, modifier = Modifier.fillMaxWidth()
             )

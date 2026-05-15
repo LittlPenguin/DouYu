@@ -4,12 +4,11 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.InMemoryStore;
-import cn.edu.app.douyu.server.common.Models.FileAsset;
-import cn.edu.app.douyu.server.common.Models.PatternAsset;
-import cn.edu.app.douyu.server.common.Models.PatternJob;
 import cn.edu.app.douyu.server.common.Models;
 import cn.edu.app.douyu.server.common.PageResult;
+import cn.edu.app.douyu.server.common.entity.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -35,15 +34,25 @@ import java.util.Set;
 @RequestMapping("/api/v1/patterns")
 public class PatternController {
     private static final Set<String> BEAD_SIZES = Set.of("MM_2_6", "MM_5");
-    private final InMemoryStore store;
+    private final PatternJobRepository patternJobRepository;
+    private final PatternAssetRepository patternAssetRepository;
+    private final FileAssetRepository fileAssetRepository;
+    private final FavoriteRepository favoriteRepository;
     private final IdGenerator idGenerator;
+    private final ObjectMapper objectMapper;
 
-    public PatternController(InMemoryStore store, IdGenerator idGenerator) {
-        this.store = store;
+    public PatternController(PatternJobRepository patternJobRepository, PatternAssetRepository patternAssetRepository,
+                             FileAssetRepository fileAssetRepository, FavoriteRepository favoriteRepository,
+                             IdGenerator idGenerator, ObjectMapper objectMapper) {
+        this.patternJobRepository = patternJobRepository;
+        this.patternAssetRepository = patternAssetRepository;
+        this.fileAssetRepository = fileAssetRepository;
+        this.favoriteRepository = favoriteRepository;
         this.idGenerator = idGenerator;
+        this.objectMapper = objectMapper;
     }
 
-    @Operation(summary = "创建 AI 拼豆任务", description = "上传图片后创建 AI 拼豆图纸生成任务")
+    @Operation(summary = "创建 AI 拼豆任务")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "创建成功"),
             @ApiResponse(responseCode = "400", description = "beadSize 不支持"),
@@ -51,24 +60,26 @@ public class PatternController {
             @ApiResponse(responseCode = "404", description = "输入文件不存在")
     })
     @PostMapping("/jobs")
-    Map<String, Object> createJob(Authentication authentication, @Valid @RequestBody CreateJobRequest request) {
+    Map<String, Object> createJob(Authentication authentication, @Valid @RequestBody CreateJobRequest request) throws JsonProcessingException {
         String userId = CurrentUser.userId(authentication);
         if (!BEAD_SIZES.contains(request.beadSize())) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "beadSize 不支持");
         }
-        FileAsset input = store.files.get(request.inputFileId());
-        if (input == null || !input.ownerId().equals(userId)) {
+        FileAssetEntity input = fileAssetRepository.findById(request.inputFileId()).orElse(null);
+        if (input == null || !input.getOwnerId().equals(userId)) {
             throw new BizException(ErrorCode.NOT_FOUND, "输入文件不存在");
         }
         Instant now = Instant.now();
-        PatternJob pending = new PatternJob(idGenerator.next("job"), userId, request.inputFileId(), request.beadSize(),
+        PatternJobEntity job = new PatternJobEntity(idGenerator.next("job"), userId, request.inputFileId(), request.beadSize(),
                 request.targetSize(), request.difficulty(), request.paletteId(), request.style(), "PENDING", null, null, false, false, now, now);
-        store.patternJobs.put(pending.id(), pending);
-        PatternAsset asset = createStubAsset(pending);
-        PatternJob succeeded = new PatternJob(pending.id(), userId, request.inputFileId(), request.beadSize(), request.targetSize(),
-                request.difficulty(), request.paletteId(), request.style(), "SUCCEEDED", null, asset.id(), false, false, now, Instant.now());
-        store.patternJobs.put(succeeded.id(), succeeded);
-        return jobView(succeeded);
+        patternJobRepository.save(job);
+        // Stub: immediately succeed
+        PatternAssetEntity asset = createStubAsset(job);
+        job.setStatus("SUCCEEDED");
+        job.setPatternId(asset.getId());
+        job.setUpdatedAt(Instant.now());
+        patternJobRepository.save(job);
+        return jobView(job);
     }
 
     @Operation(summary = "查询任务详情")
@@ -81,8 +92,8 @@ public class PatternController {
     @GetMapping("/jobs/{jobId}")
     Map<String, Object> job(Authentication authentication, @PathVariable String jobId) {
         String userId = CurrentUser.userId(authentication);
-        PatternJob job = requireJob(jobId);
-        if (!job.userId().equals(userId)) {
+        PatternJobEntity job = requireJob(jobId);
+        if (!job.getUserId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN, "无权查看该任务");
         }
         return jobView(job);
@@ -96,7 +107,7 @@ public class PatternController {
     @GetMapping("/jobs")
     PageResult<Map<String, Object>> jobs(Authentication authentication, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         String userId = CurrentUser.userId(authentication);
-        List<Map<String, Object>> items = store.userPatternJobs(userId).stream().map(this::jobView).toList();
+        List<Map<String, Object>> items = patternJobRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::jobView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
@@ -111,17 +122,17 @@ public class PatternController {
     @PostMapping("/jobs/{jobId}/cancel")
     Map<String, Object> cancel(Authentication authentication, @PathVariable String jobId) {
         String userId = CurrentUser.userId(authentication);
-        PatternJob job = requireJob(jobId);
-        if (!job.userId().equals(userId)) {
+        PatternJobEntity job = requireJob(jobId);
+        if (!job.getUserId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN, "无权取消该任务");
         }
-        if ("SUCCEEDED".equals(job.status())) {
+        if ("SUCCEEDED".equals(job.getStatus())) {
             throw new BizException(ErrorCode.CONFLICT, "已成功任务不能取消");
         }
-        PatternJob canceled = new PatternJob(job.id(), job.userId(), job.inputFileId(), job.beadSize(), job.targetSize(), job.difficulty(),
-                job.paletteId(), job.style(), "CANCELED", job.failureReason(), job.patternId(), job.retryable(), job.quotaRefunded(), job.createdAt(), Instant.now());
-        store.patternJobs.put(jobId, canceled);
-        return jobView(canceled);
+        job.setStatus("CANCELED");
+        job.setUpdatedAt(Instant.now());
+        patternJobRepository.save(job);
+        return jobView(job);
     }
 
     @Operation(summary = "收藏图纸")
@@ -134,7 +145,9 @@ public class PatternController {
     Map<String, Object> favorite(Authentication authentication, @PathVariable String patternId) {
         String userId = CurrentUser.userId(authentication);
         requirePattern(patternId);
-        store.favorites.add(userId + ":PATTERN:" + patternId);
+        Instant now = Instant.now();
+        favoriteRepository.findByUserIdAndTargetTypeAndTargetId(userId, "PATTERN", patternId).orElseGet(() ->
+                favoriteRepository.save(new FavoriteEntity(idGenerator.next("fav"), userId, "PATTERN", patternId, now, now)));
         return Map.of("favorited", true);
     }
 
@@ -150,88 +163,112 @@ public class PatternController {
         return patternView(requirePattern(patternId));
     }
 
-    private PatternAsset createStubAsset(PatternJob job) {
-        String preview = createOutputFile(job.userId(), "preview");
-        String grid = createOutputFile(job.userId(), "grid");
-        String colorMap = createOutputFile(job.userId(), "color-map");
-        PatternAsset asset = new PatternAsset(idGenerator.next("pattern"), job.id(), job.userId(), preview, grid, colorMap, null,
-                job.beadSize(), 16, 16, 256, Models.materials(256), "PRIVATE");
-        store.patternAssets.put(asset.id(), asset);
-        return asset;
-    }
-
-    private String createOutputFile(String userId, String name) {
+    private PatternAssetEntity createStubAsset(PatternJobEntity job) {
         Instant now = Instant.now();
-        FileAsset file = new FileAsset(idGenerator.next("file"), userId, "PATTERN_OUTPUT", "stub/pattern/" + name + "/" + idGenerator.next("obj") + ".png",
-                "image/png", 1024, 256, 256, "PASS", null, now);
-        store.files.put(file.id(), file);
-        return file.id();
+        String preview = createOutputFile(job.getUserId(), "preview", now);
+        String grid = createOutputFile(job.getUserId(), "grid", now);
+        String colorMap = createOutputFile(job.getUserId(), "color-map", now);
+        String materialsJson = toJson(Models.materials(256));
+        PatternAssetEntity asset = new PatternAssetEntity();
+        asset.setId(idGenerator.next("pattern"));
+        asset.setJobId(job.getId());
+        asset.setOwnerId(job.getUserId());
+        asset.setPreviewFileId(preview);
+        asset.setGridFileId(grid);
+        asset.setColorMapFileId(colorMap);
+        asset.setBeadSize(job.getBeadSize());
+        asset.setWidthCells(16);
+        asset.setHeightCells(16);
+        asset.setTotalBeads(256);
+        asset.setMaterialsJson(materialsJson);
+        asset.setStatus("PRIVATE");
+        asset.setCreatedAt(now);
+        asset.setUpdatedAt(now);
+        return patternAssetRepository.save(asset);
     }
 
-    private PatternJob requireJob(String jobId) {
-        PatternJob job = store.patternJobs.get(jobId);
-        if (job == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "AI 任务不存在");
-        }
-        return job;
+    private String createOutputFile(String userId, String name, Instant now) {
+        FileAssetEntity file = new FileAssetEntity();
+        file.setId(idGenerator.next("file"));
+        file.setOwnerId(userId);
+        file.setUsage("PATTERN_OUTPUT");
+        file.setStorageKey("stub/pattern/" + name + "/" + idGenerator.next("obj") + ".png");
+        file.setMimeType("image/png");
+        file.setSizeBytes(1024);
+        file.setWidth(256);
+        file.setHeight(256);
+        file.setAuditStatus("PASS");
+        file.setCreatedAt(now);
+        file.setUpdatedAt(now);
+        fileAssetRepository.save(file);
+        return file.getId();
     }
 
-    private PatternAsset requirePattern(String patternId) {
-        PatternAsset asset = store.patternAssets.get(patternId);
-        if (asset == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "图纸不存在");
-        }
-        return asset;
+    private PatternJobEntity requireJob(String jobId) {
+        return patternJobRepository.findById(jobId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "AI 任务不存在"));
     }
 
-    private Map<String, Object> jobView(PatternJob job) {
+    private PatternAssetEntity requirePattern(String patternId) {
+        return patternAssetRepository.findById(patternId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "图纸不存在"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> jobView(PatternJobEntity job) {
         Map<String, Object> data = new java.util.LinkedHashMap<>();
-        data.put("jobId", job.id());
-        data.put("userId", job.userId());
-        data.put("inputFileId", job.inputFileId());
+        data.put("jobId", job.getId());
+        data.put("userId", job.getUserId());
+        data.put("inputFileId", job.getInputFileId());
         String inputName = "";
-        var inputFile = store.files.get(job.inputFileId());
-        if (inputFile != null) {
-            inputName = inputFile.storageKey() != null ? inputFile.storageKey().substring(inputFile.storageKey().lastIndexOf('/') + 1) : "";
+        var inputFile = fileAssetRepository.findById(job.getInputFileId()).orElse(null);
+        if (inputFile != null && inputFile.getStorageKey() != null) {
+            inputName = inputFile.getStorageKey().substring(inputFile.getStorageKey().lastIndexOf('/') + 1);
         }
         data.put("inputName", inputName);
-        data.put("beadSize", job.beadSize());
-        data.put("targetSize", job.targetSize());
-        data.put("difficulty", job.difficulty());
-        data.put("paletteId", job.paletteId());
+        data.put("beadSize", job.getBeadSize());
+        data.put("targetSize", job.getTargetSize());
+        data.put("difficulty", job.getDifficulty());
+        data.put("paletteId", job.getPaletteId());
         data.put("paletteName", "标准色卡");
-        data.put("style", job.style());
-        data.put("status", job.status());
-        data.put("progress", "SUCCEEDED".equals(job.status()) ? 100 : "PROCESSING".equals(job.status()) ? 50 : 0);
-        data.put("failureReason", job.failureReason());
-        data.put("patternId", job.patternId());
-        if (job.patternId() != null) {
-            data.put("materials", requirePattern(job.patternId()).materials());
+        data.put("style", job.getStyle());
+        data.put("status", job.getStatus());
+        data.put("progress", "SUCCEEDED".equals(job.getStatus()) ? 1.0 : "PROCESSING".equals(job.getStatus()) ? 0.5 : 0.0);
+        data.put("failureReason", job.getFailureReason());
+        data.put("patternId", job.getPatternId());
+        if (job.getPatternId() != null) {
+            PatternAssetEntity asset = patternAssetRepository.findById(job.getPatternId()).orElse(null);
+            if (asset != null) {
+                Map<String, Object> patternAsset = new java.util.LinkedHashMap<>();
+                patternAsset.put("patternId", asset.getId());
+                patternAsset.put("materials", fromJson(asset.getMaterialsJson()));
+                data.put("patternAsset", patternAsset);
+            }
         }
         return data;
     }
 
-    private Map<String, Object> patternView(PatternAsset asset) {
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> patternView(PatternAssetEntity asset) {
         Map<String, Object> data = new java.util.LinkedHashMap<>();
-        data.put("patternId", asset.id());
-        data.put("jobId", asset.jobId());
-        data.put("ownerId", asset.ownerId());
+        data.put("patternId", asset.getId());
+        data.put("jobId", asset.getJobId());
+        data.put("ownerId", asset.getOwnerId());
         data.put("title", "拼豆图纸");
-        data.put("previewFileId", asset.previewFileId());
-        data.put("gridFileId", asset.gridFileId());
-        data.put("colorMapFileId", asset.colorMapFileId());
-        data.put("pdfFileId", asset.pdfFileId());
-        data.put("beadSize", asset.beadSize());
-        data.put("widthCells", asset.widthCells());
-        data.put("heightCells", asset.heightCells());
-        data.put("totalBeads", asset.totalBeads());
+        data.put("previewFileId", asset.getPreviewFileId());
+        data.put("gridFileId", asset.getGridFileId());
+        data.put("colorMapFileId", asset.getColorMapFileId());
+        data.put("pdfFileId", asset.getPdfFileId());
+        data.put("beadSize", asset.getBeadSize());
+        data.put("widthCells", asset.getWidthCells());
+        data.put("heightCells", asset.getHeightCells());
+        data.put("totalBeads", asset.getTotalBeads());
         data.put("paletteName", "标准色卡");
-        data.put("status", asset.status());
-        Map<String, Object> materials = asset.materials();
+        data.put("status", asset.getStatus());
+        Map<String, Object> materials = fromJson(asset.getMaterialsJson());
         List<Map<String, Object>> colorStats = new java.util.ArrayList<>();
         if (materials != null && materials.containsKey("colors")) {
-            @SuppressWarnings("unchecked")
-            var colors = (java.util.List<Map<String, Object>>) materials.get("colors");
+            var colors = (List<Map<String, Object>>) materials.get("colors");
             for (var c : colors) {
                 Map<String, Object> cs = new java.util.LinkedHashMap<>(c);
                 cs.putIfAbsent("hex", 0x000000L);
@@ -247,6 +284,17 @@ public class PatternController {
         int from = Math.max(0, (page - 1) * size);
         int to = Math.min(items.size(), from + size);
         return from >= items.size() ? List.of() : items.subList(from, to);
+    }
+
+    private String toJson(Object obj) {
+        try { return objectMapper.writeValueAsString(obj); }
+        catch (JsonProcessingException e) { return "{}"; }
+    }
+
+    private Map<String, Object> fromJson(String json) {
+        if (json == null) return null;
+        try { return objectMapper.readValue(json, objectMapper.getTypeFactory().constructMapType(java.util.LinkedHashMap.class, String.class, Object.class)); }
+        catch (JsonProcessingException e) { return null; }
     }
 
     public record CreateJobRequest(@NotBlank String inputFileId, @NotBlank String beadSize, @NotBlank String targetSize,

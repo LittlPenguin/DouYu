@@ -16,10 +16,10 @@ import androidx.navigation.NavHostController
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
+import cn.edu.app.douyu.core.data.safeCallToState
+import cn.edu.app.douyu.core.data.safeCallOrNull
 
 private val repo = DoyuAppContainer.profileRepository
-
-private inline fun <T> safeCall(block: () -> T): T? = try { block() } catch (_: Exception) { null }
 
 @Preview
 @Composable
@@ -30,7 +30,7 @@ fun ProfileScreen(navController: NavHostController) { ProfileScreenContent(navCo
 
 @Composable
 private fun ProfileScreenContent(navController: NavHostController?) {
-    val dashboard = safeCall { repo.dashboard() }
+    val dashboardState = safeCallToState { repo.dashboard() }
     Scaffold(
         topBar = {
             DoyuTopBar("我的", action = {
@@ -41,22 +41,31 @@ private fun ProfileScreenContent(navController: NavHostController?) {
         }
     ) { padding ->
         DoyuPage(padding) {
-            DoyuCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    BeadCluster(58.dp)
-                    Spacer(Modifier.width(14.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(dashboard?.user?.nickname ?: "未登录", style = MaterialTheme.typography.headlineSmall)
-                        Text(dashboard?.user?.bio ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            when (val state = dashboardState) {
+                is UiState.Success -> {
+                    val dashboard = state.data
+                    DoyuCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            BeadCluster(58.dp)
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(dashboard.user.nickname, style = MaterialTheme.typography.headlineSmall)
+                                Text(dashboard.user.bio, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Spacer(Modifier.height(14.dp))
+                        Text("${dashboard.reward.levelCode} · ${dashboard.reward.points} 积分 · ${dashboard.reward.experience} 经验", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        MetricCard("作品", "${dashboard.user.followerCount}", Modifier.weight(1f))
+                        MetricCard("图纸", "${dashboard.patternCount}", Modifier.weight(1f))
+                        MetricCard("订单", "${dashboard.orderCount}", Modifier.weight(1f))
                     }
                 }
-                Spacer(Modifier.height(14.dp))
-                Text("${dashboard?.reward?.levelCode ?: ""} · ${dashboard?.reward?.points ?: 0} 积分 · ${dashboard?.reward?.experience ?: 0} 经验", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                MetricCard("作品", "${dashboard?.user?.followerCount ?: 0}", Modifier.weight(1f))
-                MetricCard("图纸", "${dashboard?.patternCount ?: 0}", Modifier.weight(1f))
-                MetricCard("订单", "${dashboard?.orderCount ?: 0}", Modifier.weight(1f))
+                UiState.RequireLogin -> {
+                    PageStateView(UiState.RequireLogin)
+                }
+                else -> PageStateView(dashboardState)
             }
             DoyuCard {
                 SectionHeader("我的资产")
@@ -66,11 +75,12 @@ private fun ProfileScreenContent(navController: NavHostController?) {
                 ProfileAction("签到与等级", Icons.Filled.WorkspacePremium) { }
             }
             DoyuCard {
-                val checkin = safeCall { repo.checkinStatus() }
+                val checkin = safeCallOrNull { repo.checkinStatus() }
                 SectionHeader("签到与徽章")
                 Text("今日签到：${if (checkin?.checkedToday == true) "已签到" else "未签到"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(10.dp))
-                (safeCall { repo.badges() } ?: emptyList()).forEach {
+                val badges = safeCallOrNull { repo.badges() } ?: emptyList()
+                badges.forEach {
                     Text("${it.name} · ${if (it.achieved) "已获得" else "未获得"}", style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -108,19 +118,23 @@ fun MyPatternsScreen(navController: NavHostController) { MyPatternsScreenContent
 
 @Composable
 private fun MyPatternsScreenContent(navController: NavHostController?) {
+    val patternsState = safeCallToState { repo.patterns() }
     Scaffold(topBar = { DoyuTopBar("我的拼豆", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            (safeCall { repo.patterns() } ?: emptyList()).forEach {
-                DoyuCard {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        BeadPattern(Modifier.size(58.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(it.title, style = MaterialTheme.typography.titleMedium)
-                            Text("${it.patternId} · ${it.widthCells} x ${it.heightCells} · ${it.totalBeads} 颗", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            when (val state = patternsState) {
+                is UiState.Success -> state.data.forEach {
+                    DoyuCard {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            BeadPattern(Modifier.size(58.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(it.title, style = MaterialTheme.typography.titleMedium)
+                                Text("${it.patternId} · ${it.widthCells} x ${it.heightCells} · ${it.totalBeads} 颗", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 }
+                else -> PageStateView(patternsState)
             }
         }
     }

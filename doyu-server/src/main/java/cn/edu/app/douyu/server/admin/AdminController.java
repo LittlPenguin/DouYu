@@ -5,10 +5,9 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.InMemoryStore;
-import cn.edu.app.douyu.server.common.Models.AdminOperationLog;
-import cn.edu.app.douyu.server.common.Models.Report;
+import cn.edu.app.douyu.server.common.Models.User;
 import cn.edu.app.douyu.server.common.PageResult;
+import cn.edu.app.douyu.server.common.entity.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -33,174 +32,156 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/admin")
 public class AdminController {
-    private final InMemoryStore store;
+    private final UserRepository userRepository;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
+    private final PaymentRepository paymentRepository;
+    private final PatternJobRepository patternJobRepository;
+    private final ReportRepository reportRepository;
+    private final AdminOperationLogRepository adminLogRepository;
     private final AuthService authService;
     private final IdGenerator idGenerator;
 
-    public AdminController(InMemoryStore store, AuthService authService, IdGenerator idGenerator) {
-        this.store = store;
+    public AdminController(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
+                           ProductRepository productRepository, OrderRepository orderRepository, PaymentRepository paymentRepository,
+                           PatternJobRepository patternJobRepository, ReportRepository reportRepository,
+                           AdminOperationLogRepository adminLogRepository, AuthService authService, IdGenerator idGenerator) {
+        this.userRepository = userRepository;
+        this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
+        this.productRepository = productRepository;
+        this.orderRepository = orderRepository;
+        this.paymentRepository = paymentRepository;
+        this.patternJobRepository = patternJobRepository;
+        this.reportRepository = reportRepository;
+        this.adminLogRepository = adminLogRepository;
         this.authService = authService;
         this.idGenerator = idGenerator;
     }
 
     @Operation(summary = "用户列表")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限")
-    })
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/users")
     PageResult<Map<String, Object>> users(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.users.values().stream().map(authService::userView).toList();
+        List<Map<String, Object>> items = userRepository.findAll().stream()
+                .map(e -> toModel(e)).map(authService::userView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
     @Operation(summary = "帖子列表")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限")
-    })
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/posts")
     PageResult<Map<String, Object>> posts(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.posts.values().stream()
-                .map(post -> mapOf("postId", post.id(), "status", post.status(), "content", post.content()))
-                .toList();
+        List<Map<String, Object>> items = postRepository.findAll().stream()
+                .map(p -> mapOf("postId", p.getId(), "status", p.getStatus(), "content", p.getContent())).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
     @Operation(summary = "评论列表")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限")
-    })
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/comments")
     PageResult<Map<String, Object>> comments(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.comments.values().stream()
-                .map(comment -> mapOf("commentId", comment.id(), "status", comment.status(), "content", comment.content()))
-                .toList();
+        List<Map<String, Object>> items = commentRepository.findAll().stream()
+                .map(c -> mapOf("commentId", c.getId(), "status", c.getStatus(), "content", c.getContent())).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
     @Operation(summary = "商品列表")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限")
-    })
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/products")
     PageResult<Map<String, Object>> products(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.products.values().stream().map(store::productView).toList();
+        List<Map<String, Object>> items = productRepository.findAll().stream()
+                .map(p -> mapOf("productId", p.getId(), "type", p.getType(), "title", p.getTitle(), "status", p.getStatus())).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
     @Operation(summary = "订单列表")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限")
-    })
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/orders")
     PageResult<Map<String, Object>> orders(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.orders.values().stream().map(store::orderView).toList();
+        List<Map<String, Object>> items = orderRepository.findAll().stream()
+                .map(o -> mapOf("orderId", o.getId(), "buyerId", o.getBuyerId(), "status", o.getStatus(), "payableAmountCent", o.getPayableAmountCent())).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
     @Operation(summary = "支付记录列表")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限")
-    })
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/payments")
     PageResult<Map<String, Object>> payments(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.payments.values().stream()
-                .map(payment -> mapOf("paymentId", payment.id(), "orderId", payment.orderId(), "status", payment.status(), "amountCent", payment.amountCent()))
-                .toList();
+        List<Map<String, Object>> items = paymentRepository.findAll().stream()
+                .map(p -> mapOf("paymentId", p.getId(), "orderId", p.getOrderId(), "status", p.getStatus(), "amountCent", p.getAmountCent())).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
     @Operation(summary = "AI 任务列表")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限")
-    })
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/patterns/jobs")
     PageResult<Map<String, Object>> patternJobs(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.patternJobs.values().stream()
-                .map(job -> mapOf("jobId", job.id(), "userId", job.userId(), "status", job.status()))
-                .toList();
+        List<Map<String, Object>> items = patternJobRepository.findAll().stream()
+                .map(j -> mapOf("jobId", j.getId(), "userId", j.getUserId(), "status", j.getStatus())).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
     @Operation(summary = "举报列表")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限")
-    })
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/reports")
     PageResult<Map<String, Object>> reports(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.reports().stream().map(this::reportView).toList();
+        List<Map<String, Object>> items = reportRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::reportView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
-    @Operation(summary = "处理举报", description = "管理员处理举报并记录操作日志")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "处理成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限"),
-            @ApiResponse(responseCode = "404", description = "举报不存在")
-    })
+    @Operation(summary = "处理举报")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "处理成功"), @ApiResponse(responseCode = "404", description = "举报不存在") })
     @PostMapping("/reports/{reportId}/process")
     Map<String, Object> processReport(Authentication authentication, @PathVariable String reportId, @Valid @RequestBody ProcessRequest request) {
         String adminId = CurrentUser.adminId(authentication);
-        Report report = store.reports.get(reportId);
-        if (report == null) {
-            throw new BizException(ErrorCode.NOT_FOUND, "举报不存在");
-        }
-        Report updated = new Report(report.id(), report.reporterId(), report.targetType(), report.targetId(), report.reason(), report.description(), request.status(), report.createdAt());
-        store.reports.put(reportId, updated);
-        AdminOperationLog log = new AdminOperationLog(idGenerator.next("alog"), adminId, "PROCESS_REPORT", "REPORT", report.id(),
-                report.status(), updated.status(), request.reason(), Instant.now());
-        store.adminLogs.put(log.id(), log);
-        return reportView(updated);
+        ReportEntity report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "举报不存在"));
+        String beforeState = report.getStatus();
+        Instant now = Instant.now();
+        report.setStatus(request.status());
+        report.setUpdatedAt(now);
+        reportRepository.save(report);
+        AdminOperationLogEntity log = new AdminOperationLogEntity();
+        log.setId(idGenerator.next("alog"));
+        log.setAdminId(adminId);
+        log.setAction("PROCESS_REPORT");
+        log.setTargetType("REPORT");
+        log.setTargetId(report.getId());
+        log.setBeforeState(beforeState);
+        log.setAfterState(report.getStatus());
+        log.setReason(request.reason());
+        log.setCreatedAt(now);
+        log.setUpdatedAt(now);
+        adminLogRepository.save(log);
+        return reportView(report);
     }
 
     @Operation(summary = "运营日志列表")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "需要管理员权限")
-    })
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
     @GetMapping("/operation-logs")
     PageResult<Map<String, Object>> logs(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = store.adminLogs().stream()
-                .map(log -> mapOf(
-                        "logId", log.id(),
-                        "adminId", log.adminId(),
-                        "action", log.action(),
-                        "targetType", log.targetType(),
-                        "targetId", log.targetId(),
-                        "beforeState", log.beforeState() == null ? "" : log.beforeState(),
-                        "afterState", log.afterState() == null ? "" : log.afterState(),
-                        "reason", log.reason() == null ? "" : log.reason()
-                ))
+        List<Map<String, Object>> items = adminLogRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(log -> mapOf("logId", log.getId(), "adminId", log.getAdminId(), "action", log.getAction(),
+                        "targetType", log.getTargetType(), "targetId", log.getTargetId(),
+                        "beforeState", log.getBeforeState() == null ? "" : log.getBeforeState(),
+                        "afterState", log.getAfterState() == null ? "" : log.getAfterState(),
+                        "reason", log.getReason() == null ? "" : log.getReason()))
                 .toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
-    private Map<String, Object> reportView(Report report) {
-        return mapOf(
-                "reportId", report.id(),
-                "reporterId", report.reporterId(),
-                "targetType", report.targetType(),
-                "targetId", report.targetId(),
-                "reason", report.reason(),
-                "status", report.status()
-        );
+    private Map<String, Object> reportView(ReportEntity report) {
+        return mapOf("reportId", report.getId(), "reporterId", report.getReporterId(), "targetType", report.getTargetType(),
+                "targetId", report.getTargetId(), "reason", report.getReason(), "status", report.getStatus());
+    }
+
+    private User toModel(UserEntity e) {
+        return new User(e.getId(), e.getPhone(), e.getNickname(), e.getAvatarFileId(), e.getBio(),
+                e.getAgeGroup(), e.isMinor(), e.getRealNameStatus(), e.getAccountStatus(), e.getCreatedAt(), e.getUpdatedAt());
     }
 
     private <T> List<T> slice(List<T> items, int page, int size) {
@@ -217,6 +198,5 @@ public class AdminController {
         return map;
     }
 
-    public record ProcessRequest(@NotBlank String status, String reason) {
-    }
+    public record ProcessRequest(@NotBlank String status, String reason) {}
 }

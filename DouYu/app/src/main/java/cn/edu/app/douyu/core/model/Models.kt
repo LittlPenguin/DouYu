@@ -239,7 +239,7 @@ data class PatternAsset(
     val paletteName: String = "",
     val status: ContentStatus = ContentStatus.VISIBLE,
     val colorStats: List<PaletteColorCount> = emptyList(),
-    val materials: List<MaterialSuggestion>? = null
+    val materials: PatternMaterials? = null
 )
 
 @Serializable
@@ -263,6 +263,21 @@ data class MaterialSuggestion(
     val inStock: Boolean
         get() = availableStock > 0
 }
+
+/** Backend materials structure: { totalBeads, colors: [{ colorCode, displayName, beadCount, skuId }] } */
+@Serializable
+data class PatternMaterials(
+    val totalBeads: Int = 0,
+    val colors: List<PatternColorEntry> = emptyList()
+)
+
+@Serializable
+data class PatternColorEntry(
+    val colorCode: String = "",
+    val displayName: String = "",
+    val beadCount: Int = 0,
+    val skuId: String? = null
+)
 
 @Serializable
 data class ProductSku(

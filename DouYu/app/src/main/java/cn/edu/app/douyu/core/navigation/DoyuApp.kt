@@ -85,6 +85,7 @@ fun DoyuApp() {
                 PostDetailScreen(navController, it.arguments?.getString("postId").orEmpty())
             }
             composable(AppRoute.IMAGE_SELECT) { ImageSelectScreen(navController) }
+            composable(AppRoute.CAMERA_CAPTURE) { CameraCaptureScreen(navController) }
             composable(AppRoute.AI_PARAMS) { AiParamsScreen(navController) }
             composable(
                 AppRoute.AI_PROGRESS,

@@ -151,7 +151,7 @@ public class InMemoryStore {
         view.put("status", order.status());
         view.put("totalAmountCent", order.totalAmountCent());
         view.put("payableAmountCent", order.payableAmountCent());
-        view.put("addressSnapshot", order.address() != null ? order.address().toString() : "");
+        view.put("addressSnapshot", order.address() != null ? order.address() : Map.of());
         view.put("items", orderItems.getOrDefault(order.id(), List.of()).stream().map(item -> {
             Sku sku = skus.get(item.skuId());
             Product product = products.get(item.productId());

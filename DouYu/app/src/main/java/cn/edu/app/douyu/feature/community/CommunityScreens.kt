@@ -20,8 +20,7 @@ import cn.edu.app.douyu.core.model.ContentStatus
 import cn.edu.app.douyu.core.model.Post
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
-
-private inline fun <T> safeCall(block: () -> T): T? = try { block() } catch (_: Exception) { null }
+import cn.edu.app.douyu.core.data.safeCallToState
 
 private val repo = DoyuAppContainer.communityRepository
 
@@ -60,8 +59,12 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                 TagChip("关注", color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.28f))
                 TagChip("新手教程", color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.24f))
             }
-            (safeCall { repo.feed() }?.items ?: emptyList()).forEach { post ->
-                PostCard(post, onClick = { navController?.navigate(AppRoute.postDetail(post.postId)) })
+            val feedState = safeCallToState { repo.feed() }
+            when (val state = feedState) {
+                is UiState.Success -> state.data.items.forEach { post ->
+                    PostCard(post, onClick = { navController?.navigate(AppRoute.postDetail(post.postId)) })
+                }
+                else -> PageStateView(feedState)
             }
             PageStatePreviewRow()
         }
@@ -143,19 +146,29 @@ fun PostDetailScreen(navController: NavHostController, postId: String) { PostDet
 
 @Composable
 private fun PostDetailScreenContent(navController: NavHostController?, postId: String) {
-    val post = safeCall { repo.post(postId) }
+    val postState = safeCallToState { repo.post(postId) }
     Scaffold(topBar = { DoyuTopBar("作品详情", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            if (post != null) PostCard(post, onClick = {})
-            SectionHeader("评论")
-            (safeCall { repo.comments(postId) }?.items ?: emptyList()).forEach {
-                DoyuCard {
-                    Text(it.author.nickname, style = MaterialTheme.typography.titleMedium)
-                    Text(it.content, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            when (val state = postState) {
+                is UiState.Success -> {
+                    PostCard(state.data, onClick = {})
+                    SectionHeader("评论")
+                    val commentsState = safeCallToState { repo.comments(postId) }
+                    when (val cs = commentsState) {
+                        is UiState.Success -> cs.data.items.forEach {
+                            DoyuCard {
+                                Text(it.author.nickname, style = MaterialTheme.typography.titleMedium)
+                                Text(it.content, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        is UiState.Empty -> PageStateView(UiState.Empty)
+                        else -> PageStateView(commentsState)
+                    }
+                    DoyuPrimaryButton("收藏图纸", onClick = { navController?.navigate(AppRoute.patternResult(state.data.linkedPatternId ?: "pattern_001")) }, modifier = Modifier.fillMaxWidth())
+                    DoyuOutlinedButton("举报内容", onClick = {}, icon = Icons.Filled.Report, modifier = Modifier.fillMaxWidth())
                 }
+                else -> PageStateView(postState)
             }
-            DoyuPrimaryButton("收藏图纸", onClick = { navController?.navigate(AppRoute.patternResult(post?.linkedPatternId ?: "pattern_001")) }, modifier = Modifier.fillMaxWidth())
-            DoyuOutlinedButton("举报内容", onClick = {}, icon = Icons.Filled.Report, modifier = Modifier.fillMaxWidth())
         }
     }
 }

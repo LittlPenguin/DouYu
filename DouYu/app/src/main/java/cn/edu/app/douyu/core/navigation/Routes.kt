@@ -19,6 +19,7 @@ object AppRoute {
     const val POST_DETAIL = "post/{postId}"
     const val POST_CREATE = "post_create"
     const val IMAGE_SELECT = "image_select"
+    const val CAMERA_CAPTURE = "camera_capture"
     const val AI_PARAMS = "ai_params"
     const val AI_PROGRESS = "ai_progress/{jobId}"
     const val PATTERN_RESULT = "pattern/{patternId}"
@@ -38,6 +39,7 @@ object AppRoute {
         POST_DETAIL,
         POST_CREATE,
         IMAGE_SELECT,
+        CAMERA_CAPTURE,
         AI_PARAMS,
         AI_PROGRESS,
         PATTERN_RESULT,

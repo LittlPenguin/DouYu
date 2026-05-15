@@ -4,9 +4,9 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.InMemoryStore;
-import cn.edu.app.douyu.server.common.Models.FileAsset;
-import cn.edu.app.douyu.server.common.Models.ModerationRecord;
+import cn.edu.app.douyu.server.common.entity.FileAssetEntity;
+import cn.edu.app.douyu.server.common.entity.FileAssetRepository;
+import cn.edu.app.douyu.server.upload.oss.OssProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -29,15 +29,19 @@ import java.util.Set;
 @RequestMapping("/api/v1/uploads")
 public class UploadController {
     private static final Set<String> USAGES = Set.of("AVATAR", "POST_IMAGE", "POST_VIDEO", "AI_INPUT", "PATTERN_OUTPUT", "PRODUCT_IMAGE", "TRADE_IMAGE");
-    private final InMemoryStore store;
+    private static final long PRESIGN_EXPIRES_SECONDS = 900;
+
+    private final FileAssetRepository fileAssetRepository;
+    private final OssProvider ossProvider;
     private final IdGenerator idGenerator;
 
-    public UploadController(InMemoryStore store, IdGenerator idGenerator) {
-        this.store = store;
+    public UploadController(FileAssetRepository fileAssetRepository, OssProvider ossProvider, IdGenerator idGenerator) {
+        this.fileAssetRepository = fileAssetRepository;
+        this.ossProvider = ossProvider;
         this.idGenerator = idGenerator;
     }
 
-    @Operation(summary = "获取预签名上传 URL", description = "获取 OSS 预签名上传地址和文件 Key")
+    @Operation(summary = "获取预签名上传 URL")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "成功"),
             @ApiResponse(responseCode = "400", description = "用途不支持、文件类型不支持或文件大小超限"),
@@ -54,15 +58,16 @@ public class UploadController {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "文件大小超限");
         }
         String fileKey = "stub/" + request.usage().toLowerCase() + "/" + idGenerator.next("file") + "/" + request.fileName();
-        return Map.of(
-                "uploadUrl", "https://oss-stub.douyu.local/" + fileKey,
-                "fileKey", fileKey,
-                "expiresIn", 900,
-                "headers", Map.of("Content-Type", request.mimeType())
-        );
+        OssProvider.PresignResult result = ossProvider.presign(fileKey, request.mimeType(), PRESIGN_EXPIRES_SECONDS);
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("uploadUrl", result.uploadUrl());
+        response.put("fileKey", fileKey);
+        response.put("expiresIn", PRESIGN_EXPIRES_SECONDS);
+        response.put("headers", result.headers());
+        return response;
     }
 
-    @Operation(summary = "确认上传完成", description = "客户端直传 OSS 后确认上传，创建文件资产和审核记录")
+    @Operation(summary = "确认上传完成")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "成功"),
             @ApiResponse(responseCode = "400", description = "用途不支持"),
@@ -72,13 +77,23 @@ public class UploadController {
     Map<String, Object> confirm(Authentication authentication, @Valid @RequestBody ConfirmRequest request) {
         String userId = CurrentUser.userId(authentication);
         validateUsage(request.usage());
+        String publicUrl = ossProvider.confirm(request.fileKey());
         Instant now = Instant.now();
-        FileAsset file = new FileAsset(idGenerator.next("file"), userId, request.usage(), request.fileKey(), request.mimeType(),
-                request.sizeBytes(), request.width(), request.height(), "NEED_MANUAL_REVIEW", null, now);
-        store.files.put(file.id(), file);
-        ModerationRecord record = new ModerationRecord(idGenerator.next("mod"), "FILE", file.id(), "NEED_MANUAL_REVIEW", "上传后进入审核", "MACHINE", now);
-        store.moderationRecords.put(record.id(), record);
-        return Map.of("fileId", file.id(), "fileKey", file.storageKey(), "auditStatus", file.auditStatus());
+        FileAssetEntity file = new FileAssetEntity();
+        file.setId(idGenerator.next("file"));
+        file.setOwnerId(userId);
+        file.setUsage(request.usage());
+        file.setStorageKey(request.fileKey());
+        file.setMimeType(request.mimeType());
+        file.setSizeBytes(request.sizeBytes());
+        file.setWidth(request.width());
+        file.setHeight(request.height());
+        file.setAuditStatus("NEED_MANUAL_REVIEW");
+        file.setPublicUrl(publicUrl);
+        file.setCreatedAt(now);
+        file.setUpdatedAt(now);
+        fileAssetRepository.save(file);
+        return Map.of("fileId", file.getId(), "fileKey", file.getStorageKey(), "auditStatus", file.getAuditStatus());
     }
 
     private void validateUsage(String usage) {
