@@ -3,6 +3,7 @@ package cn.edu.app.douyu.server.common;
 import cn.edu.app.douyu.server.common.entity.*;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -13,18 +14,33 @@ public class DataInitializer implements ApplicationRunner {
     private final PostRepository postRepository;
     private final ProductRepository productRepository;
     private final SkuRepository skuRepository;
+    private final AdminUserRepository adminUserRepository;
+    private final DouyuProperties properties;
+    private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(UserRepository userRepository, PostRepository postRepository,
-                           ProductRepository productRepository, SkuRepository skuRepository) {
+                           ProductRepository productRepository, SkuRepository skuRepository,
+                           AdminUserRepository adminUserRepository, DouyuProperties properties,
+                           PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
+        this.adminUserRepository = adminUserRepository;
+        this.properties = properties;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(ApplicationArguments args) {
         Instant now = Instant.now();
+        // Seed admin user
+        if (adminUserRepository.findByUsername(properties.admin().bootstrapUsername()).isEmpty()) {
+            adminUserRepository.save(new AdminUserEntity("admin_bootstrap",
+                    properties.admin().bootstrapUsername(),
+                    passwordEncoder.encode(properties.admin().bootstrapPassword()),
+                    "ACTIVE", now, now));
+        }
         // Seed system user
         if (userRepository.findById("system").isEmpty()) {
             userRepository.save(new UserEntity("system", "00000000000", "系统", null, "",

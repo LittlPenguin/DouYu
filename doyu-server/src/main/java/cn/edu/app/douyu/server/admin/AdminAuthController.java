@@ -2,9 +2,9 @@ package cn.edu.app.douyu.server.admin;
 
 import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.ErrorCode;
-import cn.edu.app.douyu.server.common.InMemoryStore;
-import cn.edu.app.douyu.server.common.Models.AdminUser;
 import cn.edu.app.douyu.server.common.TokenService;
+import cn.edu.app.douyu.server.common.entity.AdminUserEntity;
+import cn.edu.app.douyu.server.common.entity.AdminUserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -23,12 +23,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/admin/auth")
 public class AdminAuthController {
-    private final InMemoryStore store;
+    private final AdminUserRepository adminUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
 
-    public AdminAuthController(InMemoryStore store, PasswordEncoder passwordEncoder, TokenService tokenService) {
-        this.store = store;
+    public AdminAuthController(AdminUserRepository adminUserRepository, PasswordEncoder passwordEncoder, TokenService tokenService) {
+        this.adminUserRepository = adminUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
     }
@@ -40,14 +40,14 @@ public class AdminAuthController {
     })
     @PostMapping("/login")
     Map<String, Object> login(@Valid @RequestBody AdminLoginRequest request) {
-        AdminUser admin = store.adminByUsername.get(request.username());
-        if (admin == null || !passwordEncoder.matches(request.password(), admin.passwordHash())) {
+        AdminUserEntity admin = adminUserRepository.findByUsername(request.username()).orElse(null);
+        if (admin == null || !passwordEncoder.matches(request.password(), admin.getPasswordHash())) {
             throw new BizException(ErrorCode.UNAUTHORIZED, "后台账号或密码错误");
         }
         return Map.of(
-                "accessToken", tokenService.accessToken(admin.id(), "ADMIN"),
+                "accessToken", tokenService.accessToken(admin.getId(), "ADMIN"),
                 "expiresIn", 7200,
-                "admin", Map.of("adminId", admin.id(), "username", admin.username())
+                "admin", Map.of("adminId", admin.getId(), "username", admin.getUsername())
         );
     }
 

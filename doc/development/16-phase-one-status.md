@@ -2,7 +2,7 @@
 
 ## 状态结论
 
-截至 2026-05-14（第二轮），豆屿 Doyu 第一阶段 P0 任务已全部完成，前后端字段对齐已通过验收，联调主链路已打通。
+截至 2026-05-15（第三轮），豆屿 Doyu 第一阶段 P0 任务已全部完成，前后端字段对齐已通过验收，联调主链路已打通。P1 PostgreSQL 持久化迁移已完成。
 
 当前可以认为已经完成：
 
@@ -21,11 +21,11 @@
 当前不能认为已经完成：
 
 - Android 还未完成真实相册选择、CameraX 拍照、对象存储直传和轮询进度的完整 UI 闭环。
-- 后端业务数据主要仍在进程内存中（InMemoryStore），PostgreSQL schema 已有，但核心业务仓储尚未全面持久化。
+- ~~后端业务数据主要仍在进程内存中（InMemoryStore），PostgreSQL schema 已有，但核心业务仓储尚未全面持久化。~~ ✅ 已完成迁移，InMemoryStore 已删除，全部 Controller 使用 JPA Repository
 - OSS、AI、微信支付、支付宝支付均为 Stub，不具备生产能力。
 - 内容审核、版权投诉、未成年人保护、玩家交易风控还停留在骨架和文档阶段。
 - 管理后台只有 API 骨架，没有完整运营工作台。
-- PatternAsset.materials 前端期望 List，后端返回 Map，需要适配。
+- ~~PatternAsset.materials 前端期望 List，后端返回 Map，需要适配。~~ ✅ 已完成
 
 ## 当前提交包含的主要内容
 
@@ -104,6 +104,29 @@
 - 更新前后端协作文档，加入联调冻结、字段对齐、Mock 约束和剩余任务。
 - 新增本文档，记录第一阶段当前状态和后续任务。
 
+## P1 已完成工作（2026-05-15）
+
+### 后端 PostgreSQL 持久化迁移
+
+- 新增 `IdempotencyRecordEntity` + `IdempotencyRecordRepository`：幂等记录持久化
+- 新增 `AdminUserEntity` + `AdminUserRepository`：管理后台用户持久化
+- `PaymentController`：从 InMemoryStore 迁移到 IdempotencyRecordRepository
+- `OrderController`：从 InMemoryStore 迁移到 IdempotencyRecordRepository
+- `AdminAuthController`：从 InMemoryStore 迁移到 AdminUserRepository
+- `DataInitializer`：管理员引导改用 AdminUserRepository
+- **删除 `InMemoryStore.java`**：全部 Controller 已迁移到 JPA
+- 后端 15 个测试全部通过，Android Debug 构建成功
+
+### 前端错误处理增强
+
+- `RealRepositories.kt`：apiCall 抛出 ApiException（携带后端 ErrorCode）
+- `ErrorMessages.kt`：新增 ApiException→中文提示映射，覆盖网络异常和业务异常
+- 修复网络 Bug（"加载失败无网络"）：后端 `level` 字段类型 String→Int 对齐
+
+### 联调
+
+- `PatternAsset.materials` 类型对齐完成
+
 ## 剩余任务：前端
 
 优先级 P0（全部已完成）：
@@ -118,13 +141,13 @@
 
 优先级 P1（第二阶段）：
 
-- 将错误码统一转为用户可读文案（ErrorCode → 中文提示）。
+- 将错误码统一转为用户可读文案（ErrorCode → 中文提示）。部分完成：ErrorMessages.kt + ApiException 已接入
 - 为核心页面补齐加载、空状态、失败、未登录、无权限、审核中、弱网重试状态。
 - 将 `traceId` 接入错误日志和问题反馈入口。
 - 对 375dp 宽度和常见 Android 设备做 UI 检查。
 - 确认不申请非必要权限，不在客户端硬编码 AI、OSS、支付密钥。
 - 完善真实相册选择、CameraX 拍照、对象存储直传的完整 UI 闭环。
-- PatternAsset.materials 类型适配（前端 List vs 后端 Map）。
+- ~~PatternAsset.materials 类型适配（前端 List vs 后端 Map）。~~ ✅ 已完成
 
 ## 剩余任务：后端
 
@@ -139,18 +162,7 @@
 
 优先级 P1：
 
-- 将核心业务对象逐步迁移到 PostgreSQL 持久化：
-  - 用户。
-  - 帖子。
-  - 评论。
-  - 文件资产。
-  - AI 任务。
-  - 商品。
-  - 购物车。
-  - 订单。
-  - 支付。
-  - 消息。
-  - 举报和审核记录。
+- ~~将核心业务对象逐步迁移到 PostgreSQL 持久化~~ ✅ 已完成：全部 Controller 已从 InMemoryStore 迁移到 JPA Repository，InMemoryStore.java 已删除
 - 接入真实 OSS Provider 或兼容 MinIO 的本地开发 Provider。
 - 接入真实 AI Provider 前先完成 `BeadPatternEngine` 算法原型。
 - 支付正式接入前补齐微信、支付宝验签、金额校验、订单号校验、回调重放处理、主动查询和对账。
@@ -198,7 +210,7 @@ mvn test
 
 | 任务 | 说明 | 优先级 |
 |---|---|---|
-| 错误码文案 | ErrorCode 枚举转中文提示文案，覆盖 UNAUTHORIZED/FORBIDDEN/AUDIT_REJECTED/AI_TASK_FAILED/INVENTORY_NOT_ENOUGH/PAYMENT_FAILED | 高 |
+| 错误码文案 | ErrorCode 枚举转中文提示文案，覆盖 UNAUTHORIZED/FORBIDDEN/AUDIT_REJECTED/AI_TASK_FAILED/INVENTORY_NOT_ENOUGH/PAYMENT_FAILED。部分完成：ErrorMessages.kt + ApiException 已接入 | 高 |
 | 页面状态补齐 | 为核心页面（Feed/AI/商城/订单/消息/我的）补齐加载中、空状态、失败、未登录、弱网重试状态 | 高 |
 | traceId 接入 | 网络错误展示 traceId，问题反馈入口携带 traceId | 中 |
 | UI 适配检查 | 375dp 宽度和常见 Android 设备（小米/华为/OPPO/vivo）UI 检查 | 中 |
@@ -206,13 +218,13 @@ mvn test
 | CameraX 拍照 | 完善拍照入口、图片裁剪、EXIF 修正、压缩后上传 | 高 |
 | Photo Picker | 完善相册选择、多图选择、图片预览 | 高 |
 | 上传进度 | 对象存储直传进度展示、失败重试 | 中 |
-| PatternAsset.materials | 前端 List vs 后端 Map 类型适配 | 中 |
+| ~~PatternAsset.materials~~ | ~~前端 List vs 后端 Map 类型适配~~ ✅ 已完成 | ~~中~~ |
 
 ### 后端 P1 任务
 
 | 任务 | 说明 | 优先级 |
 |---|---|---|
-| PostgreSQL 持久化 | 核心业务对象迁移到数据库：用户→帖子→评论→文件资产→AI 任务→商品→购物车→订单→支付→消息→举报 | 高 |
+| ~~PostgreSQL 持久化~~ | ~~核心业务对象迁移到数据库：用户→帖子→评论→文件资产→AI 任务→商品→购物车→订单→支付→消息→举报~~ ✅ 已完成 | ~~高~~ |
 | OSS Provider | 接入真实 OSS 或兼容 MinIO 的本地开发 Provider | 高 |
 | BeadPatternEngine | AI 拼豆算法原型：图片→像素化→色号匹配→材料清单 | 高 |
 | 支付安全补齐 | 微信/支付宝验签、金额校验、订单号校验、回调重放处理、主动查询和对账 | 中 |
@@ -230,9 +242,9 @@ mvn test
 
 - ~~前端 UI 已有页面骨架，但真实 Repository 接入后可能暴露状态管理和错误处理缺口。~~ ✅ 已通过 safeCall 机制处理
 - 后端 Stub 结果可以支持联调，但不能代表真实 OSS、AI 和支付服务的异常行为。
-- 后端业务数据尚未全面持久化（InMemoryStore），服务重启会丢失多数联调数据。
+- ~~后端业务数据尚未全面持久化（InMemoryStore），服务重启会丢失多数联调数据。~~ ✅ 已完成 JPA 持久化迁移
 - 支付链路当前只能用于联调，不能用于正式交易。
 - AI 图纸当前为 Stub，距离真实”图片转拼豆图纸”还需要算法和 Provider 接入。
 - 审核和风控逻辑尚未达到中国大陆应用市场上线要求。
-- PatternAsset.materials 前端 List vs 后端 Map 类型不匹配，需要适配。
+- ~~PatternAsset.materials 前端 List vs 后端 Map 类型不匹配，需要适配。~~ ✅ 已完成
 

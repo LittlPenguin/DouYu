@@ -4,7 +4,6 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.InMemoryStore;
 import cn.edu.app.douyu.server.common.PageResult;
 import cn.edu.app.douyu.server.common.entity.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -40,22 +39,22 @@ public class OrderController {
     private final CartItemRepository cartItemRepository;
     private final SkuRepository skuRepository;
     private final ProductRepository productRepository;
+    private final IdempotencyRecordRepository idempotencyRepository;
     private final IdGenerator idGenerator;
     private final ObjectMapper objectMapper;
-    private final InMemoryStore store;
 
     public OrderController(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
                            CartItemRepository cartItemRepository, SkuRepository skuRepository,
-                           ProductRepository productRepository, IdGenerator idGenerator,
-                           ObjectMapper objectMapper, InMemoryStore store) {
+                           ProductRepository productRepository, IdempotencyRecordRepository idempotencyRepository,
+                           IdGenerator idGenerator, ObjectMapper objectMapper) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.cartItemRepository = cartItemRepository;
         this.skuRepository = skuRepository;
         this.productRepository = productRepository;
+        this.idempotencyRepository = idempotencyRepository;
         this.idGenerator = idGenerator;
         this.objectMapper = objectMapper;
-        this.store = store;
     }
 
     @Operation(summary = "创建订单")
@@ -71,8 +70,9 @@ public class OrderController {
                                @Valid @RequestBody CreateOrderRequest request) throws JsonProcessingException {
         String userId = CurrentUser.userId(authentication);
         String key = "ORDER:" + userId + ":" + idempotencyKey;
-        if (store.idempotencyResponses.containsKey(key)) {
-            return readMap(store.idempotencyResponses.get(key));
+        var existing = idempotencyRepository.findByUserIdAndIdempotencyKeyAndOperation(userId, idempotencyKey, "ORDER");
+        if (existing.isPresent()) {
+            return readMap(existing.get().getResponseBody());
         }
         Instant now = Instant.now();
         int total = 0;
@@ -120,7 +120,10 @@ public class OrderController {
             cartItemRepository.deleteById(cartItem.getId());
         }
         Map<String, Object> response = orderView(order);
-        store.idempotencyResponses.put(key, objectMapper.writeValueAsString(response));
+        Instant now2 = Instant.now();
+        idempotencyRepository.save(new IdempotencyRecordEntity(
+                idGenerator.next("idem"), userId, idempotencyKey, "ORDER", "",
+                objectMapper.writeValueAsString(response), now2, now2));
         return response;
     }
 

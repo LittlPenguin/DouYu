@@ -4,7 +4,6 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.InMemoryStore;
 import cn.edu.app.douyu.server.common.entity.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,20 +38,21 @@ public class PaymentController {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final SkuRepository skuRepository;
+    private final IdempotencyRecordRepository idempotencyRepository;
     private final IdGenerator idGenerator;
     private final ObjectMapper objectMapper;
-    private final InMemoryStore store;
 
     public PaymentController(PaymentRepository paymentRepository, OrderRepository orderRepository,
                              OrderItemRepository orderItemRepository, SkuRepository skuRepository,
-                             IdGenerator idGenerator, ObjectMapper objectMapper, InMemoryStore store) {
+                             IdempotencyRecordRepository idempotencyRepository,
+                             IdGenerator idGenerator, ObjectMapper objectMapper) {
         this.paymentRepository = paymentRepository;
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.skuRepository = skuRepository;
+        this.idempotencyRepository = idempotencyRepository;
         this.idGenerator = idGenerator;
         this.objectMapper = objectMapper;
-        this.store = store;
     }
 
     @Operation(summary = "创建支付单")
@@ -76,8 +76,9 @@ public class PaymentController {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "支付渠道不支持");
         }
         String key = "PAYMENT:" + userId + ":" + idempotencyKey;
-        if (store.idempotencyResponses.containsKey(key)) {
-            return readMap(store.idempotencyResponses.get(key));
+        var existing = idempotencyRepository.findByUserIdAndIdempotencyKeyAndOperation(userId, idempotencyKey, "PAYMENT");
+        if (existing.isPresent()) {
+            return readMap(existing.get().getResponseBody());
         }
         Instant now = Instant.now();
         PaymentEntity payment = new PaymentEntity();
@@ -90,7 +91,10 @@ public class PaymentController {
         payment.setUpdatedAt(now);
         paymentRepository.save(payment);
         Map<String, Object> response = paymentView(payment);
-        store.idempotencyResponses.put(key, objectMapper.writeValueAsString(response));
+        Instant now2 = Instant.now();
+        idempotencyRepository.save(new IdempotencyRecordEntity(
+                idGenerator.next("idem"), userId, idempotencyKey, "PAYMENT", "",
+                objectMapper.writeValueAsString(response), now2, now2));
         return response;
     }
 
@@ -151,11 +155,15 @@ public class PaymentController {
             throw new BizException(ErrorCode.CONFLICT, "退款金额超过可退金额");
         }
         String key = "REFUND:" + userId + ":" + idempotencyKey;
-        if (store.idempotencyResponses.containsKey(key)) {
-            return readMap(store.idempotencyResponses.get(key));
+        var existing = idempotencyRepository.findByUserIdAndIdempotencyKeyAndOperation(userId, idempotencyKey, "REFUND");
+        if (existing.isPresent()) {
+            return readMap(existing.get().getResponseBody());
         }
         Map<String, Object> response = Map.of("refundId", idGenerator.next("rf"), "status", "CREATED", "amountCent", request.amountCent());
-        store.idempotencyResponses.put(key, objectMapper.writeValueAsString(response));
+        Instant now2 = Instant.now();
+        idempotencyRepository.save(new IdempotencyRecordEntity(
+                idGenerator.next("idem"), userId, idempotencyKey, "REFUND", "",
+                objectMapper.writeValueAsString(response), now2, now2));
         return response;
     }
 
