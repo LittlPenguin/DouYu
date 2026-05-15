@@ -1,7 +1,25 @@
 package cn.edu.app.douyu.core.model
 
 import cn.edu.app.douyu.core.network.PageResponse
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+
+/** Deserializes backend Double (0.0–1.0) to frontend Int (0–100). */
+object ProgressSerializer : KSerializer<Int> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Progress", PrimitiveKind.DOUBLE)
+    override fun deserialize(decoder: Decoder): Int {
+        val v = decoder.decodeDouble()
+        return (v * 100).toInt().coerceIn(0, 100)
+    }
+    override fun serialize(encoder: Encoder, value: Int) = encoder.encodeDouble(value / 100.0)
+}
 
 @Serializable
 enum class ContentStatus { REVIEWING, VISIBLE, SELF_VISIBLE, REJECTED, DELETED }
@@ -55,12 +73,12 @@ enum class NotificationType { SYSTEM, COMMENT, LIKE, FAVORITE, FOLLOW, ORDER, AI
 data class UserProfile(
     val userId: String,
     val nickname: String,
-    val avatarUrl: String?,
-    val bio: String,
-    val level: Int,
-    val isMinor: Boolean,
-    val followingCount: Int,
-    val followerCount: Int
+    @SerialName("avatarFileId") val avatarUrl: String? = null,
+    val bio: String = "",
+    val level: Int = 0,
+    val isMinor: Boolean = false,
+    val followingCount: Int = 0,
+    val followerCount: Int = 0
 )
 
 @Serializable
@@ -82,7 +100,12 @@ data class TokenPair(
 data class SmsCodeRequest(val phone: String)
 
 @Serializable
-data class SmsLoginRequest(val phone: String, val code: String)
+data class SmsLoginRequest(
+    val phone: String,
+    val code: String,
+    val ageGroup: String = "AGE_18_PLUS",
+    val nickname: String? = null
+)
 
 @Serializable
 data class RefreshTokenRequest(val refreshToken: String)
@@ -184,39 +207,39 @@ data class CreatePatternJobRequest(
 @Serializable
 data class PatternJob(
     val jobId: String,
-    val userId: String,
     val inputFileId: String,
-    val inputName: String,
     val beadSize: BeadSize,
     val targetSize: String,
     val difficulty: PatternDifficulty,
     val paletteId: String,
-    val paletteName: String,
     val style: PatternStyle,
     val status: PatternJobStatus,
-    val progress: Int,
-    val failureReason: String?,
-    val patternId: String?
+    val failureReason: String? = null,
+    val patternId: String? = null,
+    val userId: String? = null,
+    val inputName: String? = null,
+    val paletteName: String? = null,
+    @Serializable(with = ProgressSerializer::class) val progress: Int = 0
 )
 
 @Serializable
 data class PatternAsset(
     val patternId: String,
     val jobId: String,
-    val ownerId: String,
-    val title: String,
+    val ownerId: String = "",
+    val title: String = "",
     val previewFileId: String? = null,
     val gridFileId: String? = null,
     val colorMapFileId: String? = null,
     val pdfFileId: String? = null,
     val beadSize: BeadSize,
-    val widthCells: Int,
-    val heightCells: Int,
-    val totalBeads: Int,
-    val paletteName: String,
-    val status: ContentStatus,
-    val colorStats: List<PaletteColorCount>,
-    val materials: List<MaterialSuggestion>
+    val widthCells: Int = 0,
+    val heightCells: Int = 0,
+    val totalBeads: Int = 0,
+    val paletteName: String = "",
+    val status: ContentStatus = ContentStatus.VISIBLE,
+    val colorStats: List<PaletteColorCount> = emptyList(),
+    val materials: List<MaterialSuggestion>? = null
 )
 
 @Serializable
@@ -247,7 +270,7 @@ data class ProductSku(
     val productId: String,
     val specName: String,
     val priceCent: Int,
-    val availableStock: Int,
+    @kotlinx.serialization.SerialName("stock") val availableStock: Int,
     val status: SkuStatus
 )
 
@@ -255,15 +278,15 @@ data class ProductSku(
 data class Product(
     val productId: String,
     val type: ProductType,
-    val sellerId: String?,
+    val sellerId: String? = null,
     val title: String,
-    val description: String,
-    val categoryId: String,
-    val categoryName: String,
+    val description: String = "",
+    val categoryId: String = "",
+    val categoryName: String = "",
     val status: ProductStatus,
     val auditStatus: AuditStatus,
     val skus: List<ProductSku>,
-    val swatchColor: Long
+    val swatchColor: Long = 0
 ) {
     val priceCent: Int
         get() = skus.minOfOrNull { it.priceCent } ?: 0
@@ -275,14 +298,13 @@ data class Product(
 @Serializable
 data class CartItem(
     val itemId: String,
-    val productId: String,
-    val skuId: String,
-    val product: Product,
-    val sku: ProductSku,
-    val quantity: Int
+    val sku: ProductSku? = null,
+    val quantity: Int,
+    val productId: String? = null,
+    val product: Product? = null
 ) {
     val lineAmountCent: Int
-        get() = sku.priceCent * quantity
+        get() = (sku?.priceCent ?: 0) * quantity
 }
 
 @Serializable
@@ -329,13 +351,13 @@ data class Order(
     val orderId: String,
     val buyerId: String,
     val sellerType: SellerType,
-    val sellerId: String?,
+    val sellerId: String? = null,
     val orderType: OrderType,
     val status: OrderStatus,
     val totalAmountCent: Int,
     val payableAmountCent: Int,
     val items: List<OrderItem>,
-    val addressSnapshot: String
+    val addressSnapshot: String? = null
 )
 
 @Serializable
@@ -359,7 +381,8 @@ data class NotificationMessage(
     val type: NotificationType,
     val title: String,
     val content: String,
-    val unread: Boolean
+    val unread: Boolean = false,
+    val createdAt: String? = null
 )
 
 @Serializable
@@ -368,11 +391,15 @@ data class MarkNotificationsReadRequest(val notificationIds: List<String>)
 @Serializable
 data class Conversation(
     val conversationId: String,
-    val peerUserId: String,
-    val peerName: String,
-    val lastMessage: String,
-    val unreadCount: Int,
-    val riskHint: String?
+    val userAId: String,
+    val userBId: String,
+    val updatedAt: String? = null
+)
+
+@Serializable
+data class ConversationDetail(
+    val conversation: Conversation? = null,
+    val messages: List<ChatMessage> = emptyList()
 )
 
 @Serializable
@@ -390,26 +417,30 @@ data class SendMessageRequest(val content: String)
 
 @Serializable
 data class CheckinStatus(
-    val userId: String,
-    val checkedInToday: Boolean,
-    val continuousDays: Int
+    val checkedToday: Boolean = false,
+    val alreadyChecked: Boolean = false,
+    val points: Int = 0,
+    val experience: Int = 0
 )
 
 @Serializable
 data class Badge(
     val badgeId: String,
     val name: String,
-    val description: String,
-    val achieved: Boolean
+    val description: String = "",
+    val achieved: Boolean = false
+)
+
+@Serializable
+data class BadgeListWrapper(
+    val items: List<Badge> = emptyList()
 )
 
 @Serializable
 data class RewardSummary(
-    val userId: String,
-    val level: Int,
-    val exp: Int,
-    val nextLevelExp: Int,
-    val checkinToday: Boolean
+    val points: Int = 0,
+    val experience: Int = 0,
+    val levelCode: String = ""
 )
 
 @Serializable

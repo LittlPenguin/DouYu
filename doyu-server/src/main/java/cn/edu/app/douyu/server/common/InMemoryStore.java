@@ -121,9 +121,12 @@ public class InMemoryStore {
         view.put("sellerId", product.sellerId());
         view.put("title", product.title());
         view.put("description", product.description());
+        view.put("categoryId", product.categoryId());
+        view.put("categoryName", product.categoryId());
         view.put("status", product.status());
         view.put("auditStatus", product.auditStatus());
         view.put("skus", productSkus.stream().map(this::skuView).toList());
+        view.put("swatchColor", 0xFF6B8E7B);
         return view;
     }
 
@@ -133,8 +136,7 @@ public class InMemoryStore {
                 "productId", sku.productId(),
                 "specName", sku.specName(),
                 "priceCent", sku.priceCent(),
-                "stock", sku.stock(),
-                "availableStock", sku.availableStock(),
+                "stock", sku.availableStock(),
                 "status", sku.status()
         );
     }
@@ -144,17 +146,25 @@ public class InMemoryStore {
         view.put("orderId", order.id());
         view.put("buyerId", order.buyerId());
         view.put("sellerType", order.sellerType());
+        view.put("sellerId", order.sellerId());
         view.put("orderType", order.orderType());
         view.put("status", order.status());
         view.put("totalAmountCent", order.totalAmountCent());
         view.put("payableAmountCent", order.payableAmountCent());
-        view.put("address", order.address());
-        view.put("items", orderItems.getOrDefault(order.id(), List.of()).stream().map(item -> Map.of(
-                "skuId", item.skuId(),
-                "productId", item.productId(),
-                "quantity", item.quantity(),
-                "priceCent", item.priceCent()
-        )).toList());
+        view.put("addressSnapshot", order.address() != null ? order.address().toString() : "");
+        view.put("items", orderItems.getOrDefault(order.id(), List.of()).stream().map(item -> {
+            Sku sku = skus.get(item.skuId());
+            Product product = products.get(item.productId());
+            Map<String, Object> itemView = new LinkedHashMap<>();
+            itemView.put("orderItemId", item.id());
+            itemView.put("skuId", item.skuId());
+            itemView.put("productId", item.productId());
+            itemView.put("title", product != null ? product.title() : "");
+            itemView.put("specName", sku != null ? sku.specName() : "");
+            itemView.put("quantity", item.quantity());
+            itemView.put("priceCent", item.priceCent());
+            return itemView;
+        }).toList());
         return view;
     }
 
@@ -189,6 +199,7 @@ public class InMemoryStore {
 
     private void seedVisiblePost() {
         Instant now = Instant.now();
-        posts.put("post_seed_1", new Post("post_seed_1", "system", "新手拼豆入门", "欢迎来到豆屿拼豆社区", "VISIBLE", 10, 5, 0, true, now));
+        posts.put("post_seed_1", new Post("post_seed_1", "system", "新手拼豆入门", "欢迎来到豆屿拼豆社区",
+                List.of(), List.of(), null, "VISIBLE", 10, 5, 0, true, now));
     }
 }

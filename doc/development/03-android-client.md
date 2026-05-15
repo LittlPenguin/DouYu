@@ -6,22 +6,45 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 
 ## 模块结构
 
-建议初始化工程后按以下模块或包组织：
+当前工程采用单模块分包，包名按业务域划分：
 
-| 模块 | 职责 |
+| 包 | 职责 |
 |---|---|
-| `app` | 应用入口、导航、依赖装配 |
-| `core-network` | Retrofit、OkHttp、鉴权、错误处理 |
-| `core-data` | Repository、分页、缓存、本地存储 |
-| `core-ui` | 主题、基础组件、加载/空/失败状态 |
-| `feature-auth` | 登录、注册、token 刷新 |
-| `feature-community` | Feed、帖子详情、发帖、评论 |
-| `feature-ai-pattern` | 图片选择、AI 任务、图纸展示、生成记录 |
-| `feature-commerce` | 商品、购物车、订单、支付 |
-| `feature-message` | 通知、私信 |
-| `feature-profile` | 我的、主页、等级、签到 |
+| `app` | 应用入口（`MainActivity`）、导航、依赖装配 |
+| `core/model` | 领域数据类和枚举（`Models.kt`，Kotlinx Serializable） |
+| `core/data` | Repository 接口 + Mock 实现 + 真实实现 + 依赖容器 |
+| `core/network` | Retrofit API 接口、ApiClient 工厂、Auth 拦截器、Token 管理 |
+| `core/navigation` | `DoyuApp.kt`（NavHost + 底部栏）、`Routes.kt`（路由常量） |
+| `core/ui` | 设计系统组件（`DoyuCard`、`DoyuPrimaryButton` 等）、`UiState` 状态模型 |
+| `feature/auth` | 登录页 |
+| `feature/ai` | AI 拼豆页面 |
+| `feature/commerce` | 商城页面 |
+| `feature/community` | 社区页面 |
+| `feature/message` | 消息页面 |
+| `feature/profile` | 我的页面 |
 
-如果第一版工程规模较小，可以先用单模块分包，包名必须保持上述边界。
+### 依赖容器
+
+`DoyuAppContainer`（`core/data/DoyuAppContainer.kt`）是全局依赖容器，负责装配真实 Repository：
+
+- `RealCommunityRepository`
+- `RealPatternRepository`
+- `RealCommerceRepository`
+- `RealMessageRepository`
+- `RealProfileRepository`
+
+所有 Screen 通过 `DoyuAppContainer.xxxRepository` 获取真实 Repository 实例，不再使用 Mock。
+
+### safeCall 异常处理
+
+每个 Screen 定义 `safeCall` 包装函数，统一处理网络异常：
+
+```kotlin
+private inline fun <T> safeCall(block: () -> T): T? =
+    try { block() } catch (_: Exception) { null }
+```
+
+所有 Repository 调用均通过 `safeCall` 包装，异常时返回 null，UI 展示空状态或错误提示。
 
 ## 页面导航
 
@@ -55,6 +78,10 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 - 我的拼豆。
 - 设置。
 
+### 页面切换动画
+
+NavHost 页面切换动画时长为 150ms（`tween(TRANSITION_DURATION)`），包括 `enterTransition`、`exitTransition`、`popEnterTransition`、`popExitTransition`。
+
 ## 状态管理
 
 每个页面至少支持：
@@ -74,6 +101,20 @@ Compose 页面使用单向数据流：
 - ViewModel 处理用户意图。
 - Repository 负责网络和缓存。
 - 网络错误统一转换为可展示错误。
+
+### 当前实现状态
+
+**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`（baseUrl=`http://10.0.2.2:8080`）、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。
+
+**Repository 层**：已从 Mock Repository 切换到真实 Repository：
+
+- `RealCommunityRepository` → CommunityApi
+- `RealPatternRepository` → PatternApi
+- `RealCommerceRepository` → ProductApi + CartApi + OrderApi + PaymentApi
+- `RealMessageRepository` → MessageApi
+- `RealProfileRepository` → UserApi + RewardApi + PatternApi
+
+**异常处理**：所有 Screen 的 Repository 调用使用 `safeCall` 包装，网络异常返回 null 展示空状态而非崩溃。`ApiResponse.traceId` 有默认值，防止后端缺少 traceId 时反序列化失败。
 
 ## 权限策略
 

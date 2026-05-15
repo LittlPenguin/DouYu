@@ -95,17 +95,23 @@ public class AuthService {
     }
 
     public Map<String, Object> userView(User user) {
-        return Map.of(
-                "userId", user.id(),
-                "phone", maskPhone(user.phone()),
-                "nickname", user.nickname(),
-                "avatarFileId", user.avatarFileId() == null ? "" : user.avatarFileId(),
-                "bio", user.bio() == null ? "" : user.bio(),
-                "ageGroup", user.ageGroup(),
-                "isMinor", user.isMinor(),
-                "realNameStatus", user.realNameStatus(),
-                "accountStatus", user.accountStatus()
-        );
+        long following = store.follows.stream().filter(k -> k.startsWith(user.id() + ":")).count();
+        long followers = store.follows.stream().filter(k -> k.endsWith(":" + user.id())).count();
+        var reward = store.rewards.get(user.id());
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("userId", user.id());
+        view.put("nickname", user.nickname() == null ? "" : user.nickname());
+        view.put("avatarUrl", user.avatarFileId() == null ? "" : user.avatarFileId());
+        view.put("bio", user.bio() == null ? "" : user.bio());
+        view.put("level", reward != null ? reward.levelCode() : "LV1");
+        view.put("isMinor", user.isMinor());
+        view.put("followingCount", (int) following);
+        view.put("followerCount", (int) followers);
+        view.put("phone", maskPhone(user.phone()));
+        view.put("ageGroup", user.ageGroup());
+        view.put("realNameStatus", user.realNameStatus());
+        view.put("accountStatus", user.accountStatus());
+        return view;
     }
 
     private User createUser(AuthController.SmsLoginRequest request) {

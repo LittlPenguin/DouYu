@@ -3,6 +3,7 @@ package cn.edu.app.douyu.server.common;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class Models {
@@ -25,8 +26,10 @@ public final class Models {
                             Instant createdAt) {
     }
 
-    public record Post(String id, String authorId, String title, String content, String status,
-                       int likeCount, int favoriteCount, int commentCount, boolean pinned, Instant createdAt) {
+    public record Post(String id, String authorId, String title, String content,
+                       List<String> mediaFileIds, List<String> topicIds, String linkedPatternId,
+                       String status, int likeCount, int favoriteCount, int commentCount,
+                       boolean pinned, Instant createdAt) {
     }
 
     public record Comment(String id, String postId, String authorId, String parentId, String content,

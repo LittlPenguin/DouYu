@@ -10,6 +10,10 @@ import cn.edu.app.douyu.server.common.Models.PatternAsset;
 import cn.edu.app.douyu.server.common.Models.PatternJob;
 import cn.edu.app.douyu.server.common.Models;
 import cn.edu.app.douyu.server.common.PageResult;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.security.core.Authentication;
@@ -26,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Tag(name = "AI 拼豆", description = "AI 拼豆图纸任务、图纸收藏")
 @RestController
 @RequestMapping("/api/v1/patterns")
 public class PatternController {
@@ -38,6 +43,13 @@ public class PatternController {
         this.idGenerator = idGenerator;
     }
 
+    @Operation(summary = "创建 AI 拼豆任务", description = "上传图片后创建 AI 拼豆图纸生成任务")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "创建成功"),
+            @ApiResponse(responseCode = "400", description = "beadSize 不支持"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "404", description = "输入文件不存在")
+    })
     @PostMapping("/jobs")
     Map<String, Object> createJob(Authentication authentication, @Valid @RequestBody CreateJobRequest request) {
         String userId = CurrentUser.userId(authentication);
@@ -59,6 +71,13 @@ public class PatternController {
         return jobView(succeeded);
     }
 
+    @Operation(summary = "查询任务详情")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "无权查看该任务"),
+            @ApiResponse(responseCode = "404", description = "任务不存在")
+    })
     @GetMapping("/jobs/{jobId}")
     Map<String, Object> job(Authentication authentication, @PathVariable String jobId) {
         String userId = CurrentUser.userId(authentication);
@@ -69,6 +88,11 @@ public class PatternController {
         return jobView(job);
     }
 
+    @Operation(summary = "生成记录列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录")
+    })
     @GetMapping("/jobs")
     PageResult<Map<String, Object>> jobs(Authentication authentication, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         String userId = CurrentUser.userId(authentication);
@@ -76,6 +100,14 @@ public class PatternController {
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
+    @Operation(summary = "取消任务")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "取消成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "无权取消该任务"),
+            @ApiResponse(responseCode = "404", description = "任务不存在"),
+            @ApiResponse(responseCode = "409", description = "已成功任务不能取消")
+    })
     @PostMapping("/jobs/{jobId}/cancel")
     Map<String, Object> cancel(Authentication authentication, @PathVariable String jobId) {
         String userId = CurrentUser.userId(authentication);
@@ -92,6 +124,12 @@ public class PatternController {
         return jobView(canceled);
     }
 
+    @Operation(summary = "收藏图纸")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "收藏成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "404", description = "图纸不存在")
+    })
     @PostMapping("/{patternId}/favorite")
     Map<String, Object> favorite(Authentication authentication, @PathVariable String patternId) {
         String userId = CurrentUser.userId(authentication);
@@ -100,6 +138,12 @@ public class PatternController {
         return Map.of("favorited", true);
     }
 
+    @Operation(summary = "图纸详情")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "404", description = "图纸不存在")
+    })
     @GetMapping("/{patternId}")
     Map<String, Object> pattern(Authentication authentication, @PathVariable String patternId) {
         CurrentUser.userId(authentication);
@@ -143,16 +187,23 @@ public class PatternController {
     private Map<String, Object> jobView(PatternJob job) {
         Map<String, Object> data = new java.util.LinkedHashMap<>();
         data.put("jobId", job.id());
+        data.put("userId", job.userId());
         data.put("inputFileId", job.inputFileId());
+        String inputName = "";
+        var inputFile = store.files.get(job.inputFileId());
+        if (inputFile != null) {
+            inputName = inputFile.storageKey() != null ? inputFile.storageKey().substring(inputFile.storageKey().lastIndexOf('/') + 1) : "";
+        }
+        data.put("inputName", inputName);
         data.put("beadSize", job.beadSize());
         data.put("targetSize", job.targetSize());
         data.put("difficulty", job.difficulty());
         data.put("paletteId", job.paletteId());
+        data.put("paletteName", "标准色卡");
         data.put("style", job.style());
         data.put("status", job.status());
+        data.put("progress", "SUCCEEDED".equals(job.status()) ? 100 : "PROCESSING".equals(job.status()) ? 50 : 0);
         data.put("failureReason", job.failureReason());
-        data.put("retryable", job.retryable());
-        data.put("quotaRefunded", job.quotaRefunded());
         data.put("patternId", job.patternId());
         if (job.patternId() != null) {
             data.put("materials", requirePattern(job.patternId()).materials());
@@ -164,15 +215,31 @@ public class PatternController {
         Map<String, Object> data = new java.util.LinkedHashMap<>();
         data.put("patternId", asset.id());
         data.put("jobId", asset.jobId());
+        data.put("ownerId", asset.ownerId());
+        data.put("title", "拼豆图纸");
         data.put("previewFileId", asset.previewFileId());
         data.put("gridFileId", asset.gridFileId());
         data.put("colorMapFileId", asset.colorMapFileId());
+        data.put("pdfFileId", asset.pdfFileId());
         data.put("beadSize", asset.beadSize());
         data.put("widthCells", asset.widthCells());
         data.put("heightCells", asset.heightCells());
         data.put("totalBeads", asset.totalBeads());
-        data.put("materials", asset.materials());
+        data.put("paletteName", "标准色卡");
         data.put("status", asset.status());
+        Map<String, Object> materials = asset.materials();
+        List<Map<String, Object>> colorStats = new java.util.ArrayList<>();
+        if (materials != null && materials.containsKey("colors")) {
+            @SuppressWarnings("unchecked")
+            var colors = (java.util.List<Map<String, Object>>) materials.get("colors");
+            for (var c : colors) {
+                Map<String, Object> cs = new java.util.LinkedHashMap<>(c);
+                cs.putIfAbsent("hex", 0x000000L);
+                colorStats.add(cs);
+            }
+        }
+        data.put("colorStats", colorStats);
+        data.put("materials", materials);
         return data;
     }
 

@@ -20,7 +20,7 @@ interface AuthApi {
     suspend fun refresh(@Body request: RefreshTokenRequest): ApiResponse<TokenPair>
 
     @POST("/api/v1/auth/logout")
-    suspend fun logout(): ApiResponse<Unit>
+    suspend fun logout(@Body request: RefreshTokenRequest): ApiResponse<Unit>
 }
 
 interface UserApi {
@@ -165,7 +165,7 @@ interface MessageApi {
     ): ApiResponse<PageResponse<NotificationMessage>>
 
     @POST("/api/v1/messages/notifications/read")
-    suspend fun readNotifications(@Body request: MarkNotificationsReadRequest): ApiResponse<Unit>
+    suspend fun markNotificationsRead(): ApiResponse<Unit>
 
     @GET("/api/v1/messages/conversations")
     suspend fun conversations(
@@ -178,7 +178,7 @@ interface MessageApi {
         @Path("conversationId") conversationId: String,
         @Query("page") page: Int = 1,
         @Query("size") size: Int = 20
-    ): ApiResponse<PageResponse<ChatMessage>>
+    ): ApiResponse<ConversationDetail>
 
     @POST("/api/v1/messages/conversations/{conversationId}")
     suspend fun sendMessage(
@@ -198,5 +198,5 @@ interface RewardApi {
     suspend fun me(): ApiResponse<RewardSummary>
 
     @GET("/api/v1/badges/me")
-    suspend fun badges(): ApiResponse<List<Badge>>
+    suspend fun badges(): ApiResponse<BadgeListWrapper>
 }

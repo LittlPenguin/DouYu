@@ -4,6 +4,10 @@ import cn.edu.app.douyu.server.auth.AuthService;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.InMemoryStore;
 import cn.edu.app.douyu.server.common.Models.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.util.Map;
 
+@Tag(name = "用户", description = "用户资料、关注/取关、实名认证")
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -29,11 +34,21 @@ public class UserController {
         this.store = store;
     }
 
+    @Operation(summary = "获取当前用户资料")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录")
+    })
     @GetMapping("/me")
     Map<String, Object> me(Authentication authentication) {
         return authService.userView(authService.requireUser(CurrentUser.userId(authentication)));
     }
 
+    @Operation(summary = "更新当前用户资料")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "更新成功"),
+            @ApiResponse(responseCode = "401", description = "未登录")
+    })
     @PatchMapping("/me")
     Map<String, Object> updateMe(Authentication authentication, @RequestBody UpdateProfileRequest request) {
         String userId = CurrentUser.userId(authentication);
@@ -47,11 +62,22 @@ public class UserController {
         return authService.userView(updated);
     }
 
+    @Operation(summary = "获取用户公开资料")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "404", description = "用户不存在")
+    })
     @GetMapping("/{userId}")
     Map<String, Object> user(@PathVariable String userId) {
         return authService.userView(authService.requireUser(userId));
     }
 
+    @Operation(summary = "关注用户")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "关注成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "404", description = "目标用户不存在")
+    })
     @PostMapping("/{userId}/follow")
     Map<String, Object> follow(Authentication authentication, @PathVariable String userId) {
         String currentUserId = CurrentUser.userId(authentication);
@@ -60,6 +86,11 @@ public class UserController {
         return Map.of("followed", true);
     }
 
+    @Operation(summary = "取消关注")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "取消关注成功"),
+            @ApiResponse(responseCode = "401", description = "未登录")
+    })
     @DeleteMapping("/{userId}/follow")
     Map<String, Object> unfollow(Authentication authentication, @PathVariable String userId) {
         String currentUserId = CurrentUser.userId(authentication);
@@ -67,6 +98,11 @@ public class UserController {
         return Map.of("followed", false);
     }
 
+    @Operation(summary = "提交实名信息", description = "提交真实姓名和身份证号进行实名认证")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "提交成功"),
+            @ApiResponse(responseCode = "401", description = "未登录")
+    })
     @PostMapping("/real-name")
     Map<String, Object> realName(Authentication authentication, @Valid @RequestBody RealNameRequest request) {
         String userId = CurrentUser.userId(authentication);

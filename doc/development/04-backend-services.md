@@ -4,6 +4,46 @@
 
 后端负责业务规则、数据一致性、支付安全、AI 编排、内容审核、风控和管理后台能力。第一版采用 Spring Boot 模块化单体。
 
+## 当前实现状态
+
+更新日期：2026-05-14。
+
+### OpenAPI 注解
+
+13 个 Controller 全部已补充 `@Tag`、`@Operation`、`@ApiResponses` 注解，Swagger UI 可浏览所有接口。已注解的 Controller：
+
+AuthController、AdminController、AdminAuthController、CommunityController、CommerceController、OrderController、PaymentController、MessageController、RewardController、PatternController、UploadController、UserController、ReportController。
+
+### 字段补齐
+
+以下响应字段已在控制器中补齐，与前端 Models.kt 对齐：
+
+| 接口 | 补齐字段 |
+|---|---|
+| 帖子详情/列表 | `author` 对象（含 `userId`、`nickname`、`avatarUrl`、`bio`、`level`、`isMinor`） |
+| AI 任务详情 | `userId`、`paletteName`、`progress`、`inputName` |
+| 购物车列表 | `productId`、`product` 商品摘要 |
+| 订单详情 | `orderItemId`、`title`、`specName`、`sellerId`、`addressSnapshot` |
+| 通知列表 | `notificationId`、`unread`（`readAt == null`） |
+| 会话列表 | `peerUserId`、`peerName`、`lastMessage`、`unreadCount` |
+| 用户信息 | `avatarUrl`、`level`、`followingCount`、`followerCount` |
+| 图纸详情 | `ownerId`、`title`、`paletteName`、`colorStats` |
+| 支付查询 | `paidAt` |
+| 签到 | `checkedToday` |
+| 徽章 | `description`、`achieved` |
+
+### CreateOrderRequest
+
+创建订单接口改为接收 `itemIds`（购物车项 ID 列表）+ `addressId`（收货地址 ID）+ `remark`（可选备注）。
+
+### InMemoryStore 当前状态
+
+核心业务数据仍使用 `InMemoryStore` 内存存储，PostgreSQL schema 通过 Flyway 定义但核心业务 Repository 尚未全面接入数据库。唯一已接入数据库的 Mapper 为 `DatabaseHealthMapper`。
+
+### 测试
+
+15 个测试全部通过，包括 7 个新增联调测试：社区点赞收藏评论、关注取关、签到成长、消息通知会话、错误场景、Feed 分页、OpenAPI 文档覆盖。
+
 ## 模块划分
 
 | 模块 | 职责 |

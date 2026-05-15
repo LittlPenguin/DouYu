@@ -39,7 +39,7 @@ class ApiInterfaceContractTest {
         assertPost(method<OrderApi>("cancelOrder"), "/api/v1/orders/{orderId}/cancel")
         assertGet(method<PaymentApi>("payment"), "/api/v1/payments/{paymentId}")
 
-        assertPost(method<MessageApi>("readNotifications"), "/api/v1/messages/notifications/read")
+        assertPost(method<MessageApi>("markNotificationsRead"), "/api/v1/messages/notifications/read")
         assertGet(method<MessageApi>("conversation"), "/api/v1/messages/conversations/{conversationId}")
         assertPost(method<MessageApi>("sendMessage"), "/api/v1/messages/conversations/{conversationId}")
 

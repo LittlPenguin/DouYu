@@ -6,23 +6,33 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Report
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import cn.edu.app.douyu.core.data.MockMessageRepository
+import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
 
-private val repo = MockMessageRepository()
+private val repo = DoyuAppContainer.messageRepository
+
+private inline fun <T> safeCall(block: () -> T): T? = try { block() } catch (_: Exception) { null }
+
+@Preview
+@Composable
+private fun MessageListScreenPreview() { MessageListScreenContent(navController = null) }
 
 @Composable
-fun MessageListScreen(navController: NavHostController) {
+fun MessageListScreen(navController: NavHostController) { MessageListScreenContent(navController) }
+
+@Composable
+private fun MessageListScreenContent(navController: NavHostController?) {
     Scaffold(topBar = { DoyuTopBar("消息") }) { padding ->
         DoyuPage(padding) {
             SectionHeader("通知")
-            repo.notifications().items.forEach {
+            (safeCall { repo.notifications() }?.items ?: emptyList()).forEach {
                 DoyuCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -34,17 +44,16 @@ fun MessageListScreen(navController: NavHostController) {
                 }
             }
             SectionHeader("私信")
-            repo.conversations().items.forEach {
+            (safeCall { repo.conversations() }?.items ?: emptyList()).forEach {
                 DoyuCard {
-                    Surface(onClick = { navController.navigate(AppRoute.conversation(it.conversationId)) }) {
+                    Surface(onClick = { navController?.navigate(AppRoute.conversation(it.conversationId)) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             BeadCluster(38.dp)
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(it.peerName, style = MaterialTheme.typography.titleMedium)
-                                Text(it.lastMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("会话 ${it.conversationId}", style = MaterialTheme.typography.titleMedium)
+                                Text("${it.userAId} ↔ ${it.userBId}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            if (it.unreadCount > 0) TagChip(it.unreadCount.toString())
                         }
                     }
                 }
@@ -53,18 +62,18 @@ fun MessageListScreen(navController: NavHostController) {
     }
 }
 
+@Preview
 @Composable
-fun ConversationScreen(navController: NavHostController, conversationId: String) {
-    val conversation = repo.conversations().items.firstOrNull { it.conversationId == conversationId }
-    Scaffold(topBar = { DoyuTopBar(conversation?.peerName ?: "会话", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+private fun ConversationScreenPreview() { ConversationScreenContent(navController = null, conversationId = "conv_001") }
+
+@Composable
+fun ConversationScreen(navController: NavHostController, conversationId: String) { ConversationScreenContent(navController, conversationId) }
+
+@Composable
+private fun ConversationScreenContent(navController: NavHostController?, conversationId: String) {
+    Scaffold(topBar = { DoyuTopBar("会话", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            conversation?.riskHint?.let {
-                DoyuCard {
-                    Text("风险提示", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            repo.chat(conversationId).items.forEach {
+            (safeCall { repo.chat(conversationId) }?.items ?: emptyList()).forEach {
                 DoyuCard(modifier = Modifier.fillMaxWidth(if (it.mine) 0.86f else 1f)) {
                     Text(it.senderName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     Text(it.content)

@@ -46,7 +46,7 @@ class AuthSessionManagerTest {
         override suspend fun refresh(request: RefreshTokenRequest): ApiResponse<TokenPair> =
             ApiResponse("OK", "success", TokenPair("access_refreshed", "refresh_refreshed", 3600), "trace_refresh")
 
-        override suspend fun logout(): ApiResponse<Unit> =
+        override suspend fun logout(request: RefreshTokenRequest): ApiResponse<Unit> =
             ApiResponse("OK", "success", Unit, "trace_logout")
     }
 }

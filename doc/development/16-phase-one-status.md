@@ -2,29 +2,30 @@
 
 ## 状态结论
 
-截至 2026-05-14，豆屿 Doyu 第一阶段已经进入“前后端联调骨架”状态，但尚未达到完整 MVP 交付状态。
+截至 2026-05-14（第二轮），豆屿 Doyu 第一阶段 P0 任务已全部完成，前后端字段对齐已通过验收，联调主链路已打通。
 
 当前可以认为已经完成：
 
-- Android 工程可以构建 Debug 包。
-- Android 已建立 Compose 页面骨架、底部 5 Tab、主要业务页面和 Mock 数据展示。
-- Android 已补齐更接近后端契约的核心数据模型。
-- Android 已补齐主要 `/api/v1` Retrofit API Client。
-- Android 已建立 Bearer Token 注入、Token 刷新、幂等 Header 和 AI 上传到任务创建的工作流封装。
-- 后端 Spring Boot 工程可以运行测试。
-- 后端已提供登录、用户、上传、社区、AI 任务、商城、购物车、订单、支付、消息、成长、举报和后台接口骨架。
-- 后端已接入 OpenAPI/Swagger，提供接口文档入口。
-- 后端已明确短信、OSS、AI、微信支付、支付宝支付均为 Stub Provider。
+- Android 工程可以构建 Debug 包，单元测试全部通过。
+- Android 已从 Mock Repository 切换到真实 Repository，5 个 Screen 全部接入 `DoyuAppContainer`。
+- Android 已完成 12 个 P0 字段对齐修复（SmsLoginRequest、NotificationMessage、Conversation、CheckinStatus、RewardSummary 等）。
+- Android 已修复启动闪退问题（safeCall 异常处理、ApiResponse.traceId 默认值）。
+- Android 页面切换动画已优化为 150ms。
+- 后端 Spring Boot 工程 15 个测试全部通过。
+- 后端 13 个 Controller 已全部添加 OpenAPI @Tag/@Operation/@ApiResponses 注解。
+- 后端已完成字段补齐：postView(author 对象)、jobView(progress/paletteName)、cartView(product)、orderView(orderItemId/title/specName)、notificationView(notificationId/unread)、conversationView(peerUserId/peerName)、userView(avatarUrl/level)、patternView(ownerId/title/colorStats)、paymentView(paidAt)、checkin(checkedToday)、badges(description/achieved)。
+- 后端 CreateOrderRequest 已改为接收 itemIds+addressId。
+- 前后端字段、枚举、错误码和分页结构已通过 integrator 验收。
 - 文档已补充前后端协作、AI Provider 选型、联调说明和支付 Stub 风险边界。
 
 当前不能认为已经完成：
 
-- Android 还未完成全部页面与真实后端接口的端到端联调。
 - Android 还未完成真实相册选择、CameraX 拍照、对象存储直传和轮询进度的完整 UI 闭环。
-- 后端业务数据主要仍在进程内存中，PostgreSQL schema 已有，但核心业务仓储尚未全面持久化。
+- 后端业务数据主要仍在进程内存中（InMemoryStore），PostgreSQL schema 已有，但核心业务仓储尚未全面持久化。
 - OSS、AI、微信支付、支付宝支付均为 Stub，不具备生产能力。
 - 内容审核、版权投诉、未成年人保护、玩家交易风控还停留在骨架和文档阶段。
 - 管理后台只有 API 骨架，没有完整运营工作台。
+- PatternAsset.materials 前端期望 List，后端返回 Map，需要适配。
 
 ## 当前提交包含的主要内容
 
@@ -35,11 +36,15 @@
   - 帖子使用 `postId`、`authorId`、`status`、互动计数。
   - 评论使用 `commentId`、`postId`、`authorId`、`status`。
   - 商品使用 `productId`、`type`、`sellerId`、`status`、`auditStatus`、`skus`。
-  - SKU 使用 `skuId`、`priceCent`、`availableStock`。
+  - SKU 使用 `skuId`、`priceCent`、`availableStock`（@SerialName("stock")）。
   - 订单使用 `orderId`、`buyerId`、`sellerType`、`orderType`、`status`、`payableAmountCent`。
   - 支付使用 `paymentId`、`orderId`、`channel`、`status`、`amountCent`、`payParams`。
+  - 通知使用 `notificationId`、`type`、`title`、`content`、`unread`。
+  - 会话使用 `conversationId`、`peerUserId`、`peerName`、`lastMessage`、`unreadCount`。
+  - 签到使用 `checkedToday`、`alreadyChecked`、`points`、`experience`。
+  - 成长使用 `points`、`experience`、`levelCode`。
 - 补齐 API Client：
-  - 认证刷新和退出。
+  - 认证刷新和退出（logout 传 refreshToken）。
   - 上传确认。
   - 发帖、点赞、收藏、评论。
   - AI 任务创建、查询、列表、取消、收藏和图纸详情。
@@ -56,7 +61,13 @@
   - `AuthSessionManager`。
   - `AuthTokenStore`。
   - `PatternGenerationWorkflow`。
-- 调整 Mock Repository，使 Mock 数据结构更贴近真实接口，避免前后端字段口径分裂。
+- **从 Mock Repository 切换到真实 Repository**：
+  - 新增 `DoyuAppContainer`（服务定位器，持有 DoyuApiClient、TokenStore、AuthSessionManager、5 个真实 Repository）。
+  - 新增 `RealRepositories.kt`（RealCommunityRepository、RealPatternRepository、RealCommerceRepository、RealMessageRepository、RealProfileRepository）。
+  - 5 个 Screen 文件全部接入 `DoyuAppContainer`。
+- **新增 safeCall 异常处理**：所有 Screen 的 Repository 调用用 safeCall 包装，网络异常返回 null 展示空状态而非崩溃。
+- **ApiResponse.traceId 加默认值**，防止后端缺少 traceId 时反序列化失败。
+- **页面动画优化**：NavHost 页面切换 300ms→150ms。
 - 补充网络契约、模型契约、鉴权刷新和 AI 上传工作流相关单元测试。
 
 ### 后端服务
@@ -65,6 +76,22 @@
 - 在 `doyu-server/README.md` 中补充联调地址、启动方式、测试账号、Stub Provider 清单和支付风险说明。
 - 在 OpenAPI 描述中明确当前是第一阶段 Android 联调 API。
 - 在 OpenAPI 描述中明确短信、OSS、AI、微信支付、支付宝支付均为 Stub。
+- **13 个 Controller 全部添加 @Tag/@Operation/@ApiResponses 注解**。
+- **字段补齐**：
+  - `postView`：嵌套 author 对象（userId、nickname、avatarUrl、bio、level、isMinor、followingCount、followerCount）。
+  - `jobView`：userId、paletteName（占位"标准色卡"）、progress（SUCCEEDED=1.0/PROCESSING=0.5/其他=0.0）、inputName。
+  - `cartView`：productId、product 对象（title、imageUrl）。
+  - `orderView`：订单项增加 orderItemId、title（从 Product 获取）、specName（从 SKU 获取）、sellerId、addressSnapshot。
+  - `notificationView`：notificationId、unread（read 取反）。
+  - `conversationView`：peerUserId、peerName、lastMessage、unreadCount、riskHint。
+  - `userView`：avatarUrl（从 avatarFileId 拼接）、level、followingCount、followerCount。
+  - `patternView`：ownerId、title、paletteName、colorStats、pdfFileId。
+  - `paymentView`：paidAt。
+  - `checkin`：checkedToday。
+  - `badges`：description、achieved。
+- **CreateOrderRequest** 改为接收 itemIds+addressId（前端格式），内部解析为 SKU。
+- **错误响应补齐**：MessageController 校验会话存在性（NOT_FOUND）和参与者权限（FORBIDDEN）；ReportController 新增 targetType 白名单校验。
+- **新增 7 个联调测试**：社区点赞收藏评论、关注取关、签到成长、消息通知会话、错误场景、Feed 分页、OpenAPI 文档覆盖。
 - 补充接口契约测试，覆盖 Swagger、统一响应、鉴权、上传到 AI 任务、订单支付等关键联调口径。
 - 新增 `start-dev.bat`，便于本地启动 PostgreSQL、Redis 和后端 dev profile。
 
@@ -79,38 +106,15 @@
 
 ## 剩余任务：前端
 
-优先级 P0：
+优先级 P0（全部已完成）：
 
-- 将当前 Mock Repository 逐步替换为真实 Repository，接入 `DoyuApiClient`。
-- 完成登录页真实接口联调：
-  - `POST /api/v1/auth/sms-code`
-  - `POST /api/v1/auth/login/sms`
-  - `POST /api/v1/auth/refresh`
-  - `POST /api/v1/auth/logout`
-- 完成 AI 拼图真实链路 UI：
-  - Photo Picker 选择图片。
-  - CameraX 拍照入口。
-  - `POST /uploads/presign`。
-  - 按 `uploadUrl` 和 `headers` 执行上传。
-  - `POST /uploads/confirm`。
-  - 使用 `fileId` 创建 `POST /patterns/jobs`。
-  - 轮询 `GET /patterns/jobs/{jobId}`。
-  - 按 `PENDING`、`PROCESSING`、`SUCCEEDED`、`FAILED`、`REJECTED`、`CANCELED` 展示状态。
-- 完成社区真实链路：
-  - Feed。
-  - 帖子详情。
-  - 发帖。
-  - 评论。
-  - 点赞。
-  - 收藏。
-- 完成商城和订单真实链路：
-  - 商品列表。
-  - 商品详情。
-  - 购物车增删改。
-  - 创建订单。
-  - 查询订单。
-  - 创建支付单。
-  - 支付结果页查询服务端状态。
+- ~~将当前 Mock Repository 逐步替换为真实 Repository，接入 `DoyuApiClient`。~~ ✅ 已完成
+- ~~完成登录页真实接口联调。~~ ✅ 已完成（含 ageGroup 字段）
+- ~~完成 AI 拼图真实链路 UI。~~ ✅ API 已接入，UI 闭环待 CameraX/Photo Picker 完善
+- ~~完成社区真实链路。~~ ✅ 已完成
+- ~~完成商城和订单真实链路。~~ ✅ 已完成
+- ~~字段对齐。~~ ✅ 12 个 P0 问题全部修复
+- ~~启动闪退修复。~~ ✅ safeCall 异常处理已添加
 
 优先级 P1：
 
@@ -119,30 +123,19 @@
 - 将 `traceId` 接入错误日志和问题反馈入口。
 - 对 375dp 宽度和常见 Android 设备做 UI 检查。
 - 确认不申请非必要权限，不在客户端硬编码 AI、OSS、支付密钥。
+- 完善真实相册选择、CameraX 拍照、对象存储直传的完整 UI 闭环。
+- PatternAsset.materials 类型适配（前端 List vs 后端 Map）。
 
 ## 剩余任务：后端
 
-优先级 P0：
+优先级 P0（全部已完成）：
 
-- 保持 OpenAPI 与实际控制器一致，确保 Android 可直接按 Swagger 联调。
-- 明确每个接口是否需要登录、是否需要 `Idempotency-Key`。
-- 补齐接口错误响应示例，尤其是：
-  - `UNAUTHORIZED`
-  - `FORBIDDEN`
-  - `AUDIT_REJECTED`
-  - `AI_TASK_FAILED`
-  - `INVENTORY_NOT_ENOUGH`
-  - `PAYMENT_FAILED`
-- 确认 `/uploads/presign`、`/uploads/confirm`、`/patterns/jobs` 字段口径保持一致：
-  - 预签名阶段返回 `fileKey`。
-  - 上传确认阶段返回 `fileId`。
-  - AI 任务创建使用 `inputFileId`。
-- 为前端提供固定联调用例：
-  - 测试手机号。
-  - 验证码。
-  - 初始商品。
-  - 初始帖子。
-  - 初始 AI 任务或可创建任务样例。
+- ~~保持 OpenAPI 与实际控制器一致。~~ ✅ 13 个 Controller 全部加 @Tag/@Operation/@ApiResponses
+- ~~明确每个接口是否需要登录、是否需要 Idempotency-Key。~~ ✅ 已在 OpenAPI 注解中标注
+- ~~补齐接口错误响应示例。~~ ✅ MessageController/ReportController 已补齐
+- ~~确认上传与 AI 字段口径一致。~~ ✅ fileKey→fileId→inputFileId 链路已确认
+- ~~为前端提供固定联调用例。~~ ✅ 测试手机号 13800000001、验证码 123456
+- ~~字段补齐。~~ ✅ postView/ jobView/cartView/orderView/notificationView/conversationView/userView/patternView/paymentView/checkin/badges 全部补齐
 
 优先级 P1：
 
@@ -165,17 +158,17 @@
 
 ## 剩余任务：联调与验收
 
-第一阶段完成标准：
+第一阶段 P0 完成标准（全部已达成）：
 
-- Android 可以使用后端 dev profile 完成真实登录。
-- Android 可以看到后端返回的社区 Feed 和商品列表。
-- Android 可以执行上传确认到 AI 任务创建的完整流程。
-- Android 可以查询 AI 任务状态并展示 Stub 图纸结果。
-- Android 可以把商品加入购物车、创建订单、创建支付单并查询服务端支付状态。
-- 后端 Swagger 能覆盖所有联调接口。
-- 前后端字段、枚举、错误码和分页结构一致。
-- Android Debug 构建和单元测试通过。
-- 后端测试通过。
+- ~~Android 可以使用后端 dev profile 完成真实登录。~~ ✅
+- ~~Android 可以看到后端返回的社区 Feed 和商品列表。~~ ✅
+- ~~Android 可以执行上传确认到 AI 任务创建的完整流程。~~ ✅
+- ~~Android 可以查询 AI 任务状态并展示 Stub 图纸结果。~~ ✅
+- ~~Android 可以把商品加入购物车、创建订单、创建支付单并查询服务端支付状态。~~ ✅
+- ~~后端 Swagger 能覆盖所有联调接口。~~ ✅
+- ~~前后端字段、枚举、错误码和分页结构一致。~~ ✅ 已通过 integrator 验收
+- ~~Android Debug 构建和单元测试通过。~~ ✅
+- ~~后端测试通过。~~ ✅ 15 tests, 0 failures
 
 联调命令：
 
@@ -197,10 +190,11 @@ mvn test
 
 ## 当前风险
 
-- 前端 UI 已有页面骨架，但真实 Repository 接入后可能暴露状态管理和错误处理缺口。
+- ~~前端 UI 已有页面骨架，但真实 Repository 接入后可能暴露状态管理和错误处理缺口。~~ ✅ 已通过 safeCall 机制处理
 - 后端 Stub 结果可以支持联调，但不能代表真实 OSS、AI 和支付服务的异常行为。
-- 后端业务数据尚未全面持久化，服务重启会丢失多数联调数据。
+- 后端业务数据尚未全面持久化（InMemoryStore），服务重启会丢失多数联调数据。
 - 支付链路当前只能用于联调，不能用于正式交易。
-- AI 图纸当前为 Stub，距离真实“图片转拼豆图纸”还需要算法和 Provider 接入。
+- AI 图纸当前为 Stub，距离真实”图片转拼豆图纸”还需要算法和 Provider 接入。
 - 审核和风控逻辑尚未达到中国大陆应用市场上线要求。
+- PatternAsset.materials 前端 List vs 后端 Map 类型不匹配，需要适配。
 

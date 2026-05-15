@@ -5,6 +5,10 @@ import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.InMemoryStore;
 import cn.edu.app.douyu.server.common.Models.AdminUser;
 import cn.edu.app.douyu.server.common.TokenService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+@Tag(name = "管理后台认证", description = "后台账号登录")
 @RestController
 @RequestMapping("/api/v1/admin/auth")
 public class AdminAuthController {
@@ -28,6 +33,11 @@ public class AdminAuthController {
         this.tokenService = tokenService;
     }
 
+    @Operation(summary = "后台账号登录", description = "使用后台账号密码登录，返回 admin access token")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "登录成功"),
+            @ApiResponse(responseCode = "401", description = "账号或密码错误")
+    })
     @PostMapping("/login")
     Map<String, Object> login(@Valid @RequestBody AdminLoginRequest request) {
         AdminUser admin = store.adminByUsername.get(request.username());

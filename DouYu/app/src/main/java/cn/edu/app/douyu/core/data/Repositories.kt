@@ -272,7 +272,6 @@ object MockData {
             CartItem(
                 itemId = "cart_item_${index + 1}",
                 productId = product.productId,
-                skuId = sku.skuId,
                 product = product,
                 sku = sku,
                 quantity = index + 1
@@ -292,11 +291,11 @@ object MockData {
         items = cart.items.mapIndexed { index, item ->
             OrderItem(
                 orderItemId = "order_item_${index + 1}",
-                productId = item.productId,
-                skuId = item.skuId,
-                title = item.product.title,
-                specName = item.sku.specName,
-                priceCent = item.sku.priceCent,
+                productId = item.productId ?: "",
+                skuId = item.sku?.skuId ?: "",
+                title = item.product?.title ?: "",
+                specName = item.sku?.specName ?: "",
+                priceCent = item.sku?.priceCent ?: 0,
                 quantity = item.quantity
             )
         },
@@ -313,13 +312,13 @@ object MockData {
     )
 
     val notifications = listOf(
-        NotificationMessage("notice_001", NotificationType.AI_TASK, "AI 图纸已进入处理中", "预计 2 分钟内完成，完成后会通知你。", true),
-        NotificationMessage("notice_002", NotificationType.FAVORITE, "你的帖子有新收藏", "猫猫小挂件被 12 位同好收藏。", false)
+        NotificationMessage("notice_001", NotificationType.AI_TASK, "AI 图纸已进入处理中", "预计 2 分钟内完成，完成后会通知你。", unread = true),
+        NotificationMessage("notice_002", NotificationType.FAVORITE, "你的帖子有新收藏", "猫猫小挂件被 12 位同好收藏。", unread = false)
     )
 
     val conversations = listOf(
-        Conversation("conv_001", "user_002", "小岛手作", "可以先发参考图，我帮你看适合什么尺寸。", 2, "交易沟通请保留在平台内，谨慎添加外部联系方式。"),
-        Conversation("conv_002", "support_001", "豆屿客服", "关于账号注销和隐私问题，可以在设置页查看说明。", 0, null)
+        Conversation("conv_001", "user_001", "user_002"),
+        Conversation("conv_002", "user_001", "support_001")
     )
 
     val badges = listOf(
@@ -393,8 +392,9 @@ class MockMessageRepository : MessageRepository {
 
     override fun chat(conversationId: String): PageResponse<ChatMessage> {
         val conversation = MockData.conversations.firstOrNull { it.conversationId == conversationId } ?: MockData.conversations.first()
+        val peerId = if (conversation.userAId == MockData.user.userId) conversation.userBId else conversation.userAId
         val items = listOf(
-            ChatMessage("chat_001", conversation.conversationId, conversation.peerUserId, conversation.peerName, "可以先发参考图，我帮你看适合什么尺寸。", false),
+            ChatMessage("chat_001", conversation.conversationId, peerId, "对方", "可以先发参考图，我帮你看适合什么尺寸。", false),
             ChatMessage("chat_002", conversation.conversationId, MockData.user.userId, "我", "想做成生日礼物，预算 100 左右。", true)
         )
         return PageResponse(items, 1, 20, items.size, false)
@@ -404,7 +404,7 @@ class MockMessageRepository : MessageRepository {
 class MockProfileRepository : ProfileRepository {
     override fun dashboard(): DashboardData = DashboardData(
         user = MockData.user,
-        reward = RewardSummary(userId = MockData.user.userId, level = 6, exp = 860, nextLevelExp = 1200, checkinToday = false),
+        reward = RewardSummary(points = 680, experience = 860, levelCode = "LV6"),
         patternCount = MockData.patterns.size,
         orderCount = 3,
         badges = MockData.badges
@@ -412,7 +412,7 @@ class MockProfileRepository : ProfileRepository {
 
     override fun patterns(): List<PatternAsset> = MockData.patterns
 
-    override fun checkinStatus(): CheckinStatus = CheckinStatus(MockData.user.userId, checkedInToday = false, continuousDays = 6)
+    override fun checkinStatus(): CheckinStatus = CheckinStatus(checkedToday = false)
 
     override fun badges(): List<Badge> = MockData.badges
 }

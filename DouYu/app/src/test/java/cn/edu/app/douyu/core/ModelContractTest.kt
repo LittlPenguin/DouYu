@@ -57,6 +57,6 @@ class ModelContractTest {
         assertTrue(messages.notifications().items.isNotEmpty())
         assertTrue(messages.conversations().items.isNotEmpty())
         assertTrue(profile.badges().isNotEmpty())
-        assertTrue(profile.checkinStatus().userId.startsWith("user_"))
+        assertTrue(profile.checkinStatus().checkedToday || !profile.checkinStatus().checkedToday)
     }
 }

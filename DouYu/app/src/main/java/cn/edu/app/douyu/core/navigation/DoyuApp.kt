@@ -1,5 +1,7 @@
 package cn.edu.app.douyu.core.navigation
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -23,6 +25,8 @@ import cn.edu.app.douyu.feature.commerce.*
 import cn.edu.app.douyu.feature.community.*
 import cn.edu.app.douyu.feature.message.*
 import cn.edu.app.douyu.feature.profile.*
+
+private const val TRANSITION_DURATION = 150
 
 private data class TabUi(val tab: BottomTab, val icon: ImageVector)
 
@@ -61,7 +65,11 @@ fun DoyuApp() {
         NavHost(
             navController = navController,
             startDestination = BottomTab.COMMUNITY.route,
-            modifier = Modifier.padding(padding)
+            modifier = Modifier.padding(padding),
+            enterTransition = { fadeIn(tween(TRANSITION_DURATION)) },
+            exitTransition = { fadeOut(tween(TRANSITION_DURATION)) },
+            popEnterTransition = { fadeIn(tween(TRANSITION_DURATION)) },
+            popExitTransition = { fadeOut(tween(TRANSITION_DURATION)) }
         ) {
             composable(BottomTab.COMMUNITY.route) { CommunityFeedScreen(navController) }
             composable(BottomTab.AI.route) { AiHomeScreen(navController) }

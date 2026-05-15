@@ -29,7 +29,10 @@ class AuthSessionManager(
     }
 
     suspend fun logout() {
-        runCatching { authApi.logout() }
+        val refreshToken = tokenStore.refreshToken()
+        if (!refreshToken.isNullOrBlank()) {
+            runCatching { authApi.logout(RefreshTokenRequest(refreshToken)) }
+        }
         tokenStore.clear()
     }
 

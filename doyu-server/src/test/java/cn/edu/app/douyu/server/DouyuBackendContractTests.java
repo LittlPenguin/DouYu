@@ -182,30 +182,33 @@ class DouyuBackendContractTests {
     void orderPaymentAndRefundAreIdempotentAndGuardInventoryAndRefundAmount() throws Exception {
         String token = login("13800000004", "AGE_18_PLUS");
 
-        mockMvc.perform(post("/api/v1/cart/items")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"skuId":"sku_bead_red","quantity":2}
-                                """))
-                .andExpect(status().isOk());
+        JsonNode cartAdd = postJsonWithToken("/api/v1/cart/items", token, """
+                {"skuId":"sku_bead_red","quantity":2}
+                """);
+        String cartItemId = cartAdd.at("/data/itemId").asText();
 
         String orderPayload = """
-                {"items":[{"skuId":"sku_bead_red","quantity":2}],"address":{"receiver":"张三","phone":"13800000004","detail":"杭州测试地址"}}
-                """;
+                {"itemIds":["%s"],"addressId":"addr_test_1"}
+                """.formatted(cartItemId);
         JsonNode first = postJsonWithIdempotency("/api/v1/orders", token, "order-key-1", orderPayload);
         JsonNode second = postJsonWithIdempotency("/api/v1/orders", token, "order-key-1", orderPayload);
         String orderId = first.at("/data/orderId").asText();
 
         org.assertj.core.api.Assertions.assertThat(second.at("/data/orderId").asText()).isEqualTo(orderId);
 
+        // Add another cart item with huge quantity for inventory test
+        JsonNode cartAdd2 = postJsonWithToken("/api/v1/cart/items", token, """
+                {"skuId":"sku_bead_red","quantity":999999}
+                """);
+        String cartItemId2 = cartAdd2.at("/data/itemId").asText();
+
         mockMvc.perform(post("/api/v1/orders")
                         .header("Authorization", "Bearer " + token)
                         .header("Idempotency-Key", "order-key-2")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"items":[{"skuId":"sku_bead_red","quantity":999999}],"address":{"receiver":"张三","phone":"13800000004","detail":"杭州测试地址"}}
-                                """))
+                                {"itemIds":["%s"],"addressId":"addr_test_1"}
+                                """.formatted(cartItemId2)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code", equalTo("INVENTORY_NOT_ENOUGH")));
 
@@ -276,6 +279,206 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void communityPostLikeFavoriteAndCommentFlow() throws Exception {
+        String token = login("13800000010", "AGE_18_PLUS");
+
+        JsonNode created = postJsonWithToken("/api/v1/posts", token, """
+                {"title":"测试帖子","content":"拼豆社区测试内容"}
+                """);
+        String postId = created.at("/data/postId").asText();
+        org.assertj.core.api.Assertions.assertThat(postId).isNotEmpty();
+
+        mockMvc.perform(get("/api/v1/posts/{postId}", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.postId", equalTo(postId)))
+                .andExpect(jsonPath("$.data.status", equalTo("REVIEWING")));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/like", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.liked", equalTo(true)));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/favorite", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.favorited", equalTo(true)));
+
+        JsonNode comment = postJsonWithPath("/api/v1/posts/{postId}/comments", token, """
+                {"content":"好可爱的拼豆！"}
+                """, postId);
+        String commentId = comment.at("/data/commentId").asText();
+        org.assertj.core.api.Assertions.assertThat(commentId).isNotEmpty();
+
+        mockMvc.perform(get("/api/v1/posts/{postId}/comments", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].commentId", equalTo(commentId)));
+
+        mockMvc.perform(delete("/api/v1/comments/{commentId}", commentId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.deleted", equalTo(true)));
+
+        mockMvc.perform(delete("/api/v1/posts/{postId}/like", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.liked", equalTo(false)));
+
+        mockMvc.perform(delete("/api/v1/posts/{postId}/favorite", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.favorited", equalTo(false)));
+    }
+
+    @Test
+    void userFollowAndUnfollowWorks() throws Exception {
+        String tokenA = login("13800000011", "AGE_18_PLUS");
+        String tokenB = login("13800000012", "AGE_18_PLUS");
+
+        JsonNode userB = getJsonWithToken("/api/v1/users/me", tokenB);
+        String userBId = userB.at("/data/userId").asText();
+
+        mockMvc.perform(post("/api/v1/users/{userId}/follow", userBId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.followed", equalTo(true)));
+
+        mockMvc.perform(delete("/api/v1/users/{userId}/follow", userBId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.followed", equalTo(false)));
+    }
+
+    @Test
+    void rewardCheckinAndStatusWork() throws Exception {
+        String token = login("13800000013", "AGE_18_PLUS");
+
+        mockMvc.perform(post("/api/v1/checkins")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.checkedToday", equalTo(true)))
+                .andExpect(jsonPath("$.data.alreadyChecked", equalTo(false)))
+                .andExpect(jsonPath("$.data.points", equalTo(5)));
+
+        mockMvc.perform(post("/api/v1/checkins")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.alreadyChecked", equalTo(true)));
+
+        mockMvc.perform(get("/api/v1/checkins/status")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.checkedToday", equalTo(true)));
+
+        mockMvc.perform(get("/api/v1/rewards/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.points", equalTo(5)))
+                .andExpect(jsonPath("$.data.levelCode", equalTo("LV1")));
+
+        mockMvc.perform(get("/api/v1/badges/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].badgeId", equalTo("badge_newbie")));
+    }
+
+    @Test
+    void messageNotificationAndConversationFlow() throws Exception {
+        String token = login("13800000014", "AGE_18_PLUS");
+
+        mockMvc.perform(get("/api/v1/messages/notifications")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items").isArray());
+
+        mockMvc.perform(post("/api/v1/messages/notifications/read")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.read", equalTo(true)));
+
+        mockMvc.perform(get("/api/v1/messages/conversations")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items").isArray());
+    }
+
+    @Test
+    void errorScenariosReturnCorrectCodes() throws Exception {
+        mockMvc.perform(get("/api/v1/users/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")));
+
+        String token = login("13800000015", "AGE_18_PLUS");
+
+        mockMvc.perform(get("/api/v1/posts/nonexistent_post_id")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
+
+        mockMvc.perform(post("/api/v1/uploads/presign")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"usage":"INVALID_USAGE","mimeType":"image/png","sizeBytes":1024,"fileName":"test.png"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+
+        mockMvc.perform(post("/api/v1/uploads/presign")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"usage":"AI_INPUT","mimeType":"image/png","sizeBytes":999999999,"fileName":"huge.png"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+
+        mockMvc.perform(post("/api/v1/reports")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"targetType":"INVALID","targetId":"x","reason":"SPAM"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+    }
+
+    @Test
+    void feedEndpointIsPublicAndReturnsPagination() throws Exception {
+        mockMvc.perform(get("/api/v1/posts/feed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items").isArray())
+                .andExpect(jsonPath("$.data.page", equalTo(1)))
+                .andExpect(jsonPath("$.data.size", equalTo(20)));
+
+        mockMvc.perform(get("/api/v1/products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items").isArray());
+    }
+
+    @Test
+    void openApiDocsContainAllEndpointTags() throws Exception {
+        String docs = mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode paths = objectMapper.readTree(docs).path("paths");
+
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/posts/feed")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/posts/{postId}")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/posts/{postId}/like")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/posts/{postId}/comments")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/checkins")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/messages/notifications")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/messages/conversations")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/{userId}/follow")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/reports")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/refunds")).isTrue();
+    }
+
+    @Test
     void minorOrUnverifiedUsersCannotPublishPlayerTradeProducts() throws Exception {
         String minorToken = login("13800000006", "AGE_16_17");
 
@@ -339,6 +542,29 @@ class DouyuBackendContractTests {
     }
 
     private JsonNode postJsonWithToken(String path, String token, String body) throws Exception {
+        String content = mockMvc.perform(post(path)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().is2xxSuccessful())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(content);
+    }
+
+    private JsonNode getJsonWithToken(String path, String token) throws Exception {
+        String content = mockMvc.perform(get(path)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().is2xxSuccessful())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(content);
+    }
+
+    private JsonNode postJsonWithPath(String pathTemplate, String token, String body, String pathVar) throws Exception {
+        String path = pathTemplate.replaceFirst("\\{[^}]+}", pathVar);
         String content = mockMvc.perform(post(path)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)

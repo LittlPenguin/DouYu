@@ -7,26 +7,38 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import cn.edu.app.douyu.core.data.MockCommunityRepository
+import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.model.ContentStatus
 import cn.edu.app.douyu.core.model.Post
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
 
-private val repo = MockCommunityRepository()
+private inline fun <T> safeCall(block: () -> T): T? = try { block() } catch (_: Exception) { null }
+
+private val repo = DoyuAppContainer.communityRepository
+
+
+@Preview
+@Composable
+private fun CommunityFeedScreenPreview() { CommunityFeedScreenContent(navController = null) }
 
 @Composable
-fun CommunityFeedScreen(navController: NavHostController) {
+fun CommunityFeedScreen(navController: NavHostController) { CommunityFeedScreenContent(navController) }
+
+@Composable
+private fun CommunityFeedScreenContent(navController: NavHostController?) {
     Scaffold(
         topBar = {
             DoyuTopBar("豆屿", action = {
-                IconButton(onClick = { navController.navigate(AppRoute.POST_CREATE) }) {
+                IconButton(onClick = { navController?.navigate(AppRoute.POST_CREATE) }) {
                     Icon(Icons.Filled.AddCircle, contentDescription = "发帖")
                 }
             })
@@ -48,8 +60,8 @@ fun CommunityFeedScreen(navController: NavHostController) {
                 TagChip("关注", color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.28f))
                 TagChip("新手教程", color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.24f))
             }
-            repo.feed().items.forEach { post ->
-                PostCard(post, onClick = { navController.navigate(AppRoute.postDetail(post.postId)) })
+            (safeCall { repo.feed() }?.items ?: emptyList()).forEach { post ->
+                PostCard(post, onClick = { navController?.navigate(AppRoute.postDetail(post.postId)) })
             }
             PageStatePreviewRow()
         }
@@ -122,28 +134,42 @@ private fun PageStatePreviewRow() {
     }
 }
 
+@Preview
 @Composable
-fun PostDetailScreen(navController: NavHostController, postId: String) {
-    val post = repo.post(postId)
-    Scaffold(topBar = { DoyuTopBar("作品详情", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+private fun PostDetailScreenPreview() { PostDetailScreenContent(navController = null, postId = "post_001") }
+
+@Composable
+fun PostDetailScreen(navController: NavHostController, postId: String) { PostDetailScreenContent(navController, postId) }
+
+@Composable
+private fun PostDetailScreenContent(navController: NavHostController?, postId: String) {
+    val post = safeCall { repo.post(postId) }
+    Scaffold(topBar = { DoyuTopBar("作品详情", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            PostCard(post, onClick = {})
+            if (post != null) PostCard(post, onClick = {})
             SectionHeader("评论")
-            repo.comments(postId).items.forEach {
+            (safeCall { repo.comments(postId) }?.items ?: emptyList()).forEach {
                 DoyuCard {
                     Text(it.author.nickname, style = MaterialTheme.typography.titleMedium)
                     Text(it.content, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            DoyuPrimaryButton("收藏图纸", onClick = { navController.navigate(AppRoute.patternResult(post.linkedPatternId ?: "pattern_001")) }, modifier = Modifier.fillMaxWidth())
+            DoyuPrimaryButton("收藏图纸", onClick = { navController?.navigate(AppRoute.patternResult(post?.linkedPatternId ?: "pattern_001")) }, modifier = Modifier.fillMaxWidth())
             DoyuOutlinedButton("举报内容", onClick = {}, icon = Icons.Filled.Report, modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
+@Preview
 @Composable
-fun PostCreateScreen(navController: NavHostController) {
-    Scaffold(topBar = { DoyuTopBar("发布作品", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+private fun PostCreateScreenPreview() { PostCreateScreenContent(navController = null) }
+
+@Composable
+fun PostCreateScreen(navController: NavHostController) { PostCreateScreenContent(navController) }
+
+@Composable
+private fun PostCreateScreenContent(navController: NavHostController?) {
+    Scaffold(topBar = { DoyuTopBar("发布作品", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             DoyuCard {
                 OutlinedTextField(value = "", onValueChange = {}, label = { Text("标题") }, modifier = Modifier.fillMaxWidth())
@@ -152,7 +178,7 @@ fun PostCreateScreen(navController: NavHostController) {
             }
             DoyuCard {
                 SectionHeader("图片与图纸")
-                DoyuOutlinedButton("添加图片并确认 fileId", onClick = { navController.navigate(AppRoute.IMAGE_SELECT) }, icon = Icons.Filled.AddPhotoAlternate, modifier = Modifier.fillMaxWidth())
+                DoyuOutlinedButton("添加图片并确认 fileId", onClick = { navController?.navigate(AppRoute.IMAGE_SELECT) }, icon = Icons.Filled.AddPhotoAlternate, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(10.dp))
                 Text("发布接口使用 mediaFileIds；图片先走 /uploads/presign、直传、/uploads/confirm，发布后可能进入审核中。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

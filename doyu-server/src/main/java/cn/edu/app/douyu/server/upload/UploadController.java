@@ -7,6 +7,10 @@ import cn.edu.app.douyu.server.common.IdGenerator;
 import cn.edu.app.douyu.server.common.InMemoryStore;
 import cn.edu.app.douyu.server.common.Models.FileAsset;
 import cn.edu.app.douyu.server.common.Models.ModerationRecord;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -20,6 +24,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
+@Tag(name = "上传", description = "预签名上传、确认上传完成")
 @RestController
 @RequestMapping("/api/v1/uploads")
 public class UploadController {
@@ -32,6 +37,12 @@ public class UploadController {
         this.idGenerator = idGenerator;
     }
 
+    @Operation(summary = "获取预签名上传 URL", description = "获取 OSS 预签名上传地址和文件 Key")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "用途不支持、文件类型不支持或文件大小超限"),
+            @ApiResponse(responseCode = "401", description = "未登录")
+    })
     @PostMapping("/presign")
     Map<String, Object> presign(Authentication authentication, @Valid @RequestBody PresignRequest request) {
         CurrentUser.userId(authentication);
@@ -51,6 +62,12 @@ public class UploadController {
         );
     }
 
+    @Operation(summary = "确认上传完成", description = "客户端直传 OSS 后确认上传，创建文件资产和审核记录")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "400", description = "用途不支持"),
+            @ApiResponse(responseCode = "401", description = "未登录")
+    })
     @PostMapping("/confirm")
     Map<String, Object> confirm(Authentication authentication, @Valid @RequestBody ConfirmRequest request) {
         String userId = CurrentUser.userId(authentication);

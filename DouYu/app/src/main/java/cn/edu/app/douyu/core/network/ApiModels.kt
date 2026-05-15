@@ -10,7 +10,7 @@ data class ApiResponse<T>(
     val code: String,
     val message: String,
     val data: T? = null,
-    val traceId: String
+    val traceId: String = ""
 ) {
     val isOk: Boolean
         get() = code == "OK"

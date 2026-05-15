@@ -9,6 +9,10 @@ import cn.edu.app.douyu.server.common.InMemoryStore;
 import cn.edu.app.douyu.server.common.Models.AdminOperationLog;
 import cn.edu.app.douyu.server.common.Models.Report;
 import cn.edu.app.douyu.server.common.PageResult;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.security.core.Authentication;
@@ -25,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "管理后台", description = "后台用户/内容/商品/订单/支付/AI任务/举报/运营日志管理")
 @RestController
 @RequestMapping("/api/v1/admin")
 public class AdminController {
@@ -38,12 +43,24 @@ public class AdminController {
         this.idGenerator = idGenerator;
     }
 
+    @Operation(summary = "用户列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限")
+    })
     @GetMapping("/users")
     PageResult<Map<String, Object>> users(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<Map<String, Object>> items = store.users.values().stream().map(authService::userView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
+    @Operation(summary = "帖子列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限")
+    })
     @GetMapping("/posts")
     PageResult<Map<String, Object>> posts(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<Map<String, Object>> items = store.posts.values().stream()
@@ -52,6 +69,12 @@ public class AdminController {
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
+    @Operation(summary = "评论列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限")
+    })
     @GetMapping("/comments")
     PageResult<Map<String, Object>> comments(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<Map<String, Object>> items = store.comments.values().stream()
@@ -60,18 +83,36 @@ public class AdminController {
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
+    @Operation(summary = "商品列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限")
+    })
     @GetMapping("/products")
     PageResult<Map<String, Object>> products(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<Map<String, Object>> items = store.products.values().stream().map(store::productView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
+    @Operation(summary = "订单列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限")
+    })
     @GetMapping("/orders")
     PageResult<Map<String, Object>> orders(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<Map<String, Object>> items = store.orders.values().stream().map(store::orderView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
+    @Operation(summary = "支付记录列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限")
+    })
     @GetMapping("/payments")
     PageResult<Map<String, Object>> payments(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<Map<String, Object>> items = store.payments.values().stream()
@@ -80,6 +121,12 @@ public class AdminController {
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
+    @Operation(summary = "AI 任务列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限")
+    })
     @GetMapping("/patterns/jobs")
     PageResult<Map<String, Object>> patternJobs(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<Map<String, Object>> items = store.patternJobs.values().stream()
@@ -88,12 +135,25 @@ public class AdminController {
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
+    @Operation(summary = "举报列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限")
+    })
     @GetMapping("/reports")
     PageResult<Map<String, Object>> reports(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<Map<String, Object>> items = store.reports().stream().map(this::reportView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
+    @Operation(summary = "处理举报", description = "管理员处理举报并记录操作日志")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "处理成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限"),
+            @ApiResponse(responseCode = "404", description = "举报不存在")
+    })
     @PostMapping("/reports/{reportId}/process")
     Map<String, Object> processReport(Authentication authentication, @PathVariable String reportId, @Valid @RequestBody ProcessRequest request) {
         String adminId = CurrentUser.adminId(authentication);
@@ -109,6 +169,12 @@ public class AdminController {
         return reportView(updated);
     }
 
+    @Operation(summary = "运营日志列表")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "需要管理员权限")
+    })
     @GetMapping("/operation-logs")
     PageResult<Map<String, Object>> logs(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<Map<String, Object>> items = store.adminLogs().stream()

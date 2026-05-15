@@ -125,47 +125,76 @@ Android 与后端联调前必须冻结当前接口版本。冻结内容包括：
 - 没有硬编码密钥。
 - 文档、接口、数据模型、页面状态保持一致。
 
-## 当前协同整改结论
+## 当前协同状态
 
-检查日期：2026-05-13。
+更新日期：2026-05-14。
 
-当前 Android 与后端均已具备第一阶段骨架，但还不能视为满足前后端协作要求。主要问题是：后端接口已经推进到可测骨架，前端仍以 Mock 页面和本地模型为主，双方字段名、分页形态、上传到 AI 任务的衔接口径尚未完全一致。
+### P0 协同整改结论（已完成）
 
-### 前端必须先整改
+前端整改已完成：
 
-- 按 `12-frontend-android-task-brief.md` 的“当前联调补充整改项”修正 API model 和 API Client。
-- 将 Mock 数据结构调整为真实接口结构，不能继续使用只服务 UI 展示的字段名。
-- 上传与 AI 任务链路必须改为：`presign -> 直传 -> confirm -> patterns/jobs(inputFileId) -> jobs/{jobId}`。
-- 订单、支付、退款等重要提交必须生成并携带 `Idempotency-Key`。
-- 支付结果页必须查询后端订单或支付单状态，不能以本地支付 SDK 返回作为最终成功。
+- ~~按 `12-frontend-android-task-brief.md` 的”当前联调补充整改项”修正 API model 和 API Client。~~ ✅
+- ~~将 Mock 数据结构调整为真实接口结构。~~ ✅ 5 个 Screen 全部接入 `DoyuAppContainer` 真实 Repository
+- ~~上传与 AI 任务链路必须改为：`presign -> 直传 -> confirm -> patterns/jobs(inputFileId) -> jobs/{jobId}`。~~ ✅
+- ~~订单、支付、退款等重要提交必须生成并携带 `Idempotency-Key`。~~ ✅
+- ~~支付结果页必须查询后端订单或支付单状态。~~ ✅
 
-### 后端必须同步补齐
+后端整改已完成：
 
-- 按 `13-backend-service-task-brief.md` 的“当前联调补充整改项”输出 OpenAPI/Swagger 或等价接口契约。
-- 明确所有 Stub Provider：短信、OSS、AI、支付。
-- 对前端主链路所需字段保持稳定返回；占位值可以接受，字段缺失不接受。
-- 支付回调在未验签前只能标注为 Stub，不得作为正式支付实现。
+- ~~输出 OpenAPI/Swagger 或等价接口契约。~~ ✅ 13 个 Controller 全部加 @Tag/@Operation/@ApiResponses
+- ~~明确所有 Stub Provider。~~ ✅ 短信、OSS、AI、微信支付、支付宝支付
+- ~~对前端主链路所需字段保持稳定返回。~~ ✅ 全部字段已补齐
+- ~~支付回调标注为 Stub。~~ ✅
 
-### 联调冻结点
+### 联调冻结口径（已确认）
 
-下一次联调前冻结以下接口口径：
+以下接口口径已冻结：
 
 - `/uploads/presign` 返回 `fileKey`，用于对象存储直传。
 - `/uploads/confirm` 返回 `fileId`，用于后续业务引用。
 - `/patterns/jobs` 请求字段使用 `inputFileId`。
 - 列表接口统一返回分页结构，不返回裸数组。
 - 对外业务 ID 字段统一使用带业务语义的字符串字段，例如 `userId`、`postId`、`jobId`、`patternId`、`productId`、`skuId`、`orderId`、`paymentId`。
+- 通知使用 `notificationId`/`unread`（非 `messageId`/`read`）。
+- 会话使用 `peerUserId`/`peerName`/`lastMessage`/`unreadCount`。
+- 创建订单使用 `itemIds`+`addressId`。
+- 签到返回 `checkedToday`。
+
+### 联调主链路验证状态
+
+| 链路 | 状态 |
+|---|---|
+| 手机号验证码登录→获取当前用户 | ✅ 已联通 |
+| 社区 Feed→帖子详情 | ✅ 已联通 |
+| 发帖提交→审核中状态展示 | ✅ API 已通 |
+| 图片预签名上传→上传确认 | ✅ API 已通 |
+| AI 任务创建→任务状态轮询 | ✅ 已联通 |
+| AI 任务成功→图纸结果展示 | ✅ Stub 已通 |
+| 商品列表→商品详情 | ✅ 已联通 |
+| 加入购物车→订单确认 | ✅ 已联通 |
+| 创建订单→创建支付单 | ✅ 已联通 |
+| 支付结果页→后端订单状态查询 | ✅ 已联通 |
+| 消息通知列表展示 | ✅ 已联通 |
+| 我的页面→生成记录和订单入口 | ✅ 已联通 |
 
 ### 协同验收方式
 
 前后端完成整改后，按以下顺序验收：
 
-1. 后端运行测试并提供 OpenAPI/Swagger 地址。
-2. 前端基于后端契约完成 API model 和 Mock 结构修正。
-3. 联通登录、Feed、上传确认、AI 任务创建与查询、商品列表、购物车、创建订单、创建支付单、支付状态查询。
-4. 前端运行 `.\gradlew.bat :app:assembleDebug` 和 `.\gradlew.bat :app:testDebugUnitTest`。
-5. 后端运行 `mvn test` 或后端 README 中声明的等价命令。
-6. 项目负责人确认“已接真实接口清单”和“仍为 Stub/Mock 清单”。
+1. 后端运行测试并提供 OpenAPI/Swagger 地址。✅
+2. 前端基于后端契约完成 API model 和 Mock 结构修正。✅
+3. 联通登录、Feed、上传确认、AI 任务创建与查询、商品列表、购物车、创建订单、创建支付单、支付状态查询。✅
+4. 前端运行 `.\gradlew.bat :app:assembleDebug` 和 `.\gradlew.bat :app:testDebugUnitTest`。✅
+5. 后端运行 `mvn test` 或后端 README 中声明的等价命令。✅
+6. 项目负责人确认”已接真实接口清单”和”仍为 Stub/Mock 清单”。✅
+
+### 剩余 P1 协同事项
+
+- PatternAsset.materials 类型适配（前端 List vs 后端 Map）。
+- 错误码统一转为用户可读文案。
+- 核心页面补齐加载、空状态、失败、未登录、无权限、审核中、弱网重试状态。
+- 真实相册选择、CameraX 拍照、对象存储直传的完整 UI 闭环。
+- 核心业务对象迁移到 PostgreSQL 持久化。
 
 ## 后端第一阶段联调交付说明
 

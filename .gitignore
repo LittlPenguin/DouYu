@@ -16,6 +16,9 @@ local.properties
 *.pem
 *.key
 .codex/
+.claude/
+CLAUDE.md
+AGENTS.md
 
 # Java, Kotlin, Gradle, and Android outputs
 .gradle/

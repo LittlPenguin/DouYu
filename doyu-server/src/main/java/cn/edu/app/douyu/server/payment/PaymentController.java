@@ -10,6 +10,10 @@ import cn.edu.app.douyu.server.common.Models.Payment;
 import cn.edu.app.douyu.server.common.Models.Refund;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -28,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Tag(name = "支付", description = "支付单创建、支付回调、退款")
 @RestController
 @RequestMapping("/api/v1")
 public class PaymentController {
@@ -42,6 +47,14 @@ public class PaymentController {
         this.objectMapper = objectMapper;
     }
 
+    @Operation(summary = "创建支付单", description = "为已创建的订单创建支付单，需要 Idempotency-Key 头")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "创建成功"),
+            @ApiResponse(responseCode = "400", description = "支付渠道不支持"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "无权支付该订单"),
+            @ApiResponse(responseCode = "404", description = "订单不存在")
+    })
     @PostMapping("/payments")
     Map<String, Object> createPayment(Authentication authentication,
                                       @RequestHeader("Idempotency-Key") String idempotencyKey,
@@ -66,6 +79,13 @@ public class PaymentController {
         return response;
     }
 
+    @Operation(summary = "查询支付状态")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "无权查看该支付单"),
+            @ApiResponse(responseCode = "404", description = "支付单不存在")
+    })
     @GetMapping("/payments/{paymentId}")
     Map<String, Object> payment(Authentication authentication, @PathVariable String paymentId) {
         String userId = CurrentUser.userId(authentication);
@@ -77,16 +97,28 @@ public class PaymentController {
         return paymentView(payment);
     }
 
+    @Operation(summary = "微信支付回调", description = "微信支付异步通知回调（公开接口）")
+    @ApiResponse(responseCode = "200", description = "处理成功")
     @PostMapping("/payments/callbacks/wechat")
     Map<String, Object> wechatCallback(@Valid @RequestBody PaymentCallbackRequest request) {
         return callback(request);
     }
 
+    @Operation(summary = "支付宝支付回调", description = "支付宝异步通知回调（公开接口）")
+    @ApiResponse(responseCode = "200", description = "处理成功")
     @PostMapping("/payments/callbacks/alipay")
     Map<String, Object> alipayCallback(@Valid @RequestBody PaymentCallbackRequest request) {
         return callback(request);
     }
 
+    @Operation(summary = "申请退款", description = "为已支付的订单申请退款，需要 Idempotency-Key 头")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "退款成功"),
+            @ApiResponse(responseCode = "401", description = "未登录"),
+            @ApiResponse(responseCode = "403", description = "无权退款该订单"),
+            @ApiResponse(responseCode = "404", description = "订单或支付单不存在"),
+            @ApiResponse(responseCode = "409", description = "支付未成功或退款金额超限")
+    })
     @PostMapping("/refunds")
     Map<String, Object> refund(Authentication authentication,
                                @RequestHeader("Idempotency-Key") String idempotencyKey,
@@ -135,15 +167,16 @@ public class PaymentController {
     }
 
     private Map<String, Object> paymentView(Payment payment) {
-        return Map.of(
-                "paymentId", payment.id(),
-                "orderId", payment.orderId(),
-                "channel", payment.channel(),
-                "status", payment.status(),
-                "amountCent", payment.amountCent(),
-                "channelTradeNo", payment.channelTradeNo() == null ? "" : payment.channelTradeNo(),
-                "payParams", Map.of("provider", "STUB", "payload", "stub-pay-payload-" + payment.id())
-        );
+        Map<String, Object> view = new LinkedHashMap<>();
+        view.put("paymentId", payment.id());
+        view.put("orderId", payment.orderId());
+        view.put("channel", payment.channel());
+        view.put("status", payment.status());
+        view.put("amountCent", payment.amountCent());
+        view.put("payParams", Map.of("provider", "STUB", "payload", "stub-pay-payload-" + payment.id()));
+        view.put("channelTradeNo", payment.channelTradeNo() == null ? "" : payment.channelTradeNo());
+        view.put("paidAt", payment.paidAt() != null ? payment.paidAt().toString() : null);
+        return view;
     }
 
     private Order requireOrder(String orderId) {

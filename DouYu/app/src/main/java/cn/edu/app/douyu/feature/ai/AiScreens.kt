@@ -14,18 +14,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import cn.edu.app.douyu.core.data.MockPatternRepository
+import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.model.PatternAsset
 import cn.edu.app.douyu.core.model.PatternJobStatus
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
 
-private val repo = MockPatternRepository()
+private val repo = DoyuAppContainer.patternRepository
+
+private inline fun <T> safeCall(block: () -> T): T? = try { block() } catch (_: Exception) { null }
 
 @Composable
 fun AiHomeScreen(navController: NavHostController) {
+    AiHomeScreenContent(navController)
+}
+
+@Preview
+@Composable
+private fun AiHomeScreenPreview() {
+    AiHomeScreenContent(navController = null)
+}
+
+@Composable
+private fun AiHomeScreenContent(navController: NavHostController?) {
     Scaffold(topBar = { DoyuTopBar("AI 拼图") }) { padding ->
         DoyuPage(padding) {
             DoyuCard {
@@ -38,18 +52,18 @@ fun AiHomeScreen(navController: NavHostController) {
                     BeadPattern(Modifier.size(76.dp))
                 }
                 Spacer(Modifier.height(16.dp))
-                DoyuPrimaryButton("选择图片开始", onClick = { navController.navigate(AppRoute.IMAGE_SELECT) }, icon = Icons.Filled.AddPhotoAlternate, modifier = Modifier.fillMaxWidth())
+                DoyuPrimaryButton("选择图片开始", onClick = { navController?.navigate(AppRoute.IMAGE_SELECT) }, icon = Icons.Filled.AddPhotoAlternate, modifier = Modifier.fillMaxWidth())
             }
-            val job = repo.featuredJob()
+            val job = safeCall { repo.featuredJob() }
             DoyuCard {
-                SectionHeader("当前任务", "查看记录") { navController.navigate(AppRoute.PATTERN_HISTORY) }
-                Text(job.inputName, style = MaterialTheme.typography.titleMedium)
+                SectionHeader("当前任务", "查看记录") { navController?.navigate(AppRoute.PATTERN_HISTORY) }
+                Text(job?.inputName ?: job?.inputFileId ?: "暂无任务", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                LinearProgressIndicator(progress = { job.progress / 100f }, modifier = Modifier.fillMaxWidth())
+                LinearProgressIndicator(progress = { (job?.progress ?: 0) / 100f }, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
-                Text("处理中 ${job.progress}% · 高峰期会展示排队进度", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("处理中 ${job?.progress ?: 0}% · 高峰期会展示排队进度", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(12.dp))
-                DoyuOutlinedButton("查看任务进度", onClick = { navController.navigate(AppRoute.aiProgress(job.jobId)) }, icon = Icons.Filled.Pending, modifier = Modifier.fillMaxWidth())
+                DoyuOutlinedButton("查看任务进度", onClick = { job?.let { navController?.navigate(AppRoute.aiProgress(it.jobId)) } }, icon = Icons.Filled.Pending, modifier = Modifier.fillMaxWidth())
             }
             DoyuCard {
                 SectionHeader("新手友好参数")
@@ -64,12 +78,19 @@ fun AiHomeScreen(navController: NavHostController) {
     }
 }
 
+@Preview
 @Composable
-fun ImageSelectScreen(navController: NavHostController) {
+private fun ImageSelectScreenPreview() { ImageSelectScreenContent(navController = null) }
+
+@Composable
+fun ImageSelectScreen(navController: NavHostController) { ImageSelectScreenContent(navController) }
+
+@Composable
+private fun ImageSelectScreenContent(navController: NavHostController?) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
-        navController.navigate(AppRoute.AI_PARAMS)
+        navController?.navigate(AppRoute.AI_PARAMS)
     }
-    Scaffold(topBar = { DoyuTopBar("选择图片", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+    Scaffold(topBar = { DoyuTopBar("选择图片", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             DoyuCard {
                 Text("优先使用 Android Photo Picker，只读取你主动选择的图片。", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -94,9 +115,16 @@ fun ImageSelectScreen(navController: NavHostController) {
     }
 }
 
+@Preview
 @Composable
-fun AiParamsScreen(navController: NavHostController) {
-    Scaffold(topBar = { DoyuTopBar("图纸参数", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+private fun AiParamsScreenPreview() { AiParamsScreenContent(navController = null) }
+
+@Composable
+fun AiParamsScreen(navController: NavHostController) { AiParamsScreenContent(navController) }
+
+@Composable
+private fun AiParamsScreenContent(navController: NavHostController?) {
+    Scaffold(topBar = { DoyuTopBar("图纸参数", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             ParamSection("豆子规格", listOf("2.6mm", "5mm"))
             ParamSection("成品尺寸", listOf("小挂件", "中等摆件", "大幅作品"))
@@ -107,7 +135,7 @@ fun AiParamsScreen(navController: NavHostController) {
                 Text("将用已确认的 fileId 创建任务", style = MaterialTheme.typography.titleMedium)
                 Text("POST /patterns/jobs 请求包含 inputFileId、beadSize、targetSize、difficulty、paletteId、style。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            DoyuPrimaryButton("创建 AI 任务", onClick = { navController.navigate(AppRoute.aiProgress("job_001")) }, icon = Icons.Filled.AutoAwesome, modifier = Modifier.fillMaxWidth())
+            DoyuPrimaryButton("创建 AI 任务", onClick = { navController?.navigate(AppRoute.aiProgress("job_001")) }, icon = Icons.Filled.AutoAwesome, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -130,26 +158,33 @@ private fun ParamSection(title: String, options: List<String>) {
     }
 }
 
+@Preview
 @Composable
-fun AiProgressScreen(navController: NavHostController, jobId: String) {
-    val job = repo.job(jobId)
-    Scaffold(topBar = { DoyuTopBar("生成进度", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+private fun AiProgressScreenPreview() { AiProgressScreenContent(navController = null, jobId = "job_001") }
+
+@Composable
+fun AiProgressScreen(navController: NavHostController, jobId: String) { AiProgressScreenContent(navController, jobId) }
+
+@Composable
+private fun AiProgressScreenContent(navController: NavHostController?, jobId: String) {
+    val job = safeCall { repo.job(jobId) }
+    Scaffold(topBar = { DoyuTopBar("生成进度", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             DoyuCard {
                 BeadPattern(Modifier.size(132.dp).align(Alignment.CenterHorizontally))
                 Spacer(Modifier.height(16.dp))
                 Text("正在生成可拼图纸", style = MaterialTheme.typography.headlineSmall)
                 Spacer(Modifier.height(8.dp))
-                LinearProgressIndicator(progress = { job.progress / 100f }, modifier = Modifier.fillMaxWidth())
+                LinearProgressIndicator(progress = { (job?.progress ?: 0) / 100f }, modifier = Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
-                Text("任务 $jobId · ${job.status} · ${job.progress}%", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("任务 $jobId · ${job?.status ?: "加载中"} · ${job?.progress ?: 0}%", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             DoyuCard {
                 Text("服务端状态为准", style = MaterialTheme.typography.titleMedium)
                 Text("客户端轮询 GET /api/v1/patterns/jobs/{jobId}，按 PENDING/PROCESSING/SUCCEEDED/FAILED/REJECTED/CANCELED 展示。取消使用 POST /patterns/jobs/{jobId}/cancel。", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
-                DoyuPrimaryButton("查看图纸结果", onClick = { navController.navigate(AppRoute.patternResult(job.patternId)) }, modifier = Modifier.fillMaxWidth())
+            if (job?.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
+                DoyuPrimaryButton("查看图纸结果", onClick = { navController?.navigate(AppRoute.patternResult(job.patternId)) }, modifier = Modifier.fillMaxWidth())
             } else {
                 DoyuOutlinedButton("继续查询任务状态", onClick = {}, modifier = Modifier.fillMaxWidth())
             }
@@ -157,15 +192,22 @@ fun AiProgressScreen(navController: NavHostController, jobId: String) {
     }
 }
 
+@Preview
 @Composable
-fun PatternResultScreen(navController: NavHostController, patternId: String) {
-    val pattern = repo.pattern(patternId)
-    Scaffold(topBar = { DoyuTopBar("图纸结果", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+private fun PatternResultScreenPreview() { PatternResultScreenContent(navController = null, patternId = "pattern_001") }
+
+@Composable
+fun PatternResultScreen(navController: NavHostController, patternId: String) { PatternResultScreenContent(navController, patternId) }
+
+@Composable
+private fun PatternResultScreenContent(navController: NavHostController?, patternId: String) {
+    val pattern = safeCall { repo.pattern(patternId) }
+    Scaffold(topBar = { DoyuTopBar("图纸结果", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            PatternSummary(pattern)
+            if (pattern != null) PatternSummary(pattern)
             DoyuCard {
                 SectionHeader("色号清单")
-                pattern.colorStats.forEach {
+                (pattern?.colorStats ?: emptyList()).forEach {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         BeadDot(Color(it.hex), size = 22.dp)
                         Spacer(Modifier.width(10.dp))
@@ -177,7 +219,7 @@ fun PatternResultScreen(navController: NavHostController, patternId: String) {
             }
             DoyuCard {
                 SectionHeader("推荐材料")
-                pattern.materials.forEach {
+                (pattern?.materials ?: emptyList()).forEach {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(it.name, fontWeight = FontWeight.SemiBold)
@@ -190,7 +232,7 @@ fun PatternResultScreen(navController: NavHostController, patternId: String) {
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 DoyuOutlinedButton("保存到我的拼豆", onClick = {}, modifier = Modifier.weight(1f))
-                DoyuPrimaryButton("加入购物车", onClick = { navController.navigate(AppRoute.CART) }, modifier = Modifier.weight(1f))
+                DoyuPrimaryButton("加入购物车", onClick = { navController?.navigate(AppRoute.CART) }, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -216,17 +258,24 @@ private fun PatternSummary(pattern: PatternAsset) {
     }
 }
 
+@Preview
 @Composable
-fun PatternHistoryScreen(navController: NavHostController) {
-    Scaffold(topBar = { DoyuTopBar("生成记录", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+private fun PatternHistoryScreenPreview() { PatternHistoryScreenContent(navController = null) }
+
+@Composable
+fun PatternHistoryScreen(navController: NavHostController) { PatternHistoryScreenContent(navController) }
+
+@Composable
+private fun PatternHistoryScreenContent(navController: NavHostController?) {
+    Scaffold(topBar = { DoyuTopBar("生成记录", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            repo.history().items.forEach { job ->
+            (safeCall { repo.history() }?.items ?: emptyList()).forEach { job ->
                 DoyuCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(job.inputName, style = MaterialTheme.typography.titleMedium)
+                            Text(job.inputName ?: job.inputFileId, style = MaterialTheme.typography.titleMedium)
                             Text("${job.inputFileId} · ${job.beadSize} · ${job.difficulty} · ${job.style}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         TagChip(statusLabel(job.status))
@@ -236,9 +285,9 @@ fun PatternHistoryScreen(navController: NavHostController) {
                         "查看",
                         onClick = {
                             if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
-                                navController.navigate(AppRoute.patternResult(job.patternId))
+                                navController?.navigate(AppRoute.patternResult(job.patternId))
                             } else {
-                                navController.navigate(AppRoute.aiProgress(job.jobId))
+                                navController?.navigate(AppRoute.aiProgress(job.jobId))
                             }
                         },
                         modifier = Modifier.fillMaxWidth()

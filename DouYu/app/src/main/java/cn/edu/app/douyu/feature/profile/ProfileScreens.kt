@@ -10,21 +10,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import cn.edu.app.douyu.core.data.MockProfileRepository
+import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
 
-private val repo = MockProfileRepository()
+private val repo = DoyuAppContainer.profileRepository
+
+private inline fun <T> safeCall(block: () -> T): T? = try { block() } catch (_: Exception) { null }
+
+@Preview
+@Composable
+private fun ProfileScreenPreview() { ProfileScreenContent(navController = null) }
 
 @Composable
-fun ProfileScreen(navController: NavHostController) {
-    val dashboard = repo.dashboard()
+fun ProfileScreen(navController: NavHostController) { ProfileScreenContent(navController) }
+
+@Composable
+private fun ProfileScreenContent(navController: NavHostController?) {
+    val dashboard = safeCall { repo.dashboard() }
     Scaffold(
         topBar = {
             DoyuTopBar("我的", action = {
-                IconButton(onClick = { navController.navigate(AppRoute.SETTINGS) }) {
+                IconButton(onClick = { navController?.navigate(AppRoute.SETTINGS) }) {
                     Icon(Icons.Filled.Settings, contentDescription = "设置")
                 }
             })
@@ -36,37 +46,35 @@ fun ProfileScreen(navController: NavHostController) {
                     BeadCluster(58.dp)
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(dashboard.user.nickname, style = MaterialTheme.typography.headlineSmall)
-                        Text(dashboard.user.bio, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(dashboard?.user?.nickname ?: "未登录", style = MaterialTheme.typography.headlineSmall)
+                        Text(dashboard?.user?.bio ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Spacer(Modifier.height(14.dp))
-                LinearProgressIndicator(progress = { dashboard.reward.exp / dashboard.reward.nextLevelExp.toFloat() }, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(8.dp))
-                Text("Lv.${dashboard.reward.level} · ${dashboard.reward.exp}/${dashboard.reward.nextLevelExp} 经验", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                Text("${dashboard?.reward?.levelCode ?: ""} · ${dashboard?.reward?.points ?: 0} 积分 · ${dashboard?.reward?.experience ?: 0} 经验", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                MetricCard("作品", dashboard.user.followerCount.toString(), Modifier.weight(1f))
-                MetricCard("图纸", dashboard.patternCount.toString(), Modifier.weight(1f))
-                MetricCard("订单", dashboard.orderCount.toString(), Modifier.weight(1f))
+                MetricCard("作品", "${dashboard?.user?.followerCount ?: 0}", Modifier.weight(1f))
+                MetricCard("图纸", "${dashboard?.patternCount ?: 0}", Modifier.weight(1f))
+                MetricCard("订单", "${dashboard?.orderCount ?: 0}", Modifier.weight(1f))
             }
             DoyuCard {
                 SectionHeader("我的资产")
-                ProfileAction("我的拼豆", Icons.Filled.GridView) { navController.navigate(AppRoute.MY_PATTERNS) }
-                ProfileAction("生成记录", Icons.Filled.AutoAwesome) { navController.navigate(AppRoute.PATTERN_HISTORY) }
+                ProfileAction("我的拼豆", Icons.Filled.GridView) { navController?.navigate(AppRoute.MY_PATTERNS) }
+                ProfileAction("生成记录", Icons.Filled.AutoAwesome) { navController?.navigate(AppRoute.PATTERN_HISTORY) }
                 ProfileAction("我的订单", Icons.AutoMirrored.Filled.ReceiptLong) { }
                 ProfileAction("签到与等级", Icons.Filled.WorkspacePremium) { }
             }
             DoyuCard {
-                val checkin = repo.checkinStatus()
+                val checkin = safeCall { repo.checkinStatus() }
                 SectionHeader("签到与徽章")
-                Text("今日签到：${if (checkin.checkedInToday) "已签到" else "未签到"} · 连续 ${checkin.continuousDays} 天", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("今日签到：${if (checkin?.checkedToday == true) "已签到" else "未签到"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(10.dp))
-                repo.badges().forEach {
+                (safeCall { repo.badges() } ?: emptyList()).forEach {
                     Text("${it.name} · ${if (it.achieved) "已获得" else "未获得"}", style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            DoyuOutlinedButton("登录页占位", onClick = { navController.navigate(AppRoute.LOGIN) }, modifier = Modifier.fillMaxWidth())
+            DoyuOutlinedButton("登录页占位", onClick = { navController?.navigate(AppRoute.LOGIN) }, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -91,11 +99,18 @@ private fun ProfileAction(text: String, icon: androidx.compose.ui.graphics.vecto
     }
 }
 
+@Preview
 @Composable
-fun MyPatternsScreen(navController: NavHostController) {
-    Scaffold(topBar = { DoyuTopBar("我的拼豆", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+private fun MyPatternsScreenPreview() { MyPatternsScreenContent(navController = null) }
+
+@Composable
+fun MyPatternsScreen(navController: NavHostController) { MyPatternsScreenContent(navController) }
+
+@Composable
+private fun MyPatternsScreenContent(navController: NavHostController?) {
+    Scaffold(topBar = { DoyuTopBar("我的拼豆", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            repo.patterns().forEach {
+            (safeCall { repo.patterns() } ?: emptyList()).forEach {
                 DoyuCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         BeadPattern(Modifier.size(58.dp))
@@ -111,9 +126,16 @@ fun MyPatternsScreen(navController: NavHostController) {
     }
 }
 
+@Preview
 @Composable
-fun SettingsScreen(navController: NavHostController) {
-    Scaffold(topBar = { DoyuTopBar("设置", canGoBack = true, onBack = { navController.popBackStack() }) }) { padding ->
+private fun SettingsScreenPreview() { SettingsScreenContent(navController = null) }
+
+@Composable
+fun SettingsScreen(navController: NavHostController) { SettingsScreenContent(navController) }
+
+@Composable
+private fun SettingsScreenContent(navController: NavHostController?) {
+    Scaffold(topBar = { DoyuTopBar("设置", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             DoyuCard {
                 SectionHeader("合规入口")
