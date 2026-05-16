@@ -104,7 +104,9 @@ Compose 页面使用单向数据流：
 
 ### 当前实现状态
 
-**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`（baseUrl=`http://10.0.2.2:8080`）、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。
+**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。模拟器联调使用 `http://10.0.2.2:8080/`，真机联调必须使用电脑当前 Wi-Fi IP，例如 `http://10.64.241.153:8080/`；Retrofit `baseUrl` 必须以 `/` 结尾。
+
+**真机 HTTP 联调**：Android main 配置保持 HTTPS only；debug 包通过 `app/src/debug/res/xml/network_security_config.xml` 对当前开发机 IP 添加 `domain-config cleartextTrafficPermitted="true"`。如果真机浏览器能访问后端，但 App 显示“加载失败 - 网络异常”，优先检查 `baseUrl` 是否使用电脑 Wi-Fi IP、debug 包是否重装、logcat 是否出现 `CLEARTEXT communication ... not permitted`。
 
 **Repository 层**：已从 Mock Repository 切换到真实 Repository：
 
@@ -222,4 +224,3 @@ AI 生成使用异步任务：
 - 签到。
 
 埋点不得上传用户原图、隐私文本、支付敏感信息。
-

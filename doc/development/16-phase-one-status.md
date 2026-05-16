@@ -154,7 +154,7 @@
 
 - `AndroidManifest.xml`：新增 `CAMERA`、`POST_NOTIFICATIONS` 权限声明
 - `AndroidManifest.xml`：新增 `<uses-feature android:name="android.hardware.camera" android:required="false" />`
-- `AndroidManifest.xml`：`usesCleartextTraffic` 从 `true` 改为 `false`（生产环境 HTTPS only）
+- `AndroidManifest.xml`：`usesCleartextTraffic` 替换为 `networkSecurityConfig`（生产 HTTPS only，开发环境允许 localhost/10.0.2.2 明文）
 - 确认无硬编码密钥：grep 扫描未发现 secret/apiKey/SECRET 等敏感字面量
 - 确认 Photo Picker 替代了宽泛存储权限（无需 READ_MEDIA_IMAGES）
 

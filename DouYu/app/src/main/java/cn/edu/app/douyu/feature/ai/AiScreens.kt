@@ -65,7 +65,7 @@ private fun AiHomeScreenContent(navController: NavHostController?) {
                 Spacer(Modifier.height(16.dp))
                 DoyuPrimaryButton("选择图片开始", onClick = { navController?.navigate(AppRoute.IMAGE_SELECT) }, icon = Icons.Filled.AddPhotoAlternate, modifier = Modifier.fillMaxWidth())
             }
-            val jobState = safeCallToState { repo.featuredJob() }
+            val jobState = safeCallToState { repo.featuredJob() }.value
             DoyuCard {
                 SectionHeader("当前任务", "查看记录") { navController?.navigate(AppRoute.PATTERN_HISTORY) }
                 when (val state = jobState) {
@@ -347,7 +347,7 @@ fun AiProgressScreen(navController: NavHostController, jobId: String) { AiProgre
 
 @Composable
 private fun AiProgressScreenContent(navController: NavHostController?, jobId: String) {
-    val jobState = safeCallToState { repo.job(jobId) }
+    val jobState = safeCallToState(jobId) { repo.job(jobId) }.value
     Scaffold(topBar = { DoyuTopBar("生成进度", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             when (val state = jobState) {
@@ -386,7 +386,7 @@ fun PatternResultScreen(navController: NavHostController, patternId: String) { P
 
 @Composable
 private fun PatternResultScreenContent(navController: NavHostController?, patternId: String) {
-    val patternState = safeCallToState { repo.pattern(patternId) }
+    val patternState = safeCallToState(patternId) { repo.pattern(patternId) }.value
     Scaffold(topBar = { DoyuTopBar("图纸结果", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             when (val state = patternState) {
@@ -462,7 +462,7 @@ fun PatternHistoryScreen(navController: NavHostController) { PatternHistoryScree
 
 @Composable
 private fun PatternHistoryScreenContent(navController: NavHostController?) {
-    val historyState = safeCallToState { repo.history() }
+    val historyState = safeCallToState { repo.history() }.value
     Scaffold(topBar = { DoyuTopBar("生成记录", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             when (val state = historyState) {

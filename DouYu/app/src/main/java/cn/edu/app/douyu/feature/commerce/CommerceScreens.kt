@@ -1,25 +1,43 @@
 package cn.edu.app.douyu.feature.commerce
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.Cart
+import cn.edu.app.douyu.core.model.Order
+import cn.edu.app.douyu.core.model.OrderStatus
+import cn.edu.app.douyu.core.model.Payment
+import cn.edu.app.douyu.core.model.PaymentChannel
+import cn.edu.app.douyu.core.model.PaymentStatus
 import cn.edu.app.douyu.core.model.Product
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
+import cn.edu.app.douyu.ui.theme.DoyuSurfaceSoft
 
 private val repo = DoyuAppContainer.commerceRepository
 
@@ -58,7 +76,7 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                 )
             }
             SectionHeader("推荐商品")
-            val productsState = safeCallToState { repo.products() }
+            val productsState = safeCallToState { repo.products() }.value
             when (val state = productsState) {
                 is UiState.Success -> state.data.items.take(2).forEach { product ->
                     ProductCard(product, onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) })
@@ -90,18 +108,32 @@ fun ProductListScreen(navController: NavHostController) { ProductListScreenConte
 
 @Composable
 private fun ProductListScreenContent(navController: NavHostController?) {
+    val categories = listOf(
+        null to "全部",
+        "cat_beginner" to "新手套装",
+        "cat_beads" to "豆子",
+        "cat_tools" to "工具",
+        "cat_palette" to "色卡"
+    )
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
     Scaffold(topBar = {
         DoyuTopBar(
             "商品列表", canGoBack = true, onBack = { navController?.popBackStack() })
     }) { padding ->
         DoyuPage(padding) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TagChip("新手套装")
-                TagChip("豆子")
-                TagChip("工具")
-                TagChip("色卡")
+                categories.forEach { (id, name) ->
+                    val isSelected = selectedCategory == id
+                    TagChip(
+                        name,
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else DoyuSurfaceSoft,
+                        modifier = Modifier.clickable { selectedCategory = id }
+                    )
+                }
             }
-            val productsState = safeCallToState { repo.products() }
+            val productsState = safeCallToState(selectedCategory) {
+                if (selectedCategory == null) repo.products() else repo.productsByCategory(selectedCategory!!)
+            }.value
             when (val state = productsState) {
                 is UiState.Success -> state.data.items.forEach { product ->
                     ProductCard(product, onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) })
@@ -126,7 +158,15 @@ fun ProductDetailScreen(navController: NavHostController, productId: String) { P
 
 @Composable
 private fun ProductDetailScreenContent(navController: NavHostController?, productId: String) {
-    val productState = safeCallToState { repo.product(productId) }
+    val productState = safeCallToState(productId) { repo.product(productId) }.value
+    var addToCartState by remember { mutableStateOf<UiState<Cart>?>(null) }
+    val addToCartScope = rememberCoroutineScope()
+    LaunchedEffect(addToCartState) {
+        if (addToCartState is UiState.Success) {
+            addToCartState = null
+            navController?.navigate(AppRoute.CART)
+        }
+    }
     Scaffold(topBar = {
         DoyuTopBar(
             "商品详情", canGoBack = true, onBack = { navController?.popBackStack() })
@@ -166,9 +206,31 @@ private fun ProductDetailScreenContent(navController: NavHostController?, produc
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    val addError = addToCartState as? UiState.Error
+                    if (addError != null) {
+                        Text(
+                            addError.message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                     DoyuPrimaryButton(
                         "加入购物车",
-                        onClick = { navController?.navigate(AppRoute.CART) },
+                        onClick = {
+                            val skuId = product.skus.firstOrNull()?.skuId
+                            if (skuId != null) {
+                                addToCartScope.launch {
+                                    addToCartState = withContext(Dispatchers.IO) {
+                                        runCatching { repo.addItemToCart(product.productId, skuId, 1) }
+                                            .fold(
+                                                onSuccess = { UiState.Success(it) },
+                                                onFailure = { UiState.Error(it.message ?: "加入购物车失败") }
+                                            )
+                                    }
+                                }
+                            }
+                        },
                         icon = Icons.Filled.AddShoppingCart,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -230,7 +292,18 @@ fun CartScreen(navController: NavHostController) { CartScreenContent(navControll
 
 @Composable
 private fun CartScreenContent(navController: NavHostController?) {
-    val cartState = safeCallToState { repo.cart() }
+    var cartState by remember { mutableStateOf<UiState<Cart>>(UiState.Loading) }
+    var refreshCount by remember { mutableIntStateOf(0) }
+    val cartScope = rememberCoroutineScope()
+    LaunchedEffect(refreshCount) {
+        cartState = withContext(Dispatchers.IO) {
+            runCatching { repo.cart() }
+                .fold(
+                    onSuccess = { if (it.items.isEmpty()) UiState.Empty else UiState.Success(it) },
+                    onFailure = { UiState.Error(it.message ?: "加载购物车失败") }
+                )
+        }
+    }
     Scaffold(topBar = {
         DoyuTopBar(
             "购物车", canGoBack = true, onBack = { navController?.popBackStack() })
@@ -244,19 +317,81 @@ private fun CartScreenContent(navController: NavHostController?) {
                 )
                 is UiState.Success -> {
                     val cart = state.data
-                    cart.items.forEach {
+                    cart.items.forEach { item ->
                         DoyuCard {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                BeadDot(Color(it.product?.swatchColor ?: 0xFFF6A6B2), size = 32.dp)
+                                BeadDot(Color(item.product?.swatchColor ?: 0xFFF6A6B2), size = 32.dp)
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
-                                    Text(it.product?.title ?: "商品", style = MaterialTheme.typography.titleMedium)
+                                    Text(item.product?.title ?: "商品", style = MaterialTheme.typography.titleMedium)
                                     Text(
-                                        "${it.sku?.specName ?: ""} · 数量 x${it.quantity}",
+                                        item.sku?.specName ?: "",
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                Text(formatPriceCent(it.lineAmountCent), fontWeight = FontWeight.Bold)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = {
+                                            if (item.quantity > 1) {
+                                                cartState = UiState.Loading
+                                                cartScope.launch {
+                                                    cartState = withContext(Dispatchers.IO) {
+                                                        runCatching { repo.updateCartItem(item.itemId, item.quantity - 1) }
+                                                            .fold(
+                                                                onSuccess = { UiState.Success(it) },
+                                                                onFailure = { UiState.Error(it.message ?: "操作失败") }
+                                                            )
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        enabled = item.quantity > 1
+                                    ) {
+                                        Icon(Icons.Filled.Remove, contentDescription = "减少数量")
+                                    }
+                                    Text(
+                                        "${item.quantity}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.widthIn(min = 24.dp),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    IconButton(
+                                        onClick = {
+                                            cartState = UiState.Loading
+                                            cartScope.launch {
+                                                cartState = withContext(Dispatchers.IO) {
+                                                    runCatching { repo.updateCartItem(item.itemId, item.quantity + 1) }
+                                                        .fold(
+                                                            onSuccess = { UiState.Success(it) },
+                                                            onFailure = { UiState.Error(it.message ?: "操作失败") }
+                                                        )
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(Icons.Filled.Add, contentDescription = "增加数量")
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            cartState = UiState.Loading
+                                            cartScope.launch {
+                                                cartState = withContext(Dispatchers.IO) {
+                                                    runCatching { repo.removeCartItem(item.itemId) }
+                                                        .fold(
+                                                            onSuccess = { UiState.Success(it) },
+                                                            onFailure = { UiState.Error(it.message ?: "删除失败") }
+                                                        )
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Delete,
+                                            contentDescription = "删除",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -295,25 +430,37 @@ fun OrderConfirmScreen(navController: NavHostController) { OrderConfirmScreenCon
 
 @Composable
 private fun OrderConfirmScreenContent(navController: NavHostController?) {
-    val orderState = safeCallToState { repo.order() }
+    val cartState = safeCallToState { repo.cart() }.value
+    var createState by remember { mutableStateOf<UiState<Order>?>(null) }
+    val createScope = rememberCoroutineScope()
+    LaunchedEffect(createState) {
+        if (createState is UiState.Success) {
+            val orderId = (createState as UiState.Success<Order>).data.orderId
+            createState = null
+            navController?.navigate(AppRoute.paymentResult(orderId))
+        }
+    }
     Scaffold(topBar = {
         DoyuTopBar(
             "确认订单", canGoBack = true, onBack = { navController?.popBackStack() })
     }) { padding ->
         DoyuPage(padding) {
-            when (val state = orderState) {
+            when (val state = cartState) {
                 is UiState.Success -> {
-                    val order = state.data
+                    val cart = state.data
                     DoyuCard {
                         Text("收货信息", style = MaterialTheme.typography.titleMedium)
-                        Text(order.addressSnapshot ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("默认地址（后续接入地址管理）", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     DoyuCard {
                         Text("订单商品", style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(10.dp))
-                        order.items.forEach {
+                        cart.items.forEach {
                             Row(Modifier.fillMaxWidth()) {
-                                Text("${it.title} ${it.specName}", modifier = Modifier.weight(1f))
+                                Text(
+                                    "${it.product?.title ?: "商品"} ${it.sku?.specName ?: ""}",
+                                    modifier = Modifier.weight(1f)
+                                )
                                 Text("x${it.quantity}")
                             }
                         }
@@ -325,14 +472,39 @@ private fun OrderConfirmScreenContent(navController: NavHostController?) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    val createError = createState as? UiState.Error
+                    if (createError != null) {
+                        Text(
+                            createError.message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                     DoyuPrimaryButton(
-                        "创建支付单 ${formatPriceCent(order.payableAmountCent)}",
-                        onClick = { navController?.navigate(AppRoute.paymentResult(order.orderId)) },
+                        "创建支付单 ${formatPriceCent(cart.payableAmountCent)}",
+                        onClick = {
+                            val itemIds = cart.items.mapNotNull { it.itemId.takeIf { _ -> true } }
+                            createScope.launch {
+                                createState = withContext(Dispatchers.IO) {
+                                    runCatching { repo.createOrder(itemIds, "") }
+                                        .fold(
+                                            onSuccess = { UiState.Success(it) },
+                                            onFailure = { UiState.Error(it.message ?: "创建订单失败") }
+                                        )
+                                }
+                            }
+                        },
                         icon = Icons.Filled.Payments,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                else -> PageStateView(orderState)
+                is UiState.Empty -> EmptyContent(
+                    "购物车为空",
+                    "请先添加商品到购物车。",
+                    showRetry = false
+                )
+                else -> PageStateView(cartState)
             }
         }
     }
@@ -347,8 +519,34 @@ fun PaymentResultScreen(navController: NavHostController, orderId: String) { Pay
 
 @Composable
 private fun PaymentResultScreenContent(navController: NavHostController?, orderId: String) {
-    val orderState = safeCallToState { repo.order() }
-    val paymentState = safeCallToState { repo.payment(orderId) }
+    var orderState by remember { mutableStateOf<UiState<Order>>(UiState.Loading) }
+    var paymentState by remember { mutableStateOf<UiState<Payment>?>(null) }
+    var paymentId by remember { mutableStateOf<String?>(null) }
+    var refreshCount by remember { mutableIntStateOf(0) }
+    LaunchedEffect(refreshCount) {
+        withContext(Dispatchers.IO) {
+            if (refreshCount == 0) {
+                val result = runCatching { repo.createPayment(orderId, PaymentChannel.WECHAT_APP) }
+                    .fold(
+                        onSuccess = { UiState.Success(it) },
+                        onFailure = { UiState.Error(it.message ?: "创建支付单失败") }
+                    )
+                paymentState = result
+                paymentId = (result as? UiState.Success)?.data?.paymentId
+            } else if (paymentId != null) {
+                orderState = runCatching { repo.order(orderId) }
+                    .fold(
+                        onSuccess = { UiState.Success(it) },
+                        onFailure = { UiState.Error(it.message ?: "查询订单失败") }
+                    )
+                paymentState = runCatching { repo.paymentStatus(paymentId!!) }
+                    .fold(
+                        onSuccess = { UiState.Success(it) },
+                        onFailure = { UiState.Error(it.message ?: "查询支付状态失败") }
+                    )
+            }
+        }
+    }
     Scaffold(topBar = {
         DoyuTopBar(
             "支付结果", canGoBack = true, onBack = { navController?.popBackStack() })
@@ -372,15 +570,19 @@ private fun PaymentResultScreenContent(navController: NavHostController?, orderI
                 val orderStatus = (orderState as? UiState.Success)?.data?.status?.name ?: "查询中"
                 val payment = (paymentState as? UiState.Success)?.data
                 Text(
-                    "GET /orders/{orderId}: $orderStatus · GET /payments/{paymentId}: ${payment?.paymentId ?: ""} ${payment?.status ?: ""}",
+                    "订单状态: $orderStatus · 支付单: ${payment?.paymentId ?: "创建中"} ${payment?.status ?: ""}",
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            if (orderState is UiState.Error) PageStateView(orderState)
-            if (paymentState is UiState.Error) PageStateView(paymentState)
+            val currentOrderState = orderState
+            val currentPaymentState = paymentState
+            if (currentOrderState is UiState.Error) PageStateView(currentOrderState)
+            if (currentPaymentState is UiState.Error) PageStateView(currentPaymentState)
             DoyuOutlinedButton(
-                "重新查询服务端状态", onClick = {}, modifier = Modifier.fillMaxWidth()
+                "重新查询服务端状态",
+                onClick = { refreshCount++ },
+                modifier = Modifier.fillMaxWidth()
             )
             DoyuPrimaryButton(
                 "返回商城",

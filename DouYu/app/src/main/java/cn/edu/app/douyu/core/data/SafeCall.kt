@@ -1,21 +1,29 @@
 package cn.edu.app.douyu.core.data
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.produceState
 import cn.edu.app.douyu.core.network.ApiResponse
 import cn.edu.app.douyu.core.ui.ErrorMessages
 import cn.edu.app.douyu.core.ui.UiState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-/** Centralized safeCall that maps exceptions to UiState. */
-inline fun <T> safeCallToState(block: () -> T): UiState<T> {
-    return try {
-        val result = block()
-        if (result == null) {
-            UiState.Empty
-        } else {
-            UiState.Success(result)
+/** Centralized safeCall that maps exceptions to UiState. Non-blocking for UI thread. */
+@Composable
+inline fun <T> safeCallToState(
+    vararg keys: Any?,
+    crossinline block: () -> T
+): State<UiState<T>> = produceState<UiState<T>>(UiState.Loading, keys = keys) {
+    value = withContext(Dispatchers.IO) {
+        try {
+            val result = block()
+            if (result == null) UiState.Empty
+            else UiState.Success(result)
+        } catch (e: Exception) {
+            val message = ErrorMessages.fromException(e)
+            if (message.contains("登录")) UiState.RequireLogin else UiState.Error(message)
         }
-    } catch (e: Exception) {
-        val message = ErrorMessages.fromException(e)
-        if (message.contains("登录")) UiState.RequireLogin else UiState.Error(message)
     }
 }
 

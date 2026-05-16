@@ -59,7 +59,7 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                 TagChip("关注", color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.28f))
                 TagChip("新手教程", color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.24f))
             }
-            val feedState = safeCallToState { repo.feed() }
+            val feedState = safeCallToState { repo.feed() }.value
             when (val state = feedState) {
                 is UiState.Success -> state.data.items.forEach { post ->
                     PostCard(post, onClick = { navController?.navigate(AppRoute.postDetail(post.postId)) })
@@ -151,14 +151,14 @@ fun PostDetailScreen(navController: NavHostController, postId: String) { PostDet
 
 @Composable
 private fun PostDetailScreenContent(navController: NavHostController?, postId: String) {
-    val postState = safeCallToState { repo.post(postId) }
+    val postState = safeCallToState(postId) { repo.post(postId) }.value
     Scaffold(topBar = { DoyuTopBar("作品详情", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             when (val state = postState) {
                 is UiState.Success -> {
                     PostCard(state.data, onClick = {})
                     SectionHeader("评论")
-                    val commentsState = safeCallToState { repo.comments(postId) }
+                    val commentsState = safeCallToState(postId) { repo.comments(postId) }.value
                     when (val cs = commentsState) {
                         is UiState.Success -> cs.data.items.forEach {
                             DoyuCard {

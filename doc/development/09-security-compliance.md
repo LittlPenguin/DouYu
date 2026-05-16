@@ -13,7 +13,7 @@
 | 相机 | 拍照生成拼豆图、发帖、头像 | 使用时申请 | ✅ 已在 AndroidManifest 声明 CAMERA + uses-feature required=false |
 | 相册 | 选择图片 | 优先 Photo Picker | ✅ 已使用 Photo Picker，无需 READ_MEDIA_IMAGES |
 | 通知 | 订单、评论、AI 完成提醒 | 用户触发场景后申请 | ✅ 已在 AndroidManifest 声明 POST_NOTIFICATIONS |
-| 网络 | 访问 API、上传、支付 | 必需 | ✅ usesCleartextTraffic=false（HTTPS only） |
+| 网络 | 访问 API、上传、支付 | 必需 | ✅ networkSecurityConfig：生产 HTTPS only；debug 通过 `app/src/debug/res/xml/network_security_config.xml` 按域名/IP 显式允许本机联调 HTTP，例如 `10.64.241.153`；不得把开发机 IP 明文放行写入 main/release |
 | 存储 | 保存导出图纸 | 优先系统分享和媒体选择器，避免广泛权限 | ✅ 未申请广泛存储权限 |
 
 隐私政策必须说明：
@@ -170,4 +170,3 @@ AI 生成结果用于公开社区前，必须按社区内容再次审核。
 - 举报滥用。
 - 未成年人绕过卖家限制。
 - AI 输入输出违规绕过。
-

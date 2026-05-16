@@ -239,6 +239,27 @@ mvn test
 
 Swagger/OpenAPI 已暴露当前所有后端 Controller 中的 `/api/v1` 接口，并配置 Bearer Auth。Android 联调时，普通接口使用用户登录返回的 `accessToken`，后台接口使用 `/api/v1/admin/auth/login` 返回的后台 token。
 
+### 真机联调网络排障记录
+
+2026-05-16 真机联调出现过一次典型问题：手机浏览器可以访问后端 `http://10.64.241.153:8080/swagger-ui/index.html`，但 App 内显示“加载失败 - 网络异常”。
+
+最终原因不是后端接口、Swagger 或 Spring Security 拦截，而是 Android 客户端网络安全配置和开发地址配置问题：
+
+- 后端需要监听局域网地址，`doyu-server/src/main/resources/application.yml` 中保留 `server.address: 0.0.0.0`。
+- 真机不能使用 `localhost` 或模拟器专用地址 `10.0.2.2` 访问电脑后端，`DoyuAppContainer` 的 `baseUrl` 必须使用电脑当前 Wi-Fi IP，并以 `/` 结尾，例如 `http://10.64.241.153:8080/`。
+- Android 默认禁止明文 HTTP。debug 包必须通过 `app/src/debug/res/xml/network_security_config.xml` 对当前开发机 IP 显式放行 `cleartextTrafficPermitted=true`。
+- `debug-overrides` 只用于证书信任覆盖，不应作为放行明文 HTTP 的主要方式；明文 HTTP 放行应写在 `domain-config`。
+- `app/src/main/res/xml/network_security_config.xml` 继续保持生产默认 HTTPS only，不允许把开发机 IP 的 HTTP 放行写入 main/release 配置。
+
+排障顺序固定如下：
+
+1. 后端启动后，在电脑本机验证 `http://<电脑WiFi-IP>:8080/actuator/health` 返回 `UP`。
+2. 在真机浏览器访问同一个 health 地址，确认手机到电脑后端网络可达。
+3. 确认 App 的 `baseUrl` 是 `http://<电脑WiFi-IP>:8080/`，不是 `localhost`、`127.0.0.1` 或 `10.0.2.2`。
+4. 确认 debug 网络安全配置包含当前电脑 IP 的 `domain-config cleartextTrafficPermitted="true"`。
+5. 重新安装 debug 包，避免真机继续运行旧 APK。
+6. 若仍显示“网络异常”，优先看 logcat：`CLEARTEXT communication ... not permitted` 表示明文 HTTP 未放行；`ConnectException` 表示后端监听、防火墙或 IP 不通；`JsonDecodingException` 表示网络已通但前后端 JSON 字段不匹配。
+
 ### 测试登录规则
 
 - 测试手机号可使用任意手机号格式，建议固定使用 `13800000001`、`13800000002` 等。

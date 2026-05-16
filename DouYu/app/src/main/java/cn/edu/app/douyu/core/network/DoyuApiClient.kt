@@ -112,8 +112,8 @@ class DoyuApiClient(
 
     init {
         val refreshClient = OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
             .build()
 
         refreshRetrofit = createRetrofit(baseUrl, refreshClient)
@@ -129,8 +129,8 @@ class DoyuApiClient(
                     refreshServiceFactory = { refreshRetrofit.create(AuthApi::class.java) }
                 )
             )
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
             .build()
 
         retrofit = createRetrofit(baseUrl, client)

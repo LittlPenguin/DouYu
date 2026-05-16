@@ -5,7 +5,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,6 +16,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import cn.edu.app.douyu.core.data.DoyuAppContainer
+import cn.edu.app.douyu.core.model.Badge
+import cn.edu.app.douyu.core.model.CheckinStatus
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
 import cn.edu.app.douyu.core.data.safeCallToState
@@ -30,7 +34,7 @@ fun ProfileScreen(navController: NavHostController) { ProfileScreenContent(navCo
 
 @Composable
 private fun ProfileScreenContent(navController: NavHostController?) {
-    val dashboardState = safeCallToState { repo.dashboard() }
+    val dashboardState = safeCallToState { repo.dashboard() }.value
     Scaffold(
         topBar = {
             DoyuTopBar("我的", action = {
@@ -75,11 +79,17 @@ private fun ProfileScreenContent(navController: NavHostController?) {
                 ProfileAction("签到与等级", Icons.Filled.WorkspacePremium) { }
             }
             DoyuCard {
-                val checkin = safeCallOrNull { repo.checkinStatus() }
+                var checkin by remember { mutableStateOf<CheckinStatus?>(null) }
+                var badges by remember { mutableStateOf<List<Badge>>(emptyList()) }
+                LaunchedEffect(Unit) {
+                    withContext(Dispatchers.IO) {
+                        checkin = safeCallOrNull { repo.checkinStatus() }
+                        badges = safeCallOrNull { repo.badges() } ?: emptyList()
+                    }
+                }
                 SectionHeader("签到与徽章")
                 Text("今日签到：${if (checkin?.checkedToday == true) "已签到" else "未签到"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(10.dp))
-                val badges = safeCallOrNull { repo.badges() } ?: emptyList()
                 badges.forEach {
                     Text("${it.name} · ${if (it.achieved) "已获得" else "未获得"}", style = MaterialTheme.typography.bodyMedium)
                 }
@@ -118,7 +128,7 @@ fun MyPatternsScreen(navController: NavHostController) { MyPatternsScreenContent
 
 @Composable
 private fun MyPatternsScreenContent(navController: NavHostController?) {
-    val patternsState = safeCallToState { repo.patterns() }
+    val patternsState = safeCallToState { repo.patterns() }.value
     Scaffold(topBar = { DoyuTopBar("我的拼豆", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             when (val state = patternsState) {

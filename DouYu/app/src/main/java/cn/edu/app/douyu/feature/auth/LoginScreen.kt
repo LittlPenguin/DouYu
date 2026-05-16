@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,6 +35,7 @@ fun LoginScreenContent(navController: NavHostController?) {
     val scope = rememberCoroutineScope()
     var phone by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
+    var ageGroup by remember { mutableStateOf("AGE_18_PLUS") }
     var sending by remember { mutableStateOf(false) }
     var logging by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -76,6 +78,19 @@ fun LoginScreenContent(navController: NavHostController?) {
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(18.dp))
+                Text("年龄段", style = MaterialTheme.typography.labelLarge)
+                Spacer(Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = ageGroup == "AGE_18_PLUS", onClick = { ageGroup = "AGE_18_PLUS" })
+                        Text("18 岁及以上", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = ageGroup == "AGE_16_17", onClick = { ageGroup = "AGE_16_17" })
+                        Text("16-17 岁", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                Spacer(Modifier.height(18.dp))
                 DoyuPrimaryButton(
                     text = if (logging) "登录中..." else "登录并进入豆屿",
                     onClick = {
@@ -85,7 +100,7 @@ fun LoginScreenContent(navController: NavHostController?) {
                             scope.launch {
                                 runCatching {
                                     DoyuAppContainer.authSessionManager.loginBySms(
-                                        SmsLoginRequest(phone, code)
+                                        SmsLoginRequest(phone, code, ageGroup)
                                     )
                                 }.onSuccess {
                                     navController?.navigate(BottomTab.PROFILE.route) {

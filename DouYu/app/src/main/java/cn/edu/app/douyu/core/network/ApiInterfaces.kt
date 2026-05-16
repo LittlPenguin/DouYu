@@ -107,6 +107,7 @@ interface PatternApi {
 interface ProductApi {
     @GET("/api/v1/products")
     suspend fun products(
+        @Query("categoryId") categoryId: String? = null,
         @Query("page") page: Int = 1,
         @Query("size") size: Int = 20
     ): ApiResponse<PageResponse<Product>>

@@ -23,10 +23,17 @@ interface PatternRepository {
 
 interface CommerceRepository {
     fun products(): PageResponse<Product>
+    fun productsByCategory(categoryId: String): PageResponse<Product>
     fun product(productId: String): Product
     fun cart(): Cart
+    fun addItemToCart(productId: String, skuId: String, quantity: Int): Cart
+    fun updateCartItem(itemId: String, quantity: Int): Cart
+    fun removeCartItem(itemId: String): Cart
     fun order(): Order
-    fun payment(orderId: String): Payment
+    fun order(orderId: String): Order
+    fun createOrder(itemIds: List<String>, addressId: String): Order
+    fun createPayment(orderId: String, channel: PaymentChannel): Payment
+    fun paymentStatus(paymentId: String): Payment
 }
 
 interface MessageRepository {
@@ -74,7 +81,7 @@ object MockData {
         sizeBytes = 612_000,
         width = 1280,
         height = 960,
-        auditStatus = AuditStatus.APPROVED,
+        auditStatus = AuditStatus.PASS,
         publicUrl = null
     )
 
@@ -238,7 +245,7 @@ object MockData {
             categoryId = "cat_beginner",
             categoryName = "新手套装",
             status = ProductStatus.ON_SALE,
-            auditStatus = AuditStatus.APPROVED,
+            auditStatus = AuditStatus.PASS,
             skus = listOf(sku("sku_001_basic", "product_001", "2.6mm 入门套装", 6990, 128)),
             swatchColor = 0xFFF6A6B2
         ),
@@ -251,7 +258,7 @@ object MockData {
             categoryId = "cat_palette",
             categoryName = "色卡",
             status = ProductStatus.ON_SALE,
-            auditStatus = AuditStatus.APPROVED,
+            auditStatus = AuditStatus.PASS,
             skus = listOf(sku("sku_002_palette", "product_002", "48 色套组", 4590, 76)),
             swatchColor = 0xFFA8DADC
         ),
@@ -264,7 +271,7 @@ object MockData {
             categoryId = "cat_custom",
             categoryName = "玩家定制",
             status = ProductStatus.ON_SALE,
-            auditStatus = AuditStatus.APPROVED,
+            auditStatus = AuditStatus.PASS,
             skus = listOf(sku("sku_003_custom", "product_003", "咨询定金", 0, 1)),
             swatchColor = 0xFFFFD7C2
         )
@@ -378,13 +385,48 @@ class MockPatternRepository : PatternRepository {
 class MockCommerceRepository : CommerceRepository {
     override fun products(): PageResponse<Product> = PageResponse(MockData.products, 1, 20, MockData.products.size, false)
 
+    override fun productsByCategory(categoryId: String): PageResponse<Product> {
+        val filtered = MockData.products.filter { it.categoryId == categoryId }
+        return PageResponse(filtered, 1, 20, filtered.size, false)
+    }
+
     override fun product(productId: String): Product = MockData.products.firstOrNull { it.productId == productId } ?: MockData.products.first()
 
     override fun cart(): Cart = MockData.cart
 
+    override fun addItemToCart(productId: String, skuId: String, quantity: Int): Cart {
+        val product = MockData.products.firstOrNull { it.productId == productId }
+        val sku = product?.skus?.firstOrNull { it.skuId == skuId }
+        val newItem = CartItem(
+            itemId = "cart_item_new_${System.currentTimeMillis()}",
+            productId = productId,
+            product = product,
+            sku = sku,
+            quantity = quantity
+        )
+        return MockData.cart.copy(items = MockData.cart.items + newItem)
+    }
+
+    override fun updateCartItem(itemId: String, quantity: Int): Cart {
+        val updated = MockData.cart.items.map {
+            if (it.itemId == itemId) it.copy(quantity = quantity) else it
+        }
+        return Cart(items = updated)
+    }
+
+    override fun removeCartItem(itemId: String): Cart {
+        return Cart(items = MockData.cart.items.filter { it.itemId != itemId })
+    }
+
     override fun order(): Order = MockData.order
 
-    override fun payment(orderId: String): Payment = MockData.payment.copy(orderId = orderId)
+    override fun order(orderId: String): Order = MockData.order.copy(orderId = orderId)
+
+    override fun createOrder(itemIds: List<String>, addressId: String): Order = MockData.order
+
+    override fun createPayment(orderId: String, channel: PaymentChannel): Payment = MockData.payment.copy(orderId = orderId)
+
+    override fun paymentStatus(paymentId: String): Payment = MockData.payment.copy(paymentId = paymentId)
 }
 
 class MockMessageRepository : MessageRepository {

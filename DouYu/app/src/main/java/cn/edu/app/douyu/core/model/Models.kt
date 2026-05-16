@@ -25,7 +25,7 @@ object ProgressSerializer : KSerializer<Int> {
 enum class ContentStatus { REVIEWING, VISIBLE, SELF_VISIBLE, REJECTED, DELETED }
 
 @Serializable
-enum class AuditStatus { REVIEWING, APPROVED, REJECTED }
+enum class AuditStatus { NEED_MANUAL_REVIEW, PASS, REJECTED }
 
 @Serializable
 enum class UploadUsage { AVATAR, POST_IMAGE, POST_VIDEO, AI_INPUT, PATTERN_OUTPUT, PRODUCT_IMAGE, TRADE_IMAGE }

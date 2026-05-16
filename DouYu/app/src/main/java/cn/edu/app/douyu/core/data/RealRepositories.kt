@@ -4,9 +4,26 @@ import cn.edu.app.douyu.core.model.*
 import cn.edu.app.douyu.core.network.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import retrofit2.HttpException
+
+private val errorJson = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
 private fun <T> apiCall(block: suspend () -> ApiResponse<T>): T {
-    val response = runBlocking(Dispatchers.IO) { block() }
+    val response = try {
+        runBlocking(Dispatchers.IO) { block() }
+    } catch (e: HttpException) {
+        val parsed = runCatching {
+            val body = e.response()?.errorBody()?.string().orEmpty()
+            if (body.isBlank()) null
+            else errorJson.decodeFromString<ApiResponse<kotlinx.serialization.json.JsonElement>>(body)
+        }.getOrNull()
+        throw ApiException(
+            parsed?.code ?: "HTTP_${e.code()}",
+            parsed?.message ?: "请求失败 (${e.code()})",
+            parsed?.traceId
+        )
+    }
     if (!response.isOk) {
         throw ApiException(response.code, response.message, response.traceId)
     }
@@ -41,8 +58,21 @@ class RealCommerceRepository(
     private val paymentApi: PaymentApi
 ) : CommerceRepository {
     override fun products(): PageResponse<Product> = apiCall { productApi.products() }
+
+    override fun productsByCategory(categoryId: String): PageResponse<Product> =
+        apiCall { productApi.products(categoryId = categoryId) }
+
     override fun product(productId: String): Product = apiCall { productApi.product(productId) }
     override fun cart(): Cart = apiCall { cartApi.cart() }
+
+    override fun addItemToCart(productId: String, skuId: String, quantity: Int): Cart =
+        apiCall { cartApi.addItem(AddCartItemRequest(productId, skuId, quantity)) }
+
+    override fun updateCartItem(itemId: String, quantity: Int): Cart =
+        apiCall { cartApi.updateItem(itemId, UpdateCartItemRequest(quantity)) }
+
+    override fun removeCartItem(itemId: String): Cart =
+        apiCall { cartApi.removeItem(itemId) }
 
     override fun order(): Order {
         val page = apiCall { orderApi.orders(page = 1, size = 1) }
@@ -50,21 +80,16 @@ class RealCommerceRepository(
             ?: throw IllegalStateException("No orders found")
     }
 
-    override fun payment(orderId: String): Payment {
-        val order = apiCall { orderApi.order(orderId) }
-        return Payment(
-            paymentId = "pending_$orderId",
-            orderId = orderId,
-            channel = PaymentChannel.WECHAT_APP,
-            status = when (order.status) {
-                OrderStatus.PAID -> PaymentStatus.SUCCEEDED
-                OrderStatus.CANCELED -> PaymentStatus.CLOSED
-                else -> PaymentStatus.PROCESSING
-            },
-            amountCent = order.payableAmountCent,
-            payParams = emptyMap()
-        )
-    }
+    override fun order(orderId: String): Order = apiCall { orderApi.order(orderId) }
+
+    override fun createOrder(itemIds: List<String>, addressId: String): Order =
+        apiCall { orderApi.createOrder(CreateOrderRequest(itemIds, addressId)) }
+
+    override fun createPayment(orderId: String, channel: PaymentChannel): Payment =
+        apiCall { paymentApi.createPayment(CreatePaymentRequest(orderId, channel)) }
+
+    override fun paymentStatus(paymentId: String): Payment =
+        apiCall { paymentApi.payment(paymentId) }
 }
 
 class RealMessageRepository(private val api: MessageApi) : MessageRepository {
