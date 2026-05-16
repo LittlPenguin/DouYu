@@ -86,7 +86,12 @@ fun DoyuApp() {
             }
             composable(AppRoute.IMAGE_SELECT) { ImageSelectScreen(navController) }
             composable(AppRoute.CAMERA_CAPTURE) { CameraCaptureScreen(navController) }
-            composable(AppRoute.AI_PARAMS) { AiParamsScreen(navController) }
+            composable(
+                AppRoute.AI_PARAMS,
+                arguments = listOf(navArgument("uploadedFileId") { type = NavType.StringType })
+            ) {
+                AiParamsScreen(navController, it.arguments?.getString("uploadedFileId").orEmpty())
+            }
             composable(
                 AppRoute.AI_PROGRESS,
                 arguments = listOf(navArgument("jobId") { type = NavType.StringType })

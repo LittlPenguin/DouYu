@@ -321,3 +321,90 @@ mvn test
 - ✅ 21 个后端测试通过 + Android 构建通过
 
 第二阶段重点：接入真实 AI Provider（图片理解+预处理）、完善图纸生成 UI 闭环、图纸导出功能。
+
+---
+
+## 第二阶段完成状态（2026-05-16）
+
+### 后端：AI Provider 接入 + 异步执行 + 算法增强
+
+#### AI Provider 抽象层
+
+- 新增 `AiVisionProvider` 接口：`analyzeImage()` 图片分析 + `prepareImage()` 图片预处理
+- 新增 `ImageAnalysisResult` record：主体识别、裁剪推荐、难度/风格/格数/颜色推荐、适合度评分、风险标记
+- 新增 `ImagePrepareResult` record：预处理结果（中间图 fileKey、安全标记）
+- 新增 `StubAiVisionProvider`：@Profile({"default","dev","test"})，返回合理默认值
+- 新增 `AiProviderProperties`：从 `application.yml` 读取 `doyu.ai.provider.*` 配置
+- 新增 3 个 Stub Provider 单元测试
+
+#### 异步任务执行
+
+- 新增 `PatternJobExecutor`：@Async 异步执行器，集成 AiVisionProvider + BeadPatternEngine
+- 进度追踪：0.0→0.1(AI分析)→0.3(分析完成)→0.5(生成中)→0.7(保存中)→1.0(完成)
+- AI 分析调用带超时保护（`CompletableFuture.get(timeout)`）
+- 失败处理：设置 failureReason、retryable，记录 traceId
+- `PatternController` 改造：POST /jobs 只创建实体并触发异步执行，立即返回 PENDING
+- `PatternJobEntity` 新增 `progress` 和 `analysisResultJson` 字段
+- 新增 Flyway 迁移 `V2__pattern_jobs_add_progress_analysis.sql`
+
+#### BeadPatternEngine 算法增强
+
+- **CIEDE2000 色差计算**：RGB→Lab 色彩空间转换 + CIEDE2000 ΔE 公式，替代 RGB 欧氏距离
+- **多色卡支持**：STANDARD_26MM（23色）和 STANDARD_5MM（30色）
+- **难度参数生效**：BEGINNER≤16色、NORMAL≤32色、ADVANCED≤48色
+- **风格参数生效**：RESTORE（原图还原）、CUTE（增加饱和度）、LOW_COLOR（≤12色）、ICON（居中裁方）
+- **独立色号图**：`generateColorMap()` 生成带色号文字标注的图纸
+- 新增 14 个测试用例（CIEDE2000、难度、色卡、风格、色号图）
+
+### 前端：AI 页面完善
+
+#### 参数页接入真实 API
+
+- `AiParamsScreen`：5 个参数芯片改为可交互（`mutableStateOf` + `FilterChip`）
+- "创建 AI 任务"按钮调用 `patternApi.createJob(CreatePatternJobRequest(...))`
+- 参数映射：中文标签→后端枚举（beadSize, targetSize, difficulty, paletteId, style）
+- 防重复点击（`creating` 状态 + `enabled = !creating`）
+- 导航状态传递：`uploadedFileId` 通过路由参数从 ImageSelectScreen 传到 AiParamsScreen
+
+#### 进度页自动轮询
+
+- `LaunchedEffect(jobId, pollRevision)` 自动轮询，每 2 秒查询 `patternApi.job(jobId)`
+- 读取后端 `progress` 字段展示 `LinearProgressIndicator`
+- 进度文案：分析中(0-30%)→生成中(30-80%)→即将完成(80-100%)
+- 终态自动停止轮询（SUCCEEDED/FAILED/CANCELED/REJECTED）
+- 重试：`pollRevision++` 重启轮询
+- 取消：调用 `patternApi.cancelJob(jobId)` + 返回 AI 首页
+
+#### 图纸结果页操作
+
+- "保存到我的图纸"：调用 `patternApi.favoritePattern(patternId)`，按钮状态变化防重复
+- "加入购物车"：AlertDialog 展示材料清单明细，确认后 Toast + 导航到购物车
+- "导出 PDF"：`pdfFileId` 不为空时显示按钮，当前为占位提示
+- "分享到社区"：导航到发帖页面
+- 色号清单优化：为空时自动隐藏，有合计总豆量统计
+
+### 测试结果
+
+- 后端 38 个测试全部通过（1 contract health + 14 contract + 3 AI provider + 20 engine）
+- Android Debug 构建通过
+
+### 当前状态总结
+
+| 层 | 状态 |
+|---|---|
+| AI Provider 抽象 | ✅ 接口+Stub 已实现，待接入阿里云百炼 |
+| 异步任务执行 | ✅ PatternJobExecutor + 进度追踪 |
+| BeadPatternEngine | ✅ CIEDE2000 + 多色卡 + 难度 + 风格 + 色号图 |
+| 前端 AI 全链路 | ✅ 参数→创建→轮询→结果→收藏/购物车 |
+| PDF 导出 | 🔲 后端 PDF 生成待实现 |
+| 真实 AI Provider 接入 | 🔲 待接入阿里云百炼视觉理解 |
+
+### 剩余任务（第三阶段）
+
+- 接入阿里云百炼 Qwen-VL 视觉理解（替代 StubAiVisionProvider）
+- 接入通义万相图像预处理（清背景、低细节化）
+- PDF 图纸文件生成
+- 成本控制和额度管理
+- Provider Router（主备切换）
+- 缓存策略（相同输入+参数不重复调用）
+- 审核和风控逻辑达到应用市场上线要求

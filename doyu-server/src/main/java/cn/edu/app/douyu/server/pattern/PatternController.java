@@ -4,7 +4,6 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.Models;
 import cn.edu.app.douyu.server.common.PageResult;
 import cn.edu.app.douyu.server.common.entity.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,15 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,23 +37,20 @@ public class PatternController {
     private final PatternAssetRepository patternAssetRepository;
     private final FileAssetRepository fileAssetRepository;
     private final FavoriteRepository favoriteRepository;
-    private final BeadPatternEngine engine;
+    private final PatternJobExecutor jobExecutor;
     private final IdGenerator idGenerator;
     private final ObjectMapper objectMapper;
-    private final Path storagePath;
 
     public PatternController(PatternJobRepository patternJobRepository, PatternAssetRepository patternAssetRepository,
                              FileAssetRepository fileAssetRepository, FavoriteRepository favoriteRepository,
-                             BeadPatternEngine engine, IdGenerator idGenerator, ObjectMapper objectMapper,
-                             @Value("${douyu.storage.local-path:./doyu-storage}") String localDir) {
+                             PatternJobExecutor jobExecutor, IdGenerator idGenerator, ObjectMapper objectMapper) {
         this.patternJobRepository = patternJobRepository;
         this.patternAssetRepository = patternAssetRepository;
         this.fileAssetRepository = fileAssetRepository;
         this.favoriteRepository = favoriteRepository;
-        this.engine = engine;
+        this.jobExecutor = jobExecutor;
         this.idGenerator = idGenerator;
         this.objectMapper = objectMapper;
-        this.storagePath = Paths.get(localDir).toAbsolutePath().normalize();
     }
 
     @Operation(summary = "创建 AI 拼豆任务")
@@ -86,18 +73,11 @@ public class PatternController {
         Instant now = Instant.now();
         PatternJobEntity job = new PatternJobEntity(idGenerator.next("job"), userId, request.inputFileId(), request.beadSize(),
                 request.targetSize(), request.difficulty(), request.paletteId(), request.style(), "PENDING", null, null, false, false, now, now);
+        job.setProgress(0.0);
         patternJobRepository.save(job);
-        try {
-            PatternAssetEntity asset = processPattern(job, input);
-            job.setStatus("SUCCEEDED");
-            job.setPatternId(asset.getId());
-        } catch (Exception e) {
-            job.setStatus("FAILED");
-            job.setFailureReason(e.getMessage());
-        }
-        job.setUpdatedAt(Instant.now());
-        patternJobRepository.save(job);
-        return jobView(job);
+        Map<String, Object> view = jobView(job);
+        jobExecutor.executeAsync(job, input);
+        return view;
     }
 
     @Operation(summary = "查询任务详情")
@@ -181,115 +161,6 @@ public class PatternController {
         return patternView(requirePattern(patternId));
     }
 
-    private PatternAssetEntity processPattern(PatternJobEntity job, FileAssetEntity input) throws IOException {
-        BufferedImage inputImage = loadStoredImage(input.getStorageKey());
-        int[] dims = parseTargetSize(job.getTargetSize());
-        int width = dims[0];
-        int height = dims[1];
-
-        BeadPatternEngine.PatternResult result = engine.generate(inputImage, width, height, job.getPaletteId());
-        BufferedImage previewImage = engine.generatePreview(result.grid(), result.palette(), 16);
-
-        Instant now = Instant.now();
-        String previewFileId = saveOutputImage(job.getUserId(), "preview", previewImage, now);
-        String gridFileId = saveOutputData(job.getUserId(), "grid", serializeGrid(result.grid()), now);
-        String colorMapFileId = saveOutputImage(job.getUserId(), "color-map", previewImage, now);
-
-        PatternAssetEntity asset = new PatternAssetEntity();
-        asset.setId(idGenerator.next("pattern"));
-        asset.setJobId(job.getId());
-        asset.setOwnerId(job.getUserId());
-        asset.setPreviewFileId(previewFileId);
-        asset.setGridFileId(gridFileId);
-        asset.setColorMapFileId(colorMapFileId);
-        asset.setBeadSize(job.getBeadSize());
-        asset.setWidthCells(width);
-        asset.setHeightCells(height);
-        asset.setTotalBeads(result.totalBeads());
-        asset.setMaterialsJson(toJson(Map.of("totalBeads", result.totalBeads(), "colors", result.materials())));
-        asset.setStatus("PRIVATE");
-        asset.setCreatedAt(now);
-        asset.setUpdatedAt(now);
-        return patternAssetRepository.save(asset);
-    }
-
-    private BufferedImage loadStoredImage(String storageKey) throws IOException {
-        Path filePath = storagePath.resolve("uploads").resolve(storageKey);
-        if (Files.exists(filePath)) {
-            BufferedImage image = ImageIO.read(filePath.toFile());
-            if (image != null) return image;
-        }
-        // Fallback: generate a placeholder image for stub/test environments
-        BufferedImage placeholder = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
-        java.awt.Graphics2D g = placeholder.createGraphics();
-        g.setColor(new java.awt.Color(200, 200, 200));
-        g.fillRect(0, 0, 64, 64);
-        g.dispose();
-        return placeholder;
-    }
-
-    private int[] parseTargetSize(String targetSize) {
-        if (targetSize == null) return new int[]{32, 32};
-        String[] parts = targetSize.split("[xX*]");
-        if (parts.length == 2) {
-            try {
-                int w = Integer.parseInt(parts[0].trim());
-                int h = Integer.parseInt(parts[1].trim());
-                if (w > 0 && h > 0) return new int[]{Math.min(w, 256), Math.min(h, 256)};
-            } catch (NumberFormatException ignored) {}
-        }
-        return new int[]{32, 32};
-    }
-
-    private byte[] serializeGrid(int[][] grid) {
-        StringBuilder sb = new StringBuilder();
-        for (int[] row : grid) {
-            for (int i = 0; i < row.length; i++) {
-                if (i > 0) sb.append(',');
-                sb.append(row[i]);
-            }
-            sb.append('\n');
-        }
-        return sb.toString().getBytes();
-    }
-
-    private String saveOutputImage(String userId, String name, BufferedImage image, Instant now) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", baos);
-        byte[] data = baos.toByteArray();
-        String fileKey = "pattern/" + name + "/" + idGenerator.next("obj") + ".png";
-        Path target = storagePath.resolve("uploads").resolve(fileKey);
-        Files.createDirectories(target.getParent());
-        Files.write(target, data);
-        return createOutputFileAsset(userId, name, fileKey, "image/png", data.length, image.getWidth(), image.getHeight(), now);
-    }
-
-    private String saveOutputData(String userId, String name, byte[] data, Instant now) throws IOException {
-        String fileKey = "pattern/" + name + "/" + idGenerator.next("obj") + ".csv";
-        Path target = storagePath.resolve("uploads").resolve(fileKey);
-        Files.createDirectories(target.getParent());
-        Files.write(target, data);
-        return createOutputFileAsset(userId, name, fileKey, "text/csv", data.length, null, null, now);
-    }
-
-    private String createOutputFileAsset(String userId, String name, String fileKey, String mimeType,
-                                         long sizeBytes, Integer width, Integer height, Instant now) {
-        FileAssetEntity file = new FileAssetEntity();
-        file.setId(idGenerator.next("file"));
-        file.setOwnerId(userId);
-        file.setUsage("PATTERN_OUTPUT");
-        file.setStorageKey(fileKey);
-        file.setMimeType(mimeType);
-        file.setSizeBytes(sizeBytes);
-        file.setWidth(width);
-        file.setHeight(height);
-        file.setAuditStatus("PASS");
-        file.setCreatedAt(now);
-        file.setUpdatedAt(now);
-        fileAssetRepository.save(file);
-        return file.getId();
-    }
-
     private PatternJobEntity requireJob(String jobId) {
         return patternJobRepository.findById(jobId)
                 .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "AI 任务不存在"));
@@ -319,7 +190,8 @@ public class PatternController {
         data.put("paletteName", "标准色卡");
         data.put("style", job.getStyle());
         data.put("status", job.getStatus());
-        data.put("progress", "SUCCEEDED".equals(job.getStatus()) ? 1.0 : "PROCESSING".equals(job.getStatus()) ? 0.5 : 0.0);
+        data.put("progress", job.getProgress() != null ? job.getProgress() :
+                "SUCCEEDED".equals(job.getStatus()) ? 1.0 : "PENDING".equals(job.getStatus()) ? 0.0 : 0.5);
         data.put("failureReason", job.getFailureReason());
         data.put("patternId", job.getPatternId());
         if (job.getPatternId() != null) {
@@ -370,11 +242,6 @@ public class PatternController {
         int from = Math.max(0, (page - 1) * size);
         int to = Math.min(items.size(), from + size);
         return from >= items.size() ? List.of() : items.subList(from, to);
-    }
-
-    private String toJson(Object obj) {
-        try { return objectMapper.writeValueAsString(obj); }
-        catch (JsonProcessingException e) { return "{}"; }
     }
 
     private Map<String, Object> fromJson(String json) {

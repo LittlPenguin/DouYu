@@ -22,6 +22,8 @@ public class PatternJobEntity {
     @Column(name = "pattern_id", length = 64) private String patternId;
     @Column(name = "retryable") private boolean retryable;
     @Column(name = "quota_refunded") private boolean quotaRefunded;
+    @Column(name = "progress") private Double progress;
+    @Column(name = "analysis_result_json", columnDefinition = "text") private String analysisResultJson;
     @Column(name = "created_at", nullable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
 
@@ -49,6 +51,8 @@ public class PatternJobEntity {
     public String getPatternId() { return patternId; } public void setPatternId(String patternId) { this.patternId = patternId; }
     public boolean isRetryable() { return retryable; } public void setRetryable(boolean retryable) { this.retryable = retryable; }
     public boolean isQuotaRefunded() { return quotaRefunded; } public void setQuotaRefunded(boolean quotaRefunded) { this.quotaRefunded = quotaRefunded; }
+    public Double getProgress() { return progress; } public void setProgress(Double progress) { this.progress = progress; }
+    public String getAnalysisResultJson() { return analysisResultJson; } public void setAnalysisResultJson(String analysisResultJson) { this.analysisResultJson = analysisResultJson; }
     public Instant getCreatedAt() { return createdAt; } public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return updatedAt; } public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

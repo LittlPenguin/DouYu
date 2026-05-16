@@ -170,6 +170,16 @@ class DouyuBackendContractTests {
                 """.formatted(fileId));
         String jobId = created.at("/data/jobId").asText();
 
+        // Poll for async completion
+        String status = "PENDING";
+        for (int i = 0; i < 50; i++) {
+            JsonNode polled = getJsonWithToken("/api/v1/patterns/jobs/" + jobId, token);
+            status = polled.at("/data/status").asText();
+            if ("SUCCEEDED".equals(status) || "FAILED".equals(status)) break;
+            Thread.sleep(100);
+        }
+        org.assertj.core.api.Assertions.assertThat(status).isEqualTo("SUCCEEDED");
+
         mockMvc.perform(get("/api/v1/patterns/jobs/{jobId}", jobId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())

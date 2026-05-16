@@ -115,7 +115,7 @@
 | `AiImagePreparationService` | 调用图像编辑 Provider，生成清背景或低细节中间图 |
 | `AiProviderRouter` | 按场景、成本、可用性、灰度策略选择 Provider |
 | `PromptTemplateService` | 管理提示词模板、版本、变量和灰度 |
-| `BeadPatternEngine` | 自研拼豆算法主引擎 |
+| `BeadPatternEngine` | 自研拼豆算法主引擎（已实现 CIEDE2000 + 多色卡 + 难度/风格参数） |
 | `PaletteMatchingService` | 色卡管理、色差匹配、缺货替代色 |
 | `PatternAssetService` | 输出文件生成、对象存储写入、资产记录 |
 | `MaterialRecommendationService` | 根据色号和豆量匹配商城 SKU |

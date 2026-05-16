@@ -20,7 +20,7 @@ object AppRoute {
     const val POST_CREATE = "post_create"
     const val IMAGE_SELECT = "image_select"
     const val CAMERA_CAPTURE = "camera_capture"
-    const val AI_PARAMS = "ai_params"
+    const val AI_PARAMS = "ai_params/{uploadedFileId}"
     const val AI_PROGRESS = "ai_progress/{jobId}"
     const val PATTERN_RESULT = "pattern/{patternId}"
     const val PATTERN_HISTORY = "pattern_history"
@@ -55,6 +55,7 @@ object AppRoute {
     ) + BottomTab.entries.map { it.route }
 
     fun postDetail(postId: String) = "post/$postId"
+    fun aiParams(uploadedFileId: String) = "ai_params/$uploadedFileId"
     fun aiProgress(jobId: String) = "ai_progress/$jobId"
     fun patternResult(patternId: String) = "pattern/$patternId"
     fun productDetail(productId: String) = "product/$productId"

@@ -43,3 +43,10 @@ douyu:
     bootstrap-password: ${DOUYU_ADMIN_BOOTSTRAP_PASSWORD:admin123}
   oss:
     provider: ${DOUYU_OSS_PROVIDER:local}
+  ai:
+    provider:
+      name: ${DOUYU_AI_PROVIDER:stub}
+      vision-model: ${DOUYU_AI_VISION_MODEL:stub-vision-v1}
+      prepare-model: ${DOUYU_AI_PREPARE_MODEL:stub-prepare-v1}
+      timeout-ms: ${DOUYU_AI_TIMEOUT_MS:30000}
+      prepare-enabled: ${DOUYU_AI_PREPARE_ENABLED:false}
