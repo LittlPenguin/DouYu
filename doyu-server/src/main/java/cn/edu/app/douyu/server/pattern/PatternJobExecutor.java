@@ -2,6 +2,7 @@ package cn.edu.app.douyu.server.pattern;
 
 import cn.edu.app.douyu.server.common.IdGenerator;
 import cn.edu.app.douyu.server.common.entity.*;
+import cn.edu.app.douyu.server.pattern.ai.AiCallCache;
 import cn.edu.app.douyu.server.pattern.ai.AiVisionProvider;
 import cn.edu.app.douyu.server.pattern.ai.ImageAnalysisResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -36,6 +37,7 @@ public class PatternJobExecutor {
 
     private final BeadPatternEngine engine;
     private final AiVisionProvider aiVisionProvider;
+    private final AiCallCache aiCallCache;
     private final PatternPdfGenerator pdfGenerator;
     private final AiCostControl costControl;
     private final PatternJobRepository patternJobRepository;
@@ -46,7 +48,7 @@ public class PatternJobExecutor {
     private final Path storagePath;
     private final long aiTimeoutMs;
 
-    public PatternJobExecutor(BeadPatternEngine engine, AiVisionProvider aiVisionProvider,
+    public PatternJobExecutor(BeadPatternEngine engine, AiVisionProvider aiVisionProvider, AiCallCache aiCallCache,
                               PatternPdfGenerator pdfGenerator, AiCostControl costControl,
                               PatternJobRepository patternJobRepository, PatternAssetRepository patternAssetRepository,
                               FileAssetRepository fileAssetRepository, IdGenerator idGenerator,
@@ -55,6 +57,7 @@ public class PatternJobExecutor {
                               @Value("${doyu.ai.provider.timeout-ms:30000}") long aiTimeoutMs) {
         this.engine = engine;
         this.aiVisionProvider = aiVisionProvider;
+        this.aiCallCache = aiCallCache;
         this.pdfGenerator = pdfGenerator;
         this.costControl = costControl;
         this.patternJobRepository = patternJobRepository;
@@ -174,10 +177,25 @@ public class PatternJobExecutor {
             options.put("difficulty", job.getDifficulty());
             options.put("beadSize", job.getBeadSize());
 
+            // 检查缓存
+            ImageAnalysisResult cached = aiCallCache.get(input.getStorageKey(), options);
+            if (cached != null) {
+                log.info("Using cached AI analysis for job {}", job.getId());
+                return cached;
+            }
+
+            // 调用 AI Provider
             CompletableFuture<ImageAnalysisResult> future = CompletableFuture.supplyAsync(
                     () -> aiVisionProvider.analyzeImage(input.getStorageKey(), options));
 
-            return future.get(aiTimeoutMs, TimeUnit.MILLISECONDS);
+            ImageAnalysisResult result = future.get(aiTimeoutMs, TimeUnit.MILLISECONDS);
+
+            // 缓存结果
+            if (result != null) {
+                aiCallCache.put(input.getStorageKey(), options, result);
+            }
+
+            return result;
         } catch (Exception e) {
             log.warn("AI analysis failed for job {}, using null: {}", job.getId(), e.getMessage());
             return null;

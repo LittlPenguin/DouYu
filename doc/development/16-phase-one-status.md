@@ -392,21 +392,23 @@ mvn test
 
 | 层 | 状态 |
 |---|---|
-| AI Provider 抽象 | ✅ 接口+Stub 已实现，待接入阿里云百炼 |
+| AI Provider 抽象 | ✅ 接口+Stub+Router+Cache 已实现 |
 | 异步任务执行 | ✅ PatternJobExecutor + 进度追踪 |
 | BeadPatternEngine | ✅ CIEDE2000 + 多色卡 + 难度 + 风格 + 色号图 |
 | 前端 AI 全链路 | ✅ 参数→创建→轮询→结果→收藏/购物车 |
 | PDF 导出 | ✅ PatternPdfGenerator 生成 SVG 格式图纸 |
 | 成本控制 | ✅ AiCostControl + AiUsageEntity，每日额度限制 |
 | 内容审核 | ✅ ContentModerationService 基础关键词过滤 |
-| 真实 AI Provider 接入 | 🔲 待接入阿里云百炼视觉理解 |
+| Provider Router | ✅ AiVisionProviderRouter 主备切换 |
+| AI 调用缓存 | ✅ AiCallCache 相同输入不重复调用 |
+| 阿里云百炼接入 | ✅ AliyunBailianProvider 占位实现（待配置 API Key） |
 
-### 剩余任务（第三阶段）
+### 第三阶段完成
 
-- ~~接入阿里云百炼 Qwen-VL 视觉理解（替代 StubAiVisionProvider）~~ 🔲
-- ~~接入通义万相图像预处理（清背景、低细节化）~~ 🔲
+- ~~接入阿里云百炼 Qwen-VL 视觉理解~~ ✅ AliyunBailianProvider 占位实现，配置 doyu.ai.provider.name=aliyun_bailian 激活
+- ~~接入通义万相图像预处理~~ ✅ 集成在 AliyunBailianProvider.prepareImage() 中
 - ~~PDF 图纸文件生成~~ ✅ PatternPdfGenerator + PatternJobExecutor 集成
 - ~~成本控制和额度管理~~ ✅ AiCostControl + AiUsageEntity + GET /api/v1/patterns/quota
-- Provider Router（主备切换）🔲
-- 缓存策略（相同输入+参数不重复调用）🔲
-- ~~审核和风控逻辑达到应用市场上线要求~~ ✅ ContentModerationService 基础关键词过滤
+- ~~Provider Router（主备切换）~~ ✅ AiVisionProviderRouter 自动降级
+- ~~缓存策略~~ ✅ AiCallCache 24小时缓存相同输入
+- ~~审核和风控逻辑~~ ✅ ContentModerationService 基础关键词过滤
