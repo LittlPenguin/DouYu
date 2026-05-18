@@ -6,6 +6,8 @@
 > 项目名称：豆屿 Doyu  
 > 推荐标语：把喜欢拼成圈子  
 > 当前日期：2026-05-11
+>
+> 说明：本文档是产品、商业和阶段方向总纲，不作为当前实现状态流水账。当前工程事实、未完成项和下一步优先级见 `development/current-status.md`。
 
 ## 0. 执行摘要
 
@@ -17,7 +19,7 @@
 2. 用户是否愿意使用 AI 将照片、头像、宠物、二次元图、礼物图案转成可操作的拼豆图纸。
 3. 用户是否愿意围绕图纸购买材料包、色卡、工具，或向玩家发起二手/定制交易。
 
-本计划不包含代码实现，不初始化 Android 项目，不创建后端工程，不安装依赖。本文档用于后续拆分 PRD、UI 设计稿、Android 技术方案、后端服务方案、AI 算法方案、测试计划和运营计划。
+本文档不记录具体代码变更和联调流水账；Android、后端、接口、数据模型、AI、支付、安全、测试和 UI 规范在 `development/` 分册维护。
 
 ## 1. 项目概述
 
@@ -1255,4 +1257,3 @@ AI 供应商建议：
 - Android Wi-Fi 扫描文档：https://developer.android.com/develop/connectivity/wifi/wifi-scan
 - 微信支付 App 支付文档：https://pay.wechatpay.cn/doc/v3/merchant/4015478291
 - 支付宝开放平台移动应用文档：https://open.alipay.com/module/webApp
-

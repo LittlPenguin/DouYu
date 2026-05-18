@@ -20,8 +20,8 @@
 | nickname | 昵称 |
 | avatarFileId | 头像文件 |
 | bio | 简介 |
-| ageGroup | 年龄段 |
-| isMinor | 是否未成年人 |
+| ageGroup | 年龄段；当前登录接口仍要求传入，Android 默认传 `AGE_18_PLUS`；长期目标是由实名或后端规则判定 |
+| isMinor | 是否未成年人，由后端维护 |
 | realNameStatus | 实名状态 |
 | accountStatus | 账号状态 |
 
@@ -133,6 +133,8 @@
 | status | 任务状态 |
 | failureReason | 失败原因 |
 | patternId | 成功后的图纸 ID |
+| progress | 任务进度，0.0-1.0 |
+| analysisResultJson | 视觉分析结果 JSON |
 
 任务状态：
 
@@ -158,6 +160,7 @@
 | widthCells | 宽度格数 |
 | heightCells | 高度格数 |
 | totalBeads | 总豆量 |
+| materialsJson | 材料清单 JSON |
 | status | 可见状态 |
 
 ### PaletteColor
@@ -324,4 +327,3 @@
 - `REJECT`
 - `SELF_VISIBLE`
 - `NEED_MANUAL_REVIEW`
-

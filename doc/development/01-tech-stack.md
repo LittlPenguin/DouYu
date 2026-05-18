@@ -13,7 +13,7 @@
 | 架构 | 单 Activity + MVVM + Repository |
 | 导航 | Jetpack Navigation Compose |
 | 网络 | Retrofit + OkHttp |
-| 序列化 | Kotlinx Serialization 或 Moshi，项目初始化时二选一后保持一致 |
+| 序列化 | Kotlinx Serialization |
 | 图片加载 | Coil |
 | 本地缓存 | Room + DataStore |
 | 后台任务 | WorkManager |
@@ -41,11 +41,11 @@ Android 最低版本建议：
 | 数据库 | PostgreSQL |
 | 数据库迁移 | Flyway，PostgreSQL 运行时需包含 `flyway-database-postgresql` |
 | 缓存 | Redis |
-| 队列 | 云消息队列、RabbitMQ 或 RocketMQ，初始化时选择一种 |
-| ORM | MyBatis 或 Spring Data JPA，初始化时二选一后保持一致 |
+| 异步任务 | 当前使用 Spring `@Async`；AI 任务量增长后再接入云消息队列、RabbitMQ 或 RocketMQ |
+| ORM | Spring Data JPA |
 | 管理后台 | Web 前端独立工程，接口由后端提供 |
 | 日志 | 结构化日志，包含 traceId |
-| 监控 | 应用指标、错误日志、接口耗时、队列堆积、支付回调异常 |
+| 监控 | 应用指标、错误日志、接口耗时、AI 任务耗时、支付回调异常 |
 
 第一版采用模块化单体，不拆微服务。原因是业务边界尚在验证期，拆微服务会增加部署、链路追踪、事务和团队协作成本。
 
@@ -53,11 +53,11 @@ Android 最低版本建议：
 
 | 能力 | 默认选择 |
 |---|---|
-| 对象存储 | 阿里云 OSS |
+| 对象存储 | 开发环境 Local OSS Provider；生产目标为阿里云 OSS |
 | CDN | 阿里云 CDN 或对象存储同厂商 CDN |
-| 短信 | 国内云短信服务，供应商初始化时确认 |
-| 内容审核 | 国内云内容安全服务 + 人审后台 |
-| AI 模型 | 国内模型 API，通过 `AiProvider` 抽象 |
+| 短信 | 当前为 Stub 验证码；生产接国内云短信服务 |
+| 内容审核 | 当前为基础关键词过滤；生产接国内云内容安全服务 + 人审后台 |
+| AI 模型 | 当前为 Stub Provider + 自研算法；生产通过 `AiVisionProvider` 接国内模型 API |
 | 数据库备份 | PostgreSQL 自动备份 + 手动快照 |
 | 配置管理 | 环境变量 + 云密钥管理 |
 | 部署 | 云服务器或容器服务，先保证可观测和可回滚 |
@@ -78,6 +78,8 @@ Android 最低版本建议：
 
 - 微信支付 App 支付。
 - 支付宝 App 支付。
+
+当前工程只有支付单、Stub 支付参数和回调安全骨架，尚未接入真实微信/支付宝 SDK 或 API，不能用于生产收款。
 
 支付规则：
 

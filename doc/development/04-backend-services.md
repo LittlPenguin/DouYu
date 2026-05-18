@@ -2,294 +2,189 @@
 
 ## 后端目标
 
-后端负责业务规则、数据一致性、支付安全、AI 编排、内容审核、风控和管理后台能力。第一版采用 Spring Boot 模块化单体。
+后端负责业务规则、数据一致性、支付安全、AI 编排、内容审核、风控和管理后台能力。当前采用 Spring Boot 模块化单体，不拆微服务。
 
 ## 当前实现状态
 
-更新日期：2026-05-14。
-
-### OpenAPI 注解
-
-13 个 Controller 全部已补充 `@Tag`、`@Operation`、`@ApiResponses` 注解，Swagger UI 可浏览所有接口。已注解的 Controller：
-
-AuthController、AdminController、AdminAuthController、CommunityController、CommerceController、OrderController、PaymentController、MessageController、RewardController、PatternController、UploadController、UserController、ReportController。
-
-### 字段补齐
-
-以下响应字段已在控制器中补齐，与前端 Models.kt 对齐：
-
-| 接口 | 补齐字段 |
-|---|---|
-| 帖子详情/列表 | `author` 对象（含 `userId`、`nickname`、`avatarUrl`、`bio`、`level`、`isMinor`） |
-| AI 任务详情 | `userId`、`paletteName`、`progress`、`inputName` |
-| 购物车列表 | `productId`、`product` 商品摘要 |
-| 订单详情 | `orderItemId`、`title`、`specName`、`sellerId`、`addressSnapshot` |
-| 通知列表 | `notificationId`、`unread`（`readAt == null`） |
-| 会话列表 | `peerUserId`、`peerName`、`lastMessage`、`unreadCount` |
-| 用户信息 | `avatarUrl`、`level`、`followingCount`、`followerCount` |
-| 图纸详情 | `ownerId`、`title`、`paletteName`、`colorStats` |
-| 支付查询 | `paidAt` |
-| 签到 | `checkedToday` |
-| 徽章 | `description`、`achieved` |
-
-### CreateOrderRequest
-
-创建订单接口改为接收 `itemIds`（购物车项 ID 列表）+ `addressId`（收货地址 ID）+ `remark`（可选备注）。
-
-### InMemoryStore 当前状态
-
-核心业务数据仍使用 `InMemoryStore` 内存存储，PostgreSQL schema 通过 Flyway 定义但核心业务 Repository 尚未全面接入数据库。唯一已接入数据库的 Mapper 为 `DatabaseHealthMapper`。
-
-### 测试
-
-15 个测试全部通过，包括 7 个新增联调测试：社区点赞收藏评论、关注取关、签到成长、消息通知会话、错误场景、Feed 分页、OpenAPI 文档覆盖。
+- Java 21 + Spring Boot。
+- API 前缀统一为 `/api/v1`。
+- Spring Security + JWT access token / refresh token。
+- 核心业务对象已迁移到 PostgreSQL + Spring Data JPA Repository。
+- Flyway 管理数据库迁移。
+- Redis 已作为基础设施接入，当前主要用于后续缓存、限流和异步能力扩展。
+- OpenAPI/Swagger 已覆盖主要 Controller。
+- 本地开发上传使用 Local OSS Provider。
+- AI 拼豆任务已支持异步执行和自研算法生成。
+- 真实 AI Provider、真实微信/支付宝支付、生产级内容审核仍未完成。
 
 ## 模块划分
 
 | 模块 | 职责 |
 |---|---|
-| Auth | 登录、注册、token、验证码、账号注销 |
-| User | 用户资料、主页、实名状态、年龄状态 |
-| Community | 帖子、评论、点赞、收藏、关注、话题 |
-| Upload | 上传凭证、文件元数据、缩略图、审核触发 |
-| Pattern | AI 拼豆任务、图纸资产、色号清单 |
-| Commerce | 商品、SKU、购物车、库存 |
-| Order | 订单、履约、取消、售后 |
-| Payment | 微信支付、支付宝支付、回调、退款 |
-| Message | 通知、私信、系统消息 |
-| Reward | 签到、等级、经验、徽章 |
-| Moderation | 内容审核、举报、处罚 |
-| Admin | 管理后台接口 |
+| `auth` | 短信登录、注册、token、刷新、退出、账号注销 |
+| `user` | 用户资料、主页、实名状态、年龄状态 |
+| `community` | 帖子、评论、点赞、收藏、关注、Feed |
+| `upload` | 上传凭证、文件元数据、本地开发对象存储 |
+| `pattern` | AI 拼豆任务、图纸资产、算法、额度、PDF |
+| `commerce` | 商品、SKU、购物车、库存 |
+| `order` | 订单、取消、售后入口 |
+| `payment` | 支付单、支付参数、回调、安全校验骨架 |
+| `message` | 通知、私信、会话 |
+| `reward` | 签到、等级、经验、徽章 |
+| `moderation` | 内容审核、举报、处理记录 |
+| `admin` | 后台登录、用户、内容、商品、订单、举报、操作日志 |
+| `common` | 统一响应、错误码、鉴权、实体、Repository、TraceId |
 
 ## 本地开发启动
 
 后端工程路径：`D:\Studio\SpellBean\doyu-server`。
 
-Windows 本地推荐使用启动脚本：
+推荐启动：
 
 ```powershell
 cd D:\Studio\SpellBean\doyu-server
 .\start-dev.bat
 ```
 
-脚本等价于：
+等价手动命令：
 
 ```powershell
 docker compose up -d postgres redis
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-`dev` profile 使用 Docker Compose 中的 PostgreSQL 16 和 Redis 7。Spring Boot 4 当前使用的 Flyway 需要在 Maven 中包含 `org.flywaydb:flyway-database-postgresql`，否则连接 PostgreSQL 16 时会在启动阶段报 `Unsupported Database: PostgreSQL 16.x`。
+端口：
 
-端口配置：
+- 后端：`8081`
+- PostgreSQL：宿主机 `5433`，容器内 `5432`
+- Redis：`6379`
 
-- 后端：`server.port: 8081`（`application.yml`）
-- PostgreSQL 宿主机端口：`5433:5432`（`docker-compose.yml`，容器内仍为 5432）
-- Redis：`6379:6379`
+测试：
 
-## 安全配置（SecurityConfig）
+```powershell
+cd D:\Studio\SpellBean\doyu-server
+mvn test
+```
+
+## 安全配置
 
 Spring Security 配置位于 `common/SecurityConfig.java`。
 
-公开接口（permitAll）：
+公开接口：
 
-- 认证相关：`/auth/sms-code`、`/auth/login/sms`、`/auth/refresh`
-- 后台登录：`/admin/auth/login`
-- 支付回调：`/payments/callbacks/**`
-- 社区 Feed：`/posts/feed`、`/posts/following`
-- 帖子详情：`GET /posts/*`（仅 GET 方法免登录）
-- 商品浏览：`/products`、`/products/*`
-- 文件访问：`/uploads/**`
+- `/actuator/**`
+- `/v3/api-docs/**`
+- `/swagger-ui/**`
+- `/api/v1/auth/**`
+- `/api/v1/admin/auth/login`
+- `/api/v1/payments/callbacks/**`
+- `GET /api/v1/posts/feed`
+- `GET /api/v1/posts/following`
+- `GET /api/v1/posts/{postId}`
+- `GET /api/v1/products`
+- `GET /api/v1/products/{productId}`
+- `/uploads/**`
 
-管理后台接口（`/admin/**`）要求 `ROLE_ADMIN` 权限，其余接口均需认证。
+后台接口：
+
+- `/api/v1/admin/**` 要求 `ROLE_ADMIN`。
+
+其他接口默认要求登录。
 
 ## 鉴权与账号
 
-认证方式：
+- 普通用户和后台管理员使用不同角色。
+- 短信验证码开发环境固定为 `123456`。
+- 当前后端 `SmsLoginRequest` 仍要求 `ageGroup`，Android 现阶段继续传默认 `AGE_18_PLUS`。
+- 年龄段、未成年人状态和实名状态长期应由后端业务逻辑维护；移除登录 `ageGroup` 需要先修改后端接口和客户端模型。
+- 玩家卖家、提现、定制服务发布者必须 18+ 实名。
+- refresh token 必须可撤销；退出登录应撤销当前 refresh token。
 
-- access token：短期有效。
-- refresh token：长期有效，可撤销。
-- 管理后台账号与普通用户账号分离。
+## 持久化
 
-账号状态：
+- 当前核心业务数据使用 JPA Repository 持久化。
+- Flyway 迁移文件位于 `src/main/resources/db/migration/`。
+- `ddl-auto` 使用 `validate`，避免运行时隐式改表。
+- 对外业务 ID 使用字符串。
+- 订单、支付、退款、库存、实名、审核相关改动必须说明迁移和回滚风险。
 
-- 正常。
-- 待验证。
-- 限制发布。
-- 限制交易。
-- 封禁。
-- 注销中。
-- 已注销。
+## 上传与对象存储
 
-年龄策略：
+当前开发环境：
 
-- 用户注册时确认年龄段。
-- 16-17 岁标记为未成年人。
-- 玩家卖家、提现、定制服务发布必须 18+ 实名。
+- 使用 Local OSS Provider。
+- 后端签发上传地址。
+- Android 直传文件。
+- 后端 confirm 后生成 `FileAsset`。
+- `/uploads/**` 用于本地开发访问文件。
 
-## 社区服务
+生产目标：
 
-社区服务负责：
+- 接入真实对象存储，例如阿里云 OSS。
+- 客户端不得持有 OSS Secret。
+- 上传文件默认按不可信输入处理，必须经过类型、大小、用途和审核校验。
 
-- Feed 查询。
-- 发帖。
-- 帖子详情。
-- 评论。
-- 点赞。
-- 收藏。
-- 关注。
-- 话题。
-- 举报。
+## AI 拼豆
 
-内容状态：
+当前已实现：
 
-- 草稿。
-- 审核中。
-- 可见。
-- 仅自己可见。
-- 驳回。
-- 删除。
+- AI 任务创建、查询、列表、取消。
+- 异步执行器 `PatternJobExecutor`。
+- 进度追踪。
+- BeadPatternEngine 图纸算法。
+- 预览图、色号图、材料清单、PDF 生成。
+- AI 调用缓存和每日额度记录。
 
-Feed 第一版采用规则排序：
+仍未完成：
 
-- 审核通过。
-- 发布时间。
-- 点赞数。
-- 收藏数。
-- 评论数。
-- 举报降权。
-- 运营置顶。
+- 真实阿里云百炼/通义万相 API 调用。
+- 生产级输入/输出审核。
+- Provider 限流、熔断、监控和真实成本统计。
 
-## AI 图纸任务服务
+## 支付
 
-任务特点：
-
-- 异步。
-- 可追踪。
-- 可重试。
-- 可审核。
-- 可计费或消耗次数。
-
-后端职责：
-
-- 校验用户额度。
-- 校验输入图片。
-- 创建任务。
-- 投递队列。
-- 执行或调度 AI Provider。
-- 保存结果文件。
-- 更新任务状态。
-- 失败返还次数。
-
-任务状态见 `06-data-model.md`。
-
-## 上传服务
-
-上传服务只签发凭证，不接收大文件作为默认路径。
-
-服务端校验：
-
-- 文件用途。
-- 文件类型。
-- 文件大小。
-- 用户权限。
-- 上传频率。
-
-上传完成后：
-
-- 保存文件元数据。
-- 触发内容审核。
-- 生成缩略图。
-- 清理 EXIF。
-- 按用途决定是否可公开访问。
-
-## 商城与订单
-
-后端必须保证：
-
-- 商品价格以服务端为准。
-- 库存以服务端为准。
-- 优惠以服务端为准。
-- 订单状态机不可被客户端跳转。
-- 支付前锁定库存或下单时校验库存。
-
-自营商城和玩家市场要区分交易责任。第一版玩家直连交易以撮合、留痕、举报、风控为主。
-
-## 支付服务
-
-支付服务负责：
+当前已实现：
 
 - 创建支付单。
-- 调用微信支付。
-- 调用支付宝。
-- 处理支付回调。
-- 主动查询支付状态。
-- 退款申请。
-- 支付日志。
+- 返回开发态支付参数。
+- 支付回调入口。
+- 回调签名验证接口。
+- 金额校验、渠道一致性、时间窗口防重放和幂等处理骨架。
 
-支付回调要求：
+仍未完成：
 
-- 验签。
-- 幂等。
-- 记录原始通知摘要。
-- 不信任客户端状态。
-- 异常时可重放处理。
+- 微信支付 App 支付真实 SDK/API。
+- 支付宝 App 支付真实 SDK/API。
+- 渠道主动查询。
+- 退款真实调用和退款回调。
+- 对账和异常账务处理。
 
-## 消息服务
-
-消息类型：
-
-- 评论。
-- 点赞收藏。
-- 关注。
-- 系统通知。
-- AI 完成。
-- 订单。
-- 私信。
-- 举报处理。
-
-私信风控：
-
-- 敏感词过滤。
-- 频率限制。
-- 陌生人限制。
-- 举报入口。
-- 高风险外部联系方式识别。
-
-## 审核与风控
-
-审核对象：
-
-- 昵称、头像、简介。
-- 帖子文本和媒体。
-- 评论。
-- 私信。
-- 商品信息。
-- AI 输入和输出。
-- 玩家交易内容。
-
-处罚方式：
-
-- 内容驳回。
-- 删除。
-- 限流。
-- 禁言。
-- 限制交易。
-- 封禁账号。
+客户端不得单点判定支付成功，订单最终状态以服务端为准。
 
 ## 管理后台
 
-后台必须支持：
+后端提供后台 API：
 
-- 用户查询和处理。
-- 内容审核。
+- 管理员登录。
+- 用户列表和搜索。
+- 帖子列表和搜索。
 - 举报处理。
-- 商品和 SKU 管理。
-- 订单查询。
-- 支付记录查询。
-- AI 任务查询。
-- 玩家交易风控。
-- 等级和签到配置。
-- 运营位和话题管理。
+- 商品、订单、AI 任务等运营处理入口。
+- 操作日志。
 
-后台操作必须记录操作人、时间、对象、前后状态和原因。
+当前还没有完整运营后台前端。上线前需要补齐运营可用的审核、举报、订单和风控工作台。
+
+## Provider 边界
+
+当前 Provider 状态：
+
+| 能力 | 当前状态 | 生产要求 |
+|---|---|---|
+| 短信 | Stub 验证码 `123456` | 接入真实短信供应商、限流、防刷 |
+| OSS | Local OSS Provider | 接入真实对象存储和 CDN |
+| AI | Stub + 自研算法，Aliyun provider 占位 | 接入真实视觉 Provider |
+| 微信支付 | Stub 参数和回调骨架 | 官方 SDK/API、验签、查询、退款、对账 |
+| 支付宝支付 | Stub 参数和回调骨架 | 官方 SDK/API、验签、查询、退款、对账 |
+| 内容审核 | 基础关键词过滤 | 云内容安全 + 人审后台 + 风控策略 |
+
+不得把 Stub 或占位 Provider 当作生产能力交付。
