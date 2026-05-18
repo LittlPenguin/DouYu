@@ -220,7 +220,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 `dev` profile 需要本机 PostgreSQL 和 Redis。项目已提供 Docker Compose：
 
-- PostgreSQL: `localhost:5432`，数据库 `douyu`，账号 `douyu`。
+- PostgreSQL: `localhost:5433`，数据库 `douyu`，账号 `douyu`。
 - Redis: `localhost:6379`。
 
 如果只运行自动化测试，不需要启动 PostgreSQL/Redis：
@@ -232,10 +232,10 @@ mvn test
 
 ### 前端联调地址
 
-- API Base URL: `http://localhost:8080/api/v1`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- 健康检查: `http://localhost:8080/actuator/health`
+- API Base URL: `http://localhost:8081/api/v1`
+- OpenAPI JSON: `http://localhost:8081/v3/api-docs`
+- Swagger UI: `http://localhost:8081/swagger-ui/index.html`
+- 健康检查: `http://localhost:8081/actuator/health`
 
 Swagger/OpenAPI 已暴露当前所有后端 Controller 中的 `/api/v1` 接口，并配置 Bearer Auth。Android 联调时，普通接口使用用户登录返回的 `accessToken`，后台接口使用 `/api/v1/admin/auth/login` 返回的后台 token。
 
@@ -264,9 +264,7 @@ Swagger/OpenAPI 已暴露当前所有后端 Controller 中的 `/api/v1` 接口�
 
 - 测试手机号可使用任意手机号格式，建议固定使用 `13800000001`、`13800000002` 等。
 - 短信验证码固定为 `123456`。
-- 新用户登录必须传 `ageGroup`：
-  - `AGE_16_17`：服务端返回用户 `isMinor=true`。
-  - `AGE_18_PLUS`：服务端返回成年用户。
+- ~~新用户登录必须传 `ageGroup`~~：`ageGroup` 已从客户端移除，年龄段由后端根据实名信息自动判定。登录只需手机号 + 验证码。
 - 后台测试账号：`admin / admin123`，仅 `dev/test` 默认配置使用。
 
 ### 上传与 AI 任务冻结口径

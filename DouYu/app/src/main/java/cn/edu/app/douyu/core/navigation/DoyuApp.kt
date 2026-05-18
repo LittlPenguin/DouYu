@@ -136,6 +136,8 @@ fun DoyuApp() {
                 ConversationScreen(navController, it.arguments?.getString("conversationId").orEmpty())
             }
             composable(AppRoute.MY_PATTERNS) { MyPatternsScreen(navController) }
+            composable(AppRoute.FAVORITES) { FavoritesScreen(navController) }
+            composable(AppRoute.MY_ORDERS) { MyOrdersScreen(navController) }
             composable(AppRoute.SETTINGS) { SettingsScreen(navController) }
         }
     }

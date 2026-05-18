@@ -306,11 +306,6 @@ fun PageStateView(
                 message = "当前账号没有这个操作权限。"
                 showRetry = false
             }
-            UiState.Reviewing -> {
-                title = "内容审核中"
-                message = "发布后需要通过审核才会公开展示。"
-                showRetry = false
-            }
             UiState.WeakNetwork -> {
                 title = "网络有点慢"
                 message = "关键任务会保留状态，可以稍后重试。"
@@ -378,6 +373,37 @@ fun BeadPattern(modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+// ── LoginRequiredDialog ──
+
+@Composable
+fun LoginRequiredDialog(
+    onDismiss: () -> Unit,
+    onLogin: () -> Unit,
+    message: String = "登录后可以使用完整功能"
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("需要登录") },
+        text = {
+            Column {
+                Text(message)
+                Spacer(Modifier.height(8.dp))
+                Text("登录后可以保存图纸、收藏作品、查看订单和同步生成记录。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onLogin) {
+                Text("去登录")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("返回")
+            }
+        }
+    )
 }
 
 // ── SectionHeader ──

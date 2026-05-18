@@ -31,6 +31,8 @@ object AppRoute {
     const val PAYMENT_RESULT = "payment_result/{orderId}"
     const val CONVERSATION = "conversation/{conversationId}"
     const val MY_PATTERNS = "my_patterns"
+    const val FAVORITES = "favorites"
+    const val MY_ORDERS = "my_orders"
     const val SETTINGS = "settings"
 
     val allRoutes = listOf(
@@ -51,6 +53,8 @@ object AppRoute {
         PAYMENT_RESULT,
         CONVERSATION,
         MY_PATTERNS,
+        FAVORITES,
+        MY_ORDERS,
         SETTINGS
     ) + BottomTab.entries.map { it.route }
 

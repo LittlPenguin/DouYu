@@ -51,6 +51,20 @@ fun CommunityFeedScreen(navController: NavHostController) { CommunityFeedScreenC
 private fun CommunityFeedScreenContent(navController: NavHostController?) {
     var selectedTag by remember { mutableIntStateOf(0) }
     val tags = listOf("推荐", "热门", "教程", "关注", "配件")
+    var searchQuery by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
+    var showLoginDialog by remember { mutableStateOf(false) }
+
+    if (showLoginDialog) {
+        LoginRequiredDialog(
+            onDismiss = { showLoginDialog = false },
+            onLogin = {
+                showLoginDialog = false
+                navController?.navigate(cn.edu.app.douyu.core.navigation.AppRoute.LOGIN)
+            },
+            message = "登录后才能使用完整功能"
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -67,10 +81,16 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = { showSearch = !showSearch }) {
                         Icon(Icons.Filled.Search, contentDescription = "搜索", tint = LightPrimary)
                     }
-                    IconButton(onClick = { navController?.navigate(AppRoute.POST_CREATE) }) {
+                    IconButton(onClick = {
+                        if (DoyuAppContainer.isLoggedIn) {
+                            navController?.navigate(AppRoute.POST_CREATE)
+                        } else {
+                            showLoginDialog = true
+                        }
+                    }) {
                         Icon(Icons.Filled.AddCircle, contentDescription = "发帖", tint = LightPrimary)
                     }
                 },
@@ -81,7 +101,13 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController?.navigate(AppRoute.POST_CREATE) },
+                onClick = {
+                    if (DoyuAppContainer.isLoggedIn) {
+                        navController?.navigate(AppRoute.POST_CREATE)
+                    } else {
+                        showLoginDialog = true
+                    }
+                },
                 containerColor = LightPrimary,
                 contentColor = LightOnPrimary,
                 shape = MaterialTheme.shapes.medium
@@ -96,6 +122,27 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
+            // Search bar (collapsible)
+            AnimatedVisibility(visible = showSearch) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("搜索帖子...") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Filled.Clear, contentDescription = "清除")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
             // Tag chips - horizontal scrolling
             LazyRow(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -103,12 +150,18 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
             ) {
                 items(tags.size) { index ->
                     val selected = index == selectedTag
-                    TagChip(
-                        text = tags[index],
-                        selected = selected,
-                        color = if (selected) LightPrimaryContainer else LightSurfaceVariant,
-                        contentColor = if (selected) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Surface(
+                        onClick = { selectedTag = index },
+                        shape = MaterialTheme.shapes.small,
+                        color = if (selected) LightPrimaryContainer else LightSurfaceVariant
+                    ) {
+                        Text(
+                            tags[index],
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = if (selected) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
             }
 
@@ -117,6 +170,22 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
             val feedState = safeCallToState(feedRetryCount) { repo.feed() }.value
             when (val state = feedState) {
                 is UiState.Success -> {
+                    val filteredPosts = state.data.items.filter { post ->
+                        val matchesTag = selectedTag == 0 || // "推荐" = all
+                                post.topicNames.any { it.contains(tags[selectedTag]) } ||
+                                tags[selectedTag] in post.content
+                        val matchesSearch = searchQuery.isBlank() ||
+                                post.title.contains(searchQuery, ignoreCase = true) ||
+                                post.content.contains(searchQuery, ignoreCase = true)
+                        matchesTag && matchesSearch
+                    }
+                    if (filteredPosts.isEmpty()) {
+                        EmptyContent(
+                            "没有找到帖子",
+                            "换个关键词试试？",
+                            showRetry = false
+                        )
+                    } else {
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Fixed(2),
                         modifier = Modifier.fillMaxSize(),
@@ -124,7 +193,7 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalItemSpacing = 12.dp
                     ) {
-                        itemsIndexed(state.data.items) { index, post ->
+                        itemsIndexed(filteredPosts) { index, post ->
                             StaggeredItemAnimator(index = index) {
                                 PostCard(
                                     post = post,
@@ -133,6 +202,7 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                             }
                         }
                     }
+                    } // end else (filteredPosts not empty)
                 }
                 is UiState.Empty -> {
                     EmptyContent(
@@ -173,16 +243,6 @@ private fun PostCard(post: Post, onClick: () -> Unit) {
                     .aspectRatio(0.75f + (post.likeCount % 3) * 0.15f)
                     .background(LightSurfaceVariant)
             ) {
-                if (post.status == ContentStatus.REVIEWING) {
-                    TagChip(
-                        "审核中",
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp),
-                        color = LightTertiaryContainer,
-                        contentColor = LightOnTertiaryContainer
-                    )
-                }
             }
 
             // Content area
@@ -244,7 +304,8 @@ fun PostDetailScreen(navController: NavHostController, postId: String) { PostDet
 
 @Composable
 private fun PostDetailScreenContent(navController: NavHostController?, postId: String) {
-    val postState = safeCallToState(postId) { repo.post(postId) }.value
+    var postRetryCount by remember { mutableIntStateOf(0) }
+    val postState = safeCallToState(postId, postRetryCount) { repo.post(postId) }.value
     Scaffold(
         topBar = {
             DoyuTopBar("作品详情", canGoBack = true, onBack = { navController?.popBackStack() })
@@ -326,7 +387,7 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                else -> PageStateView(postState)
+                else -> PageStateView(postState, onRetry = { postRetryCount++ })
             }
         }
     }
@@ -341,6 +402,29 @@ fun PostCreateScreen(navController: NavHostController) { PostCreateScreenContent
 
 @Composable
 private fun PostCreateScreenContent(navController: NavHostController?) {
+    var title by remember { mutableStateOf("") }
+    var content by remember { mutableStateOf("") }
+    var submitted by remember { mutableStateOf(false) }
+    var showLoginDialog by remember { mutableStateOf(false) }
+
+    if (showLoginDialog) {
+        LoginRequiredDialog(
+            onDismiss = { showLoginDialog = false },
+            onLogin = {
+                showLoginDialog = false
+                navController?.navigate(cn.edu.app.douyu.core.navigation.AppRoute.LOGIN)
+            },
+            message = "登录后才能发布作品"
+        )
+    }
+
+    // Check login status on entry
+    LaunchedEffect(Unit) {
+        if (!DoyuAppContainer.isLoggedIn) {
+            showLoginDialog = true
+        }
+    }
+
     Scaffold(
         topBar = {
             DoyuTopBar("发布作品", canGoBack = true, onBack = { navController?.popBackStack() })
@@ -349,15 +433,15 @@ private fun PostCreateScreenContent(navController: NavHostController?) {
         DoyuPage(padding) {
             DoyuCard {
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = title,
+                    onValueChange = { title = it },
                     label = { Text("标题") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
+                    value = content,
+                    onValueChange = { content = it },
                     label = { Text("正文、教程或踩坑经验") },
                     minLines = 5,
                     modifier = Modifier.fillMaxWidth()
@@ -373,13 +457,20 @@ private fun PostCreateScreenContent(navController: NavHostController?) {
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "发布接口使用 mediaFileIds；图片先走 /uploads/presign、直传、/uploads/confirm，发布后可能进入审核中。",
+                    "发布接口使用 mediaFileIds；图片先走 /uploads/presign、直传、/uploads/confirm。",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            DoyuPrimaryButton("提交发布", onClick = {}, modifier = Modifier.fillMaxWidth())
-            PageStateView(UiState.Reviewing)
+            DoyuPrimaryButton(
+                "提交发布",
+                onClick = { submitted = true },
+                enabled = title.isNotBlank() && content.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (submitted) {
+                LaunchedEffect(Unit) { navController?.popBackStack() }
+            }
         }
     }
 }

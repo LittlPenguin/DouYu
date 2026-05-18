@@ -7,6 +7,5 @@ sealed interface UiState<out T> {
     data class Error(val message: String) : UiState<Nothing>
     data object RequireLogin : UiState<Nothing>
     data object Forbidden : UiState<Nothing>
-    data object Reviewing : UiState<Nothing>
     data object WeakNetwork : UiState<Nothing>
 }

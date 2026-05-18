@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -40,10 +41,12 @@ public class SecurityConfig {
                                 "/api/v1/admin/auth/login",
                                 "/api/v1/payments/callbacks/**",
                                 "/api/v1/posts/feed",
+                                "/api/v1/posts/following",
                                 "/api/v1/products",
                                 "/api/v1/products/*",
                                 "/uploads/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/*").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(errors -> errors

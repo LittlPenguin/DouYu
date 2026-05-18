@@ -5,7 +5,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -17,6 +16,10 @@ import cn.edu.app.douyu.core.model.SmsLoginRequest
 import cn.edu.app.douyu.core.navigation.BottomTab
 import cn.edu.app.douyu.core.ui.*
 import kotlinx.coroutines.launch
+
+private fun isValidPhone(phone: String): Boolean {
+    return phone.matches(Regex("^1[3-9]\\d{9}$"))
+}
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
@@ -35,10 +38,11 @@ fun LoginScreenContent(navController: NavHostController?) {
     val snackbarHostState = remember { SnackbarHostState() }
     var phone by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
-    var ageGroup by remember { mutableStateOf("AGE_18_PLUS") }
     var sending by remember { mutableStateOf(false) }
     var logging by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showCodeDialog by remember { mutableStateOf(false) }
+    var sentCode by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = { DoyuTopBar("手机号登录", canGoBack = true, onBack = { navController?.popBackStack() }) },
@@ -54,6 +58,10 @@ fun LoginScreenContent(navController: NavHostController?) {
                     onValueChange = { phone = it.take(11) },
                     label = { Text("手机号") },
                     singleLine = true,
+                    isError = phone.isNotEmpty() && !isValidPhone(phone),
+                    supportingText = if (phone.isNotEmpty() && !isValidPhone(phone)) {
+                        { Text("请输入正确的手机号") }
+                    } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -75,14 +83,17 @@ fun LoginScreenContent(navController: NavHostController?) {
                                         // 尝试调用后端发送验证码
                                         runCatching {
                                             DoyuAppContainer.apiClient.authApi.sendSmsCode(SmsCodeRequest(phone))
+                                        }.onSuccess {
+                                            sentCode = "123456"
+                                            showCodeDialog = true
+                                        }.onFailure {
+                                            error = ErrorMessages.fromException(it as Exception)
                                         }
-                                        // 无论成功与否，自动填入 stub 验证码
-                                        code = "123456"
                                         sending = false
                                     }
                                 }
                             },
-                            enabled = !sending && phone.length == 11
+                            enabled = !sending && isValidPhone(phone)
                         ) {
                             Text(if (sending) "发送中..." else "获取验证码")
                         }
@@ -92,33 +103,17 @@ fun LoginScreenContent(navController: NavHostController?) {
 
                 Spacer(Modifier.height(18.dp))
 
-                // 年龄段选择
-                Text("年龄段", style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = ageGroup == "AGE_18_PLUS", onClick = { ageGroup = "AGE_18_PLUS" })
-                        Text("18 岁及以上", style = MaterialTheme.typography.bodyMedium)
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = ageGroup == "AGE_16_17", onClick = { ageGroup = "AGE_16_17" })
-                        Text("16-17 岁", style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-
-                Spacer(Modifier.height(18.dp))
-
                 // 登录按钮
                 DoyuPrimaryButton(
                     text = if (logging) "登录中..." else "登录并进入豆屿",
                     onClick = {
-                        if (phone.length == 11 && code.length == 6 && !logging) {
+                        if (isValidPhone(phone) && code.length == 6 && !logging) {
                             logging = true
                             error = null
                             scope.launch {
                                 runCatching {
                                     DoyuAppContainer.authSessionManager.loginBySms(
-                                        SmsLoginRequest(phone, code, ageGroup)
+                                        SmsLoginRequest(phone, code)
                                     )
                                 }.onSuccess {
                                     navController?.navigate(BottomTab.PROFILE.route) {
@@ -133,7 +128,7 @@ fun LoginScreenContent(navController: NavHostController?) {
                     },
                     icon = Icons.AutoMirrored.Filled.Login,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = phone.length == 11 && code.length == 6 && !logging
+                    enabled = isValidPhone(phone) && code.length == 6 && !logging
                 )
             }
 
@@ -143,21 +138,28 @@ fun LoginScreenContent(navController: NavHostController?) {
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }
             }
-
-            // 合规提示
-            DoyuCard {
-                Text("合规提示", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-                Text("注册登录时需要确认年龄段。16-17 岁用户会受到卖家发布和高额消费限制。", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            // 开发提示
-            DoyuCard {
-                Text("开发模式", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(8.dp))
-                Text("测试手机号：13800000001", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("验证码：123456（点击获取自动填入）", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
         }
+    }
+
+    // 验证码弹窗
+    if (showCodeDialog) {
+        AlertDialog(
+            onDismissRequest = { showCodeDialog = false },
+            title = { Text("验证码") },
+            text = {
+                Column {
+                    Text("验证码已发送至 $phone")
+                    Spacer(Modifier.height(8.dp))
+                    Text("验证码：$sentCode", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(8.dp))
+                    Text("请手动输入验证码", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCodeDialog = false }) {
+                    Text("确定")
+                }
+            }
+        )
     }
 }

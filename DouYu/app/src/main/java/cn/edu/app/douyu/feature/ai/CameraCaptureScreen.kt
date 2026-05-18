@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.view.OrientationEventListener
+import android.view.Surface
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -180,11 +182,33 @@ private fun CameraPreviewContent(
     val lifecycleOwner = LocalLifecycleOwner.current
     val imageCapture = remember { ImageCapture.Builder().build() }
     var isCapturing by remember { mutableStateOf(false) }
+    var useFrontCamera by remember { mutableStateOf(false) }
+
+    // Track device orientation and update ImageCapture targetRotation
+    DisposableEffect(Unit) {
+        val listener = object : OrientationEventListener(context) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) return
+                val rotation = when {
+                    orientation >= 315 || orientation < 45 -> Surface.ROTATION_0
+                    orientation >= 45 && orientation < 135 -> Surface.ROTATION_90
+                    orientation >= 135 && orientation < 225 -> Surface.ROTATION_180
+                    else -> Surface.ROTATION_270
+                }
+                imageCapture.targetRotation = rotation
+            }
+        }
+        listener.enable()
+        onDispose { listener.disable() }
+    }
 
     Box(modifier = modifier) {
+        val cameraSelector = if (useFrontCamera) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
         AndroidView(
             factory = { ctx ->
-                val previewView = PreviewView(ctx)
+                val previewView = PreviewView(ctx).apply {
+                    scaleType = PreviewView.ScaleType.FILL_CENTER
+                }
                 val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
                 cameraProviderFuture.addListener({
                     val cameraProvider = cameraProviderFuture.get()
@@ -194,15 +218,49 @@ private fun CameraPreviewContent(
                     cameraProvider.unbindAll()
                     cameraProvider.bindToLifecycle(
                         lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        cameraSelector,
                         preview,
                         imageCapture
                     )
                 }, ContextCompat.getMainExecutor(ctx))
                 previewView
             },
+            update = { previewView ->
+                val cameraProviderFuture = ProcessCameraProvider.getInstance(previewView.context)
+                cameraProviderFuture.addListener({
+                    val cameraProvider = cameraProviderFuture.get()
+                    val preview = Preview.Builder().build()
+                        .also {
+                            it.surfaceProvider = previewView.surfaceProvider
+                        }
+                    cameraProvider.unbindAll()
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        cameraSelector,
+                        preview,
+                        imageCapture
+                    )
+                }, ContextCompat.getMainExecutor(previewView.context))
+            },
             modifier = Modifier.fillMaxSize()
         )
+
+        // Camera flip button
+        FloatingActionButton(
+            onClick = { useFrontCamera = !useFrontCamera },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(48.dp),
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+            shape = CircleShape
+        ) {
+            Icon(
+                Icons.Filled.Refresh,
+                contentDescription = "切换摄像头",
+                modifier = Modifier.size(24.dp)
+            )
+        }
 
         // Capture button
         Box(

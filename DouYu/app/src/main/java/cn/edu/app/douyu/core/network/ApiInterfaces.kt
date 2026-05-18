@@ -100,6 +100,12 @@ interface PatternApi {
     @POST("/api/v1/patterns/{patternId}/favorite")
     suspend fun favoritePattern(@Path("patternId") patternId: String): ApiResponse<Unit>
 
+    @GET("/api/v1/patterns/favorites")
+    suspend fun favorites(
+        @Query("page") page: Int = 1,
+        @Query("size") size: Int = 20
+    ): ApiResponse<PageResponse<PatternAsset>>
+
     @GET("/api/v1/patterns/{patternId}")
     suspend fun pattern(@Path("patternId") patternId: String): ApiResponse<PatternAsset>
 }

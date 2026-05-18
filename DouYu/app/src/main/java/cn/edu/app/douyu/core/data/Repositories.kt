@@ -29,6 +29,7 @@ interface CommerceRepository {
     fun addItemToCart(productId: String, skuId: String, quantity: Int): Cart
     fun updateCartItem(itemId: String, quantity: Int): Cart
     fun removeCartItem(itemId: String): Cart
+    fun orders(): PageResponse<Order>
     fun order(): Order
     fun order(orderId: String): Order
     fun createOrder(itemIds: List<String>, addressId: String): Order
@@ -45,6 +46,7 @@ interface MessageRepository {
 interface ProfileRepository {
     fun dashboard(): DashboardData
     fun patterns(): List<PatternAsset>
+    fun favorites(): PageResponse<PatternAsset>
     fun checkinStatus(): CheckinStatus
     fun badges(): List<Badge>
 }
@@ -113,7 +115,7 @@ object MockData {
             topicIds = listOf("topic_beginner"),
             topicNames = listOf("新手教程"),
             linkedPatternId = null,
-            status = ContentStatus.REVIEWING,
+            status = ContentStatus.VISIBLE,
             likeCount = 96,
             favoriteCount = 44,
             commentCount = 12
@@ -220,9 +222,9 @@ object MockData {
             paletteId = "palette_doyu_48",
             paletteName = "豆屿通用 48 色",
             style = PatternStyle.CUTE,
-            status = PatternJobStatus.REJECTED,
+            status = PatternJobStatus.FAILED,
             progress = 0,
-            failureReason = "图片审核未通过或主体不清晰",
+            failureReason = "图片不清晰或主体不明确",
             patternId = null
         )
     )
@@ -418,6 +420,8 @@ class MockCommerceRepository : CommerceRepository {
         return Cart(items = MockData.cart.items.filter { it.itemId != itemId })
     }
 
+    override fun orders(): PageResponse<Order> = PageResponse(listOf(MockData.order), 1, 20, 1, false)
+
     override fun order(): Order = MockData.order
 
     override fun order(orderId: String): Order = MockData.order.copy(orderId = orderId)
@@ -457,6 +461,8 @@ class MockProfileRepository : ProfileRepository {
     )
 
     override fun patterns(): List<PatternAsset> = MockData.patterns
+
+    override fun favorites(): PageResponse<PatternAsset> = PageResponse(MockData.patterns, 1, 20, MockData.patterns.size, false)
 
     override fun checkinStatus(): CheckinStatus = CheckinStatus(checkedToday = false)
 

@@ -43,7 +43,7 @@
 | NOT_FOUND | 资源不存在 |
 | CONFLICT | 状态冲突或重复提交 |
 | RATE_LIMITED | 请求过于频繁 |
-| AUDIT_REJECTED | 内容审核未通过 |
+| AUDIT_REJECTED | 内容不符合要求 |
 | PAYMENT_FAILED | 支付失败 |
 | INVENTORY_NOT_ENOUGH | 库存不足 |
 | AI_TASK_FAILED | AI 任务失败 |
@@ -63,7 +63,7 @@
 
 - `phone`：手机号。
 - `code`：验证码，Stub 环境固定 `123456`。
-- `ageGroup`：年龄段，必填。`AGE_16_17` 或 `AGE_18_PLUS`。
+- ~~`ageGroup`~~：已移除。年龄段不再由客户端在登录时传入，改为后端根据实名信息自动判定。
 
 登录响应至少包含：
 
@@ -134,10 +134,10 @@
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/posts/feed` | 推荐 Feed |
-| GET | `/posts/following` | 关注 Feed |
+| GET | `/posts/feed` | 推荐 Feed（免登录） |
+| GET | `/posts/following` | 关注 Feed（免登录） |
 | POST | `/posts` | 发布帖子 |
-| GET | `/posts/{postId}` | 帖子详情 |
+| GET | `/posts/{postId}` | 帖子详情（免登录） |
 | PATCH | `/posts/{postId}` | 编辑帖子 |
 | DELETE | `/posts/{postId}` | 删除帖子 |
 | POST | `/posts/{postId}/like` | 点赞 |
@@ -176,6 +176,7 @@
 | GET | `/patterns/jobs` | 生成记录 |
 | POST | `/patterns/jobs/{jobId}/cancel` | 取消任务 |
 | POST | `/patterns/{patternId}/favorite` | 收藏图纸 |
+| GET | `/patterns/favorites` | 收藏图纸列表（分页） |
 | GET | `/patterns/{patternId}` | 图纸详情 |
 
 任务状态：

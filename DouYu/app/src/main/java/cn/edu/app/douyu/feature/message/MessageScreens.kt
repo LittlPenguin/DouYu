@@ -83,6 +83,7 @@ private fun MessageListScreenContent(navController: NavHostController?) {
             } else {
                 AnimatedContent(
                     targetState = selectedTab,
+                    modifier = Modifier.weight(1f),
                     transitionSpec = {
                         fadeIn(animationSpec = tween(200)) togetherWith fadeOut(animationSpec = tween(200))
                     },
@@ -103,11 +104,10 @@ private fun NotificationList(state: UiState<*>, onRetry: () -> Unit = {}) {
     when (val ns = state) {
         is UiState.Success -> {
             val items = (ns.data as? PageResponse<cn.edu.app.douyu.core.model.NotificationMessage>)?.items.orEmpty()
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                 items.forEach { notification ->
                     Surface(
                         shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
@@ -187,12 +187,11 @@ private fun ConversationList(state: UiState<*>, navController: NavHostController
     when (val cs = state) {
         is UiState.Success -> {
             val items = (cs.data as? PageResponse<cn.edu.app.douyu.core.model.Conversation>)?.items.orEmpty()
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                 items.forEach { conv ->
                     Surface(
                         onClick = { navController?.navigate(AppRoute.conversation(conv.conversationId)) },
                         shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.surface,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
@@ -267,17 +266,17 @@ private fun MessageLoginPrompt(navController: NavHostController?) {
             onClick = { navController?.navigate(AppRoute.LOGIN) },
             modifier = Modifier.fillMaxWidth()
         )
-    }
-    Spacer(Modifier.height(24.dp))
-    DoyuCard {
-        SectionHeader("通知")
-        MessagePlaceholderRow(Icons.Filled.Notifications, "系统与订单通知", "发货提醒、签收确认、审核结果")
-        MessagePlaceholderRow(Icons.Filled.Notifications, "互动消息", "点赞、评论、关注提醒")
-    }
-    DoyuCard {
-        SectionHeader("私信")
-        MessagePlaceholderRow(Icons.Filled.MailOutline, "卖家与买家对话", "交易沟通、定制需求协商")
-        MessagePlaceholderRow(Icons.Filled.MailOutline, "社区好友私信", "拼豆爱好者之间的交流")
+        Spacer(Modifier.height(24.dp))
+        DoyuCard {
+            SectionHeader("通知")
+            MessagePlaceholderRow(Icons.Filled.Notifications, "系统与订单通知", "发货提醒、签收确认、系统公告")
+            MessagePlaceholderRow(Icons.Filled.Notifications, "互动消息", "点赞、评论、关注提醒")
+        }
+        DoyuCard {
+            SectionHeader("私信")
+            MessagePlaceholderRow(Icons.Filled.MailOutline, "卖家与买家对话", "交易沟通、定制需求协商")
+            MessagePlaceholderRow(Icons.Filled.MailOutline, "社区好友私信", "拼豆爱好者之间的交流")
+        }
     }
 }
 

@@ -74,6 +74,8 @@ class RealCommerceRepository(
     override fun removeCartItem(itemId: String): Cart =
         apiCall { cartApi.removeItem(itemId) }
 
+    override fun orders(): PageResponse<Order> = apiCall { orderApi.orders() }
+
     override fun order(): Order {
         val page = apiCall { orderApi.orders(page = 1, size = 1) }
         return page.items.firstOrNull()
@@ -129,4 +131,5 @@ class RealProfileRepository(
 
     override fun checkinStatus(): CheckinStatus = apiCall { rewardApi.checkinStatus() }
     override fun badges(): List<Badge> = apiCall { rewardApi.badges() }.items
+    override fun favorites(): PageResponse<PatternAsset> = apiCall { patternApi.favorites() }
 }

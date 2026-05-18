@@ -967,6 +967,6 @@ private fun statusLabel(status: PatternJobStatus): String = when (status) {
     PatternJobStatus.PROCESSING -> "处理中"
     PatternJobStatus.SUCCEEDED -> "已完成"
     PatternJobStatus.FAILED -> "失败"
-    PatternJobStatus.REJECTED -> "审核拒绝"
+    PatternJobStatus.REJECTED -> "失败"
     PatternJobStatus.CANCELED -> "已取消"
 }

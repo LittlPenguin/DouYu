@@ -81,6 +81,28 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 `dev` profile 使用 Docker Compose 中的 PostgreSQL 16 和 Redis 7。Spring Boot 4 当前使用的 Flyway 需要在 Maven 中包含 `org.flywaydb:flyway-database-postgresql`，否则连接 PostgreSQL 16 时会在启动阶段报 `Unsupported Database: PostgreSQL 16.x`。
 
+端口配置：
+
+- 后端：`server.port: 8081`（`application.yml`）
+- PostgreSQL 宿主机端口：`5433:5432`（`docker-compose.yml`，容器内仍为 5432）
+- Redis：`6379:6379`
+
+## 安全配置（SecurityConfig）
+
+Spring Security 配置位于 `common/SecurityConfig.java`。
+
+公开接口（permitAll）：
+
+- 认证相关：`/auth/sms-code`、`/auth/login/sms`、`/auth/refresh`
+- 后台登录：`/admin/auth/login`
+- 支付回调：`/payments/callbacks/**`
+- 社区 Feed：`/posts/feed`、`/posts/following`
+- 帖子详情：`GET /posts/*`（仅 GET 方法免登录）
+- 商品浏览：`/products`、`/products/*`
+- 文件访问：`/uploads/**`
+
+管理后台接口（`/admin/**`）要求 `ROLE_ADMIN` 权限，其余接口均需认证。
+
 ## 鉴权与账号
 
 认证方式：

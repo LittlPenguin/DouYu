@@ -45,6 +45,18 @@ fun ProfileScreen(navController: NavHostController) { ProfileScreenContent(navCo
 private fun ProfileScreenContent(navController: NavHostController?) {
     var dashboardRetryCount by remember { mutableIntStateOf(0) }
     val dashboardState = safeCallToState(dashboardRetryCount) { repo.dashboard() }.value
+    var showLoginDialog by remember { mutableStateOf(false) }
+
+    if (showLoginDialog) {
+        LoginRequiredDialog(
+            onDismiss = { showLoginDialog = false },
+            onLogin = {
+                showLoginDialog = false
+                navController?.navigate(cn.edu.app.douyu.core.navigation.AppRoute.LOGIN)
+            },
+            message = "登录后可以查看个人中心"
+        )
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -164,9 +176,9 @@ private fun ProfileScreenContent(navController: NavHostController?) {
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
                                 FunctionGridItem("草稿", Icons.Filled.Palette, LightPrimaryContainer, LightPrimary) {}
-                                FunctionGridItem("订单", Icons.Filled.ShoppingBag, LightTertiaryContainer, LightTertiary) {}
-                                FunctionGridItem("收藏", Icons.Filled.Favorite, LightSecondaryContainer, LightSecondary) {}
-                                FunctionGridItem("历史", Icons.Filled.History, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) {}
+                                FunctionGridItem("订单", Icons.Filled.ShoppingBag, LightTertiaryContainer, LightTertiary) { navController?.navigate(AppRoute.MY_ORDERS) }
+                                FunctionGridItem("收藏", Icons.Filled.Favorite, LightSecondaryContainer, LightSecondary) { navController?.navigate(AppRoute.FAVORITES) }
+                                FunctionGridItem("历史", Icons.Filled.History, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { navController?.navigate(AppRoute.PATTERN_HISTORY) }
                             }
                         }
                     }
@@ -249,19 +261,92 @@ private fun ProfileScreenContent(navController: NavHostController?) {
                             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                             ProfileAction("生成记录", Icons.Filled.AutoAwesome, LightTertiaryContainer, LightTertiary) { navController?.navigate(AppRoute.PATTERN_HISTORY) }
                             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                            ProfileAction("我的订单", Icons.AutoMirrored.Filled.ReceiptLong, LightSecondaryContainer, LightSecondary) { }
+                            ProfileAction("我的订单", Icons.AutoMirrored.Filled.ReceiptLong, LightSecondaryContainer, LightSecondary) { navController?.navigate(AppRoute.MY_ORDERS) }
                             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                             ProfileAction("签到与等级", Icons.Filled.WorkspacePremium, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { }
                         }
                     }
                 }
                 UiState.RequireLogin -> {
-                    PageStateView(UiState.RequireLogin)
+                    // Guest placeholder — show layout with default values
+                    Surface(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 1.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .clip(CircleShape)
+                                    .background(LightSurfaceVariant),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Filled.Person,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "未登录",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "登录后解锁完整功能",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Stats panel — zeroed
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        StatCard("作品", 0, Modifier.weight(1f))
+                        StatCard("获赞", 0, Modifier.weight(1f))
+                        StatCard("收藏", 0, Modifier.weight(1f))
+                    }
+
+                    // Function grid (disabled)
+                    Surface(
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 1.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("我的工坊", style = MaterialTheme.typography.titleLarge)
+                            Spacer(Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                FunctionGridItem("草稿", Icons.Filled.Palette, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { showLoginDialog = true }
+                                FunctionGridItem("订单", Icons.Filled.ShoppingBag, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { showLoginDialog = true }
+                                FunctionGridItem("收藏", Icons.Filled.Favorite, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { showLoginDialog = true }
+                                FunctionGridItem("历史", Icons.Filled.History, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { showLoginDialog = true }
+                            }
+                        }
+                    }
                 }
                 else -> PageStateView(dashboardState, onRetry = { dashboardRetryCount++ })
             }
 
-            DoyuOutlinedButton("登录页占位", onClick = { navController?.navigate(AppRoute.LOGIN) }, modifier = Modifier.fillMaxWidth())
+            if (!DoyuAppContainer.isLoggedIn) {
+                DoyuPrimaryButton(
+                    "登录",
+                    onClick = { showLoginDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -393,6 +478,53 @@ private fun MyPatternsScreenContent(navController: NavHostController?) {
                     }
                 }
                 else -> PageStateView(patternsState)
+            }
+        }
+    }
+}
+
+// ── FavoritesScreen ──
+
+@Preview
+@Composable
+private fun FavoritesScreenPreview() { FavoritesScreenContent(navController = null) }
+
+@Composable
+fun FavoritesScreen(navController: NavHostController) { FavoritesScreenContent(navController) }
+
+@Composable
+private fun FavoritesScreenContent(navController: NavHostController?) {
+    val favoritesState = safeCallToState { repo.favorites() }.value
+    Scaffold(topBar = { DoyuTopBar("收藏图纸", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
+        DoyuPage(padding) {
+            when (val state = favoritesState) {
+                is UiState.Success -> state.data.items.forEach {
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 1.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(58.dp)
+                                    .background(LightSurfaceVariant, MaterialTheme.shapes.small),
+                                contentAlignment = Alignment.Center
+                            ) { BeadPattern(Modifier.size(42.dp)) }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(it.title, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    "${it.widthCells} x ${it.heightCells} · ${it.totalBeads} 颗",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+                }
+                else -> PageStateView(favoritesState)
             }
         }
     }

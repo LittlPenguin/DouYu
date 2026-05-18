@@ -191,7 +191,7 @@
 优先级 P0（全部已完成）：
 
 - ~~将当前 Mock Repository 逐步替换为真实 Repository，接入 `DoyuApiClient`。~~ ✅ 已完成
-- ~~完成登录页真实接口联调。~~ ✅ 已完成（含 ageGroup 字段）
+- ~~完成登录页真实接口联调。~~ ✅ 已完成（ageGroup 已移除，改为后端自动判定）
 - ~~完成 AI 拼图真实链路 UI。~~ ✅ API 已接入，CameraX 拍照预览确认 + Photo Picker 图片选择预览 + 上传进度 UI 已完成
 - ~~完成社区真实链路。~~ ✅ 已完成
 - ~~完成商城和订单真实链路。~~ ✅ 已完成
@@ -201,7 +201,7 @@
 优先级 P1（第二阶段）：
 
 - ~~将错误码统一转为用户可读文案（ErrorCode → 中文提示）。~~ ✅ 已完成：ErrorMessages.kt + ApiException + LoginScreen 已接入
-- ~~为核心页面补齐加载、空状态、失败、未登录、无权限、审核中、弱网重试状态。~~ ✅ 已完成：Feed/商城/购物车/图纸记录已补齐空状态
+- ~~为核心页面补齐加载、空状态、失败、未登录、无权限、弱网重试状态。~~ ✅ 已完成：Feed/商城/购物车/图纸记录已补齐空状态（审核中状态已移除）
 - ~~将 `traceId` 接入错误日志和问题反馈入口。~~ ✅ 已完成：PageStateView Error 状态展示 traceId
 - ~~对 375dp 宽度和常见 Android 设备做 UI 检查。~~ ✅ 已完成：新增 Responsive.kt 自适应布局，DoyuPage 使用自适应内边距
 - ~~确认不申请非必要权限，不在客户端硬编码 AI、OSS、支付密钥。~~ ✅ 已完成：CAMERA/POST_NOTIFICATIONS 权限已声明，usesCleartextTraffic=false，无硬编码密钥
@@ -412,3 +412,64 @@ mvn test
 - ~~Provider Router（主备切换）~~ ✅ AiVisionProviderRouter 自动降级
 - ~~缓存策略~~ ✅ AiCallCache 24小时缓存相同输入
 - ~~审核和风控逻辑~~ ✅ ContentModerationService 基础关键词过滤
+
+---
+
+## UI Bug 修复与功能补全（2026-05-18）
+
+### 登录流程变更
+
+- `ageGroup` 字段已从客户端登录请求中移除，改为后端根据实名信息自动判定
+- 登录页移除年龄段选择 RadioButton
+- 登录页新增手机号正则校验（`^1[3-9]\d{9}$`）
+- 验证码从自动填入改为弹窗展示，用户手动输入
+- 移除合规提示和开发环境提示
+
+### 通用组件
+
+- 新增 `LoginRequiredDialog`：统一登录引导弹窗（标题"需要登录"，按钮"返回"/"去登录"），被社区、商城、购物车、我的页面复用
+- `DoyuAppContainer.isLoggedIn` 属性：基于 `tokenStore.accessToken() != null`，用于各页面登录状态检查
+
+### 新增页面
+
+- `FavoritesScreen`：收藏图纸列表，路由 `favorites`，调用 `GET /api/v1/patterns/favorites`
+- `MyOrdersScreen`：我的订单列表，路由 `my_orders`，调用 `GET /api/v1/orders`，展示订单状态标签
+
+### 页面功能补全
+
+- 社区 Feed：新增可折叠搜索框（OutlinedTextField）和标签筛选（Surface + Text 可点击）
+- 商城首页：搜索框改为功能型，分类 chips 可点击，商品按分类+关键词过滤
+- 发布页：修复输入框、图片上传、发布按钮逻辑
+- 我的页面：未登录时显示 guest 占位视图（默认头像+"未登录"+归零统计+功能格点击弹登录弹窗）
+- 消息页：修复私信区域高度被压缩到 ~20px 的问题（AnimatedContent 添加 weight(1f)）
+- 社区帖子详情：改为公开页面，未登录可阅读内容，互动按钮才需登录
+
+### 相机增强
+
+- 新增前后摄像头切换按钮（FloatingActionButton）
+- 设备方向追踪：`OrientationEventListener` 动态更新 `imageCapture.targetRotation`，竖拍出竖图
+
+### UiState 变更
+
+- 删除 `UiState.Reviewing` 状态，前端不再展示审核中 UI
+- `PatternJobStatus.REJECTED` 前端标签改为"失败"（与 FAILED 统一）
+- 发布内容后直接返回，不再显示审核中状态
+
+### 后端 SecurityConfig 变更
+
+- `GET /api/v1/posts/{postId}` 设为 `permitAll()`，帖子详情免登录
+- `GET /api/v1/posts/following` 设为 `permitAll()`，关注 Feed 免登录
+- 帖子列表 `GET /api/v1/posts/feed` 已有 permitAll
+
+### 端口变更
+
+- 后端端口：8080 → 8081
+- PostgreSQL 宿主机端口：5432 → 5433（容器内仍为 5432）
+
+### 未完成
+
+- 真实支付接入（微信/支付宝仍是 Stub）
+- 内容审核增强（当前仅基础关键词过滤）
+- 玩家二手/定制交易体系
+- 合规备案与应用市场上架材料
+- AI Provider 真实接入（阿里云百炼已写好占位代码，待配置 API Key）

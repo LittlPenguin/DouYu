@@ -40,6 +40,7 @@ fun CommerceHomeScreen(navController: NavHostController) { CommerceHomeScreenCon
 private fun CommerceHomeScreenContent(navController: NavHostController?) {
     var selectedCategory by remember { mutableIntStateOf(0) }
     val categories = listOf("全部商品", "材料包", "独家图纸", "成品手作", "配件工具")
+    var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -63,22 +64,23 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                 .background(MaterialTheme.colorScheme.background)
         ) {
             // Search bar
-            Surface(
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("搜索手作、图纸或材料包...") },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Filled.Clear, contentDescription = "清除")
+                        }
+                    }
+                },
+                singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = MaterialTheme.shapes.small,
-                color = LightSurfaceVariant
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Filled.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(8.dp))
-                    Text("搜索手作、图纸或材料包...", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
 
             // Category chips
             Row(
@@ -87,12 +89,18 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
             ) {
                 categories.forEachIndexed { index, name ->
                     val selected = index == selectedCategory
-                    TagChip(
-                        text = name,
-                        selected = selected,
-                        color = if (selected) LightPrimaryContainer else LightSurfaceVariant,
-                        contentColor = if (selected) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Surface(
+                        onClick = { selectedCategory = index },
+                        shape = MaterialTheme.shapes.small,
+                        color = if (selected) LightPrimaryContainer else LightSurfaceVariant
+                    ) {
+                        Text(
+                            name,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = if (selected) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
             }
 
@@ -102,55 +110,73 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
             val productsState = safeCallToState(productsRetryCount) { repo.products() }.value
             when (val state = productsState) {
                 is UiState.Success -> {
-                    // Recommended section
-                    CommerceSectionHeader(modifier = Modifier.padding(horizontal = horizontalPadding)) {
-                        Text("推荐商品", style = MaterialTheme.typography.titleLarge)
+                    val allProducts = state.data.items
+                    val filteredProducts = allProducts.filter { product ->
+                        val matchesCategory = selectedCategory == 0 || // "全部商品"
+                                product.categoryName.contains(categories[selectedCategory])
+                        val matchesSearch = searchQuery.isBlank() ||
+                                product.title.contains(searchQuery, ignoreCase = true) ||
+                                product.description.contains(searchQuery, ignoreCase = true)
+                        matchesCategory && matchesSearch
                     }
 
-                    // Featured cards (horizontal scroll)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = horizontalPadding),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        state.data.items.take(2).forEach { product ->
-                            FeaturedProductCard(
-                                product = product,
-                                modifier = Modifier.weight(1f),
-                                onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) }
-                            )
+                    if (filteredProducts.isEmpty()) {
+                        EmptyContent(
+                            "没有找到商品",
+                            "换个关键词试试？",
+                            showRetry = false
+                        )
+                    } else {
+                        // Recommended section
+                        CommerceSectionHeader(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                            Text("推荐商品", style = MaterialTheme.typography.titleLarge)
                         }
-                    }
 
-                    Spacer(Modifier.height(16.dp))
-
-                    // Product grid
-                    CommerceSectionHeader(modifier = Modifier.padding(horizontal = horizontalPadding)) {
-                        Text("猜你喜欢", style = MaterialTheme.typography.titleLarge)
-                    }
-
-                    // 2-column grid
-                    val chunked = state.data.items.drop(2).chunked(2)
-                    chunked.forEach { row ->
+                        // Featured cards (horizontal scroll)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = horizontalPadding),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            row.forEach { product ->
-                                ProductCard(
+                            filteredProducts.take(2).forEach { product ->
+                                FeaturedProductCard(
                                     product = product,
                                     modifier = Modifier.weight(1f),
                                     onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) }
                                 )
                             }
-                            if (row.size == 1) {
-                                Spacer(Modifier.weight(1f))
-                            }
                         }
-                        Spacer(Modifier.height(12.dp))
+
+                        Spacer(Modifier.height(16.dp))
+
+                        // Product grid
+                        CommerceSectionHeader(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                            Text("猜你喜欢", style = MaterialTheme.typography.titleLarge)
+                        }
+
+                        // 2-column grid
+                        val chunked = filteredProducts.drop(2).chunked(2)
+                        chunked.forEach { row ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = horizontalPadding),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                row.forEach { product ->
+                                    ProductCard(
+                                        product = product,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) }
+                                    )
+                                }
+                                if (row.size == 1) {
+                                    Spacer(Modifier.weight(1f))
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+                        }
                     }
                 }
                 is UiState.Empty -> {
@@ -358,6 +384,19 @@ private fun ProductDetailScreenContent(navController: NavHostController?, produc
     val productState = safeCallToState(productId) { repo.product(productId) }.value
     var addToCartState by remember { mutableStateOf<UiState<Cart>?>(null) }
     val addToCartScope = rememberCoroutineScope()
+    var showLoginDialog by remember { mutableStateOf(false) }
+
+    if (showLoginDialog) {
+        LoginRequiredDialog(
+            onDismiss = { showLoginDialog = false },
+            onLogin = {
+                showLoginDialog = false
+                navController?.navigate(cn.edu.app.douyu.core.navigation.AppRoute.LOGIN)
+            },
+            message = "登录后才能加入购物车"
+        )
+    }
+
     LaunchedEffect(addToCartState) {
         if (addToCartState is UiState.Success) {
             addToCartState = null
@@ -407,15 +446,19 @@ private fun ProductDetailScreenContent(navController: NavHostController?, produc
                     DoyuPrimaryButton(
                         "加入购物车",
                         onClick = {
-                            val skuId = product.skus.firstOrNull()?.skuId
-                            if (skuId != null) {
-                                addToCartScope.launch {
-                                    addToCartState = withContext(Dispatchers.IO) {
-                                        runCatching { repo.addItemToCart(product.productId, skuId, 1) }
-                                            .fold(
-                                                onSuccess = { UiState.Success(it) },
-                                                onFailure = { UiState.Error(it.message ?: "加入购物车失败") }
-                                            )
+                            if (!DoyuAppContainer.isLoggedIn) {
+                                showLoginDialog = true
+                            } else {
+                                val skuId = product.skus.firstOrNull()?.skuId
+                                if (skuId != null) {
+                                    addToCartScope.launch {
+                                        addToCartState = withContext(Dispatchers.IO) {
+                                            runCatching { repo.addItemToCart(product.productId, skuId, 1) }
+                                                .fold(
+                                                    onSuccess = { UiState.Success(it) },
+                                                    onFailure = { UiState.Error(it.message ?: "加入购物车失败") }
+                                                )
+                                        }
                                     }
                                 }
                             }
@@ -444,13 +487,43 @@ private fun CartScreenContent(navController: NavHostController?) {
     var cartState by remember { mutableStateOf<UiState<Cart>>(UiState.Loading) }
     var refreshCount by remember { mutableIntStateOf(0) }
     val cartScope = rememberCoroutineScope()
+    var showLoginDialog by remember { mutableStateOf(false) }
+
+    if (showLoginDialog) {
+        LoginRequiredDialog(
+            onDismiss = { showLoginDialog = false },
+            onLogin = {
+                showLoginDialog = false
+                navController?.navigate(cn.edu.app.douyu.core.navigation.AppRoute.LOGIN)
+            },
+            message = "登录后才能使用购物车"
+        )
+    }
+
+    // Check login status on entry
+    LaunchedEffect(Unit) {
+        if (!DoyuAppContainer.isLoggedIn) {
+            showLoginDialog = true
+        } else {
+            cartState = withContext(Dispatchers.IO) {
+                runCatching { repo.cart() }
+                    .fold(
+                        onSuccess = { if (it.items.isEmpty()) UiState.Empty else UiState.Success(it) },
+                        onFailure = { UiState.Error(it.message ?: "加载购物车失败") }
+                    )
+            }
+        }
+    }
+
     LaunchedEffect(refreshCount) {
-        cartState = withContext(Dispatchers.IO) {
-            runCatching { repo.cart() }
-                .fold(
-                    onSuccess = { if (it.items.isEmpty()) UiState.Empty else UiState.Success(it) },
-                    onFailure = { UiState.Error(it.message ?: "加载购物车失败") }
-                )
+        if (DoyuAppContainer.isLoggedIn && refreshCount > 0) {
+            cartState = withContext(Dispatchers.IO) {
+                runCatching { repo.cart() }
+                    .fold(
+                        onSuccess = { if (it.items.isEmpty()) UiState.Empty else UiState.Success(it) },
+                        onFailure = { UiState.Error(it.message ?: "加载购物车失败") }
+                    )
+            }
         }
     }
     Scaffold(topBar = { DoyuTopBar("购物车", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
@@ -651,4 +724,69 @@ private fun PaymentResultScreenContent(navController: NavHostController?, orderI
             DoyuPrimaryButton("返回商城", onClick = { navController?.navigate(cn.edu.app.douyu.core.navigation.BottomTab.COMMERCE.route) }, modifier = Modifier.fillMaxWidth())
         }
     }
+}
+
+// ── MyOrdersScreen ──
+
+@Preview
+@Composable
+private fun MyOrdersScreenPreview() { MyOrdersScreenContent(navController = null) }
+
+@Composable
+fun MyOrdersScreen(navController: NavHostController) { MyOrdersScreenContent(navController) }
+
+@Composable
+private fun MyOrdersScreenContent(navController: NavHostController?) {
+    val ordersState = safeCallToState { repo.orders() }.value
+    Scaffold(topBar = { DoyuTopBar("我的订单", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
+        DoyuPage(padding) {
+            when (val state = ordersState) {
+                is UiState.Success -> state.data.items.forEach { order ->
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 1.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "订单 ${order.orderId}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                TagChip(orderStatusLabel(order.status))
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            order.items.forEach { item ->
+                                Text(
+                                    "${item.title} x${item.quantity}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                formatPriceCent(order.payableAmountCent),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = DoyuCoral
+                            )
+                        }
+                    }
+                }
+                else -> PageStateView(ordersState)
+            }
+        }
+    }
+}
+
+private fun orderStatusLabel(status: OrderStatus): String = when (status) {
+    OrderStatus.CREATED -> "已创建"
+    OrderStatus.WAITING_PAYMENT -> "待付款"
+    OrderStatus.PAID -> "已付款"
+    OrderStatus.FULFILLING -> "备货中"
+    OrderStatus.SHIPPED -> "已发货"
+    OrderStatus.COMPLETED -> "已完成"
+    OrderStatus.CANCELED -> "已取消"
+    OrderStatus.REFUNDING -> "退款中"
+    OrderStatus.REFUNDED -> "已退款"
 }

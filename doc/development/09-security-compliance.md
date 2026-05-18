@@ -26,6 +26,42 @@
 - 图片和 AI 生成记录处理方式。
 - 支付和订单信息处理方式。
 
+## 公开接口（免登录）
+
+以下接口通过 Spring Security `permitAll` 配置允许未登录访问：
+
+- `POST /api/v1/auth/sms-code` — 发送验证码
+- `POST /api/v1/auth/login/sms` — 登录
+- `POST /api/v1/auth/refresh` — 刷新 token
+- `POST /api/v1/admin/auth/login` — 后台登录
+- `POST /api/v1/payments/callbacks/**` — 支付回调
+- `GET /api/v1/posts/feed` — 推荐 Feed
+- `GET /api/v1/posts/following` — 关注 Feed
+- `GET /api/v1/posts/*` — 帖子详情（仅 GET）
+- `GET /api/v1/products` — 商品列表
+- `GET /api/v1/products/*` — 商品详情
+- `/uploads/**` — 上传文件访问
+
+所有其他接口必须携带有效 access token。
+
+## 登录流程
+
+登录方式：手机号 + 短信验证码。
+
+客户端校验：
+
+- 手机号正则：`^1[3-9]\d{9}$`，不合法时显示提示。
+- 验证码发送后弹窗展示（Stub 环境固定 `123456`）。
+
+请求字段：
+
+- `phone`：手机号。
+- `code`：验证码。
+
+> 年龄段（`ageGroup`）已从登录请求中移除，改为后端根据实名信息自动判定。
+
+未登录用户访问需登录功能时，客户端弹出 `LoginRequiredDialog` 引导登录，支持场景：发帖、加入购物车、查看购物车、查看个人中心等。
+
 ## 密钥安全
 
 禁止：
@@ -73,7 +109,7 @@
 
 规则：
 
-- 注册阶段确认年龄段。
+- 年龄段由后端根据实名信息自动判定（客户端登录不再传 `ageGroup`）。
 - 16-17 岁用户标记为未成年人。
 - 未成年人不得作为玩家卖家。
 - 未成年人不得发布定制服务。

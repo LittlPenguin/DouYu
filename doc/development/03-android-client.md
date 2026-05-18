@@ -35,6 +35,12 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 
 所有 Screen 通过 `DoyuAppContainer.xxxRepository` 获取真实 Repository 实例，不再使用 Mock。
 
+`DoyuAppContainer.isLoggedIn` 属性（基于 `tokenStore.accessToken() != null`）用于各页面的登录状态检查。
+
+### 通用组件
+
+- `LoginRequiredDialog`（`core/ui/Components.kt`）：统一登录引导弹窗，标题"需要登录"，提示"该功能需要登录后使用"，按钮"返回"（关闭弹窗）和"去登录"（跳转登录页）。被社区发布入口、发布页、购物车、商品详情、我的页面复用。
+
 ### safeCall 异常处理
 
 每个 Screen 定义 `safeCall` 包装函数，统一处理网络异常：
@@ -76,6 +82,8 @@ private inline fun <T> safeCall(block: () -> T): T? =
 - 私信会话。
 - 用户主页。
 - 我的拼豆。
+- 收藏图纸。
+- 我的订单。
 - 设置。
 
 ### 页面切换动画
@@ -92,7 +100,6 @@ NavHost 页面切换动画时长为 150ms（`tween(TRANSITION_DURATION)`），�
 - 失败。
 - 未登录。
 - 无权限。
-- 审核中。
 - 弱网重试。
 
 Compose 页面使用单向数据流：
@@ -104,7 +111,7 @@ Compose 页面使用单向数据流：
 
 ### 当前实现状态
 
-**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。模拟器联调使用 `http://10.0.2.2:8080/`，真机联调必须使用电脑当前 Wi-Fi IP，例如 `http://10.64.241.153:8080/`；Retrofit `baseUrl` 必须以 `/` 结尾。
+**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。模拟器联调使用 `http://10.0.2.2:8081/`，真机联调必须使用电脑当前 Wi-Fi IP，例如 `http://10.64.241.153:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
 
 **真机 HTTP 联调**：Android main 配置保持 HTTPS only；debug 包通过 `app/src/debug/res/xml/network_security_config.xml` 对当前开发机 IP 添加 `domain-config cleartextTrafficPermitted="true"`。如果真机浏览器能访问后端，但 App 显示“加载失败 - 网络异常”，优先检查 `baseUrl` 是否使用电脑 Wi-Fi IP、debug 包是否重装、logcat 是否出现 `CLEARTEXT communication ... not permitted`。
 
@@ -138,6 +145,8 @@ Compose 页面使用单向数据流：
 拍照：
 
 - 使用 CameraX。
+- 支持前后摄像头切换（右上角 FAB 按钮）。
+- 设备方向追踪：通过 `OrientationEventListener` 动态更新 `imageCapture.targetRotation`，竖拍出竖图，横拍出横图。
 - 拍摄后进入裁剪页。
 - 自动修正图片方向。
 - 大图压缩后再上传。
@@ -171,6 +180,16 @@ Compose 页面使用单向数据流：
 - 大图上传显示进度。
 - AI 输入图和公开帖子图分开标记用途。
 - 不在客户端拼接公开 CDN 地址，以后端返回为准。
+
+## 登录
+
+登录页（`feature/auth/LoginScreen.kt`）：
+
+- 手机号 + 验证码登录。
+- 手机号格式校验：正则 `^1[3-9]\d{9}$`，不合法时 Toast 提示。
+- 验证码通过弹窗展示（Stub 环境），用户手动输入到输入框。
+- 已移除年龄段（`ageGroup`）选择 UI。
+- 已移除合规提示和开发环境提示文案。
 
 ## AI 任务
 

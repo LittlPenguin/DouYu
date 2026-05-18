@@ -61,7 +61,7 @@
 
 内容状态：
 
-- `REVIEWING`
+- `REVIEWING`（前端不再展示审核中 UI，发布后直接展示内容）
 - `VISIBLE`
 - `SELF_VISIBLE`
 - `REJECTED`
@@ -140,7 +140,7 @@
 - `PROCESSING`
 - `SUCCEEDED`
 - `FAILED`
-- `REJECTED`
+- `REJECTED`（前端展示为"失败"，与 `FAILED` 统一）
 - `CANCELED`
 
 ### PatternAsset

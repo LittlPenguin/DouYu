@@ -12,7 +12,7 @@ object ErrorMessages {
         "INVALID_ARGUMENT" to "请求参数有误",
         "CONFLICT" to "操作冲突，请重试",
         "RATE_LIMITED" to "操作太频繁，请稍后再试",
-        "AUDIT_REJECTED" to "内容审核未通过",
+        "AUDIT_REJECTED" to "内容不符合要求",
         "AI_TASK_FAILED" to "AI 生成失败，请重试",
         "INVENTORY_NOT_ENOUGH" to "库存不足",
         "PAYMENT_FAILED" to "支付失败，请重试",
