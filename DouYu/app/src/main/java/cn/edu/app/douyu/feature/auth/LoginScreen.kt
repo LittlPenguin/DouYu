@@ -23,16 +23,16 @@ fun LoginScreen(navController: NavHostController) {
     LoginScreenContent(navController)
 }
 
-
 @Preview
 @Composable
-private fun LoginScreenPreview(){
+private fun LoginScreenPreview() {
     LoginScreenContent(navController = null)
 }
 
 @Composable
 fun LoginScreenContent(navController: NavHostController?) {
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     var phone by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
     var ageGroup by remember { mutableStateOf("AGE_18_PLUS") }
@@ -41,11 +41,14 @@ fun LoginScreenContent(navController: NavHostController?) {
     var error by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
-        topBar = { DoyuTopBar("手机号登录", canGoBack = true, onBack = { navController?.popBackStack() }) }
+        topBar = { DoyuTopBar("手机号登录", canGoBack = true, onBack = { navController?.popBackStack() }) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         DoyuPage(padding) {
             Text("登录后可以保存图纸、收藏作品、查看订单和同步生成记录。", style = MaterialTheme.typography.bodyLarge)
+
             DoyuCard {
+                // 手机号输入
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it.take(11) },
@@ -53,7 +56,10 @@ fun LoginScreenContent(navController: NavHostController?) {
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
                 Spacer(Modifier.height(12.dp))
+
+                // 验证码输入 + 获取按钮
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it.take(6) },
@@ -66,18 +72,27 @@ fun LoginScreenContent(navController: NavHostController?) {
                                     sending = true
                                     error = null
                                     scope.launch {
-                                        runCatching { DoyuAppContainer.apiClient.authApi.sendSmsCode(SmsCodeRequest(phone)) }
-                                            .onFailure { error = ErrorMessages.fromException(it as Exception) }
+                                        // 尝试调用后端发送验证码
+                                        runCatching {
+                                            DoyuAppContainer.apiClient.authApi.sendSmsCode(SmsCodeRequest(phone))
+                                        }
+                                        // 无论成功与否，自动填入 stub 验证码
+                                        code = "123456"
                                         sending = false
                                     }
                                 }
                             },
-                            enabled = !sending
-                        ) { Text(if (sending) "发送中..." else "获取") }
+                            enabled = !sending && phone.length == 11
+                        ) {
+                            Text(if (sending) "发送中..." else "获取验证码")
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
+
                 Spacer(Modifier.height(18.dp))
+
+                // 年龄段选择
                 Text("年龄段", style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -90,7 +105,10 @@ fun LoginScreenContent(navController: NavHostController?) {
                         Text("16-17 岁", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
+
                 Spacer(Modifier.height(18.dp))
+
+                // 登录按钮
                 DoyuPrimaryButton(
                     text = if (logging) "登录中..." else "登录并进入豆屿",
                     onClick = {
@@ -106,24 +124,39 @@ fun LoginScreenContent(navController: NavHostController?) {
                                     navController?.navigate(BottomTab.PROFILE.route) {
                                         popUpTo(BottomTab.PROFILE.route) { inclusive = true }
                                     }
-                                }.onFailure { error = ErrorMessages.fromException(it as Exception) }
+                                }.onFailure {
+                                    error = ErrorMessages.fromException(it as Exception)
+                                }
                                 logging = false
                             }
                         }
                     },
                     icon = Icons.AutoMirrored.Filled.Login,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = phone.length == 11 && code.length == 6 && !logging
                 )
             }
+
+            // 错误提示
             error?.let {
                 DoyuCard {
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }
             }
+
+            // 合规提示
             DoyuCard {
                 Text("合规提示", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 Text("注册登录时需要确认年龄段。16-17 岁用户会受到卖家发布和高额消费限制。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            // 开发提示
+            DoyuCard {
+                Text("开发模式", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
+                Text("测试手机号：13800000001", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("验证码：123456（点击获取自动填入）", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

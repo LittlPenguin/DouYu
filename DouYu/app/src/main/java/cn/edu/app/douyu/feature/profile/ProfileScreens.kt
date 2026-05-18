@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -408,6 +409,31 @@ fun SettingsScreen(navController: NavHostController) { SettingsScreenContent(nav
 
 @Composable
 private fun SettingsScreenContent(navController: NavHostController?) {
+    val scope = rememberCoroutineScope()
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("退出登录") },
+            text = { Text("确定要退出登录吗？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogoutDialog = false
+                    scope.launch {
+                        runCatching { DoyuAppContainer.authSessionManager.logout() }
+                        navController?.navigate(AppRoute.LOGIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                }) { Text("确定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) { Text("取消") }
+            }
+        )
+    }
+
     Scaffold(topBar = { DoyuTopBar("设置", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             DoyuCard {
@@ -438,7 +464,7 @@ private fun SettingsScreenContent(navController: NavHostController?) {
             Spacer(Modifier.height(8.dp))
             DoyuOutlinedButton(
                 "退出登录",
-                onClick = {},
+                onClick = { showLogoutDialog = true },
                 modifier = Modifier.fillMaxWidth()
             )
         }

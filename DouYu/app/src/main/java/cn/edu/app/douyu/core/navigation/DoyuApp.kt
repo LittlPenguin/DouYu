@@ -150,7 +150,7 @@ private fun DoyuBottomNavBar(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shadowElevation = 8.dp,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier

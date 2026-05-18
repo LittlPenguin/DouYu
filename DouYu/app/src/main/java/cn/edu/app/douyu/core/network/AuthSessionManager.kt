@@ -1,5 +1,6 @@
 package cn.edu.app.douyu.core.network
 
+import cn.edu.app.douyu.core.data.ApiException
 import cn.edu.app.douyu.core.model.AuthSession
 import cn.edu.app.douyu.core.model.RefreshTokenRequest
 import cn.edu.app.douyu.core.model.SmsLoginRequest
@@ -20,7 +21,7 @@ class AuthSessionManager(
         val refreshToken = tokenStore.refreshToken().orEmpty()
         if (refreshToken.isBlank()) {
             tokenStore.clear()
-            throw IllegalStateException("Missing refresh token")
+            throw ApiException("UNAUTHORIZED", "登录已过期", null)
         }
         val response = authApi.refresh(RefreshTokenRequest(refreshToken))
         val tokenPair = requireSuccess(response)
@@ -39,7 +40,7 @@ class AuthSessionManager(
     private fun <T> requireSuccess(response: ApiResponse<T>): T {
         val data = response.data
         if (!response.isOk || data == null) {
-            throw IllegalStateException("API error ${response.code}: ${response.message}")
+            throw ApiException(response.code, response.message ?: "请求失败", response.traceId)
         }
         return data
     }
