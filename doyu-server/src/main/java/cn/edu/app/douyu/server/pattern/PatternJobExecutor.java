@@ -36,6 +36,8 @@ public class PatternJobExecutor {
 
     private final BeadPatternEngine engine;
     private final AiVisionProvider aiVisionProvider;
+    private final PatternPdfGenerator pdfGenerator;
+    private final AiCostControl costControl;
     private final PatternJobRepository patternJobRepository;
     private final PatternAssetRepository patternAssetRepository;
     private final FileAssetRepository fileAssetRepository;
@@ -45,6 +47,7 @@ public class PatternJobExecutor {
     private final long aiTimeoutMs;
 
     public PatternJobExecutor(BeadPatternEngine engine, AiVisionProvider aiVisionProvider,
+                              PatternPdfGenerator pdfGenerator, AiCostControl costControl,
                               PatternJobRepository patternJobRepository, PatternAssetRepository patternAssetRepository,
                               FileAssetRepository fileAssetRepository, IdGenerator idGenerator,
                               ObjectMapper objectMapper,
@@ -52,6 +55,8 @@ public class PatternJobExecutor {
                               @Value("${doyu.ai.provider.timeout-ms:30000}") long aiTimeoutMs) {
         this.engine = engine;
         this.aiVisionProvider = aiVisionProvider;
+        this.pdfGenerator = pdfGenerator;
+        this.costControl = costControl;
         this.patternJobRepository = patternJobRepository;
         this.patternAssetRepository = patternAssetRepository;
         this.fileAssetRepository = fileAssetRepository;
@@ -81,12 +86,20 @@ public class PatternJobExecutor {
     }
 
     private void doExecute(PatternJobEntity job, FileAssetEntity input) throws IOException, JsonProcessingException {
+        // 检查 AI 调用额度
+        if (!costControl.canMakeCall(job.getUserId())) {
+            throw new IllegalStateException("今日 AI 调用额度已用完，请明天再试");
+        }
+
         // Phase 1: AI 分析 (0.0 → 0.3)
         updateProgress(job, "PROCESSING", 0.1, null);
 
         ImageAnalysisResult analysis = callAiAnalysis(job, input);
         String analysisJson = objectMapper.writeValueAsString(analysis);
         updateProgress(job, "PROCESSING", 0.3, analysisJson);
+
+        // 记录 AI 调用使用量
+        costControl.recordUsage(job.getUserId(), job.getId());
 
         // Phase 2: 图片处理 + 图纸生成 (0.3 → 0.8)
         BufferedImage inputImage = loadStoredImage(input.getStorageKey());
@@ -116,6 +129,18 @@ public class PatternJobExecutor {
         String gridFileId = saveOutputData(job.getUserId(), "grid", serializeGrid(result.grid()), now);
         String colorMapFileId = saveOutputImage(job.getUserId(), "color-map", colorMapImage, now);
 
+        // Generate PDF
+        String pdfFileId = null;
+        try {
+            byte[] pdfData = pdfGenerator.generatePdf(
+                    "拼豆图纸",
+                    previewImage, colorMapImage, result.grid(), result.materials(),
+                    width, height, result.totalBeads());
+            pdfFileId = saveOutputData(job.getUserId(), "pdf", pdfData, now);
+        } catch (Exception e) {
+            log.warn("PDF generation failed for job {}: {}", job.getId(), e.getMessage());
+        }
+
         PatternAssetEntity asset = new PatternAssetEntity();
         asset.setId(idGenerator.next("pattern"));
         asset.setJobId(job.getId());
@@ -123,6 +148,7 @@ public class PatternJobExecutor {
         asset.setPreviewFileId(previewFileId);
         asset.setGridFileId(gridFileId);
         asset.setColorMapFileId(colorMapFileId);
+        asset.setPdfFileId(pdfFileId);
         asset.setBeadSize(job.getBeadSize());
         asset.setWidthCells(width);
         asset.setHeightCells(height);

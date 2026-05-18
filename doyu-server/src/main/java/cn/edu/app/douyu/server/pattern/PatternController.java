@@ -38,17 +38,20 @@ public class PatternController {
     private final FileAssetRepository fileAssetRepository;
     private final FavoriteRepository favoriteRepository;
     private final PatternJobExecutor jobExecutor;
+    private final AiCostControl costControl;
     private final IdGenerator idGenerator;
     private final ObjectMapper objectMapper;
 
     public PatternController(PatternJobRepository patternJobRepository, PatternAssetRepository patternAssetRepository,
                              FileAssetRepository fileAssetRepository, FavoriteRepository favoriteRepository,
-                             PatternJobExecutor jobExecutor, IdGenerator idGenerator, ObjectMapper objectMapper) {
+                             PatternJobExecutor jobExecutor, AiCostControl costControl,
+                             IdGenerator idGenerator, ObjectMapper objectMapper) {
         this.patternJobRepository = patternJobRepository;
         this.patternAssetRepository = patternAssetRepository;
         this.fileAssetRepository = fileAssetRepository;
         this.favoriteRepository = favoriteRepository;
         this.jobExecutor = jobExecutor;
+        this.costControl = costControl;
         this.idGenerator = idGenerator;
         this.objectMapper = objectMapper;
     }
@@ -159,6 +162,21 @@ public class PatternController {
     Map<String, Object> pattern(Authentication authentication, @PathVariable String patternId) {
         CurrentUser.userId(authentication);
         return patternView(requirePattern(patternId));
+    }
+
+    @Operation(summary = "查询 AI 调用额度")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "成功"),
+            @ApiResponse(responseCode = "401", description = "未登录")
+    })
+    @GetMapping("/quota")
+    Map<String, Object> quota(Authentication authentication) {
+        String userId = CurrentUser.userId(authentication);
+        return Map.of(
+                "remaining", costControl.getRemainingQuota(userId),
+                "used", costControl.getUsedQuota(userId),
+                "todayCostCents", costControl.getTodayCostCents(userId)
+        );
     }
 
     private PatternJobEntity requireJob(String jobId) {
