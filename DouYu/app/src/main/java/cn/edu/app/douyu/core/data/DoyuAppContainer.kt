@@ -6,8 +6,8 @@ object DoyuAppContainer {
     private val tokenStore = InMemoryTokenStore()
 
     val apiClient = DoyuApiClient(
-        // 真机调试用本机 WiFi IP；模拟器改回 http://10.0.2.2:8080
-        baseUrl = "http://10.64.241.153:8080/",
+        // 真机调试用本机 WiFi IP；模拟器改回 http://10.0.2.2:8081
+        baseUrl = "http://10.64.241.153:8081/",
         tokenProvider = tokenStore,
         refreshTokenProvider = tokenStore,
         onTokenRefreshed = { pair -> tokenStore.save(pair) },

@@ -1,27 +1,30 @@
 package cn.edu.app.douyu.feature.message
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Report
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.ui.*
 import cn.edu.app.douyu.core.data.safeCallToState
-import cn.edu.app.douyu.ui.theme.DoyuTextMuted
+import cn.edu.app.douyu.core.network.PageResponse
+import cn.edu.app.douyu.ui.theme.*
 
 private val repo = DoyuAppContainer.messageRepository
 
@@ -32,54 +35,207 @@ private fun MessageListScreenPreview() { MessageListScreenContent(navController 
 @Composable
 fun MessageListScreen(navController: NavHostController) { MessageListScreenContent(navController) }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MessageListScreenContent(navController: NavHostController?) {
-    val notificationsState = safeCallToState { repo.notifications() }.value
-    val conversationsState = safeCallToState { repo.conversations() }.value
+    var selectedTab by remember { mutableIntStateOf(0) }
+    var notificationsRetryCount by remember { mutableIntStateOf(0) }
+    var conversationsRetryCount by remember { mutableIntStateOf(0) }
+    val notificationsState = safeCallToState(notificationsRetryCount) { repo.notifications() }.value
+    val conversationsState = safeCallToState(conversationsRetryCount) { repo.conversations() }.value
     val isUnauthenticated = notificationsState is UiState.RequireLogin || conversationsState is UiState.RequireLogin
 
-    Scaffold(topBar = { DoyuTopBar("消息") }) { padding ->
-        DoyuPage(padding) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        TextButton(onClick = { selectedTab = 0 }) {
+                            Text(
+                                "通知",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = if (selectedTab == 0) LightPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                        TextButton(onClick = { selectedTab = 1 }) {
+                            Text(
+                                "私信",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = if (selectedTab == 1) LightPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
             if (isUnauthenticated) {
                 MessageLoginPrompt(navController)
             } else {
-                SectionHeader("通知")
-                when (val ns = notificationsState) {
-                    is UiState.Success -> ns.data.items.forEach {
-                        DoyuCard {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(it.title, style = MaterialTheme.typography.titleMedium)
-                                    Text(it.content, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                if (it.unread) BeadDot(MaterialTheme.colorScheme.primary, size = 12.dp)
-                            }
-                        }
+                AnimatedContent(
+                    targetState = selectedTab,
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(200)) togetherWith fadeOut(animationSpec = tween(200))
+                    },
+                    label = "tabSwitch"
+                ) { tab ->
+                    when (tab) {
+                        0 -> NotificationList(notificationsState, onRetry = { notificationsRetryCount++ })
+                        1 -> ConversationList(conversationsState, navController, onRetry = { conversationsRetryCount++ })
                     }
-                    is UiState.Empty -> PageStateView(UiState.Empty)
-                    else -> PageStateView(notificationsState)
-                }
-                SectionHeader("私信")
-                when (val cs = conversationsState) {
-                    is UiState.Success -> cs.data.items.forEach {
-                        DoyuCard {
-                            Surface(onClick = { navController?.navigate(AppRoute.conversation(it.conversationId)) }) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    BeadCluster(38.dp)
-                                    Spacer(Modifier.width(10.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Text("会话 ${it.conversationId}", style = MaterialTheme.typography.titleMedium)
-                                        Text("${it.userAId} ↔ ${it.userBId}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    is UiState.Empty -> PageStateView(UiState.Empty)
-                    else -> PageStateView(conversationsState)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NotificationList(state: UiState<*>, onRetry: () -> Unit = {}) {
+    when (val ns = state) {
+        is UiState.Success -> {
+            val items = (ns.data as? PageResponse<cn.edu.app.douyu.core.model.NotificationMessage>)?.items.orEmpty()
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                items.forEach { notification ->
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Icon
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when (notification.type) {
+                                            cn.edu.app.douyu.core.model.NotificationType.SYSTEM -> LightTertiaryContainer
+                                            cn.edu.app.douyu.core.model.NotificationType.ORDER -> LightSecondaryContainer
+                                            else -> LightPrimaryContainer
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    when (notification.type) {
+                                        cn.edu.app.douyu.core.model.NotificationType.SYSTEM -> Icons.Filled.Notifications
+                                        cn.edu.app.douyu.core.model.NotificationType.ORDER -> Icons.Filled.ShoppingBag
+                                        else -> Icons.Filled.Favorite
+                                    },
+                                    contentDescription = null,
+                                    tint = when (notification.type) {
+                                        cn.edu.app.douyu.core.model.NotificationType.SYSTEM -> LightOnTertiaryContainer
+                                        cn.edu.app.douyu.core.model.NotificationType.ORDER -> LightOnSecondaryContainer
+                                        else -> LightOnPrimaryContainer
+                                    },
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp))
+
+                            // Content
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    notification.title,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    notification.content,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+
+                            // Unread indicator
+                            if (notification.unread) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(LightPrimary)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        is UiState.Empty -> EmptyContent("还没有消息", "去社区看看吧", showRetry = false)
+        else -> PageStateView(state, onRetry = onRetry)
+    }
+}
+
+@Composable
+private fun ConversationList(state: UiState<*>, navController: NavHostController?, onRetry: () -> Unit = {}) {
+    when (val cs = state) {
+        is UiState.Success -> {
+            val items = (cs.data as? PageResponse<cn.edu.app.douyu.core.model.Conversation>)?.items.orEmpty()
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                items.forEach { conv ->
+                    Surface(
+                        onClick = { navController?.navigate(AppRoute.conversation(conv.conversationId)) },
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Avatar
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(LightSurfaceVariant),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Spacer(Modifier.width(12.dp))
+
+                            // Content
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "会话 ${conv.conversationId}",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    "${conv.userAId} ↔ ${conv.userBId}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+
+                            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
+        is UiState.Empty -> EmptyContent("还没有私信", "去社区看看吧", showRetry = false)
+        else -> PageStateView(state, onRetry = onRetry)
     }
 }
 
@@ -101,7 +257,7 @@ private fun MessageLoginPrompt(navController: NavHostController?) {
         Spacer(Modifier.height(8.dp))
         Text(
             "接收订单更新、互动通知和卖家私信，不错过每一笔交易动态。",
-            color = DoyuTextMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )
@@ -133,14 +289,16 @@ private fun MessagePlaceholderRow(icon: ImageVector, title: String, subtitle: St
             .fillMaxWidth()
             .padding(vertical = 10.dp)
     ) {
-        Icon(icon, contentDescription = null, tint = DoyuTextMuted, modifier = Modifier.size(28.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = DoyuTextMuted)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = DoyuTextMuted.copy(alpha = 0.6f))
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
         }
     }
 }
+
+// ── ConversationScreen ──
 
 @Preview
 @Composable
@@ -156,10 +314,31 @@ private fun ConversationScreenContent(navController: NavHostController?, convers
             val chatState = safeCallToState(conversationId) { repo.chat(conversationId) }.value
             when (val cs = chatState) {
                 is UiState.Success -> cs.data.items.forEach {
-                    DoyuCard(modifier = Modifier.fillMaxWidth(if (it.mine) 0.86f else 1f)) {
-                        Text(it.senderName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                        Text(it.content)
+                    val isMine = it.mine
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = if (isMine) Arrangement.End else Arrangement.Start
+                    ) {
+                        Surface(
+                            shape = MaterialTheme.shapes.medium,
+                            color = if (isMine) LightPrimaryContainer else LightSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth(if (isMine) 0.7f else 0.85f)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    it.senderName,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isMine) LightOnPrimaryContainer else LightPrimary
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    it.content,
+                                    color = if (isMine) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
                     }
+                    Spacer(Modifier.height(8.dp))
                 }
                 is UiState.Empty -> PageStateView(UiState.Empty)
                 else -> PageStateView(chatState)

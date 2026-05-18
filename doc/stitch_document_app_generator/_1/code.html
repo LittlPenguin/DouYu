@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Doyu - 社区</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#ebe7e4",
+                        "secondary-fixed-dim": "#9ed1bc",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#a0cbf7",
+                        "inverse-primary": "#ffb2be",
+                        "secondary": "#366756",
+                        "secondary-container": "#b9eed7",
+                        "inverse-on-surface": "#f4f0ec",
+                        "background": "#fdf9f5",
+                        "surface-dim": "#ddd9d6",
+                        "outline": "#887274",
+                        "surface-bright": "#fdf9f5",
+                        "primary-fixed-dim": "#ffb2be",
+                        "primary-container": "#e8778e",
+                        "on-secondary": "#ffffff",
+                        "primary": "#9e3d54",
+                        "on-secondary-fixed-variant": "#1d4f3f",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f7f3ef",
+                        "doyu-coral": "#FF8F75",
+                        "on-background": "#1c1c19",
+                        "surface-container": "#f1ede9",
+                        "on-tertiary-fixed-variant": "#194a6f",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#3d6e5c",
+                        "surface-tint": "#9e3d54",
+                        "text-primary": "#201A1C",
+                        "surface": "#fdf9f5",
+                        "on-surface-variant": "#554245",
+                        "tertiary-container": "#739ec8",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#FFF0F3",
+                        "text-secondary": "#524347",
+                        "tertiary-fixed": "#cee5ff",
+                        "on-primary-fixed-variant": "#7f253d",
+                        "doyu-petal": "#F48FA4",
+                        "on-secondary-fixed": "#002117",
+                        "on-primary-fixed": "#3f0015",
+                        "primary-fixed": "#ffd9de",
+                        "surface-container-highest": "#e5e2de",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#001d33",
+                        "outline-soft": "#E0CDD0",
+                        "outline-variant": "#dbc0c3",
+                        "inverse-surface": "#31302e",
+                        "on-tertiary-container": "#003556",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary": "#356289",
+                        "secondary-fixed": "#b9eed7",
+                        "on-primary-container": "#640f29",
+                        "on-surface": "#1c1c19"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xxl": "48px",
+                        "margin-page": "24px",
+                        "xs": "4px",
+                        "lg": "16px",
+                        "md": "12px",
+                        "gutter": "16px",
+                        "xl": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Noto Sans SC"],
+                        "body-lg": ["Noto Sans SC"],
+                        "title-lg": ["Noto Sans SC"],
+                        "headline-lg-mobile": ["Noto Sans SC"],
+                        "headline-lg": ["Noto Sans SC"],
+                        "label-sm": ["Noto Sans SC"],
+                        "display-md": ["Noto Sans SC"],
+                        "label-md": ["Noto Sans SC"],
+                        "display-lg": ["Noto Sans SC"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.25px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0.5px", "fontWeight": "400" }],
+                        "title-lg": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "label-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "display-md": ["30px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.25px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #fdf9f5; }
+        .masonry-grid {
+            column-count: 2;
+            column-gap: 16px;
+            padding: 16px 24px;
+        }
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 16px;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface antialiased pb-[100px] pt-[120px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-40 bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-xl px-margin-page py-md flex justify-between items-center no-shadows">
+<button class="hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" style="font-variation-settings: 'FILL' 0;">grid_view</span>
+</button>
+<div class="text-headline-lg-mobile font-headline-lg-mobile text-primary dark:text-primary-fixed-dim tracking-tight flex items-center gap-2 font-bold">
+            豆屿 Doyu
+        </div>
+<button class="hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" style="font-variation-settings: 'FILL' 0;">search</span>
+</button>
+</header>
+<!-- Tag Navigation -->
+<nav class="fixed top-[64px] w-full z-30 bg-surface/90 backdrop-blur-md px-margin-page py-2 overflow-x-auto no-scrollbar border-b border-surface-container/50">
+<div class="flex gap-4 min-w-max">
+<button class="px-4 py-1.5 rounded-full bg-primary-container/20 text-primary font-label-md text-label-md">推荐</button>
+<button class="px-4 py-1.5 rounded-full text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors">热门</button>
+<button class="px-4 py-1.5 rounded-full text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors">教程</button>
+<button class="px-4 py-1.5 rounded-full text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors">关注</button>
+<button class="px-4 py-1.5 rounded-full text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors">配件</button>
+</div>
+</nav>
+<!-- Masonry Feed -->
+<main class="masonry-grid max-w-5xl mx-auto">
+<!-- Card 1 -->
+<article class="masonry-item bg-surface-container-lowest rounded-xl shadow-[0_1px_4px_rgba(232,119,142,0.05)] overflow-hidden transition-transform duration-200 active:scale-95">
+<img class="w-full h-auto object-cover" data-alt="A macro photograph of colorful perler beads arranged in a complex, pixel-art style floral pattern. The scene is lit with bright, soft natural light, highlighting the glossy texture of the plastic beads. The overall aesthetic is cheerful, crafty, and playful, matching a vibrant, modern Doyu community vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuApRuGg4lP0WjgUuN3l64q7XxxAJyCWYQWXed4JsnB_z6Ti8kAi2Pi51kpvlyiXReQ_MeGDehemHp1ttM0Xj3bsRxT-FWfyh2KTe_9D2H9rPCNGmtTs37A94ZchI3RYcpfLEBawTpj4Ci_YLwniI0tzkOj4_qQo7exPvncU26A9n_KHGAsqNKVKLFzPUvnGmRG-YdMX_-aQsyfWyQmBhQkSZvoVrref-snK9BPqBc-OhLi78ekFwasks61nBX7wzdcGN8XWAyi46A"/>
+<div class="p-3">
+<h3 class="font-title-lg text-body-md line-clamp-2 mb-2 text-on-surface">春日限定花朵拼豆教程，超简单！</h3>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-1.5">
+<div class="w-5 h-5 rounded-full bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A soft, high-key portrait of a young woman smiling gently. The background is a clean, bright, out-of-focus pastel tone. The lighting is flattering and airy, evoking a sense of youthfulness and creativity typical of a modern maker community avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6utPv6opWSdq8Gk8yqq0-LFeQVvV7Li_jeaX54ewFg6sy3Dc0XcyTfo33d0MFNxYqjNPwBH7LEuXyIg_6m74XBKBVAtRBog5Jbj-Bcm2c9pXgtMAka-SNKXB_rkZCuxK7dvTdE_3_ceazRY8AGEZJexL3cAV5JgTOe3o1eFvNAu8u2cBJw9UTHk36aDAhCn2JCSDgSarKmAvUtkR9TZ2kRty9EQ_oJITXnH0vh7Lzr8dep6InKNuU-OA98X_wbBFvWEIiBx2-Ug"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">手作达人小莉</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">favorite</span>
+<span class="font-label-sm text-label-sm">342</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="masonry-item bg-surface-container-lowest rounded-xl shadow-[0_1px_4px_rgba(232,119,142,0.05)] overflow-hidden transition-transform duration-200 active:scale-95">
+<img class="w-full h-[280px] object-cover" data-alt="A flat-lay composition showing a completed geometric pixel-art design made of brightly colored perler beads alongside scattered loose beads. The background is a pristine, warm white surface. The image is brightly lit, creating soft shadows that emphasize the 3D texture of the beads, reflecting a clean, organized, and creative craft space." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8bfcJx9vl_L8EHRXzr1sVTmgZepC9Q-tk_DV_6JwXWmkufDWX1-3PXhwNd-Od3EdVqzr7ZOB_OIUMc5wF4-nRU839W0eORm7s_Nj4t9W3uQsWDXcl376hKJSrmfJssOBvvWvNG5B7WXqR6zmL1s21pRP5T5Lr_AKSW5v-QAVS5oKjDuWHkS_cOdmQpP49TEeZE6-LKKi17oIwqPuUKtBgaRKmSA_wf3qLizNn1hI3owEitehXDfCIynridg7kYo5_1WkUux38MQ"/>
+<div class="p-3">
+<h3 class="font-title-lg text-body-md line-clamp-2 mb-2 text-on-surface">周末挑战：像素风立体收纳盒</h3>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-1.5">
+<div class="w-5 h-5 rounded-full bg-surface-container-high overflow-hidden"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">豆屿官方</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">favorite</span>
+<span class="font-label-sm text-label-sm">1.2k</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="masonry-item bg-surface-container-lowest rounded-xl shadow-[0_1px_4px_rgba(232,119,142,0.05)] overflow-hidden transition-transform duration-200 active:scale-95">
+<img class="w-full h-auto object-cover" data-alt="Close-up of hands carefully using tweezers to place small, pastel-colored perler beads onto a pegboard. The focus is sharp on the tweezers and the bead being placed, with the rest of the board gently blurred out. The scene is brightly illuminated with soft, warm daylight, conveying concentration and the delicate nature of handmade crafts." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfzkFfqxRr_3PvgsgKo6FzgdvvJ5IkD8U5MBpUW-8f_j4ETsmnghvPbmNDJD8-F4IC99JH4O-oyLZla63FoKbz5niLo_ukL059YU7BnK5vkg_ofrXNo_CNsomXb_RosF_dBa-H6SYbsT-VgT2Rm_tWOMBD6IG7AEem2Ol00DQgA0DNJG6IyqcZ8Cmak_FymWywGTqHGRrD_MPysdGO0FMxawAXKQTnaZLCDXYtRUdXFchuK6qcQeTRp2AmRsWocnWu9eME592dGQ"/>
+<div class="p-3">
+<h3 class="font-title-lg text-body-md line-clamp-2 mb-2 text-on-surface">新手必看！如何避免熨烫翻车</h3>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-1.5">
+<div class="w-5 h-5 rounded-full bg-surface-container-high overflow-hidden"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">拼豆小课堂</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">favorite</span>
+<span class="font-label-sm text-label-sm">856</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Card 4 -->
+<article class="masonry-item bg-surface-container-lowest rounded-xl shadow-[0_1px_4px_rgba(232,119,142,0.05)] overflow-hidden transition-transform duration-200 active:scale-95">
+<img class="w-full h-[200px] object-cover" data-alt="A collection of small, cute pixel-art style animal figures made from perler beads, arranged on a light wood grain desk. The lighting is warm and sunny, creating a cozy, inviting atmosphere. The colors of the beads pop vibrantly against the neutral background, fitting the youthful and creative Doyu platform aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqfHryIfbsvCAwlC1ScYx4m1HicvKTe3GuHiIVeJEb_Na4O752fpJ4hK9YvKOqFxje6BddM-90FudhUuo9dKu9f_zTouW8oagp9Zpqkg0oDmsquVp_bDpU7OoPI3MXONhXVDCwBwi8aZZl9EnzCc_EViJZ-6KP-pIBJRlVtH82DZx9G1pJM4ZXv-vleoBh2P35O_Xn3HdmS8JNRW5QcFruYCUOTexpDnu664e58wNDTpYBEE-gsFMRGr3kjbUrHO7NMAbXYwa7Ow"/>
+<div class="p-3">
+<h3 class="font-title-lg text-body-md line-clamp-2 mb-2 text-on-surface">治愈系萌宠系列，附图纸</h3>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-1.5">
+<div class="w-5 h-5 rounded-full bg-surface-container-high overflow-hidden"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">喵星人手作</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">favorite</span>
+<span class="font-label-sm text-label-sm">520</span>
+</div>
+</div>
+</div>
+</article>
+</main>
+<!-- FAB for Create -->
+<button class="fixed right-6 bottom-28 w-14 h-14 bg-primary text-on-primary rounded-2xl shadow-[0_6px_16px_rgba(232,119,142,0.3)] flex items-center justify-center z-40 hover:scale-105 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-lg pt-sm pb-xl bg-surface/70 dark:bg-surface-container-highest/70 backdrop-blur-xl z-50 rounded-t-xl shadow-[0_-4px_24px_rgba(232,119,142,0.1)]">
+<!-- Active Item: 社区 -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim bg-primary-container/10 rounded-xl px-4 py-1 active:scale-90 transition-all duration-300 ease-out hover:bg-surface-variant/50" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-label-md text-label-md mt-1 font-bold">社区</span>
+</a>
+<!-- Inactive Items -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-colors px-4 py-1 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">local_mall</span>
+<span class="font-label-md text-label-md mt-1">商城</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-colors px-4 py-1 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">auto_awesome</span>
+<span class="font-label-md text-label-md mt-1">AI创作</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-colors px-4 py-1 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">chat_bubble</span>
+<span class="font-label-md text-label-md mt-1">消息</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-colors px-4 py-1 rounded-xl" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+<span class="font-label-md text-label-md mt-1">我的</span>
+</a>
+</nav>
+</body></html>

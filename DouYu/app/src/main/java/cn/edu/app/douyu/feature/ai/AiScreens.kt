@@ -4,8 +4,10 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -15,30 +17,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import android.graphics.BitmapFactory
 import cn.edu.app.douyu.core.data.DoyuAppContainer
-import cn.edu.app.douyu.core.model.BeadSize
-import cn.edu.app.douyu.core.model.CreatePatternJobRequest
-import cn.edu.app.douyu.core.model.PatternAsset
-import cn.edu.app.douyu.core.model.PatternDifficulty
-import cn.edu.app.douyu.core.model.PatternJobStatus
-import cn.edu.app.douyu.core.model.PatternStyle
-import cn.edu.app.douyu.core.model.UploadConfirmRequest
-import cn.edu.app.douyu.core.model.UploadPresignRequest
-import cn.edu.app.douyu.core.model.UploadUsage
+import cn.edu.app.douyu.core.model.*
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.navigation.BottomTab
 import cn.edu.app.douyu.core.ui.*
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.data.safeCallOrNull
 import cn.edu.app.douyu.core.network.requireSuccess
+import cn.edu.app.douyu.ui.theme.*
 import android.widget.Toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -58,56 +55,203 @@ private fun AiHomeScreenPreview() {
     AiHomeScreenContent(navController = null)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AiHomeScreenContent(navController: NavHostController?) {
-    Scaffold(topBar = { DoyuTopBar("AI 拼图") }) { padding ->
-        DoyuPage(padding) {
-            DoyuCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("照片变拼豆图纸", style = MaterialTheme.typography.headlineSmall)
-                        Spacer(Modifier.height(6.dp))
-                        Text("生成预览图、网格图、色号清单和材料建议。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("AI 拼图", style = MaterialTheme.typography.headlineMedium, color = LightPrimary)
+                },
+                actions = {
+                    IconButton(onClick = { navController?.navigate(AppRoute.PATTERN_HISTORY) }) {
+                        Icon(Icons.Filled.History, contentDescription = "历史", tint = LightPrimary)
                     }
-                    BeadPattern(Modifier.size(76.dp))
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Spacer(Modifier.height(8.dp))
+
+            // Hero Card with gradient
+            DoyuHeroCard(
+                title = "照片变拼豆图纸",
+                subtitle = "上传你的照片，AI一键生成专属拼豆图纸，让回忆变得可触摸，轻松开启手工之旅。",
+                ctaText = "开始创作",
+                onCtaClick = { navController?.navigate(AppRoute.IMAGE_SELECT) },
+                badge = "智能图纸引擎"
+            )
+
+            // Current Task Card
+            var jobRetryCount by remember { mutableIntStateOf(0) }
+            val jobState = safeCallToState(jobRetryCount) { repo.featuredJob() }.value
+            when (val state = jobState) {
+                is UiState.Success -> {
+                    val job = state.data
+                    CurrentTaskCard(
+                        fileName = job.inputName ?: job.inputFileId,
+                        progress = job.progress,
+                        onViewProgress = { navController?.navigate(AppRoute.aiProgress(job.jobId)) }
+                    )
                 }
-                Spacer(Modifier.height(16.dp))
-                DoyuPrimaryButton("选择图片开始", onClick = { navController?.navigate(AppRoute.IMAGE_SELECT) }, icon = Icons.Filled.AddPhotoAlternate, modifier = Modifier.fillMaxWidth())
+                is UiState.Empty -> {
+                    // No current task - show nothing
+                }
+                else -> { /* loading or error */ }
             }
-            val jobState = safeCallToState { repo.featuredJob() }.value
-            DoyuCard {
-                SectionHeader("当前任务", "查看记录") { navController?.navigate(AppRoute.PATTERN_HISTORY) }
-                when (val state = jobState) {
-                    is UiState.Success -> {
-                        val job = state.data
-                        Text(job.inputName ?: job.inputFileId, style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(8.dp))
-                        LinearProgressIndicator(progress = { job.progress / 100f }, modifier = Modifier.fillMaxWidth())
-                        Spacer(Modifier.height(8.dp))
-                        Text("处理中 ${job.progress}% · 高峰期会展示排队进度", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(12.dp))
-                        DoyuOutlinedButton("查看任务进度", onClick = { navController?.navigate(AppRoute.aiProgress(job.jobId)) }, icon = Icons.Filled.Pending, modifier = Modifier.fillMaxWidth())
-                    }
-                    is UiState.Empty -> {
-                        Text("暂无任务", style = MaterialTheme.typography.titleMedium)
-                        Spacer(Modifier.height(8.dp))
-                        Text("选择图片开始生成你的第一张拼豆图纸", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    else -> PageStateView(jobState)
+
+            // Inspiration Tags
+            SectionHeader("创作灵感")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("头像", "宠物", "二次元", "节日", "情侣").forEach { tag ->
+                    TagChip(tag)
                 }
             }
-            DoyuCard {
-                SectionHeader("新手友好参数")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TagChip("2.6mm")
-                    TagChip("低色数")
-                    TagChip("小挂件")
-                    TagChip("可爱化")
+
+            // History Section
+            SectionHeader("创作历史", action = "查看全部") {
+                navController?.navigate(AppRoute.PATTERN_HISTORY)
+            }
+            var historyRetryCount by remember { mutableIntStateOf(0) }
+            val historyState = safeCallToState(historyRetryCount) { repo.history() }.value
+            when (val state = historyState) {
+                is UiState.Success -> {
+                    state.data.items.take(4).forEach { job ->
+                        HistoryJobCard(
+                            title = job.inputName ?: job.inputFileId,
+                            status = statusLabel(job.status),
+                            onClick = {
+                                if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
+                                    navController?.navigate(AppRoute.patternResult(job.patternId))
+                                } else {
+                                    navController?.navigate(AppRoute.aiProgress(job.jobId))
+                                }
+                            }
+                        )
+                    }
                 }
+                is UiState.Empty -> {
+                    EmptyContent(
+                        "还没有生成过图纸",
+                        "选择一张图片，开始生成你的第一张拼豆图纸吧！",
+                        showRetry = false
+                    )
+                }
+                else -> PageStateView(historyState, onRetry = { historyRetryCount++ })
             }
         }
     }
 }
+
+@Composable
+private fun CurrentTaskCard(
+    fileName: String,
+    progress: Int,
+    onViewProgress: () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "taskPulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(LightPrimary.copy(alpha = pulseAlpha))
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("正在生成中", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.weight(1f))
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = LightPrimaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Text(
+                        "$progress%",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = LightPrimary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            LinearProgressIndicator(
+                progress = { progress / 100f },
+                modifier = Modifier.fillMaxWidth(),
+                color = LightPrimary,
+                trackColor = LightPrimaryContainer
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                fileName,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+            Spacer(Modifier.height(12.dp))
+            DoyuOutlinedButton("查看进度", onViewProgress, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+@Composable
+private fun HistoryJobCard(title: String, status: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(LightSurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = LightPrimary, modifier = Modifier.size(24.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+                Text(status, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+// ── ImageSelectScreen ──
 
 @Preview
 @Composable
@@ -134,7 +278,6 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
         }
     }
 
-    // Listen for captured URI from camera
     val savedStateHandle = navController?.currentBackStackEntry?.savedStateHandle
     LaunchedEffect(savedStateHandle) {
         val capturedUriStr = savedStateHandle?.get<String>("captured_uri")
@@ -148,7 +291,6 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
     Scaffold(topBar = { DoyuTopBar("选择图片", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             if (selectedUri == null) {
-                // No image selected yet — show selection options
                 DoyuCard {
                     Text("选择一张图片，AI 会帮你转成拼豆图纸。", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(16.dp))
@@ -167,7 +309,6 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                     )
                 }
             } else {
-                // Image selected — show preview
                 DoyuCard {
                     SectionHeader("已选图片")
                     Spacer(Modifier.height(8.dp))
@@ -177,7 +318,7 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(12.dp)),
+                            .clip(MaterialTheme.shapes.small),
                         contentScale = ContentScale.Crop
                     )
                     Spacer(Modifier.height(12.dp))
@@ -254,20 +395,13 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                     }
                 }
 
-                // Upload progress/status
                 if (uploadState == UploadState.UPLOADING) {
                     DoyuCard {
                         Text("上传中...", style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(8.dp))
-                        LinearProgressIndicator(
-                            progress = { uploadProgress },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        LinearProgressIndicator(progress = { uploadProgress }, modifier = Modifier.fillMaxWidth())
                         Spacer(Modifier.height(6.dp))
-                        Text(
-                            "已上传 ${(uploadProgress * 100).toInt()}%",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text("已上传 ${(uploadProgress * 100).toInt()}%", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -281,7 +415,7 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
 
                 if (uploadState == UploadState.SUCCESS) {
                     DoyuCard {
-                        Text("上传完成", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                        Text("上传完成", style = MaterialTheme.typography.titleMedium, color = LightPrimary)
                         Spacer(Modifier.height(4.dp))
                         Text("fileId: ${uploadedFileId ?: "..."}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -296,13 +430,15 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
 
             DoyuCard {
                 SectionHeader("上传流程")
-                Text("Photo Picker/拍照 -> /uploads/presign -> 直传对象存储 -> /uploads/confirm 返回 fileId。")
+                Text("Photo Picker/拍照 -> /uploads/presign -> 直传对象存储 -> /uploads/confirm 返回 fileId。", style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(8.dp))
-                Text("创建 AI 任务时只传 inputFileId，不直接传 fileKey。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("创建 AI 任务时只传 inputFileId，不直接传 fileKey。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
 }
+
+// ── AiParamsScreen ──
 
 @Preview
 @Composable
@@ -330,8 +466,19 @@ private fun AiParamsScreenContent(navController: NavHostController?, uploadedFil
             ParamSection("难度", listOf("新手", "普通", "进阶"), difficulty) { difficulty = it }
             ParamSection("色卡", listOf("豆屿通用 48 色", "低饱和新手色", "已有材料优先"), palette) { palette = it }
             ParamSection("风格", listOf("还原", "可爱", "二次元", "低色数", "头像图标"), style) { style = it }
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "预计需要 30 秒",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+
             DoyuPrimaryButton(
-                if (creating) "创建中..." else "创建 AI 任务",
+                if (creating) "创建中..." else "开始生成",
                 onClick = {
                     if (creating) return@DoyuPrimaryButton
                     creating = true
@@ -390,15 +537,22 @@ private fun ParamSection(title: String, options: List<String>, selected: String,
         Spacer(Modifier.height(10.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             options.forEach { option ->
+                val isSelected = option == selected
                 FilterChip(
-                    selected = option == selected,
+                    selected = isSelected,
                     onClick = { onSelect(option) },
-                    label = { Text(option) }
+                    label = { Text(option) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = LightPrimaryContainer,
+                        selectedLabelColor = LightOnPrimaryContainer
+                    )
                 )
             }
         }
     }
 }
+
+// ── AiProgressScreen ──
 
 @Preview
 @Composable
@@ -411,11 +565,22 @@ fun AiProgressScreen(navController: NavHostController, jobId: String) { AiProgre
 private fun AiProgressScreenContent(navController: NavHostController?, jobId: String) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
-    var job by remember { mutableStateOf<cn.edu.app.douyu.core.model.PatternJob?>(null) }
+    var job by remember { mutableStateOf<PatternJob?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var pollRevision by remember { mutableIntStateOf(0) }
     var canceling by remember { mutableStateOf(false) }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "progressPulse")
+    val shimmerAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "shimmerAlpha"
+    )
 
     LaunchedEffect(jobId, pollRevision) {
         loading = true
@@ -443,93 +608,141 @@ private fun AiProgressScreenContent(navController: NavHostController?, jobId: St
     }
 
     Scaffold(topBar = { DoyuTopBar("生成进度", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
-        DoyuPage(padding) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
             if (loading && job == null) {
-                PageStateView(UiState.Loading)
+                CircularProgressIndicator(color = LightPrimary)
             } else if (error != null && job == null) {
-                PageStateView(UiState.Error(error!!))
-                DoyuOutlinedButton("重试", onClick = { pollRevision++ }, modifier = Modifier.fillMaxWidth())
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                    Text("加载失败", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(Modifier.height(8.dp))
+                    Text(error!!, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(16.dp))
+                    DoyuPrimaryButton("重试", onClick = { pollRevision++ })
+                }
             } else if (job != null) {
                 val current = job!!
-                DoyuCard {
-                    BeadPattern(Modifier.size(132.dp).align(Alignment.CenterHorizontally))
-                    Spacer(Modifier.height(16.dp))
-                    Text("正在生成可拼图纸", style = MaterialTheme.typography.headlineSmall)
-                    Spacer(Modifier.height(8.dp))
-                    LinearProgressIndicator(progress = { current.progress / 100f }, modifier = Modifier.fillMaxWidth())
-                    Spacer(Modifier.height(8.dp))
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(32.dp)
+                ) {
+                    // Animation area
+                    Box(
+                        modifier = Modifier
+                            .size(160.dp)
+                            .clip(CircleShape)
+                            .background(LightSurfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        BeadPattern(Modifier.size(120.dp))
+                    }
+
+                    Spacer(Modifier.height(24.dp))
+
+                    // Progress bar
+                    LinearProgressIndicator(
+                        progress = { current.progress / 100f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(MaterialTheme.shapes.extraSmall),
+                        color = LightPrimary,
+                        trackColor = LightPrimaryContainer
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Percentage
                     Text(
-                        when {
-                            current.progress < 30 -> "分析图片中..."
-                            current.progress < 80 -> "生成图纸中..."
-                            else -> "即将完成..."
-                        } + " ${current.progress}%",
+                        "${current.progress}%",
+                        style = MaterialTheme.typography.displayMedium,
+                        color = LightPrimary
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Status text
+                    val statusText = when {
+                        current.progress < 30 -> "分析图片中..."
+                        current.progress < 80 -> "生成图纸中..."
+                        else -> "即将完成..."
+                    }
+                    Text(
+                        statusText,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text("任务 $jobId · ${statusLabel(current.status)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
 
-                if (current.status == PatternJobStatus.SUCCEEDED && current.patternId != null) {
-                    DoyuPrimaryButton(
-                        "查看图纸结果",
-                        onClick = { navController?.navigate(AppRoute.patternResult(current.patternId)) },
-                        icon = Icons.Filled.Visibility,
-                        modifier = Modifier.fillMaxWidth()
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "任务 $jobId",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
-                } else if (current.status == PatternJobStatus.FAILED) {
-                    DoyuCard {
-                        Text("生成失败", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
-                        Spacer(Modifier.height(4.dp))
-                        Text(current.failureReason ?: "AI 生成失败，请重试", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        DoyuOutlinedButton(
-                            "取消",
-                            onClick = {
-                                canceling = true
-                                scope.launch {
-                                    try {
-                                        withContext(Dispatchers.IO) {
-                                            requireSuccess(DoyuAppContainer.apiClient.patternApi.cancelJob(jobId))
-                                        }
-                                        navController?.popBackStack(BottomTab.AI.route, inclusive = false)
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "取消失败: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    } finally {
-                                        canceling = false
-                                    }
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                        DoyuPrimaryButton(
-                            "重试",
-                            onClick = { pollRevision++ },
-                            icon = Icons.Filled.Refresh,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                } else if (current.status == PatternJobStatus.CANCELED || current.status == PatternJobStatus.REJECTED) {
-                    DoyuCard {
-                        Text(
-                            if (current.status == PatternJobStatus.CANCELED) "任务已取消" else "任务被拒绝",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        if (current.failureReason != null) {
-                            Spacer(Modifier.height(4.dp))
-                            Text(current.failureReason!!, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                    Spacer(Modifier.height(32.dp))
+
+                    // Action buttons based on status
+                    when (current.status) {
+                        PatternJobStatus.SUCCEEDED -> {
+                            if (current.patternId != null) {
+                                DoyuPrimaryButton(
+                                    "查看图纸结果",
+                                    onClick = { navController?.navigate(AppRoute.patternResult(current.patternId)) },
+                                    icon = Icons.Filled.Visibility,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
-                    }
-                    DoyuPrimaryButton(
-                        "返回",
-                        onClick = { navController?.popBackStack(BottomTab.AI.route, inclusive = false) },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        DoyuOutlinedButton(
-                            "取消任务",
-                            onClick = {
+                        PatternJobStatus.FAILED -> {
+                            Surface(
+                                shape = MaterialTheme.shapes.medium,
+                                color = LightError.copy(alpha = 0.1f),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text("生成失败", style = MaterialTheme.typography.titleMedium, color = LightError)
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(current.failureReason ?: "AI 生成失败，请重试", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                DoyuOutlinedButton("取消", onClick = {
+                                    canceling = true
+                                    scope.launch {
+                                        try {
+                                            withContext(Dispatchers.IO) {
+                                                requireSuccess(DoyuAppContainer.apiClient.patternApi.cancelJob(jobId))
+                                            }
+                                            navController?.popBackStack(BottomTab.AI.route, inclusive = false)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "取消失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        } finally { canceling = false }
+                                    }
+                                }, modifier = Modifier.weight(1f))
+                                DoyuPrimaryButton("重试", onClick = { pollRevision++ }, icon = Icons.Filled.Refresh, modifier = Modifier.weight(1f))
+                            }
+                        }
+                        PatternJobStatus.CANCELED, PatternJobStatus.REJECTED -> {
+                            Text(
+                                if (current.status == PatternJobStatus.CANCELED) "任务已取消" else "任务被拒绝",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            if (current.failureReason != null) {
+                                Spacer(Modifier.height(4.dp))
+                                Text(current.failureReason!!, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            DoyuPrimaryButton("返回", onClick = { navController?.popBackStack(BottomTab.AI.route, inclusive = false) }, modifier = Modifier.fillMaxWidth())
+                        }
+                        else -> {
+                            TextButton(onClick = {
                                 canceling = true
                                 scope.launch {
                                     try {
@@ -539,19 +752,20 @@ private fun AiProgressScreenContent(navController: NavHostController?, jobId: St
                                         navController?.popBackStack(BottomTab.AI.route, inclusive = false)
                                     } catch (e: Exception) {
                                         Toast.makeText(context, "取消失败: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    } finally {
-                                        canceling = false
-                                    }
+                                    } finally { canceling = false }
                                 }
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
+                            }) {
+                                Text("取消任务")
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
+
+// ── PatternResultScreen ──
 
 @Preview
 @Composable
@@ -585,9 +799,7 @@ private fun PatternResultScreenContent(navController: NavHostController?, patter
                         Spacer(Modifier.height(8.dp))
                         Text("共 ${materials.totalBeads} 颗", fontWeight = FontWeight.SemiBold)
                     }
-                } else {
-                    Text("暂无材料信息")
-                }
+                } else { Text("暂无材料信息") }
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -596,9 +808,7 @@ private fun PatternResultScreenContent(navController: NavHostController?, patter
                     navController?.navigate(AppRoute.CART)
                 }) { Text("确认") }
             },
-            dismissButton = {
-                TextButton(onClick = { showCartDialog = false }) { Text("取消") }
-            }
+            dismissButton = { TextButton(onClick = { showCartDialog = false }) { Text("取消") } }
         )
     }
 
@@ -609,21 +819,16 @@ private fun PatternResultScreenContent(navController: NavHostController?, patter
                     val pattern = state.data
                     PatternSummary(pattern)
 
-                    // Preview image
                     if (pattern.previewFileId != null) {
                         DoyuCard {
                             SectionHeader("预览图")
                             Box(
-                                modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.small).background(LightSurfaceVariant),
                                 contentAlignment = Alignment.Center
-                            ) {
-                                Text("预览图加载中...", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
+                            ) { Text("预览图加载中...", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                     }
 
-                    // Color stats
                     if (pattern.colorStats.isNotEmpty()) {
                         DoyuCard {
                             SectionHeader("色号清单")
@@ -645,7 +850,6 @@ private fun PatternResultScreenContent(navController: NavHostController?, patter
                         }
                     }
 
-                    // Materials
                     val materials = pattern.materials
                     if (materials != null && materials.colors.isNotEmpty()) {
                         DoyuCard {
@@ -662,7 +866,6 @@ private fun PatternResultScreenContent(navController: NavHostController?, patter
                         }
                     }
 
-                    // Actions
                     DoyuPrimaryButton(
                         if (favorited) "已收藏" else "保存到我的图纸",
                         onClick = {
@@ -692,12 +895,7 @@ private fun PatternResultScreenContent(navController: NavHostController?, patter
                         DoyuOutlinedButton("导出 PDF", onClick = { Toast.makeText(context, "PDF 导出功能开发中", Toast.LENGTH_SHORT).show() }, icon = Icons.Filled.PictureAsPdf, modifier = Modifier.fillMaxWidth())
                     }
                     Spacer(Modifier.height(10.dp))
-                    DoyuOutlinedButton(
-                        "分享到社区",
-                        onClick = { navController?.navigate(AppRoute.POST_CREATE) },
-                        icon = Icons.Filled.Share,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    DoyuOutlinedButton("分享到社区", onClick = { navController?.navigate(AppRoute.POST_CREATE) }, icon = Icons.Filled.Share, modifier = Modifier.fillMaxWidth())
                 }
                 else -> PageStateView(patternState)
             }
@@ -712,18 +910,20 @@ private fun PatternSummary(pattern: PatternAsset) {
             Box(
                 modifier = Modifier
                     .size(92.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(22.dp)),
+                    .background(LightSurfaceVariant, MaterialTheme.shapes.large),
                 contentAlignment = Alignment.Center
             ) { BeadPattern(Modifier.size(72.dp)) }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(pattern.title, style = MaterialTheme.typography.titleLarge)
                 Text("${pattern.widthCells} x ${pattern.heightCells} 格 · ${pattern.totalBeads} 颗", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(pattern.paletteName, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                Text(pattern.paletteName, color = LightPrimary, fontWeight = FontWeight.SemiBold)
             }
         }
     }
 }
+
+// ── PatternHistoryScreen ──
 
 @Preview
 @Composable
@@ -739,29 +939,17 @@ private fun PatternHistoryScreenContent(navController: NavHostController?) {
         DoyuPage(padding) {
             when (val state = historyState) {
                 is UiState.Success -> state.data.items.forEach { job ->
-                    DoyuCard {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(Modifier.width(10.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(job.inputName ?: job.inputFileId, style = MaterialTheme.typography.titleMedium)
-                                Text("${job.inputFileId} · ${job.beadSize} · ${job.difficulty} · ${job.style}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    HistoryJobCard(
+                        title = job.inputName ?: job.inputFileId,
+                        status = statusLabel(job.status),
+                        onClick = {
+                            if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
+                                navController?.navigate(AppRoute.patternResult(job.patternId))
+                            } else {
+                                navController?.navigate(AppRoute.aiProgress(job.jobId))
                             }
-                            TagChip(statusLabel(job.status))
                         }
-                        Spacer(Modifier.height(10.dp))
-                        DoyuOutlinedButton(
-                            "查看",
-                            onClick = {
-                                if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
-                                    navController?.navigate(AppRoute.patternResult(job.patternId))
-                                } else {
-                                    navController?.navigate(AppRoute.aiProgress(job.jobId))
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                    )
                 }
                 is UiState.Empty -> EmptyContent(
                     "还没有生成过图纸",

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Doyu - 商城 (Mall)</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Noto Sans SC for clean Chinese typography -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#ebe7e4",
+                        "secondary-fixed-dim": "#9ed1bc",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed-dim": "#a0cbf7",
+                        "inverse-primary": "#ffb2be",
+                        "secondary": "#366756",
+                        "secondary-container": "#b9eed7",
+                        "inverse-on-surface": "#f4f0ec",
+                        "background": "#fdf9f5",
+                        "surface-dim": "#ddd9d6",
+                        "outline": "#887274",
+                        "surface-bright": "#fdf9f5",
+                        "primary-fixed-dim": "#ffb2be",
+                        "primary-container": "#e8778e",
+                        "on-secondary": "#ffffff",
+                        "primary": "#9e3d54",
+                        "on-secondary-fixed-variant": "#1d4f3f",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f7f3ef",
+                        "doyu-coral": "#FF8F75",
+                        "on-background": "#1c1c19",
+                        "surface-container": "#f1ede9",
+                        "on-tertiary-fixed-variant": "#194a6f",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#3d6e5c",
+                        "surface-tint": "#9e3d54",
+                        "text-primary": "#201A1C",
+                        "surface": "#fdf9f5",
+                        "on-surface-variant": "#554245",
+                        "tertiary-container": "#739ec8",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#FFF0F3",
+                        "text-secondary": "#524347",
+                        "tertiary-fixed": "#cee5ff",
+                        "on-primary-fixed-variant": "#7f253d",
+                        "doyu-petal": "#F48FA4",
+                        "on-secondary-fixed": "#002117",
+                        "on-primary-fixed": "#3f0015",
+                        "primary-fixed": "#ffd9de",
+                        "surface-container-highest": "#e5e2de",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#001d33",
+                        "outline-soft": "#E0CDD0",
+                        "outline-variant": "#dbc0c3",
+                        "inverse-surface": "#31302e",
+                        "on-tertiary-container": "#003556",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary": "#356289",
+                        "secondary-fixed": "#b9eed7",
+                        "on-primary-container": "#640f29",
+                        "on-surface": "#1c1c19"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xxl": "48px",
+                        "margin-page": "24px",
+                        "xs": "4px",
+                        "lg": "16px",
+                        "md": "12px",
+                        "gutter": "16px",
+                        "xl": "24px",
+                        "nav-bottom": "80px",
+                        "nav-top": "64px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Noto Sans SC"],
+                        "body-lg": ["Noto Sans SC"],
+                        "title-lg": ["Noto Sans SC"],
+                        "headline-lg-mobile": ["Noto Sans SC"],
+                        "headline-lg": ["Noto Sans SC"],
+                        "label-sm": ["Noto Sans SC"],
+                        "display-md": ["Noto Sans SC"],
+                        "label-md": ["Noto Sans SC"],
+                        "display-lg": ["Noto Sans SC"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.25px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0.5px", "fontWeight": "400" }],
+                        "title-lg": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "label-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "display-md": ["30px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "display-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.25px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Hide scrollbar for clean horizontal scrolls */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        /* Subtle spring animation for interactive elements */
+        .btn-spring:active {
+            transform: scale(0.97);
+            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background pb-nav-bottom min-h-screen antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar (From JSON) -->
+<header class="fixed top-0 z-40 w-full flex justify-between items-center px-margin-page py-md bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-xl">
+<button class="material-symbols-outlined text-on-surface-variant hover:opacity-80 transition-opacity" data-icon="grid_view">grid_view</button>
+<div class="text-headline-lg-mobile font-headline-lg-mobile text-primary dark:text-primary-fixed-dim tracking-tight flex items-center gap-2 font-bold">
+            豆屿 Doyu
+        </div>
+<button class="material-symbols-outlined text-on-surface-variant hover:opacity-80 transition-opacity" data-icon="search">search</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-[80px] flex flex-col gap-xl">
+<!-- Search Bar Section (Prominent for Commerce) -->
+<section class="px-margin-page">
+<div class="flex items-center bg-surface-container-high rounded-full px-lg py-sm shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] border border-transparent focus-within:border-primary-container focus-within:bg-surface transition-colors duration-300">
+<span class="material-symbols-outlined text-outline mr-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none outline-none w-full text-body-md font-body-md text-on-surface placeholder-outline flex-1" placeholder="搜索手作、图纸或材料包..." type="text"/>
+<button class="material-symbols-outlined text-outline ml-sm hover:text-primary transition-colors" data-icon="qr_code_scanner">qr_code_scanner</button>
+</div>
+</section>
+<!-- Horizontal Category Chips -->
+<section class="px-margin-page overflow-x-auto no-scrollbar">
+<div class="flex items-center gap-md w-max pb-sm">
+<button class="px-lg py-xs rounded-full bg-primary-container text-on-primary-container text-label-md font-label-md btn-spring transition-colors whitespace-nowrap shadow-[0_2px_8px_rgba(232,119,142,0.2)]">全部商品</button>
+<button class="px-lg py-xs rounded-full bg-surface-container-high text-on-surface-variant text-label-md font-label-md btn-spring hover:bg-surface-variant transition-colors whitespace-nowrap">材料包</button>
+<button class="px-lg py-xs rounded-full bg-surface-container-high text-on-surface-variant text-label-md font-label-md btn-spring hover:bg-surface-variant transition-colors whitespace-nowrap">独家图纸</button>
+<button class="px-lg py-xs rounded-full bg-surface-container-high text-on-surface-variant text-label-md font-label-md btn-spring hover:bg-surface-variant transition-colors whitespace-nowrap">成品手作</button>
+<button class="px-lg py-xs rounded-full bg-surface-container-high text-on-surface-variant text-label-md font-label-md btn-spring hover:bg-surface-variant transition-colors whitespace-nowrap">配件工具</button>
+</div>
+</section>
+<!-- Featured Product Carousel -->
+<section class="overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-pl-margin-page">
+<div class="flex gap-md px-margin-page w-max pb-sm">
+<!-- Carousel Card 1 -->
+<div class="snap-start w-[280px] h-[160px] rounded-xl overflow-hidden relative shadow-[0_4px_16px_rgba(0,0,0,0.04)] group cursor-pointer btn-spring">
+<img alt="Featured bead craft" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A professional flat-lay photograph of a premium DIY craft kit for making pixel-art coasters. The kit features neatly organized colorful perler beads in a compartmentalized clear box, fine tweezers, and an ironing paper. The background is a clean, warm-toned pastel pink surface. Soft, highly diffused lighting creates a serene, inspiring, and professional e-commerce aesthetic suitable for a modern handmade community." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB10-SI6nMyUqIf3a7SLtPn7PGv_NY7gYVSgSBDUmscXZksc0YJ1a5GVZ_kipc9AObn6HMKnl79YxmghtGnIx1hgw8JtVHa87Hk4zUMqbYzo4KoxKZBHuPHImNnteb15dR5qBUF27wufF0zdC769s4mU6vckLL0fpSma-OEVNXEdSEcjsEwP5SVFJgPjy5g9UciIAQXAL_KbHm4yXtIzyapC0kfpQ6p3SvVkP8HpNfekYkjdrJp7iScoFZMUlQv_yLTsC0hlbrHTw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-lg w-full">
+<span class="inline-block px-sm py-xs bg-surface/90 backdrop-blur-sm rounded text-[10px] font-label-sm text-primary mb-xs">新品首发</span>
+<h3 class="text-on-primary text-title-lg font-title-lg leading-tight">春日繁花材料包</h3>
+<p class="text-surface-container-low text-label-sm font-label-sm mt-xs">含5款图纸 + 基础工具</p>
+</div>
+</div>
+<!-- Carousel Card 2 -->
+<div class="snap-start w-[280px] h-[160px] rounded-xl overflow-hidden relative shadow-[0_4px_16px_rgba(0,0,0,0.04)] group cursor-pointer btn-spring">
+<div class="absolute inset-0 bg-secondary-container mix-blend-multiply opacity-20"></div>
+<img alt="Tools promotion" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A macro studio shot of high-quality craft tools, focusing on a pair of precision metal tweezers picking up a vibrant, glowing neon green perler bead. The background is a soft, out-of-focus warm white space, highlighting the precision and quality of the tools. The lighting is crisp and bright, conveying a professional, clean, and trustworthy e-commerce vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZdGdhWJ8EzngvBmygapTkiab9fEb3YqUo9g4MaVQ5d1OtGhVvqfpshDnmPeGf1pnJuQaHDlRdsbfB8g3TDWCpKFjeUVQqI2XP3DJ1hfd8Hm-o_RDz4ULGMYidHDvpkUlTU95XZ73lqRYZVmQbGazW-sASRpkGib2xvZ_fSv79ZrLZrUo3QEECyq3SI5XYXIGHx_fN_mMQqfqW2gXJ0VLFi3CITw2AF5GO6IfDVhGf_Ufqaw4IdElxguzPucXroE9wA_wb6fHpsw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-secondary/80 via-secondary/30 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-lg w-full">
+<span class="inline-block px-sm py-xs bg-surface/90 backdrop-blur-sm rounded text-[10px] font-label-sm text-secondary mb-xs">限时特惠</span>
+<h3 class="text-on-primary text-title-lg font-title-lg leading-tight">专业级精细镊子套装</h3>
+<p class="text-surface-container-low text-label-sm font-label-sm mt-xs">提升30%拼豆效率</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Product Grid (2-Column) -->
+<section class="px-margin-page pb-xl">
+<div class="flex items-center justify-between mb-md">
+<h2 class="text-title-lg font-title-lg text-text-primary">猜你喜欢</h2>
+<button class="text-label-md font-label-md text-outline flex items-center hover:text-primary transition-colors">
+                    更多 <span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-gutter">
+<!-- Product Card 1 -->
+<div class="bg-surface rounded-xl border border-outline-soft overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col group cursor-pointer btn-spring">
+<div class="aspect-square bg-surface-container-high relative overflow-hidden">
+<img alt="Product image" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A well-lit, minimalist e-commerce photo of a completed handmade perler bead art piece resembling a cute, stylized Shiba Inu dog face. The item is displayed straight-on against a pristine, seamless light pink background. The lighting is soft, even, and shadowless, highlighting the texture of the fused beads. The overall mood is playful, neat, and highly professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlu8bSJdm20ckIOL-N3YoMdwsQOxddlc3vR9vd5bMYK-vmvR3c0_y4PAumbVDNgJESxeYnr3RdVsTLYfozuKWzpMKqN8TwFPywljl55Oajj4PSIA69GIHQA7c_KQSdTBZyZImd024J35GSWm_UbtjuurXD_tDASGJINWKODoz29zLsUNiX5m69uFopjzTBBrAuHfFHcitgvGeBwQN5tcVIEcDEcHHRwLIIuPtk8-p1NdP65GfHXTpVtOxA88f2MEV4OYLuib6aUg"/>
+<!-- Tag -->
+<div class="absolute top-sm left-sm bg-doyu-petal/90 backdrop-blur-sm text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full">热卖</div>
+</div>
+<div class="p-md flex flex-col flex-1 justify-between">
+<div>
+<h3 class="text-body-md font-body-md text-text-primary line-clamp-2 leading-tight">柴犬像素拼豆成品 桌面摆件可爱礼物</h3>
+</div>
+<div class="mt-sm flex items-end justify-between">
+<div class="flex items-baseline gap-xs">
+<span class="text-label-sm font-label-sm text-primary">¥</span>
+<span class="text-title-lg font-title-lg text-primary">39.9</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">已售 200+</span>
+</div>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="bg-surface rounded-xl border border-outline-soft overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col group cursor-pointer btn-spring">
+<div class="aspect-square bg-surface-container-high relative overflow-hidden">
+<img alt="Product image" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A clean product shot of an assortment of pastel-colored cosmetic-grade plastic beads sorted into a circular palette box, mimicking a painter's palette. The background is a solid, warm off-white surface. The lighting is studio-quality, casting subtle, soft shadows that emphasize the roundness and premium quality of the materials. The image evokes a sense of organized creativity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtYzIuGeSzlcmrrb5NMN0vMYwn7S0fF5mwqngSM7O-Hq_f3-d3Zb3rWJqbDBXsnFWwWfJoQvhzH-cfX2w3um8niwi6QH3T-y7FoIrVcSf6iF0Y0WUPWESmW8ir8hXOyeXfdhHaT6s3BU9yhg9-fpiq_D3YVJQWpOo7ti0JaEzlRU1-lJI_WaLIp6Bmit5DBG49yX04J0PfHp0gOfGy9ljcH2gHDyzYoUa_TmVREE6Z78FZAJ6VzA1WNpsW0qE2N324Fhdyo3D5gA"/>
+</div>
+<div class="p-md flex flex-col flex-1 justify-between">
+<div>
+<h3 class="text-body-md font-body-md text-text-primary line-clamp-2 leading-tight">马卡龙色系 2.6mm软豆补充包 10色入</h3>
+</div>
+<div class="mt-sm flex items-end justify-between">
+<div class="flex items-baseline gap-xs">
+<span class="text-label-sm font-label-sm text-primary">¥</span>
+<span class="text-title-lg font-title-lg text-primary">15.0</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">已售 1.2k</span>
+</div>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="bg-surface rounded-xl border border-outline-soft overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col group cursor-pointer btn-spring">
+<div class="aspect-square bg-surface-container-high relative overflow-hidden">
+<img alt="Product image" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="An isometric lifestyle shot of a neatly organized desk setup featuring a half-finished pixel art project on a square pegboard. A small pink iron and an iPad displaying a colorful digital pattern are visible in the soft-focus background. The scene is brightly lit with natural window light, creating a cozy, productive, and modern crafting atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBR8-ll_bdyglcbMY7rC0tWTCkXmWhQJ5L8m-apiJTSXOlt0zrCPVrwOl-HYmOdrodjTFNDh8rgeVkGlrSKVOlPZnAGabbLmVt8rj0gtkmPBXk1UQJWAoKYPf03z7bhUiY40pUHTfopGEfJmUxdKNZHfd_RFx4q6zRvYCs9o4FdsQYfkYYpRx8xzcPJpDXv7gwdbNKai1eOx2XHfq-bSXNU01vKYG8pYFND28SScLK3lK6Iim9D5o0eF3hPEbQXfa4KOfgFTVGJEA"/>
+</div>
+<div class="p-md flex flex-col flex-1 justify-between">
+<div>
+<h3 class="text-body-md font-body-md text-text-primary line-clamp-2 leading-tight">新手入坑全套工具包 含熨斗/模板/夹子</h3>
+</div>
+<div class="mt-sm flex items-end justify-between">
+<div class="flex items-baseline gap-xs">
+<span class="text-label-sm font-label-sm text-primary">¥</span>
+<span class="text-title-lg font-title-lg text-primary">88.0</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">已售 500+</span>
+</div>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="bg-surface rounded-xl border border-outline-soft overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col group cursor-pointer btn-spring">
+<div class="aspect-square bg-surface-container-high relative overflow-hidden">
+<img alt="Product image" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A vibrant e-commerce catalog image showcasing a set of four retro-gaming inspired pixel art drink coasters made from fused beads. They are stacked slightly askew on a clean, light beige surface. The lighting is direct but diffused, creating crisp edges and bright colors that pop against the neutral background, communicating high product quality and nostalgic charm." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmKonbTEiokkA1UamSHiVQEXfJFIT0WeT2VPYZ8398yjfiROtAz4wMlDxXo0cLu3OWhi7VpzrJ9HB1vurDdiJ9NXB_7-TEayCrPOjVdm4E-81TaC0Khn9vkTmvQ4YJNX4Pdd0SZbgit49D87AMOTe5vlOOQHiOa36dIaqPYVuWPLA1zI29e-V5mkDUY-GdYw7qaKBDR7A14Wa0KjXugus7RIM7vK0OSjPsuzDkeYLCz4CNZX3fFaGSDHxqscAzKqvEk6b1Ab2d5A"/>
+<div class="absolute top-sm left-sm bg-tertiary-container/90 backdrop-blur-sm text-on-tertiary-container text-[10px] font-bold px-2 py-0.5 rounded-full">独家图纸</div>
+</div>
+<div class="p-md flex flex-col flex-1 justify-between">
+<div>
+<h3 class="text-body-md font-body-md text-text-primary line-clamp-2 leading-tight">复古游戏机系列 电子图纸合集 (PDF)</h3>
+</div>
+<div class="mt-sm flex items-end justify-between">
+<div class="flex items-baseline gap-xs">
+<span class="text-label-sm font-label-sm text-primary">¥</span>
+<span class="text-title-lg font-title-lg text-primary">9.9</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">已售 3.5k</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (From JSON, Active State: 商城) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-lg pt-sm pb-xl bg-surface/70 dark:bg-surface-container-highest/70 backdrop-blur-xl border-t border-outline-variant/20 shadow-[0_-4px_24px_rgba(232,119,142,0.1)] z-50 rounded-t-xl">
+<!-- 社区 (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-colors w-16 py-1 rounded-xl group">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform" data-icon="explore">explore</span>
+<span class="text-label-md font-label-md mt-1">社区</span>
+</button>
+<!-- 商城 (Active - Direct Match) -->
+<button class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim bg-primary-container/10 rounded-xl px-4 py-1 scale-90 transition-all duration-300 ease-out">
+<span class="material-symbols-outlined text-[24px]" data-icon="local_mall" data-weight="fill" style="font-variation-settings: 'FILL' 1;">local_mall</span>
+<span class="text-label-md font-label-md mt-1 font-bold">商城</span>
+</button>
+<!-- AI创作 (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-colors w-16 py-1 rounded-xl group">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform" data-icon="auto_awesome">auto_awesome</span>
+<span class="text-label-md font-label-md mt-1">AI创作</span>
+</button>
+<!-- 消息 (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-colors w-16 py-1 rounded-xl group relative">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform" data-icon="chat_bubble">chat_bubble</span>
+<!-- Notification Badge Example -->
+<span class="absolute top-1 right-3 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+<span class="text-label-md font-label-md mt-1">消息</span>
+</button>
+<!-- 我的 (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-variant/50 transition-colors w-16 py-1 rounded-xl group">
+<span class="material-symbols-outlined text-[24px] group-hover:scale-110 transition-transform" data-icon="person">person</span>
+<span class="text-label-md font-label-md mt-1">我的</span>
+</button>
+</nav>
+</body></html>
