@@ -82,6 +82,9 @@ class PatternGenerationWorkflowTest {
         override suspend fun favoritePattern(patternId: String): ApiResponse<Unit> =
             ApiResponse("OK", "success", Unit, "trace_favorite")
 
+        override suspend fun favorites(page: Int, size: Int): ApiResponse<PageResponse<PatternAsset>> =
+            ApiResponse("OK", "success", PageResponse(MockData.patterns, page, size, MockData.patterns.size, false), "trace_favorites")
+
         override suspend fun pattern(patternId: String): ApiResponse<PatternAsset> =
             ApiResponse("OK", "success", MockData.patterns.first().copy(patternId = patternId), "trace_pattern")
     }

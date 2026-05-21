@@ -1,7 +1,102 @@
+import java.io.File
+
+fun loadDotEnv(file: File): Map<String, String> {
+    if (!file.isFile) return emptyMap()
+
+    return file.readLines()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && !it.startsWith("#") }
+        .mapNotNull { line ->
+            val separatorIndex = line.indexOf('=')
+            if (separatorIndex <= 0) {
+                null
+            } else {
+                val key = line.substring(0, separatorIndex).trim()
+                val value = line.substring(separatorIndex + 1).trim().trim('"')
+                key to value
+            }
+        }
+        .toMap()
+}
+
+fun ensureTrailingSlash(value: String): String =
+    if (value.endsWith("/")) value else "$value/"
+
+fun buildConfigString(value: String): String =
+    "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
+fun escapeXml(value: String): String =
+    value
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&apos;")
+
+val repoRootDir = rootProject.projectDir.parentFile
+val localEnv = loadDotEnv(repoRootDir.resolve(".env"))
+
+fun envConfig(key: String, defaultValue: String): String =
+    providers.environmentVariable(key).orNull ?: localEnv[key] ?: defaultValue
+
+val douyuBackendHost = envConfig("DOUYU_BACKEND_HOST", "10.0.2.2")
+val douyuBackendPort = envConfig("DOUYU_BACKEND_PORT", "8081")
+val douyuDebugApiBaseUrl = ensureTrailingSlash(
+    envConfig("DOUYU_ANDROID_API_BASE_URL", "http://$douyuBackendHost:$douyuBackendPort/")
+)
+val douyuReleaseApiBaseUrl = ensureTrailingSlash(
+    envConfig("DOUYU_ANDROID_RELEASE_API_BASE_URL", "https://api.example.invalid/")
+)
+val douyuDebugCleartextHosts = envConfig(
+    "DOUYU_ANDROID_CLEARTEXT_HOSTS",
+    listOf(douyuBackendHost, "10.0.2.2", "localhost").joinToString(",")
+)
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+}
+
+val generatedDebugEnvResDir = layout.buildDirectory.asFile.get().resolve("generated/res/douyuEnv/debug")
+val generateDebugEnvResources by tasks.registering {
+    inputs.property("douyuDebugCleartextHosts", douyuDebugCleartextHosts)
+    outputs.dir(generatedDebugEnvResDir)
+
+    doLast {
+        val xmlDir = generatedDebugEnvResDir.resolve("xml")
+        xmlDir.mkdirs()
+
+        val domains = douyuDebugCleartextHosts
+            .split(',', ';', ' ', '\n', '\r', '\t')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
+
+        val domainConfigs = domains.joinToString(separator = "\n\n") { domain ->
+            """
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">${escapeXml(domain)}</domain>
+    </domain-config>
+            """.trimEnd()
+        }
+
+        xmlDir.resolve("network_security_config.xml").writeText(
+            """
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+$domainConfigs
+</network-security-config>
+            """.trimIndent(),
+            Charsets.UTF_8
+        )
+    }
 }
 
 android {
@@ -23,8 +118,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", buildConfigString(douyuDebugApiBaseUrl))
+        }
+
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "API_BASE_URL", buildConfigString(douyuReleaseApiBaseUrl))
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -37,7 +137,17 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
+    sourceSets {
+        getByName("debug") {
+            res.srcDir(generatedDebugEnvResDir)
+        }
+    }
+}
+
+tasks.matching { it.name == "preDebugBuild" || it.name == "mergeDebugResources" }.configureEach {
+    dependsOn(generateDebugEnvResources)
 }
 
 dependencies {

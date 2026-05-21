@@ -4,6 +4,16 @@
 
 ## 环境
 
+仓库根目录使用本机私有 `.env` 管理本地联调地址；`.env` 不提交，提交的是 `.env.example`。换网络、换电脑或从真机改模拟器时，只改 `.env` 后重新启动后端并重新构建 debug 包。
+
+关键字段：
+
+- `DOUYU_BACKEND_HOST`：当前开发机可被 Android 设备访问的 IP。真机使用电脑 Wi-Fi/LAN IPv4，模拟器通常使用 `10.0.2.2`。
+- `DOUYU_BACKEND_PORT`：后端端口，默认 `8081`。
+- `DOUYU_ANDROID_API_BASE_URL`：Android debug Retrofit baseUrl，必须以 `/` 结尾。
+- `DOUYU_ANDROID_CLEARTEXT_HOSTS`：Android debug HTTP 明文访问白名单，逗号分隔。
+- `DOUYU_STORAGE_BASE_URL`：后端 Local OSS 返回给 Android 的上传和资源访问 URL。
+
 后端：
 
 - 工程路径：`doyu-server/`
@@ -23,11 +33,12 @@ Android：
 - 模拟器访问电脑后端：`http://10.0.2.2:8081/`
 - 真机访问电脑后端：`http://<电脑 Wi-Fi IP>:8081/`
 - Retrofit `baseUrl` 必须以 `/` 结尾。
+- Debug 包的 `baseUrl` 和 HTTP 白名单由根目录 `.env` 在构建时生成。
 
 ## Debug HTTP 与 Release HTTPS
 
 - `main` 网络安全配置保持 HTTPS only。
-- `debug` 可通过 `app/src/debug/res/xml/network_security_config.xml` 显式放行本机联调用的 IP。
+- `debug` 通过 Gradle 从 `.env` 的 `DOUYU_ANDROID_CLEARTEXT_HOSTS` 生成 `network_security_config.xml`，显式放行本机联调用的 IP。
 - 不得把开发机 IP 的 HTTP 放行写入 release/main 配置。
 - 真机能用浏览器访问后端但 App 网络失败时，优先检查：
   - App 是否安装 debug 包。

@@ -27,9 +27,9 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 
 ## 当前实现状态
 
-**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。模拟器联调使用 `http://10.0.2.2:8081/`，真机联调必须使用电脑当前 Wi-Fi IP，例如 `http://10.64.241.153:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
+**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。Debug 包的 Retrofit `baseUrl` 从仓库根目录 `.env` 的 `DOUYU_ANDROID_API_BASE_URL` 生成到 `BuildConfig.API_BASE_URL`；模拟器联调使用 `http://10.0.2.2:8081/`，真机联调使用电脑当前 Wi-Fi IP，例如 `http://10.63.105.12:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
 
-**真机 HTTP 联调**：Android main 配置保持 HTTPS only；debug 包通过 `app/src/debug/res/xml/network_security_config.xml` 对当前开发机 IP 添加 `domain-config cleartextTrafficPermitted="true"`。如果真机浏览器能访问后端，但 App 显示网络异常，优先检查 `baseUrl`、debug 包、logcat 中的 cleartext 配置错误。
+**真机 HTTP 联调**：Android main 配置保持 HTTPS only；debug 包通过 Gradle 从 `.env` 的 `DOUYU_ANDROID_CLEARTEXT_HOSTS` 生成 `network_security_config.xml`，对当前开发机 IP 添加 `domain-config cleartextTrafficPermitted="true"`。如果真机浏览器能访问后端，但 App 显示网络异常，优先检查 `baseUrl`、debug 包、logcat 中的 cleartext 配置错误。
 
 **Repository 层**：已从 Mock Repository 切换到真实 Repository：
 
@@ -41,7 +41,6 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 
 **当前主要缺口**：
 
-- API Base URL 仍硬编码在 `DoyuAppContainer`。
 - 登录态仍使用 `InMemoryTokenStore`，App 重启后不可恢复。
 - 多数页面仍在 Composable 内直接管理副作用和 Repository 调用，MVVM 尚未完全落地。
 - 多个 Feature 文件体量偏大，页面、子组件、网络状态、副作用混在同一文件中。

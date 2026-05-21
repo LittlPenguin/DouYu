@@ -4,10 +4,10 @@
 
 ## 第一阶段联调结论
 
-- API Base URL: `http://localhost:8080/api/v1`
-- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
-- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-- 健康检查: `http://localhost:8080/actuator/health`
+- API Base URL: `http://<DOUYU_BACKEND_HOST>:8081/api/v1`
+- OpenAPI JSON: `http://<DOUYU_BACKEND_HOST>:8081/v3/api-docs`
+- Swagger UI: `http://<DOUYU_BACKEND_HOST>:8081/swagger-ui/index.html`
+- 健康检查: `http://<DOUYU_BACKEND_HOST>:8081/actuator/health`
 - 所有 Controller 暴露的 `/api/v1` 接口会进入 OpenAPI 文档；登录、上传、AI、商城、订单、支付、消息、成长、举报和后台接口均可在 Swagger UI 中检索。
 - Swagger 已配置 Bearer Auth。前端登录后把 `accessToken` 填入 Swagger Authorize 或 Android `Authorization: Bearer <accessToken>`。
 - 当前所有业务数据用于联调骨架，主要保存在进程内存；Flyway 和 MyBatis 已接入，PostgreSQL schema 已初始化，但业务仓储后续再逐步替换为持久化实现。
@@ -16,22 +16,25 @@
 
 ### 推荐：dev profile + PostgreSQL/Redis
 
+先复制仓库根目录 `.env.example` 为 `.env`，把 `DOUYU_BACKEND_HOST`、`DOUYU_ANDROID_API_BASE_URL`、`DOUYU_ANDROID_CLEARTEXT_HOSTS` 和 `DOUYU_STORAGE_BASE_URL` 改成当前开发机 IP。真机使用电脑 Wi-Fi/LAN IPv4，Android 模拟器使用 `10.0.2.2`。
+
 ```powershell
-cd D:\Studio\SpellBean\doyu-server
+cd C:\Users\22462\Desktop\XM\Android\APP\APP_DouYu\doyu-server
 .\start-dev.bat
 ```
 
 等价手动命令：
 
 ```powershell
-cd D:\Studio\SpellBean\doyu-server
+cd C:\Users\22462\Desktop\XM\Android\APP\APP_DouYu\doyu-server
 docker compose up -d postgres redis
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+mvn spring-boot:run -Dspring-boot.run.profiles=dev `
+  -Dspring-boot.run.jvmArguments="-DDOUYU_STORAGE_BASE_URL=http://<当前开发机IP>:8081"
 ```
 
 dev profile 会连接本机 Docker Compose 中的：
 
-- PostgreSQL: `localhost:5432`，数据库 `douyu`，账号 `douyu`
+- PostgreSQL: `localhost:5433`，数据库 `douyu`，账号 `douyu`
 - Redis: `localhost:6379`
 
 如果 Docker Desktop 没启动，`dev` profile 无法完整启动。测试命令不依赖 Docker，会使用 H2 内存数据库。

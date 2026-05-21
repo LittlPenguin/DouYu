@@ -1,5 +1,6 @@
 package cn.edu.app.douyu.core.data
 
+import cn.edu.app.douyu.BuildConfig
 import cn.edu.app.douyu.core.network.*
 
 object DoyuAppContainer {
@@ -8,8 +9,7 @@ object DoyuAppContainer {
     val isLoggedIn: Boolean get() = tokenStore.accessToken() != null
 
     val apiClient = DoyuApiClient(
-        // 真机调试用本机 WiFi IP；模拟器改回 http://10.0.2.2:8081
-        baseUrl = "http://10.64.241.153:8081/",
+        baseUrl = BuildConfig.API_BASE_URL,
         tokenProvider = tokenStore,
         refreshTokenProvider = tokenStore,
         onTokenRefreshed = { pair -> tokenStore.save(pair) },
