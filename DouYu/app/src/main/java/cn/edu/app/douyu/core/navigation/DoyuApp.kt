@@ -2,9 +2,9 @@ package cn.edu.app.douyu.core.navigation
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -150,16 +150,22 @@ private fun DoyuBottomNavBar(
     onTabClick: (BottomTab) -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 20.dp, bottomEnd = 20.dp),
         tonalElevation = 2.dp,
-        shadowElevation = 2.dp,
-        color = MaterialTheme.colorScheme.surface
+        shadowElevation = 4.dp,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, LightOutlineVariant.copy(alpha = 0.72f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+                .heightIn(min = 64.dp)
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             tabItems.forEach { item ->
@@ -167,6 +173,7 @@ private fun DoyuBottomNavBar(
                 DoyuTabItem(
                     tab = item,
                     selected = selected,
+                    modifier = Modifier.weight(1f),
                     onClick = { onTabClick(item.tab) }
                 )
             }
@@ -178,10 +185,11 @@ private fun DoyuBottomNavBar(
 private fun DoyuTabItem(
     tab: TabUi,
     selected: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val scale by animateFloatAsState(
-        targetValue = if (selected) 1.0f else 0.95f,
+        targetValue = if (selected) 1.0f else 0.98f,
         animationSpec = SpringFast,
         label = "tabScale"
     )
@@ -193,12 +201,16 @@ private fun DoyuTabItem(
 
     Surface(
         onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        color = if (selected) LightPrimaryContainer.copy(alpha = 0.15f) else Color.Transparent,
-        modifier = Modifier.scale(scale)
+        shape = RoundedCornerShape(18.dp),
+        color = if (selected) LightPrimaryContainer.copy(alpha = 0.64f) else Color.Transparent,
+        modifier = modifier
+            .heightIn(min = 54.dp)
+            .scale(scale)
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 7.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
@@ -209,15 +221,15 @@ private fun DoyuTabItem(
                     .size(24.dp)
                     .scale(iconScale)
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(3.dp))
             Text(
                 tab.tab.label,
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected) LightPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                maxLines = 1
             )
 
-            // Indicator bar
             AnimatedVisibility(
                 visible = selected,
                 enter = fadeIn() + expandHorizontally(),

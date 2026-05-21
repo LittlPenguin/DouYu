@@ -1,16 +1,53 @@
 package cn.edu.app.douyu.feature.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Storefront
+import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,27 +55,53 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import cn.edu.app.douyu.core.data.DoyuAppContainer
-import cn.edu.app.douyu.core.model.Badge
-import cn.edu.app.douyu.core.model.CheckinStatus
-import cn.edu.app.douyu.core.navigation.AppRoute
-import cn.edu.app.douyu.core.ui.*
 import cn.edu.app.douyu.core.data.safeCallToState
-import cn.edu.app.douyu.core.data.safeCallOrNull
-import cn.edu.app.douyu.ui.theme.*
+import cn.edu.app.douyu.core.model.DashboardData
+import cn.edu.app.douyu.core.navigation.AppRoute
+import cn.edu.app.douyu.core.ui.BeadPattern
+import cn.edu.app.douyu.core.ui.DisabledFeatureNotice
+import cn.edu.app.douyu.core.ui.DoyuAnimatedCounter
+import cn.edu.app.douyu.core.ui.DoyuCard
+import cn.edu.app.douyu.core.ui.DoyuOutlinedButton
+import cn.edu.app.douyu.core.ui.DoyuPage
+import cn.edu.app.douyu.core.ui.DoyuPrimaryButton
+import cn.edu.app.douyu.core.ui.DoyuTopBar
+import cn.edu.app.douyu.core.ui.LoginRequiredDialog
+import cn.edu.app.douyu.core.ui.PageStateView
+import cn.edu.app.douyu.core.ui.SectionHeader
+import cn.edu.app.douyu.core.ui.UiState
+import cn.edu.app.douyu.core.ui.disabledClick
+import cn.edu.app.douyu.ui.theme.DoyuCoral
+import cn.edu.app.douyu.ui.theme.DoyuPetal
+import cn.edu.app.douyu.ui.theme.LightOnPrimary
+import cn.edu.app.douyu.ui.theme.LightOnPrimaryContainer
+import cn.edu.app.douyu.ui.theme.LightPrimary
+import cn.edu.app.douyu.ui.theme.LightPrimaryContainer
+import cn.edu.app.douyu.ui.theme.LightSecondary
+import cn.edu.app.douyu.ui.theme.LightSecondaryContainer
+import cn.edu.app.douyu.ui.theme.LightSurface
+import cn.edu.app.douyu.ui.theme.LightSurfaceVariant
+import cn.edu.app.douyu.ui.theme.LightTertiary
+import cn.edu.app.douyu.ui.theme.LightTertiaryContainer
+import kotlinx.coroutines.launch
 
 private val repo = DoyuAppContainer.profileRepository
 
 @Preview
 @Composable
-private fun ProfileScreenPreview() { ProfileScreenContent(navController = null) }
+private fun ProfileScreenPreview() {
+    ProfileScreenContent(navController = null)
+}
 
 @Composable
-fun ProfileScreen(navController: NavHostController) { ProfileScreenContent(navController) }
+fun ProfileScreen(navController: NavHostController) {
+    ProfileScreenContent(navController)
+}
 
 @Composable
 private fun ProfileScreenContent(navController: NavHostController?) {
@@ -46,16 +109,21 @@ private fun ProfileScreenContent(navController: NavHostController?) {
     val dashboardState = safeCallToState(dashboardRetryCount) { repo.dashboard() }.value
     var showLoginDialog by remember { mutableStateOf(false) }
 
+    fun openLogin() {
+        showLoginDialog = true
+    }
+
     if (showLoginDialog) {
         LoginRequiredDialog(
             onDismiss = { showLoginDialog = false },
             onLogin = {
                 showLoginDialog = false
-                navController?.navigate(cn.edu.app.douyu.core.navigation.AppRoute.LOGIN)
+                navController?.navigate(AppRoute.LOGIN)
             },
-            message = "登录后可以查看个人中心"
+            message = "登录后可以查看个人资料、创作资产、收藏和订单状态。"
         )
     }
+
     Scaffold(
         topBar = {
             DoyuTopBar("我的") {
@@ -65,283 +133,337 @@ private fun ProfileScreenContent(navController: NavHostController?) {
             }
         }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Spacer(Modifier.height(4.dp))
-
+        DoyuPage(padding) {
             when (val state = dashboardState) {
-                is UiState.Success -> {
-                    val dashboard = state.data
+                is UiState.Success -> ProfileDashboardContent(
+                    dashboard = state.data,
+                    navController = navController
+                )
 
-                    // User header card
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 1.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Box {
-                            // Decorative blob
-                            Box(
-                                modifier = Modifier
-                                    .size(120.dp)
-                                    .offset(x = 200.dp, y = (-20).dp)
-                                    .clip(CircleShape)
-                                    .background(LightPrimaryContainer.copy(alpha = 0.2f))
-                            )
+                UiState.RequireLogin -> GuestProfileContent(
+                    onLogin = ::openLogin,
+                    onSettings = { navController?.navigate(AppRoute.SETTINGS) }
+                )
 
-                            Column(
-                                modifier = Modifier.padding(20.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                // Avatar
-                                Box(
-                                    modifier = Modifier
-                                        .size(72.dp)
-                                        .clip(CircleShape)
-                                        .background(LightPrimaryContainer),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Person,
-                                        contentDescription = null,
-                                        tint = LightPrimary,
-                                        modifier = Modifier.size(36.dp)
-                                    )
-                                }
-                                Spacer(Modifier.height(8.dp))
-
-                                // Name
-                                Text(
-                                    dashboard.user.nickname,
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-
-                                // Level badge
-                                Surface(
-                                    shape = MaterialTheme.shapes.extraSmall,
-                                    color = LightPrimaryContainer
-                                ) {
-                                    Text(
-                                        dashboard.reward.levelCode,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = LightOnPrimaryContainer,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                    )
-                                }
-
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    dashboard.user.bio,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    // Stats panel
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StatCard("作品", dashboard.user.followerCount, Modifier.weight(1f))
-                        StatCard("获赞", dashboard.reward.points, Modifier.weight(1f))
-                        StatCard("收藏", dashboard.patternCount, Modifier.weight(1f))
-                    }
-
-                    // Function grid
-                    Surface(
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 1.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("我的工坊", style = MaterialTheme.typography.titleLarge)
-                            Spacer(Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                FunctionGridItem("草稿", Icons.Filled.Palette, LightPrimaryContainer, LightPrimary) {}
-                                FunctionGridItem("订单", Icons.Filled.ShoppingBag, LightTertiaryContainer, LightTertiary) { navController?.navigate(AppRoute.MY_ORDERS) }
-                                FunctionGridItem("收藏", Icons.Filled.Favorite, LightSecondaryContainer, LightSecondary) { navController?.navigate(AppRoute.FAVORITES) }
-                                FunctionGridItem("历史", Icons.Filled.History, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { navController?.navigate(AppRoute.PATTERN_HISTORY) }
-                            }
-                        }
-                    }
-
-                    // Check-in card
-                    Surface(
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth(),
-                        shadowElevation = 1.dp
-                    ) {
-                        Box(
-                            modifier = Modifier.background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(LightPrimaryContainer.copy(alpha = 0.3f), LightSurface)
-                                )
-                            )
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = DoyuCoral, modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("创意打卡", style = MaterialTheme.typography.titleMedium)
-                                }
-                                Spacer(Modifier.height(4.dp))
-                                Text(
-                                    "连续创作或探索设计即可打卡收集豆子！",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(Modifier.height(12.dp))
-
-                                // Week calendar
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
-                                ) {
-                                    val days = listOf("一", "二", "三", "四", "五", "六", "日")
-                                    val signedDays = setOf(0, 1, 2) // Mon, Tue, Wed signed
-                                    days.forEachIndexed { index, day ->
-                                        val signed = index in signedDays
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(32.dp)
-                                                    .clip(CircleShape)
-                                                    .background(if (signed) DoyuPetal else LightSurfaceVariant),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                if (signed) {
-                                                    Icon(
-                                                        Icons.Filled.Check,
-                                                        contentDescription = null,
-                                                        tint = LightOnPrimary,
-                                                        modifier = Modifier.size(16.dp)
-                                                    )
-                                                }
-                                            }
-                                            Spacer(Modifier.height(4.dp))
-                                            Text(
-                                                day,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = if (signed) DoyuPetal else MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Action list
-                    Surface(
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 1.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column {
-                            ProfileAction("我的拼豆", Icons.Filled.GridView, LightPrimaryContainer, LightPrimary) { navController?.navigate(AppRoute.MY_PATTERNS) }
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                            ProfileAction("生成记录", Icons.Filled.AutoAwesome, LightTertiaryContainer, LightTertiary) { navController?.navigate(AppRoute.PATTERN_HISTORY) }
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                            ProfileAction("我的订单", Icons.AutoMirrored.Filled.ReceiptLong, LightSecondaryContainer, LightSecondary) { navController?.navigate(AppRoute.MY_ORDERS) }
-                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                            ProfileAction("签到与等级", Icons.Filled.WorkspacePremium, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { }
-                        }
-                    }
-                }
-                UiState.RequireLogin -> {
-                    // Guest placeholder — show layout with default values
-                    Surface(
-                        shape = MaterialTheme.shapes.extraLarge,
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 1.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(CircleShape)
-                                    .background(LightSurfaceVariant),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Filled.Person,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(36.dp)
-                                )
-                            }
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "未登录",
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                "登录后解锁完整功能",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    // Stats panel — zeroed
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        StatCard("作品", 0, Modifier.weight(1f))
-                        StatCard("获赞", 0, Modifier.weight(1f))
-                        StatCard("收藏", 0, Modifier.weight(1f))
-                    }
-
-                    // Function grid (disabled)
-                    Surface(
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 1.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("我的工坊", style = MaterialTheme.typography.titleLarge)
-                            Spacer(Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                FunctionGridItem("草稿", Icons.Filled.Palette, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { showLoginDialog = true }
-                                FunctionGridItem("订单", Icons.Filled.ShoppingBag, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { showLoginDialog = true }
-                                FunctionGridItem("收藏", Icons.Filled.Favorite, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { showLoginDialog = true }
-                                FunctionGridItem("历史", Icons.Filled.History, LightSurfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant) { showLoginDialog = true }
-                            }
-                        }
-                    }
-                }
                 else -> PageStateView(dashboardState, onRetry = { dashboardRetryCount++ })
             }
+        }
+    }
+}
 
-            if (!DoyuAppContainer.isLoggedIn) {
-                DoyuPrimaryButton(
-                    "登录",
-                    onClick = { showLoginDialog = true },
-                    modifier = Modifier.fillMaxWidth()
+@Composable
+private fun ProfileDashboardContent(
+    dashboard: DashboardData,
+    navController: NavHostController?
+) {
+    ProfileHeroCard(dashboard)
+    ProfileStatsRow(
+        firstLabel = "图纸",
+        firstValue = dashboard.patternCount,
+        secondLabel = "订单",
+        secondValue = dashboard.orderCount,
+        thirdLabel = "豆子",
+        thirdValue = dashboard.reward.points
+    )
+    WorkshopCard(navController)
+    RewardSummaryCard(dashboard)
+    ProfileActionGroup(
+        title = "创作资产",
+        actions = listOf(
+            ProfileActionSpec(
+                title = "我的拼豆图纸",
+                subtitle = "查看已保存的图纸资产",
+                icon = Icons.Filled.GridView,
+                iconBgColor = LightPrimaryContainer,
+                iconColor = LightPrimary,
+                status = "${dashboard.patternCount} 张",
+                onClick = { navController?.navigate(AppRoute.MY_PATTERNS) }
+            ),
+            ProfileActionSpec(
+                title = "生成记录",
+                subtitle = "查看 AI 图纸任务历史，真实视觉 Provider 后期接入",
+                icon = Icons.Filled.AutoAwesome,
+                iconBgColor = LightTertiaryContainer,
+                iconColor = LightTertiary,
+                status = "历史",
+                onClick = { navController?.navigate(AppRoute.PATTERN_HISTORY) }
+            ),
+            ProfileActionSpec(
+                title = "徽章与等级",
+                subtitle = "只读展示奖励摘要，不开放签到领取",
+                icon = Icons.Filled.WorkspacePremium,
+                iconBgColor = LightSurfaceVariant,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                status = dashboard.reward.levelCode.ifBlank { "待同步" },
+                enabled = false
+            )
+        )
+    )
+    ProfileActionGroup(
+        title = "交易资产",
+        actions = listOf(
+            ProfileActionSpec(
+                title = "收藏图纸",
+                subtitle = "管理收藏的拼豆图纸",
+                icon = Icons.Filled.Favorite,
+                iconBgColor = LightSecondaryContainer,
+                iconColor = LightSecondary,
+                status = "可查看",
+                onClick = { navController?.navigate(AppRoute.FAVORITES) }
+            ),
+            ProfileActionSpec(
+                title = "订单记录",
+                subtitle = "只展示服务端订单状态，不代表真实支付成功",
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                iconBgColor = LightTertiaryContainer,
+                iconColor = LightTertiary,
+                status = "${dashboard.orderCount} 单",
+                onClick = { navController?.navigate(AppRoute.MY_ORDERS) }
+            ),
+            ProfileActionSpec(
+                title = "卖家与定制服务",
+                subtitle = "玩家交易、实名、提现和纠纷处理本轮不开放",
+                icon = Icons.Filled.Storefront,
+                iconBgColor = LightSurfaceVariant,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                status = "待开放",
+                enabled = false
+            )
+        )
+    )
+    ProfileActionGroup(
+        title = "设置 / 安全",
+        actions = listOf(
+            ProfileActionSpec(
+                title = "设置与权限",
+                subtitle = "查看权限策略和本阶段合规边界",
+                icon = Icons.Filled.Settings,
+                iconBgColor = LightPrimaryContainer,
+                iconColor = LightPrimary,
+                status = "进入",
+                onClick = { navController?.navigate(AppRoute.SETTINGS) }
+            ),
+            ProfileActionSpec(
+                title = "登录保持",
+                subtitle = "当前 TokenStore 仍为内存实现，重启后可能需要重新登录",
+                icon = Icons.Filled.Lock,
+                iconBgColor = LightSurfaceVariant,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                status = "开发态",
+                enabled = false
+            )
+        )
+    )
+}
+
+@Composable
+private fun GuestProfileContent(
+    onLogin: () -> Unit,
+    onSettings: () -> Unit
+) {
+    DoyuCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(20.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(LightSurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(34.dp)
                 )
             }
-            Spacer(Modifier.height(8.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    "未登录",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "登录后查看个人资料、图纸、收藏和订单状态。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                DoyuPrimaryButton(
+                    text = "去登录",
+                    onClick = onLogin,
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.Filled.AccountCircle
+                )
+            }
         }
+    }
+    ProfileStatsRow("图纸", 0, "订单", 0, "豆子", 0)
+    DisabledFeatureNotice(
+        title = "登录态仍是开发态",
+        message = "当前登录令牌保存在内存中，重启应用后可能需要重新登录；本轮不补 DataStore 持久化。"
+    )
+    ProfileActionGroup(
+        title = "个人资料",
+        actions = listOf(
+            ProfileActionSpec(
+                title = "登录查看资产",
+                subtitle = "个人图纸、收藏、订单和等级需要登录后加载",
+                icon = Icons.Filled.Person,
+                iconBgColor = LightPrimaryContainer,
+                iconColor = LightPrimary,
+                status = "去登录",
+                onClick = onLogin
+            ),
+            ProfileActionSpec(
+                title = "设置与权限",
+                subtitle = "未登录也可以查看本阶段权限和合规边界",
+                icon = Icons.Filled.Settings,
+                iconBgColor = LightSurfaceVariant,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                status = "进入",
+                onClick = onSettings
+            )
+        )
+    )
+}
+
+@Composable
+private fun ProfileHeroCard(dashboard: DashboardData) {
+    Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier.background(
+                Brush.horizontalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.surface,
+                        LightPrimaryContainer.copy(alpha = 0.38f)
+                    )
+                )
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    Box(
+                        modifier = Modifier
+                            .size(76.dp)
+                            .clip(CircleShape)
+                            .background(LightPrimaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = null,
+                            tint = LightPrimary,
+                            modifier = Modifier.size(38.dp)
+                        )
+                    }
+                    LevelPill(dashboard.reward.levelCode.ifBlank { "LV" })
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        dashboard.user.nickname,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        dashboard.user.bio.ifBlank { "还没有填写个人简介" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SoftTag("创作者", LightPrimaryContainer, LightOnPrimaryContainer)
+                        SoftTag(
+                            if (dashboard.badges.any { it.achieved }) "徽章已点亮" else "徽章待点亮",
+                            LightSecondaryContainer,
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LevelPill(text: String) {
+    Surface(
+        shape = CircleShape,
+        color = DoyuPetal,
+        contentColor = LightOnPrimary,
+        shadowElevation = 1.dp
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun SoftTag(
+    text: String,
+    color: Color,
+    contentColor: Color
+) {
+    Surface(
+        shape = CircleShape,
+        color = color,
+        contentColor = contentColor
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+        )
+    }
+}
+
+@Composable
+private fun ProfileStatsRow(
+    firstLabel: String,
+    firstValue: Int,
+    secondLabel: String,
+    secondValue: Int,
+    thirdLabel: String,
+    thirdValue: Int
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        StatCard(firstLabel, firstValue, Modifier.weight(1f))
+        StatCard(secondLabel, secondValue, Modifier.weight(1f))
+        StatCard(thirdLabel, thirdValue, Modifier.weight(1f))
     }
 }
 
@@ -349,13 +471,14 @@ private fun ProfileScreenContent(navController: NavHostController?) {
 private fun StatCard(label: String, value: Int, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
-        shape = MaterialTheme.shapes.medium,
-        color = LightSurfaceVariant,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 1.dp
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(vertical = 14.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             DoyuAnimatedCounter(
                 targetValue = value,
@@ -364,8 +487,52 @@ private fun StatCard(label: String, value: Int, modifier: Modifier = Modifier) {
             )
             Text(
                 label,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun WorkshopCard(navController: NavHostController?) {
+    DoyuCard(contentPadding = PaddingValues(20.dp)) {
+        SectionHeader(
+            title = "我的工坊",
+            subtitle = "常用资产入口"
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            FunctionGridItem(
+                label = "图纸",
+                icon = Icons.Filled.Palette,
+                bgColor = LightPrimaryContainer,
+                iconColor = LightPrimary,
+                onClick = { navController?.navigate(AppRoute.MY_PATTERNS) }
+            )
+            FunctionGridItem(
+                label = "订单",
+                icon = Icons.Filled.ShoppingBag,
+                bgColor = LightTertiaryContainer,
+                iconColor = LightTertiary,
+                onClick = { navController?.navigate(AppRoute.MY_ORDERS) }
+            )
+            FunctionGridItem(
+                label = "收藏",
+                icon = Icons.Filled.Favorite,
+                bgColor = LightSecondaryContainer,
+                iconColor = LightSecondary,
+                onClick = { navController?.navigate(AppRoute.FAVORITES) }
+            )
+            FunctionGridItem(
+                label = "历史",
+                icon = Icons.Filled.History,
+                bgColor = LightSurfaceVariant,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                onClick = { navController?.navigate(AppRoute.PATTERN_HISTORY) }
             )
         }
     }
@@ -377,36 +544,165 @@ private fun FunctionGridItem(
     icon: ImageVector,
     bgColor: Color,
     iconColor: Color,
-    onClick: () -> Unit
+    enabled: Boolean = true,
+    onClick: () -> Unit = ::disabledClick
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(8.dp)
+        modifier = Modifier.width(68.dp)
     ) {
         Surface(
             onClick = onClick,
+            enabled = enabled,
             shape = CircleShape,
             color = bgColor,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(56.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(24.dp))
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(25.dp)
+                )
             }
         }
-        Spacer(Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
     }
 }
 
 @Composable
-private fun ProfileAction(
-    text: String,
-    icon: ImageVector,
-    iconBgColor: Color,
-    iconColor: Color,
-    onClick: () -> Unit
+private fun RewardSummaryCard(dashboard: DashboardData) {
+    val achievedBadges = dashboard.badges.count { it.achieved }
+    Surface(
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth(),
+        shadowElevation = 1.dp
+    ) {
+        Box(
+            modifier = Modifier.background(
+                Brush.horizontalGradient(
+                    colors = listOf(
+                        LightPrimaryContainer.copy(alpha = 0.28f),
+                        LightSurface
+                    )
+                )
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.WorkspacePremium,
+                        contentDescription = null,
+                        tint = DoyuCoral,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "等级与奖励",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.weight(1f))
+                    SoftTag(
+                        dashboard.reward.levelCode.ifBlank { "等级待同步" },
+                        LightPrimaryContainer,
+                        LightOnPrimaryContainer
+                    )
+                }
+                Text(
+                    "这里只展示后端奖励摘要；签到领取、实名奖励和交易激励不在本轮开放。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    RewardMetric("豆子", dashboard.reward.points, Modifier.weight(1f))
+                    RewardMetric("经验", dashboard.reward.experience, Modifier.weight(1f))
+                    RewardMetric("徽章", achievedBadges, Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RewardMetric(label: String, value: Int, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = LightSurface.copy(alpha = 0.78f)
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                value.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+private data class ProfileActionSpec(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+    val iconBgColor: Color,
+    val iconColor: Color,
+    val status: String,
+    val enabled: Boolean = true,
+    val onClick: () -> Unit = ::disabledClick
+)
+
+@Composable
+private fun ProfileActionGroup(
+    title: String,
+    actions: List<ProfileActionSpec>
 ) {
-    Surface(onClick = onClick, color = Color.Transparent) {
+    DoyuCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        actions.forEachIndexed { index, action ->
+            ProfileAction(action)
+            if (index < actions.lastIndex) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileAction(action: ProfileActionSpec) {
+    Surface(
+        onClick = action.onClick,
+        enabled = action.enabled,
+        color = Color.Transparent
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -415,16 +711,56 @@ private fun ProfileAction(
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
-                    .background(iconBgColor),
+                    .background(action.iconBgColor),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
+                Icon(
+                    action.icon,
+                    contentDescription = null,
+                    tint = action.iconColor,
+                    modifier = Modifier.size(20.dp)
+                )
             }
             Spacer(Modifier.width(12.dp))
-            Text(text, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    action.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (action.enabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                Text(
+                    action.subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Text(
+                action.status,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+            if (action.enabled) {
+                Spacer(Modifier.width(4.dp))
+                Icon(
+                    Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
     }
 }
@@ -433,10 +769,14 @@ private fun ProfileAction(
 
 @Preview
 @Composable
-private fun MyPatternsScreenPreview() { MyPatternsScreenContent(navController = null) }
+private fun MyPatternsScreenPreview() {
+    MyPatternsScreenContent(navController = null)
+}
 
 @Composable
-fun MyPatternsScreen(navController: NavHostController) { MyPatternsScreenContent(navController) }
+fun MyPatternsScreen(navController: NavHostController) {
+    MyPatternsScreenContent(navController)
+}
 
 @Composable
 private fun MyPatternsScreenContent(navController: NavHostController?) {
@@ -480,10 +820,14 @@ private fun MyPatternsScreenContent(navController: NavHostController?) {
 
 @Preview
 @Composable
-private fun FavoritesScreenPreview() { FavoritesScreenContent(navController = null) }
+private fun FavoritesScreenPreview() {
+    FavoritesScreenContent(navController = null)
+}
 
 @Composable
-fun FavoritesScreen(navController: NavHostController) { FavoritesScreenContent(navController) }
+fun FavoritesScreen(navController: NavHostController) {
+    FavoritesScreenContent(navController)
+}
 
 @Composable
 private fun FavoritesScreenContent(navController: NavHostController?) {
@@ -527,10 +871,14 @@ private fun FavoritesScreenContent(navController: NavHostController?) {
 
 @Preview
 @Composable
-private fun SettingsScreenPreview() { SettingsScreenContent(navController = null) }
+private fun SettingsScreenPreview() {
+    SettingsScreenContent(navController = null)
+}
 
 @Composable
-fun SettingsScreen(navController: NavHostController) { SettingsScreenContent(navController) }
+fun SettingsScreen(navController: NavHostController) {
+    SettingsScreenContent(navController)
+}
 
 @Composable
 private fun SettingsScreenContent(navController: NavHostController?) {
@@ -561,45 +909,128 @@ private fun SettingsScreenContent(navController: NavHostController?) {
 
     Scaffold(topBar = { DoyuTopBar("设置", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            DoyuCard {
-                SectionHeader("合规入口")
-                DisabledFeatureNotice(
-                    title = "生产合规材料待补齐",
-                    message = "当前阶段只保留入口清单，不展示为已完成的隐私政策、协议、SDK 清单或注销闭环。",
-                    modifier = Modifier.padding(bottom = 8.dp)
+            DoyuCard(modifier = Modifier.fillMaxWidth()) {
+                SectionHeader(
+                    title = "账号与安全",
+                    subtitle = "只保留当前阶段真实可用的账号操作"
                 )
-                listOf("隐私政策", "用户协议", "权限说明", "第三方 SDK 清单", "账号注销", "客服与反馈").forEach {
-                    Surface(
-                        color = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ) {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(it, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                            Text("待接入", style = MaterialTheme.typography.labelMedium)
-                        }
+                Spacer(Modifier.height(10.dp))
+                DisabledFeatureNotice(
+                    title = "登录保持仍为开发态",
+                    message = "当前 TokenStore 是内存实现，重启应用后可能需要重新登录；本轮不补 DataStore 持久化。"
+                )
+                Spacer(Modifier.height(12.dp))
+                SettingsStatusRow(
+                    title = "短信登录",
+                    description = "开发环境验证码固定为 123456",
+                    status = "可用",
+                    icon = Icons.Filled.Lock
+                )
+                SettingsStatusRow(
+                    title = "账号注销",
+                    description = "生产闭环、人工审核和冷静期流程待补齐",
+                    status = "待补齐",
+                    icon = Icons.Filled.Security
+                )
+            }
+            DoyuCard(modifier = Modifier.fillMaxWidth()) {
+                SectionHeader(
+                    title = "隐私与合规入口",
+                    subtitle = "只展示清单，不表达为生产材料已完成"
+                )
+                Spacer(Modifier.height(8.dp))
+                listOf(
+                    "隐私政策" to "文本、版本记录和弹窗确认待补齐",
+                    "用户协议" to "正式协议和版本变更流程待补齐",
+                    "权限说明" to "按实际 SDK 和权限清单后续补齐",
+                    "第三方 SDK 清单" to "真实 SDK 接入后再维护清单",
+                    "客服与反馈" to "生产客服渠道待补齐"
+                ).forEachIndexed { index, item ->
+                    SettingsStatusRow(
+                        title = item.first,
+                        description = item.second,
+                        status = "待补齐",
+                        icon = Icons.Filled.Info
+                    )
+                    if (index < 4) {
+                        HorizontalDivider()
                     }
                 }
             }
-            DoyuCard {
-                Text("权限策略", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
+            DoyuCard(modifier = Modifier.fillMaxWidth()) {
+                SectionHeader(
+                    title = "权限策略",
+                    subtitle = "当前 Android 权限申请原则"
+                )
+                Spacer(Modifier.height(8.dp))
                 Text(
                     "相机仅在拍照时申请；相册优先使用 Photo Picker；不默认申请定位、蓝牙、Wi-Fi 或广泛存储权限。",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            Spacer(Modifier.height(8.dp))
-            DoyuOutlinedButton(
-                "退出登录",
-                onClick = { showLogoutDialog = true },
-                modifier = Modifier.fillMaxWidth()
+            if (DoyuAppContainer.isLoggedIn) {
+                DoyuOutlinedButton(
+                    "退出登录",
+                    onClick = { showLogoutDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.AutoMirrored.Filled.Logout
+                )
+            } else {
+                DoyuPrimaryButton(
+                    "去登录",
+                    onClick = { navController?.navigate(AppRoute.LOGIN) },
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = Icons.Filled.AccountCircle
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsStatusRow(
+    title: String,
+    description: String,
+    status: String,
+    icon: ImageVector
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(LightSurfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(19.dp)
             )
         }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            status,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

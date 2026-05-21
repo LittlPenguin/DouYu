@@ -2,6 +2,7 @@ package cn.edu.app.douyu.core.ui
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,7 +11,6 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,13 +29,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import cn.edu.app.douyu.ui.theme.*
 
 fun disabledClick() = Unit
+
+private val DoyuPageGap = 16.dp
+private val DoyuCardBorder = BorderStroke(1.dp, LightOutlineVariant.copy(alpha = 0.72f))
 
 // ── DoyuTopBar ──
 
@@ -48,33 +51,48 @@ fun DoyuTopBar(
     action: (@Composable RowScope.() -> Unit)? = null
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.background,
+        tonalElevation = 0.dp,
         modifier = modifier.statusBarsPadding()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (canGoBack) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (canGoBack) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    }
+                    Spacer(Modifier.width(4.dp))
+                } else {
+                    BeadCluster(size = 28.dp)
+                    Spacer(Modifier.width(10.dp))
                 }
-            } else {
-                BeadCluster(size = 28.dp)
-                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                if (action != null) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        content = action
+                    )
+                }
             }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            if (action != null) Row(content = action)
+            HorizontalDivider(color = LightOutlineVariant.copy(alpha = 0.72f))
         }
     }
 }
@@ -91,7 +109,9 @@ fun DoyuCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 1.dp
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+        border = DoyuCardBorder
     ) {
         Column(modifier = Modifier.padding(contentPadding), content = content)
     }
@@ -132,7 +152,12 @@ fun DoyuPrimaryButton(
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
         }
-        Text(text, fontWeight = FontWeight.SemiBold)
+        Text(
+            text = text,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -168,7 +193,7 @@ fun DoyuOutlinedButton(
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
         }
-        Text(text)
+        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -184,14 +209,15 @@ fun DoyuSearchField(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(46.dp),
+            .heightIn(min = 48.dp),
         shape = MaterialTheme.shapes.large,
-        color = LightSurfaceVariant.copy(alpha = 0.58f)
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, LightOutlineVariant)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 14.dp, end = 6.dp),
+                .padding(start = 14.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -224,7 +250,10 @@ fun DoyuSearchField(
                 }
             )
             if (value.isNotEmpty()) {
-                IconButton(onClick = { onValueChange("") }) {
+                IconButton(
+                    onClick = { onValueChange("") },
+                    modifier = Modifier.size(40.dp)
+                ) {
                     Icon(Icons.Filled.Clear, contentDescription = "清除")
                 }
             }
@@ -262,7 +291,9 @@ fun DoyuSegmentedControl(
                         color = if (selected) LightPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                         modifier = Modifier.padding(vertical = 9.dp),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -281,20 +312,28 @@ fun DisabledFeatureNotice(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = LightSurfaceVariant.copy(alpha = 0.65f),
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        color = LightSurfaceVariant.copy(alpha = 0.58f),
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        border = BorderStroke(1.dp, LightOutlineVariant.copy(alpha = 0.72f))
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Icon(
-                Icons.Filled.Info,
-                contentDescription = null,
-                tint = LightPrimary,
-                modifier = Modifier.size(20.dp)
-            )
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface,
+                contentColor = LightPrimary
+            ) {
+                Icon(
+                    Icons.Filled.Info,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(6.dp)
+                        .size(18.dp)
+                )
+            }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
                 Text(message, style = MaterialTheme.typography.bodySmall)
@@ -363,11 +402,6 @@ fun BeadDot(
 
 @Composable
 fun BeadCluster(size: Dp = 42.dp) {
-    val infiniteTransition = rememberInfiniteTransition(label = "beadCluster")
-    var appeared by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) { appeared = true }
-
     Box(modifier = Modifier.size(size)) {
         BeadDot(DoyuPetal, Modifier.align(Alignment.TopStart), size / 2)
         BeadDot(DoyuMint, Modifier.align(Alignment.TopEnd), size / 2)
@@ -426,13 +460,7 @@ fun PageStateView(
                     title = "加载失败"
                     message = parts[0]
                     showRetry = true
-                    EmptyContent(title, message, modifier, showRetry, onRetry)
-                    Text(
-                        "traceId: ${parts[1]}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 24.dp)
-                    )
+                    EmptyContent(title, message, modifier, showRetry, onRetry, traceId = parts[1])
                     return@AnimatedVisibility
                 }
                 title = "加载失败"
@@ -468,7 +496,8 @@ fun EmptyContent(
     message: String,
     modifier: Modifier = Modifier,
     showRetry: Boolean = false,
-    onRetry: () -> Unit = {}
+    onRetry: () -> Unit = {},
+    traceId: String? = null
 ) {
     Column(
         modifier = modifier
@@ -484,9 +513,28 @@ fun EmptyContent(
                 .padding(16.dp)
         )
         Spacer(Modifier.height(16.dp))
-        Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
         Spacer(Modifier.height(6.dp))
-        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            message,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center
+        )
+        if (traceId != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "traceId: $traceId",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall,
+                textAlign = TextAlign.Center
+            )
+        }
         if (showRetry) {
             Spacer(Modifier.height(16.dp))
             DoyuPrimaryButton("重试", onRetry)
@@ -587,23 +635,111 @@ fun SectionHeader(
 @Composable
 fun DoyuPage(
     contentPadding: PaddingValues,
+    modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val horizontalPadding = adaptiveHorizontalPadding()
     LazyColumn(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(
             start = horizontalPadding,
-            top = contentPadding.calculateTopPadding() + 12.dp,
+            top = contentPadding.calculateTopPadding() + DoyuPageGap,
             end = horizontalPadding,
-            bottom = contentPadding.calculateBottomPadding() + 20.dp
+            bottom = contentPadding.calculateBottomPadding() + 24.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(DoyuPageGap)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(DoyuPageGap),
+                content = content
+            )
+        }
+    }
+}
+
+// ── DoyuMetricItem ──
+
+@Composable
+fun DoyuMetricItem(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    accentColor: Color = LightPrimary
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            color = accentColor,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+// ── DoyuReadOnlyEntry ──
+
+@Composable
+fun DoyuReadOnlyEntry(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    trailingText: String? = null
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        border = DoyuCardBorder
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = LightPrimaryContainer.copy(alpha = 0.72f),
+                contentColor = LightPrimary
+            ) {
+                Icon(icon, contentDescription = null, modifier = Modifier.padding(8.dp).size(18.dp))
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (trailingText != null) {
+                TagChip(text = trailingText, selected = true)
+            }
         }
     }
 }
