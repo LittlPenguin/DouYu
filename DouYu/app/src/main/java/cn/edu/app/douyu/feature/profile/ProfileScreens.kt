@@ -40,7 +40,6 @@ private fun ProfileScreenPreview() { ProfileScreenContent(navController = null) 
 @Composable
 fun ProfileScreen(navController: NavHostController) { ProfileScreenContent(navController) }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileScreenContent(navController: NavHostController?) {
     var dashboardRetryCount by remember { mutableIntStateOf(0) }
@@ -59,17 +58,11 @@ private fun ProfileScreenContent(navController: NavHostController?) {
     }
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text("我的", style = MaterialTheme.typography.headlineMedium, color = LightPrimary)
-                },
-                actions = {
-                    IconButton(onClick = { navController?.navigate(AppRoute.SETTINGS) }) {
-                        Icon(Icons.Filled.Settings, contentDescription = "设置", tint = LightPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-            )
+            DoyuTopBar("我的") {
+                IconButton(onClick = { navController?.navigate(AppRoute.SETTINGS) }) {
+                    Icon(Icons.Filled.Settings, contentDescription = "设置", tint = LightPrimary)
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -78,9 +71,9 @@ private fun ProfileScreenContent(navController: NavHostController?) {
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
 
             when (val state = dashboardState) {
                 is UiState.Success -> {

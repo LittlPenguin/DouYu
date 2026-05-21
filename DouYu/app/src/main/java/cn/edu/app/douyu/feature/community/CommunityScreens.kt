@@ -46,13 +46,11 @@ private fun CommunityFeedScreenPreview() { CommunityFeedScreenContent(navControl
 @Composable
 fun CommunityFeedScreen(navController: NavHostController) { CommunityFeedScreenContent(navController) }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CommunityFeedScreenContent(navController: NavHostController?) {
     var selectedTag by remember { mutableIntStateOf(0) }
     val tags = listOf("推荐", "热门", "教程", "关注", "配件")
     var searchQuery by remember { mutableStateOf("") }
-    var showSearch by remember { mutableStateOf(false) }
     var showLoginDialog by remember { mutableStateOf(false) }
 
     if (showLoginDialog) {
@@ -68,36 +66,7 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        BeadCluster(28.dp)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "豆屿",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = LightPrimary
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showSearch = !showSearch }) {
-                        Icon(Icons.Filled.Search, contentDescription = "搜索", tint = LightPrimary)
-                    }
-                    IconButton(onClick = {
-                        if (DoyuAppContainer.isLoggedIn) {
-                            navController?.navigate(AppRoute.POST_CREATE)
-                        } else {
-                            showLoginDialog = true
-                        }
-                    }) {
-                        Icon(Icons.Filled.AddCircle, contentDescription = "发帖", tint = LightPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
+            DoyuTopBar("豆屿")
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -122,20 +91,15 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            AnimatedVisibility(visible = showSearch) {
-                DoyuSearchField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = "搜索帖子...",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp)
-                )
-            }
+            DoyuSearchField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = "搜索帖子...",
+                modifier = Modifier.padding(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 4.dp)
+            )
 
-            // Tag chips - horizontal scrolling
             LazyRow(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(tags.size) { index ->
@@ -147,7 +111,7 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                     ) {
                         Text(
                             tags[index],
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
                             color = if (selected) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelLarge
                         )
@@ -179,7 +143,7 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                     LazyVerticalStaggeredGrid(
                         columns = StaggeredGridCells.Fixed(2),
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalItemSpacing = 12.dp
                     ) {
