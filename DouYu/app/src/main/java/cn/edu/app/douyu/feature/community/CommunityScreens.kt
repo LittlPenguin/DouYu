@@ -159,13 +159,13 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                 Icon(Icons.Filled.Add, contentDescription = "发布")
             }
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
             AnimatedVisibility(visible = showSearch) {
                 DoyuSearchField(
                     value = searchQuery,
@@ -176,7 +176,7 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
             }
 
             LazyRow(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 itemsIndexed(tags) { index, tag ->

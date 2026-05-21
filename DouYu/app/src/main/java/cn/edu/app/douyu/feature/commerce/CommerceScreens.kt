@@ -35,7 +35,6 @@ private fun CommerceHomeScreenPreview() { CommerceHomeScreenContent(navControlle
 @Composable
 fun CommerceHomeScreen(navController: NavHostController) { CommerceHomeScreenContent(navController) }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CommerceHomeScreenContent(navController: NavHostController?) {
     var selectedCategory by remember { mutableIntStateOf(0) }
@@ -44,17 +43,11 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text("商城", style = MaterialTheme.typography.headlineMedium, color = LightPrimary)
-                },
-                actions = {
-                    IconButton(onClick = { navController?.navigate(AppRoute.CART) }) {
-                        Icon(Icons.Filled.ShoppingCart, contentDescription = "购物车", tint = LightPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-            )
+            DoyuTopBar("商城") {
+                IconButton(onClick = { navController?.navigate(AppRoute.CART) }) {
+                    Icon(Icons.Filled.ShoppingCart, contentDescription = "购物车", tint = LightPrimary)
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -69,12 +62,11 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                 placeholder = "搜索手作、图纸或材料包...",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 4.dp)
             )
 
-            // Category chips
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 categories.forEachIndexed { index, name ->
@@ -86,7 +78,7 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                     ) {
                         Text(
                             name,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
                             color = if (selected) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelLarge
                         )
@@ -138,7 +130,7 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                             }
                         }
 
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(10.dp))
 
                         // Product grid
                         CommerceSectionHeader(modifier = Modifier.padding(horizontal = horizontalPadding)) {

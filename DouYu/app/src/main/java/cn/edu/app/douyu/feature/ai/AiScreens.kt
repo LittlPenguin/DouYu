@@ -54,22 +54,15 @@ private fun AiHomeScreenPreview() {
     AiHomeScreenContent(navController = null)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AiHomeScreenContent(navController: NavHostController?) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text("AI 拼图", style = MaterialTheme.typography.headlineMedium, color = LightPrimary)
-                },
-                actions = {
-                    IconButton(onClick = { navController?.navigate(AppRoute.PATTERN_HISTORY) }) {
-                        Icon(Icons.Filled.History, contentDescription = "历史", tint = LightPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-            )
+            DoyuTopBar("AI 拼图") {
+                IconButton(onClick = { navController?.navigate(AppRoute.PATTERN_HISTORY) }) {
+                    Icon(Icons.Filled.History, contentDescription = "历史", tint = LightPrimary)
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -78,11 +71,9 @@ private fun AiHomeScreenContent(navController: NavHostController?) {
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Spacer(Modifier.height(8.dp))
-
-            // Hero Card with gradient
+            Spacer(Modifier.height(4.dp))
             DoyuHeroCard(
                 title = "照片变拼豆图纸",
                 subtitle = "上传你的照片，AI一键生成专属拼豆图纸，让回忆变得可触摸，轻松开启手工之旅。",

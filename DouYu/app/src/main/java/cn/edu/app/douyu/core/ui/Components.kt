@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,12 +47,15 @@ fun DoyuTopBar(
     onBack: () -> Unit = {},
     action: (@Composable RowScope.() -> Unit)? = null
 ) {
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        modifier = modifier.statusBarsPadding()
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
-                .padding(horizontal = 12.dp),
+                .height(48.dp)
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (canGoBack) {
@@ -58,8 +63,8 @@ fun DoyuTopBar(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                 }
             } else {
-                BeadCluster(size = 34.dp)
-                Spacer(Modifier.width(10.dp))
+                BeadCluster(size = 28.dp)
+                Spacer(Modifier.width(8.dp))
             }
             Text(
                 text = title,
@@ -169,7 +174,6 @@ fun DoyuOutlinedButton(
 
 // ── DoyuSearchField ──
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoyuSearchField(
     value: String,
@@ -177,29 +181,55 @@ fun DoyuSearchField(
     placeholder: String,
     modifier: Modifier = Modifier
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        placeholder = { Text(placeholder) },
-        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-        trailingIcon = {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(46.dp),
+        shape = MaterialTheme.shapes.large,
+        color = LightSurfaceVariant.copy(alpha = 0.58f)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 14.dp, end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Filled.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(21.dp)
+            )
+            Spacer(Modifier.width(10.dp))
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                cursorBrush = SolidColor(LightPrimary),
+                modifier = Modifier.weight(1f),
+                decorationBox = { innerTextField ->
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (value.isEmpty()) {
+                            Text(
+                                placeholder,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
+            )
             if (value.isNotEmpty()) {
                 IconButton(onClick = { onValueChange("") }) {
                     Icon(Icons.Filled.Clear, contentDescription = "清除")
                 }
             }
-        },
-        singleLine = true,
-        shape = MaterialTheme.shapes.large,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = LightSurfaceVariant.copy(alpha = 0.55f),
-            unfocusedContainerColor = LightSurfaceVariant.copy(alpha = 0.55f),
-            focusedBorderColor = LightPrimary.copy(alpha = 0.35f),
-            unfocusedBorderColor = Color.Transparent,
-            cursorColor = LightPrimary
-        ),
-        modifier = modifier.fillMaxWidth()
-    )
+        }
+    }
 }
 
 // ── DoyuSegmentedControl ──

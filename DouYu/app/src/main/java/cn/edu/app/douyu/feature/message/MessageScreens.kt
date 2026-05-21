@@ -35,7 +35,6 @@ private fun MessageListScreenPreview() { MessageListScreenContent(navController 
 @Composable
 fun MessageListScreen(navController: NavHostController) { MessageListScreenContent(navController) }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MessageListScreenContent(navController: NavHostController?) {
     var selectedTab by remember { mutableIntStateOf(0) }
