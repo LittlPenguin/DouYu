@@ -69,7 +69,7 @@ UI 重构可以参考这些资产：
 | `ai/screen.png` | AI 创作首页 |
 | `_4/screen.png` | 消息页 |
 | `_3/screen.png` | 我的页 |
-| `doyu_vitality_craft/DESIGN.md` | 设计系统探索稿 |
+| `DESIGN.md` | 设计系统探索稿 |
 
 当前权威 UI 文档只有：
 

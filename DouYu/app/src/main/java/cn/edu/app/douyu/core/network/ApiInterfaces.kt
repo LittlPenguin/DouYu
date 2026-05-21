@@ -56,16 +56,16 @@ interface CommunityApi {
     suspend fun post(@Path("postId") postId: String): ApiResponse<Post>
 
     @POST("/api/v1/posts/{postId}/like")
-    suspend fun likePost(@Path("postId") postId: String): ApiResponse<Post>
+    suspend fun likePost(@Path("postId") postId: String): ApiResponse<PostInteractionResult>
 
     @DELETE("/api/v1/posts/{postId}/like")
-    suspend fun unlikePost(@Path("postId") postId: String): ApiResponse<Post>
+    suspend fun unlikePost(@Path("postId") postId: String): ApiResponse<PostInteractionResult>
 
     @POST("/api/v1/posts/{postId}/favorite")
-    suspend fun favoritePost(@Path("postId") postId: String): ApiResponse<Post>
+    suspend fun favoritePost(@Path("postId") postId: String): ApiResponse<PostInteractionResult>
 
     @DELETE("/api/v1/posts/{postId}/favorite")
-    suspend fun unfavoritePost(@Path("postId") postId: String): ApiResponse<Post>
+    suspend fun unfavoritePost(@Path("postId") postId: String): ApiResponse<PostInteractionResult>
 
     @GET("/api/v1/posts/{postId}/comments")
     suspend fun comments(

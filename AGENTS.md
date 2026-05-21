@@ -6,12 +6,13 @@
 
 ## 当前阶段
 
-当前项目处于 **UI 重构准备 / MVP 收敛阶段**。
+当前项目处于 **第一轮重构基线 / UI MVP 收敛阶段**。
 
 阶段目标：
 
 - 根据 `doc/stitch_document_app_generator/` 的 Stitch 设计探索稿重建 Android UI 口径。
 - 以 `doc/development/11-ui-style-guide.md` 作为唯一 UI 权威规范。
+- 以 `doc/development/05-api-contract.md` 作为登录 + 社区第一轮样板链路的唯一接口契约源。
 - 把现有开发态能力收敛为可演示、主链路可跑、不可用能力不误导用户的 Android UI MVP。
 - 优先消除空点击、假成功 Toast、误导性支付、误导性合规入口和半成品功能暴露。
 
@@ -59,6 +60,51 @@
 
 发现冲突时，不要继续扩大实现。先把冲突写清楚，并同步修正文档或向用户确认。
 
+## 第一轮契约规则
+
+- 第一轮只治理登录 + 社区 + 文档/契约/UI 基线。
+- 登录 + 社区接口以 `doc/development/05-api-contract.md` 为唯一契约源；后端 Controller/DTO、Android DTO、Repository、UI 和测试若与它冲突，默认改代码追契约。
+- 确实需要修改契约时，必须先改 `05-api-contract.md`，再同步后端、Android、测试和 `14-frontend-backend-collaboration.md`。
+- 登录请求当前仍传 `ageGroup=AGE_18_PLUS`；不得写成客户端已经移除该字段。
+- AI、支付、应用市场上线、备案、生产审核风控、隐私政策、SDK 清单和灰度发布材料均为后期工作，不列入第一轮验收。
+
+## 本地环境配置
+
+- 仓库根目录 `.env` 是本地联调唯一生效文件，由 `doyu-server/start-dev.bat` 和 Android debug Gradle 构建读取；`.env` 不提交。
+- `.env.emulator` 和 `.env.phone` 只作为本机私有切换模板，按 `.gitignore` 忽略，不提交；提交模板只能是 `.env.example`。
+- 当前默认开发目标是 Android 模拟器，`.env` 应优先使用：
+  - `DOUYU_ANDROID_API_BASE_URL=http://10.0.2.2:8081/`
+  - `DOUYU_STORAGE_BASE_URL=http://10.0.2.2:8081`
+- 真机模板使用电脑当前 Wi-Fi/LAN IPv4，例如本机当前可写为：
+  - `DOUYU_ANDROID_API_BASE_URL=http://10.64.241.153:8081/`
+  - `DOUYU_STORAGE_BASE_URL=http://10.64.241.153:8081`
+- 切换模板时只复制目标模板为 `.env`：
+
+```powershell
+Copy-Item .env.emulator .env -Force
+Copy-Item .env.phone .env -Force
+```
+
+- 切换 `.env` 后必须重启后端并重新构建 debug 包。后端 Local OSS URL 在启动时读取环境变量，Android `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单在 Gradle 构建期写入，不是运行时动态切换。
+
+## Android Studio / Gradle JDK
+
+- Android Studio 使用 Gradle Wrapper 构建；Gradle JVM 必须是完整 JDK 21，必须包含 `bin\java.exe`、`bin\javac.exe` 和 `bin\jlink.exe`。
+- 推荐使用 Android Studio Embedded JDK / JetBrains JBR，例如 `D:\Program Files\Android\Android Studio\jbr`，或明确选择本机完整 JDK 21。
+- Android Studio 设置路径：`File > Settings > Build, Execution, Deployment > Build Tools > Gradle`。
+- `Distribution` 使用 `Wrapper`；`Gradle JVM criteria` 使用 `Version 21`，`Vendor` 推荐 `JetBrains`，或直接选择完整 JDK 路径。不要保持容易误选精简 JRE 的 `Vendor: Any vendor`。
+- 禁止把 VS Code Red Hat Java 扩展内置 JRE 作为 Gradle JVM。出现 `jlink executable ...\.vscode\extensions\redhat.java...\bin\jlink.exe does not exist` 时，按环境/JDK 选择问题处理，不先改业务代码。
+- 标准恢复命令：
+
+```powershell
+cd DouYu
+.\gradlew.bat --stop
+.\gradlew.bat --version
+.\gradlew.bat :app:assembleDebug
+```
+
+- `.\gradlew.bat --version` 输出中的 JVM 路径不得指向 `C:\Users\Oya\.vscode\extensions\redhat.java-...`。
+
 ## 工作纪律
 
 - 使用中文沟通、中文文档和中文提交说明；代码标识符按技术栈使用英文。
@@ -80,7 +126,7 @@
 - 目录：`DouYu/`。
 - 技术栈：Kotlin、Jetpack Compose、单 Activity、Navigation Compose、Retrofit、OkHttp、Kotlinx Serialization、Coil、CameraX、Photo Picker。
 - 当前依赖装配：`DoyuAppContainer` 服务定位器；MVVM 是目标架构，不代表所有页面已完全 ViewModel 化。
-- 当前问题：API Base URL 仍硬编码开发机地址，TokenStore 仍是内存实现，多个页面仍有半成品 UI 和未接 Repository 的功能。
+- 当前问题：debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在模拟器/真机模板间切换并重新构建；TokenStore 仍是内存实现，多个页面仍有半成品 UI 和未接 Repository 的功能。
 - UI 权威规范：`doc/development/11-ui-style-guide.md`。
 - Stitch 设计稿只作为视觉参考：`doc/stitch_document_app_generator/`。
 
@@ -149,12 +195,15 @@
 ```powershell
 git diff --check
 rg -n "17-ui-red[e]sign|12-front[e]nd|13-back[e]nd|16-ph[a]se|18-bug[f]ix|Leaders[P]rompt" doc AGENTS.md CLAUDE.md -g "!doc/development/10-testing-acceptance.md"
+rg -n '登录请求只传手机号和验证[码]|不再传 `age[G]roup`|不再传 age[G]roup' doc AGENTS.md
+git check-ignore -v .env .env.emulator .env.phone
 ```
 
 Android 改动至少运行：
 
 ```powershell
 cd DouYu
+.\gradlew.bat --version
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:assembleDebug
 ```

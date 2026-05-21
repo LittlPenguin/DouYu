@@ -1,18 +1,19 @@
 # 当前状态
 
-> 更新日期：2026-05-18
+> 更新日期：2026-05-21
 > 用途：记录当前工程事实、UI 重构阶段、功能完成度、不可用边界和下一步优先级。产品目标和商业边界以 `../豆屿App商业技术执行计划.md` 为准。
 
 ## 阶段结论
 
-豆屿 Doyu 当前进入 **UI 重构准备 / MVP 收敛阶段**。
+豆屿 Doyu 当前进入 **第一轮重构基线 / UI MVP 收敛阶段**。
 
-项目不是“没有功能”，而是 Android 与后端已经实现了不少开发态链路，但 UI、交互闭环、功能可用边界和文档口径混杂，导致用户看到的 App 像多个阶段产物拼在一起。本阶段目标不是补齐全部生产能力，而是把现有能力收敛成一个 **开发态可演示、主链路可跑、不可用能力不误导用户** 的 Android UI MVP。
+项目不是“没有功能”，而是 Android 与后端已经实现了不少开发态链路，但 UI、交互闭环、功能可用边界和文档口径混杂，导致用户看到的 App 像多个阶段产物拼在一起。第一轮先把 **文档契约 + 登录/社区样板链路** 稳住，再复制同一套方法推进 AI、商城、消息、我的等模块。
 
 本阶段默认策略：
 
 - 采用 **MVP 收敛**，不是全入口保留，也不是重做全部信息架构。
-- 只改 Android UI 计划和文档口径；源码重构需在后续执行阶段单独开始。
+- 第一轮只允许小范围源码改动：登录 + 社区 + 文档/契约/UI 基线；不全量重构 5 个 Tab。
+- 登录 + 社区接口以 `doc/development/05-api-contract.md` 为唯一契约源。
 - 视觉参考使用 `doc/stitch_document_app_generator/` 下 Stitch 设计稿。
 - 最终 UI 权威规范仍沉淀到 `doc/development/11-ui-style-guide.md`。
 - 暂不做真实 AI Provider、增强审核、真实微信/支付宝支付、合规风控、玩家交易完整闭环。
@@ -21,9 +22,9 @@
 
 | 模块 | 当前已有 | 半成品 / 问题 | MVP 收敛策略 |
 |---|---|---|---|
-| App Shell | 5 个主 Tab：社区、商城、AI 创作、消息、我的；NavHost 和底部导航已存在 | 各页视觉风格不统一，底部栏、TopBar、卡片和状态页体验不一致 | 后续源码重构先统一 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、FAB、卡片、按钮、Chip、加载/空/错/未登录状态 |
-| 登录 | 短信登录、验证码 Stub、token 刷新接口、退出登录接口存在 | Android 使用 `InMemoryTokenStore`，重启后登录态丢失；后端当前仍要求 `ageGroup`，文档曾有冲突 | UI 文档按真实代码记录：Android 继续传默认 `AGE_18_PLUS`；后续源码阶段补 DataStore 持久化 |
-| 社区 | Feed、帖子详情、发帖接口、点赞/收藏、评论接口、举报接口在后端存在 | Android 部分入口未完整接 Repository；发布页曾存在假提交；图片 fileId/媒体预览策略不完整；状态 `VISIBLE/PUBLISHED/REVIEWING` 有实现口径冲突 | 保留 Feed、详情、发布、评论；接入已有发帖/点赞/收藏/评论接口；提交后显示“审核中”；无法展示的图片显示明确占位，不再空白 |
+| App Shell | 5 个主 Tab：社区、商城、AI 创作、消息、我的；NavHost 和底部导航已存在 | 各页视觉风格不统一，底部栏、TopBar、卡片和状态页体验不一致 | 第一轮先让社区样板对齐 Stitch `_1` 主骨架；后续再统一 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、FAB、卡片、按钮、Chip、加载/空/错/未登录状态 |
+| 登录 | 短信登录、验证码 Stub、token 刷新接口、退出登录接口存在；Android DTO 默认传 `AGE_18_PLUS` | Android 使用 `InMemoryTokenStore`，重启后登录态丢失；DataStore 持久化未完成 | 第一轮保持 `ageGroup=AGE_18_PLUS` 契约不变；DataStore 登录态持久化作为 P1 小任务 |
+| 社区 | Feed、帖子详情、评论列表、发帖、评论、点赞/取消、收藏/取消后端接口存在；Android 样板页已接 Repository 写操作 | 图片 fileId/媒体预览策略不完整；举报 UI 暂不开放；完整 MVVM 拆分和全页面一致性仍待做 | 第一轮保留 Feed、详情、发布、评论、点赞、收藏；提交后显示“审核中”；未登录操作进入登录引导；无法展示的图片显示明确占位，不再空白 |
 | AI 图纸 | 上传、创建任务、轮询、取消、生成记录、图纸详情、收藏、材料清单、PDF 文件记录等开发态能力存在 | 真实视觉 Provider 未完成；部分结果操作如材料加购、PDF 导出、分享到社区在 Android 上仍可能是假成功或开发中 | 保留上传、参数、任务、进度、失败、取消、结果、收藏；材料加购、PDF 导出、分享到社区先隐藏或禁用，除非后续接真实链路 |
 | 商城 | 商品列表/详情、购物车、订单、支付单和支付查询骨架存在 | 地址管理未完成；真实微信/支付宝 SDK 未接；玩家商品不支持标准购物车；支付页容易误导为真实支付 | 自营商品可加购；玩家/定制/二手只展示；地址未接入时禁用或明确开发态；支付只展示联调支付单/服务端确认 |
 | 消息 | 通知列表、会话列表、会话详情和发送接口骨架存在 | 后端私信是半占位；Android 会话输入框/发送/举报存在空点击风险 | 消息页先做只读通知和会话列表体验；发送能力未闭环前不做强聊天体验，按钮禁用或隐藏 |
@@ -39,13 +40,15 @@
 - AI 拼豆任务支持异步执行、进度追踪、图纸预览、色号图、材料清单和 PDF 文件生成。
 - BeadPatternEngine 已实现 CIEDE2000 色差、多色卡、难度和风格参数。
 - 管理后台 API、举报处理、基础内容审核、AI 调用额度、支付回调安全骨架已存在。
-- `doc/stitch_document_app_generator/` 提供了社区、商城、AI、消息、我的页面视觉参考和 `doyu_vitality_craft/DESIGN.md` 设计系统探索稿。
+- `doc/stitch_document_app_generator/` 提供了社区、商城、AI、消息、我的页面视觉参考和 `DESIGN.md` 设计系统探索稿。
+- `05-api-contract.md` 已明确登录 + 社区第一轮契约：`avatarUrl`、`ageGroup`、发帖/评论 `REVIEWING`、`PostInteractionResult`、统一错误和 `traceId` 映射。
 
 ## 当前不能认为完成
 
 - UI 还没有形成一致的 Stitch 风格 App Shell、卡片体系、状态体系和主页面视觉。
-- Android API Base URL 仍依赖开发机地址配置，登录态仍使用内存 TokenStore。
-- Android 多处功能没有完整接入已有后端接口，存在空点击、假成功 Toast、开发中按钮或弱占位。
+- Android debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在 `.env.emulator` / `.env.phone` 模板间切换并重新构建；登录态仍使用内存 TokenStore。
+- Android Studio / Gradle JVM 如果误选到 VS Code Red Hat Java 扩展内置精简 JRE，会触发 `jlink.exe does not exist`；本地构建必须按协作规范选择完整 JDK/JBR 21。
+- 社区样板链路已开始消除空点击和假成功；其他模块仍可能存在未完整接入后端接口、空点击、假成功 Toast、开发中按钮或弱占位。
 - 文件预览 URL 策略不完整，帖子图、图纸预览、头像等 fileId 不一定能直接展示为图片。
 - 真实 AI Provider 未接入完成。`AliyunBailianProvider` 仍是占位实现，尚未调用真实阿里云百炼/通义万相 API。
 - 微信支付和支付宝支付仍是 Stub。当前实现不能用于真实交易收款、退款或对账。
@@ -58,6 +61,7 @@
 
 - Android：Kotlin、Jetpack Compose、单 Activity、Navigation Compose、Retrofit、OkHttp、Kotlinx Serialization、Coil、CameraX、Photo Picker。
 - Android 当前依赖装配：`DoyuAppContainer` 服务定位器；MVVM 是目标架构，不代表所有页面已完全 ViewModel 化。
+- Android 本地联调默认模拟器使用 `10.0.2.2`；真机使用电脑当前 Wi-Fi/LAN IPv4。debug 包的 Retrofit `baseUrl` 由仓库根目录 `.env` 在 Gradle 构建期写入 `BuildConfig.API_BASE_URL`，切换模拟器/真机模板后必须重新构建。
 - 后端：Java 21、Spring Boot、Spring Security、JWT、Spring Data JPA、Flyway、PostgreSQL、Redis。
 - 后端端口：`8081`。
 - PostgreSQL 宿主机端口：`5433`，容器内端口仍为 `5432`。
@@ -77,18 +81,18 @@
 
 ## 下一步优先级
 
-P0：文档与 UI 基线修正
+P0：第一轮登录 + 社区基线收口
 
-- 保留并恢复 `doc/stitch_document_app_generator/` 全部设计探索资产。
-- 将 Stitch 视觉映射沉淀到 `11-ui-style-guide.md`，并明确它是唯一 UI 权威规范。
-- 在 `03-android-client.md` 写清 UI MVP 收敛边界、路由收敛、禁用/隐藏规则和可接入接口清单。
-- 在 `10-testing-acceptance.md` 增加 UI MVP 验收、无空点击、无假成功、视觉对齐和手工联调清单。
+- 保持 `05-api-contract.md`、后端 Controller/DTO、Android DTO/Repository、UI 和测试一致。
+- 登录继续传 `ageGroup=AGE_18_PLUS`，登录响应用户字段使用 `avatarUrl`。
+- 社区 Feed、详情、发布、评论、点赞、收藏均有明确状态和错误映射。
+- 运行后端契约测试、Android DTO/Repository 测试、Android debug 构建和文档检查。
 
-P1：源码执行阶段的 UI 基础设施
+P1：把样板方法推广到 UI 基础设施
 
 - 统一 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、FAB、卡片、按钮、Chip、加载/空/错误/未登录状态。
-- 按 Stitch `_1` 重构社区主骨架，按 `_2`、`ai`、`_4`、`_3` 分别约束商城、AI、消息、我的。
-- 补齐 Android Repository 暴露能力：发帖、点赞、收藏、评论、通知已读、签到、必要的文件预览 URL 解析策略。
+- 按 Stitch `_1` 继续打磨社区主骨架，按 `_2`、`ai`、`_4`、`_3` 分别约束商城、AI、消息、我的。
+- 补齐通知已读、签到、必要的文件预览 URL 解析策略。
 - 隐藏或禁用没有闭环的功能入口，消除空点击和假成功。
 
 P2：开发态主链路联调

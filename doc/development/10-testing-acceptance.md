@@ -2,7 +2,7 @@
 
 ## 测试目标
 
-当前阶段的测试目标是支撑 **UI MVP 收敛**：确保 Android App 的开发态主链路可演示、可联调、状态清楚，并且不可用能力不会以空点击、假成功或误导性文案暴露给用户。
+当前阶段的测试目标是支撑 **第一轮重构基线 / UI MVP 收敛**：先确保登录 + 社区样板链路的契约、后端、Android Repository、UI 状态和文档一致，再复制到其他模块；不可用能力不能以空点击、假成功或误导性文案暴露给用户。
 
 当前已有后端契约测试、图纸算法测试、AI Stub Provider 测试和 Android 单元测试。本文档区分：
 
@@ -10,9 +10,31 @@
 - 源码执行阶段必须补充的 Android 检查。
 - 生产上线前才需要完整补齐的支付、审核、合规和风控验收。
 
-## 当前 UI MVP 验收
+## 第一轮登录 + 社区基线验收
+
+环境和构建不稳定时，不进入 UI 重构验收。先按“环境与构建验收”修正本机 `.env`、Android Studio Gradle JVM 和 debug 构建。
 
 必须满足：
+
+- `05-api-contract.md` 是登录 + 社区链路唯一接口事实源。
+- 登录请求仍传 `ageGroup=AGE_18_PLUS`，不得写成客户端已移除该字段。
+- 登录响应用户字段使用 `avatarUrl`。
+- 社区接口覆盖 Feed、帖子详情、评论列表、发帖、评论、点赞/取消、收藏/取消。
+- 发帖和评论提交后展示“审核中”，不假装立即公开。
+- 未登录发帖、评论、点赞、收藏统一进入登录引导。
+- Android 错误状态按后端 `{ code,message,traceId }` 转换，不吞异常成空白。
+- `PostInteractionResult` 对齐后端 `{ liked }` / `{ favorited }` 响应。
+
+第一轮不验收：
+
+- 真实 AI Provider。
+- 真实微信/支付宝支付、退款、对账和支付 SDK。
+- 应用市场上线、备案、隐私政策、SDK 清单、生产审核风控和灰度发布材料。
+- 五个 Tab 全量重构。
+
+## 当前 UI MVP 验收
+
+在第一轮登录 + 社区基线稳定后，再进入更广的 UI MVP 验收：
 
 - 5 个主 Tab 可以正常进入：社区、商城、AI 创作、消息、我的。
 - App Shell 视觉一致：顶部品牌栏、底部导航、卡片、按钮、Chip、状态页统一。
@@ -32,40 +54,122 @@
 
 文档更新后必须执行：
 
-```bash
-rg -n "17-ui-redesign|12-frontend|13-backend|16-phase|18-bugfix|LeadersPrompt" doc AGENTS.md CLAUDE.md -g "!doc/development/10-testing-acceptance.md"
-rg -n "stitch_document_app_generator" doc/development
+```powershell
+git diff --check
+rg -n "17-ui-red[e]sign|12-front[e]nd|13-back[e]nd|16-ph[a]se|18-bug[f]ix|Leaders[P]rompt" doc AGENTS.md CLAUDE.md -g "!doc/development/10-testing-acceptance.md"
+rg -n '登录请求只传手机号和验证[码]|不再传 `age[G]roup`|不再传 age[G]roup' doc AGENTS.md
+rg -n "doyu_vit[a]lity_craft|doyu_craft_app_navig[a]tion|17_ui_red[e]sign|11_ui_style_g[u]ide" doc AGENTS.md CLAUDE.md
 git status --short
 ```
 
 验收标准：
 
 - `doc/development/README.md` 的阅读顺序只指向存在且有效的文档。
-- `doc/stitch_document_app_generator/` 不应出现删除项。
+- 文档不再引用已删除的 Stitch 旧路径。
 - Stitch 目录只作为视觉参考和设计探索归档，不作为权威规范。
 - 权威 UI 规范只指向 `doc/development/11-ui-style-guide.md`。
 - `current-status.md` 能独立回答：当前阶段、已完成、未完成、本轮不做、下一步优先级。
+
+## 环境与构建验收
+
+UI MVP 重构前必须先确认本地环境和构建稳定。
+
+环境文件忽略规则：
+
+```powershell
+git check-ignore -v .env .env.emulator .env.phone
+```
+
+验收标准：
+
+- `.env`、`.env.emulator`、`.env.phone` 均被 `.gitignore` 命中。
+- `.env.example` 不应被忽略，且不得写入个人真实 IP、密钥、Token 或本机私有路径。
+- 当前默认开发目标是模拟器时，`.env` 应由 `.env.emulator` 复制而来；切换真机时再复制 `.env.phone`。
+
+Android Studio 构建设置：
+
+- 路径：`File > Settings > Build, Execution, Deployment > Build Tools > Gradle`
+- `Distribution`：`Wrapper`
+- `Gradle JVM criteria`：`Version 21`
+- `Vendor`：推荐 `JetBrains`，或直接选择完整 JDK 21 路径，例如 `D:\Program Files\Android\Android Studio\jbr`
+- 不要保持可能误选精简 JRE 的 `Vendor: Any vendor`。
+
+Gradle JVM 验证：
+
+```powershell
+cd D:\Studio\SpellBean\DouYu
+.\gradlew.bat --version
+```
+
+验收标准：
+
+- JVM 为完整 JDK/JBR 21。
+- JVM 路径不得指向 `.vscode\extensions\redhat.java`。
+- 出现 `jlink executable ...\.vscode\extensions\redhat.java...\bin\jlink.exe does not exist` 时，先修 Android Studio Gradle JVM，不先改业务代码。
+
+Debug 构建验收：
+
+```powershell
+cd D:\Studio\SpellBean\DouYu
+.\gradlew.bat :app:assembleDebug
+```
+
+验收标准：
+
+- 构建成功。
+- 改 `.env` 后必须重新构建 debug 包，因为 `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单在构建期生成。
+
+后端环境检查：
+
+```powershell
+cd D:\Studio\SpellBean\doyu-server
+.\start-dev.bat
+```
+
+验收标准：
+
+- 后端读取当前 `.env`。
+- 服务启动在 `8081`。
+- `DOUYU_STORAGE_BASE_URL` 与当前模拟器/真机模板一致。
 
 ## 源码执行阶段检查
 
 后续开始 Android 源码重构时，至少运行：
 
-```bash
+```powershell
 cd DouYu
+.\gradlew.bat --version
 .\gradlew.bat :app:testDebugUnitTest
 .\gradlew.bat :app:assembleDebug
 ```
 
 后端未改时不强制跑全量后端测试；如果 UI 重构牵引 API 契约、状态机或字段解释变化，必须运行：
 
-```bash
+```powershell
 cd doyu-server
 mvn test
 ```
 
+第一轮登录 + 社区基线必须覆盖：
+
+```powershell
+cd D:\Studio\SpellBean\doyu-server
+mvn -Dtest=DouyuBackendContractTests test
+
+cd D:\Studio\SpellBean\DouYu
+.\gradlew.bat :app:testDebugUnitTest --tests cn.edu.app.douyu.core.ApiInterfaceContractTest
+.\gradlew.bat :app:testDebugUnitTest --tests cn.edu.app.douyu.core.CommunityRepositoryContractTest
+```
+
+验收标准：
+
+- 后端登录响应、社区发布、评论、互动、未登录、缺失资源、重复点赞/收藏均返回统一响应和 `traceId`。
+- Android DTO 能解析 `avatarUrl`、默认编码 `ageGroup=AGE_18_PLUS`，并解析 `{ liked }` / `{ favorited }`。
+- Repository 写操作成功返回明确状态；错误保留 `code` 与 `traceId`。
+
 必须搜索空实现和误导性占位：
 
-```bash
+```powershell
 rg -n "onClick = \\{ \\}|开发中|后续接入|TODO|placeholder|Toast" DouYu/app/src/main/java
 ```
 

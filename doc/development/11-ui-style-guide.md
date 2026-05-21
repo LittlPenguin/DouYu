@@ -37,7 +37,7 @@
 | `ai/screen.png` | AI 创作首页 | AI Hero、正在生成任务卡、创作历史双列 Grid |
 | `_4/screen.png` | 消息页 | 通知/私信 Tab、通知列表、未读强调条、时间与摘要截断 |
 | `_3/screen.png` | 我的页 | 个人资料区、统计卡、我的工坊入口、签到卡；落地时必须中文化并降低卡片嵌套 |
-| `doyu_vitality_craft/DESIGN.md` | Stitch 设计系统探索稿 | 可参考 “Restrained Vitality” 的克制活力、手作温度、留白、圆角和动效原则 |
+| `DESIGN.md` | Stitch 设计系统探索稿 | 可参考 “Restrained Vitality” 的克制活力、手作温度、留白、圆角和动效原则 |
 
 冲突处理：
 

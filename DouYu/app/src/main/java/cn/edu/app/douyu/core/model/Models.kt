@@ -73,7 +73,7 @@ enum class NotificationType { SYSTEM, COMMENT, LIKE, FAVORITE, FOLLOW, ORDER, AI
 data class UserProfile(
     val userId: String,
     val nickname: String,
-    @SerialName("avatarFileId") val avatarUrl: String? = null,
+    val avatarUrl: String? = null,
     val bio: String = "",
     val level: Int = 0,
     val isMinor: Boolean = false,
@@ -192,6 +192,12 @@ data class Comment(
 data class CreateCommentRequest(
     val content: String,
     val parentId: String? = null
+)
+
+@Serializable
+data class PostInteractionResult(
+    val liked: Boolean? = null,
+    val favorited: Boolean? = null
 )
 
 @Serializable

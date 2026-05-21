@@ -12,6 +12,12 @@ interface CommunityRepository {
     fun feed(): PageResponse<Post>
     fun post(postId: String): Post
     fun comments(postId: String): PageResponse<Comment>
+    fun createPost(request: CreatePostRequest): Post
+    fun createComment(postId: String, request: CreateCommentRequest): Comment
+    fun likePost(postId: String): PostInteractionResult
+    fun unlikePost(postId: String): PostInteractionResult
+    fun favoritePost(postId: String): PostInteractionResult
+    fun unfavoritePost(postId: String): PostInteractionResult
 }
 
 interface PatternRepository {
@@ -372,6 +378,40 @@ class MockCommunityRepository : CommunityRepository {
         )
         return PageResponse(items, 1, 20, items.size, false)
     }
+
+    override fun createPost(request: CreatePostRequest): Post =
+        MockData.posts.first().copy(
+            postId = "post_preview_created",
+            title = request.title,
+            content = request.content,
+            mediaFileIds = request.mediaFileIds,
+            topicIds = request.topicIds,
+            topicNames = emptyList(),
+            linkedPatternId = request.linkedPatternId,
+            status = ContentStatus.REVIEWING,
+            likeCount = 0,
+            favoriteCount = 0,
+            commentCount = 0
+        )
+
+    override fun createComment(postId: String, request: CreateCommentRequest): Comment =
+        Comment(
+            commentId = "comment_preview_created",
+            postId = postId,
+            authorId = MockData.user.userId,
+            author = MockData.user,
+            parentId = request.parentId,
+            content = request.content,
+            status = ContentStatus.REVIEWING
+        )
+
+    override fun likePost(postId: String): PostInteractionResult = PostInteractionResult(liked = true)
+
+    override fun unlikePost(postId: String): PostInteractionResult = PostInteractionResult(liked = false)
+
+    override fun favoritePost(postId: String): PostInteractionResult = PostInteractionResult(favorited = true)
+
+    override fun unfavoritePost(postId: String): PostInteractionResult = PostInteractionResult(favorited = false)
 }
 
 class MockPatternRepository : PatternRepository {

@@ -1,5 +1,9 @@
 # 05. API 契约
 
+本文档是豆屿登录与社区第一轮样板链路的唯一接口事实源。登录和社区链路如果与后端 Controller/DTO、Android DTO、Repository、UI 或测试冲突，默认改代码追本文档；确实需要改契约时，必须先改本文档，再同步后端、Android、测试和联调手册。
+
+第一轮只治理登录 + 社区链路。AI、支付和上线生产化能力均放后期：本文档可保留现有开发态接口说明，但不得把真实 AI Provider、真实微信/支付宝支付、退款对账、备案、应用市场、生产审核风控等列入第一轮验收。
+
 ## 基础规范
 
 - API 前缀：`/api/v1`。
@@ -70,11 +74,22 @@
 - `accessToken`
 - `refreshToken`
 - `expiresIn`
-- `user`
+- `user`：用户对象，字段见“用户响应字段”。登录响应里的头像字段名必须是 `avatarUrl`，不得返回给 Android 作为 `avatarFileId`。
 
 退出登录请求字段：
 
 - `refreshToken`：客户端必须传当前 refreshToken，后端用于撤销会话。
+
+刷新 token：
+
+- 请求字段：`refreshToken`。
+- 响应字段：`accessToken`、`refreshToken`、`expiresIn`。
+
+鉴权规则：
+
+- `sms-code`、`login/sms`、`refresh` 为公开接口。
+- `logout` 需要有效 access token；refresh token 用于撤销会话。
+- 当前 Android 使用 `InMemoryTokenStore`，登录态持久化到 DataStore 是 P1 缺口，不属于本轮账号体系扩展。
 
 ## 用户接口
 
@@ -135,7 +150,7 @@
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/posts/feed` | 推荐 Feed（免登录） |
-| GET | `/posts/following` | 关注 Feed（免登录） |
+| GET | `/posts/following` | 关注 Feed（需要登录） |
 | POST | `/posts` | 发布帖子 |
 | GET | `/posts/{postId}` | 帖子详情（免登录） |
 | PATCH | `/posts/{postId}` | 编辑帖子 |
@@ -166,6 +181,92 @@
 - `status`：帖子状态。
 - `likeCount`、`commentCount`、`favoriteCount`：互动计数。
 - `createdAt`、`updatedAt`：时间戳。
+
+发帖请求字段：
+
+- `title`：标题，可为空字符串但 Android 第一轮 UI 要求必填。
+- `content`：正文，必填。
+- `mediaFileIds`：帖子图片或视频文件 ID 列表，可为空。
+- `topicIds`：话题 ID 列表，可为空。
+- `linkedPatternId`：关联图纸 ID，可为空。
+
+发帖响应：
+
+- 返回完整 `Post`。
+- 新发帖默认 `status=REVIEWING`。
+- Android 必须展示“审核中”，不得假装立即公开。
+
+评论响应字段：
+
+- `commentId`
+- `postId`
+- `authorId`
+- `author`：作者对象，字段同用户响应。
+- `parentId`
+- `content`
+- `status`
+
+发表评论请求字段：
+
+- `content`：评论内容，必填。
+- `parentId`：父评论 ID，可为空。
+
+发表评论响应：
+
+- 返回完整 `Comment`。
+- 新评论默认 `status=REVIEWING`。
+- Android 必须展示“评论已提交，等待审核”，不得假装立即公开。
+
+互动响应字段：
+
+`POST /posts/{postId}/like` 和 `DELETE /posts/{postId}/like` 返回：
+
+```json
+{
+  "liked": true
+}
+```
+
+`POST /posts/{postId}/favorite` 和 `DELETE /posts/{postId}/favorite` 返回：
+
+```json
+{
+  "favorited": true
+}
+```
+
+说明：
+
+- 点赞/收藏是幂等语义；重复点赞仍返回 `liked=true`，重复收藏仍返回 `favorited=true`，计数不得重复增加。
+- 取消点赞/收藏时，如果帖子不存在或已删除，返回 `NOT_FOUND`；不得返回假成功。
+- Android DTO 使用 `PostInteractionResult(liked?, favorited?)` 接该响应。需要刷新计数时，客户端可重新请求帖子详情。
+
+社区错误和鉴权：
+
+| 场景 | HTTP / code | Android UI |
+|---|---|---|
+| 未登录发帖、评论、点赞、收藏 | 401 / `UNAUTHORIZED` | 统一登录引导 |
+| 无权限编辑/删除他人内容 | 403 / `FORBIDDEN` | 无权限状态 |
+| 帖子、评论不存在或已删除 | 404 / `NOT_FOUND` | 错误状态，可显示 traceId |
+| 请求字段缺失或格式错误 | 400 / `INVALID_ARGUMENT` | 表单错误或错误状态 |
+
+## 登录 + 社区契约对齐矩阵
+
+| 契约项 | 文档字段 | 后端 Controller/DTO | Android DTO/Repository | UI 页面 | 测试状态 |
+|---|---|---|---|---|---|
+| 短信验证码 | `phone` | `AuthController#sendSms` | `SmsCodeRequest` | 登录页发送验证码 | 后端契约测试 + Android 单元测试 |
+| 短信登录 | `phone`、`code`、`ageGroup`、`nickname?` | `SmsLoginRequest` | `SmsLoginRequest` 默认 `AGE_18_PLUS` | 登录页 | 后端契约测试 + Android DTO 测试 |
+| 登录响应用户 | `user.avatarUrl` | `AuthService.userView()` | `UserProfile.avatarUrl` | 登录成功后进入 App | 后端契约测试 + Android DTO 测试 |
+| token 刷新 | `refreshToken` | `AuthController#refresh` | `AuthSessionManager.refresh()` | 自动刷新或未登录态 | Android `AuthSessionManagerTest` |
+| 退出登录 | `refreshToken` | `AuthController#logout` | `AuthSessionManager.logout()` | 后续设置页/我的页接入 | 后端契约测试 |
+| Feed | `Page<Post>` | `CommunityController#feed` | `CommunityRepository.feed()` | 社区首页双列流 | 后端契约测试 + Android单元测试 |
+| 帖子详情 | `Post` | `CommunityController#post` | `CommunityRepository.post()` | 帖子详情 | 后端契约测试 |
+| 发帖 | `CreatePostRequest` -> `Post(REVIEWING)` | `CommunityController#createPost` | `CommunityRepository.createPost()` | 发布页审核中结果 | 后端契约测试 + Android Repository 测试 |
+| 评论列表 | `Page<Comment>` | `CommunityController#comments` | `CommunityRepository.comments()` | 详情页评论区 | 后端契约测试 |
+| 发表评论 | `CreateCommentRequest` -> `Comment(REVIEWING)` | `CommunityController#comment` | `CommunityRepository.createComment()` | 评论输入框审核中提示 | 后端契约测试 + Android Repository 测试 |
+| 点赞/取消 | `{ liked }` | `like/unlike` | `PostInteractionResult.liked` | 详情页互动按钮 | 后端契约测试 + Android DTO/Repository 测试 |
+| 收藏/取消 | `{ favorited }` | `favorite/unfavorite` | `PostInteractionResult.favorited` | 详情页互动按钮 | 后端契约测试 + Android DTO/Repository 测试 |
+| 统一错误 | `{ code,message,traceId }` | `ApiResponse` / 全局异常处理 | `ApiException` -> `UiState` | 登录引导、错误、弱网 | Android 错误映射测试 |
 
 ## AI 拼豆接口
 

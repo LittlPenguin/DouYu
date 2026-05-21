@@ -16,17 +16,30 @@
 
 ### 推荐：dev profile + PostgreSQL/Redis
 
-先复制仓库根目录 `.env.example` 为 `.env`，把 `DOUYU_BACKEND_HOST`、`DOUYU_ANDROID_API_BASE_URL`、`DOUYU_ANDROID_CLEARTEXT_HOSTS` 和 `DOUYU_STORAGE_BASE_URL` 改成当前开发机 IP。真机使用电脑 Wi-Fi/LAN IPv4，Android 模拟器使用 `10.0.2.2`。
+仓库根目录 `.env` 是唯一生效文件，`start-dev.bat` 会读取它。推荐本机维护两个不提交的私有模板：
+
+- `.env.emulator`：模拟器模板，默认使用 `10.0.2.2`。
+- `.env.phone`：真机模板，使用电脑当前 Wi-Fi/LAN IPv4。
+
+切换时复制目标模板为 `.env`，再重启后端：
 
 ```powershell
-cd C:\Users\22462\Desktop\XM\Android\APP\APP_DouYu\doyu-server
+# 模拟器
+Copy-Item ..\.env.emulator ..\.env -Force
+
+# 真机
+Copy-Item ..\.env.phone ..\.env -Force
+```
+
+```powershell
+cd D:\Studio\SpellBean\doyu-server
 .\start-dev.bat
 ```
 
 等价手动命令：
 
 ```powershell
-cd C:\Users\22462\Desktop\XM\Android\APP\APP_DouYu\doyu-server
+cd D:\Studio\SpellBean\doyu-server
 docker compose up -d postgres redis
 mvn spring-boot:run -Dspring-boot.run.profiles=dev `
   -Dspring-boot.run.jvmArguments="-DDOUYU_STORAGE_BASE_URL=http://<当前开发机IP>:8081"

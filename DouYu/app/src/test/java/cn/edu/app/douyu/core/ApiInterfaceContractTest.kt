@@ -1,13 +1,21 @@
 package cn.edu.app.douyu.core
 
+import cn.edu.app.douyu.core.data.ApiException
+import cn.edu.app.douyu.core.data.exceptionToUiState
 import cn.edu.app.douyu.core.model.*
 import cn.edu.app.douyu.core.network.*
+import cn.edu.app.douyu.core.ui.UiState
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import java.net.UnknownHostException
 
 class ApiInterfaceContractTest {
     @Test
@@ -46,6 +54,71 @@ class ApiInterfaceContractTest {
         assertPost(method<RewardApi>("checkin"), "/api/v1/checkins")
         assertGet(method<RewardApi>("checkinStatus"), "/api/v1/checkins/status")
         assertGet(method<RewardApi>("badges"), "/api/v1/badges/me")
+    }
+
+    @Test
+    fun loginAndCommunityDtosMatchDocumentedJsonContract() {
+        val user = DoyuJson.decodeFromString<UserProfile>(
+            """
+            {
+              "userId": "user_contract",
+              "nickname": "契约用户",
+              "avatarUrl": "https://cdn.example.test/avatar.png",
+              "bio": "拼豆爱好者",
+              "level": 3,
+              "isMinor": false,
+              "followingCount": 7,
+              "followerCount": 12
+            }
+            """.trimIndent()
+        )
+        assertEquals("https://cdn.example.test/avatar.png", user.avatarUrl)
+
+        val loginJson = DoyuJson.encodeToString(SmsLoginRequest("13800000000", "123456"))
+        assertTrue(loginJson.contains("\"ageGroup\":\"AGE_18_PLUS\""))
+
+        val likeResponse = DoyuJson.decodeFromString<ApiResponse<PostInteractionResult>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": { "liked": true },
+              "traceId": "trace_like"
+            }
+            """.trimIndent()
+        )
+        assertEquals(true, likeResponse.data?.liked)
+        assertNull(likeResponse.data?.favorited)
+
+        val favoriteResponse = DoyuJson.decodeFromString<ApiResponse<PostInteractionResult>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": { "favorited": false },
+              "traceId": "trace_favorite"
+            }
+            """.trimIndent()
+        )
+        assertEquals(false, favoriteResponse.data?.favorited)
+        assertNull(favoriteResponse.data?.liked)
+    }
+
+    @Test
+    fun apiErrorCodesMapToExplicitUiStates() {
+        assertEquals(
+            UiState.RequireLogin,
+            exceptionToUiState<Unit>(ApiException("UNAUTHORIZED", "token expired", "trace_auth"))
+        )
+        assertEquals(
+            UiState.Forbidden,
+            exceptionToUiState<Unit>(ApiException("FORBIDDEN", "forbidden", "trace_forbidden"))
+        )
+        assertEquals(UiState.WeakNetwork, exceptionToUiState<Unit>(UnknownHostException("offline")))
+
+        val state = exceptionToUiState<Unit>(ApiException("NOT_FOUND", "missing", "trace_missing"))
+        assertTrue(state is UiState.Error)
+        assertTrue((state as UiState.Error).message.contains("trace_missing"))
     }
 
     private inline fun <reified T> method(name: String): java.lang.reflect.Method =

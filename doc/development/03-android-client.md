@@ -4,7 +4,7 @@
 
 Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图、AI 拼豆图生成、商城购买、玩家私信、订单和个人资产。
 
-当前阶段的 Android 工作重心是 **UI MVP 收敛**：在不新增真实 AI Provider、真实支付、增强审核、合规风控和完整玩家交易闭环的前提下，把已有开发态能力包装成可演示、可联调、边界清楚的 App。
+当前阶段的 Android 工作重心是 **第一轮重构基线**：先把登录 + 社区链路做成可复制样板，再复制方法推进其他模块。在不新增真实 AI Provider、真实支付、增强审核、合规风控和完整玩家交易闭环的前提下，把已有开发态能力包装成可演示、可联调、边界清楚的 App。
 
 ## 模块结构
 
@@ -27,7 +27,9 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 
 ## 当前实现状态
 
-**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。Debug 包的 Retrofit `baseUrl` 从仓库根目录 `.env` 的 `DOUYU_ANDROID_API_BASE_URL` 生成到 `BuildConfig.API_BASE_URL`；模拟器联调使用 `http://10.0.2.2:8081/`，真机联调使用电脑当前 Wi-Fi IP，例如 `http://10.63.105.12:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
+**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。Debug 包的 Retrofit `baseUrl` 从仓库根目录 `.env` 的 `DOUYU_ANDROID_API_BASE_URL` 在 Gradle 构建期生成到 `BuildConfig.API_BASE_URL`；模拟器联调使用 `http://10.0.2.2:8081/`，真机联调使用电脑当前 Wi-Fi/LAN IPv4，例如 `http://10.64.241.153:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
+
+**环境切换**：`.env` 是唯一生效文件，`.env.emulator` 和 `.env.phone` 只作为本机私有模板。模拟器和真机切换不是运行时动态能力；复制目标模板为 `.env` 后，必须重启后端并重新构建、安装 debug 包，Android 侧的 `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单才会更新。
 
 **真机 HTTP 联调**：Android main 配置保持 HTTPS only；debug 包通过 Gradle 从 `.env` 的 `DOUYU_ANDROID_CLEARTEXT_HOSTS` 生成 `network_security_config.xml`，对当前开发机 IP 添加 `domain-config cleartextTrafficPermitted="true"`。如果真机浏览器能访问后端，但 App 显示网络异常，优先检查 `baseUrl`、debug 包、logcat 中的 cleartext 配置错误。
 
@@ -44,8 +46,8 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 - 登录态仍使用 `InMemoryTokenStore`，App 重启后不可恢复。
 - 多数页面仍在 Composable 内直接管理副作用和 Repository 调用，MVVM 尚未完全落地。
 - 多个 Feature 文件体量偏大，页面、子组件、网络状态、副作用混在同一文件中。
-- 部分后端已有能力未通过 Android Repository 暴露或未接到页面。
-- 部分 UI 存在空点击、假成功 Toast、开发中按钮或弱占位。
+- 第一轮已把社区发帖、评论、点赞、收藏补到 `CommunityRepository`，并接入社区样板页；其他模块仍可能存在后端已有能力未通过 Android Repository 暴露或未接到页面。
+- 第一轮样板链路已消除社区发布页假提交；其他模块仍需继续搜索空点击、假成功 Toast、开发中按钮或弱占位。
 
 ## 页面导航
 
@@ -118,6 +120,7 @@ P1：社区 MVP
 - 发帖/评论提交后显示“审核中”，不假装立即公开。
 - 搜索/标签若未接真实查询，则弱化为频道筛选或本地展示，不作为强功能。
 - 图片不能继续空白占位；若无法解析 URL，则显示明确的图片处理中或无预览状态。
+- 点赞/收藏接口返回 `{ liked }` / `{ favorited }`，Android 使用 `PostInteractionResult` 解码；详情页需要最新计数时重新读取帖子详情。
 
 P2：AI MVP
 
@@ -198,6 +201,15 @@ private inline fun <T> safeCall(block: () -> T): T? =
 ```
 
 后续重构应逐步把错误转换为明确 UI 状态，避免所有异常都退化为空状态。
+
+当前 Android 已在 `core/data/SafeCall.kt` 提供 `exceptionToUiState`：
+
+- `UNAUTHORIZED` -> `UiState.RequireLogin`
+- `FORBIDDEN` -> `UiState.Forbidden`
+- `SocketTimeoutException`、`UnknownHostException`、`IOException` -> `UiState.WeakNetwork`
+- 其他 `ApiException` -> `UiState.Error`，保留可展示的 `traceId`
+
+社区样板页和后续页面应复用该映射，避免把后端统一响应吞成空白页。
 
 ## 权限策略
 

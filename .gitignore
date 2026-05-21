@@ -19,6 +19,7 @@ local.properties
 .claude/
 CLAUDE.md
 AGENTS.md
+.aionrs/
 
 # Java, Kotlin, Gradle, and Android outputs
 .gradle/

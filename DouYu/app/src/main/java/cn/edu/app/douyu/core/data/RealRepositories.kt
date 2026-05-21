@@ -37,6 +37,14 @@ class RealCommunityRepository(private val api: CommunityApi) : CommunityReposito
     override fun feed(): PageResponse<Post> = apiCall { api.feed() }
     override fun post(postId: String): Post = apiCall { api.post(postId) }
     override fun comments(postId: String): PageResponse<Comment> = apiCall { api.comments(postId) }
+    override fun createPost(request: CreatePostRequest): Post = apiCall { api.createPost(request) }
+    override fun createComment(postId: String, request: CreateCommentRequest): Comment =
+        apiCall { api.createComment(postId, request) }
+
+    override fun likePost(postId: String): PostInteractionResult = apiCall { api.likePost(postId) }
+    override fun unlikePost(postId: String): PostInteractionResult = apiCall { api.unlikePost(postId) }
+    override fun favoritePost(postId: String): PostInteractionResult = apiCall { api.favoritePost(postId) }
+    override fun unfavoritePost(postId: String): PostInteractionResult = apiCall { api.unfavoritePost(postId) }
 }
 
 class RealPatternRepository(private val api: PatternApi) : PatternRepository {

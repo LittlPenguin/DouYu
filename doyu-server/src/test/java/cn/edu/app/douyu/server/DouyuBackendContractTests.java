@@ -347,6 +347,122 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void loginAndCommunitySampleContractFieldsStayAligned() throws Exception {
+        JsonNode login = postJson("/api/v1/auth/login/sms", """
+                {"phone":"13800000016","code":"123456","ageGroup":"AGE_18_PLUS","nickname":"contract-user"}
+                """);
+        org.assertj.core.api.Assertions.assertThat(login.at("/data/accessToken").asText()).isNotBlank();
+        org.assertj.core.api.Assertions.assertThat(login.at("/data/refreshToken").asText()).isNotBlank();
+        org.assertj.core.api.Assertions.assertThat(login.at("/data/expiresIn").asLong()).isGreaterThan(0);
+        org.assertj.core.api.Assertions.assertThat(login.at("/data/user/avatarUrl").isMissingNode()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(login.at("/data/user/avatarFileId").isMissingNode()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(login.path("traceId").asText()).isNotBlank();
+
+        String token = login.at("/data/accessToken").asText();
+        JsonNode created = postJsonWithToken("/api/v1/posts", token, """
+                {"title":"contract post","content":"community contract content","mediaFileIds":[],"topicIds":[]}
+                """);
+        JsonNode post = created.path("data");
+        org.assertj.core.api.Assertions.assertThat(post.path("postId").asText()).startsWith("post_");
+        org.assertj.core.api.Assertions.assertThat(post.path("status").asText()).isEqualTo("REVIEWING");
+        org.assertj.core.api.Assertions.assertThat(post.path("mediaFileIds").isArray()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(post.path("topicIds").isArray()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(post.path("author").has("avatarUrl")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(created.path("traceId").asText()).isNotBlank();
+
+        JsonNode comment = postJsonWithPath("/api/v1/posts/{postId}/comments", token, """
+                {"content":"contract comment"}
+                """, post.path("postId").asText());
+        org.assertj.core.api.Assertions.assertThat(comment.at("/data/status").asText()).isEqualTo("REVIEWING");
+        org.assertj.core.api.Assertions.assertThat(comment.at("/data/author/avatarUrl").isMissingNode()).isFalse();
+    }
+
+    @Test
+    void communityInteractionsAreAuthGuardedAndValidateResource() throws Exception {
+        mockMvc.perform(post("/api/v1/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"unauthorized","content":"body"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")))
+                .andExpect(jsonPath("$.traceId", notNullValue()));
+
+        mockMvc.perform(post("/api/v1/posts/missing_post/comments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"comment"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")));
+
+        mockMvc.perform(post("/api/v1/posts/missing_post/like"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")));
+
+        mockMvc.perform(post("/api/v1/posts/missing_post/favorite"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")));
+
+        String token = login("13800000017", "AGE_18_PLUS");
+
+        mockMvc.perform(post("/api/v1/posts/missing_post/like")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
+
+        mockMvc.perform(delete("/api/v1/posts/missing_post/like")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
+
+        mockMvc.perform(post("/api/v1/posts/missing_post/favorite")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
+
+        mockMvc.perform(delete("/api/v1/posts/missing_post/favorite")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
+    }
+
+    @Test
+    void repeatedCommunityInteractionsRemainIdempotent() throws Exception {
+        String token = login("13800000018", "AGE_18_PLUS");
+        JsonNode created = postJsonWithToken("/api/v1/posts", token, """
+                {"title":"idempotent post","content":"community interaction content"}
+                """);
+        String postId = created.at("/data/postId").asText();
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/like", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.liked", equalTo(true)));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/like", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.liked", equalTo(true)));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/favorite", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.favorited", equalTo(true)));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/favorite", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.favorited", equalTo(true)));
+
+        mockMvc.perform(get("/api/v1/posts/{postId}", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.likeCount", equalTo(1)))
+                .andExpect(jsonPath("$.data.favoriteCount", equalTo(1)));
+    }
+
+    @Test
     void userFollowAndUnfollowWorks() throws Exception {
         String tokenA = login("13800000011", "AGE_18_PLUS");
         String tokenB = login("13800000012", "AGE_18_PLUS");

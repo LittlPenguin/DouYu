@@ -177,12 +177,10 @@ public class CommunityController {
     @DeleteMapping("/posts/{postId}/like")
     Map<String, Object> unlike(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
+        PostEntity post = requirePost(postId);
         likeRepository.deleteByUserIdAndTargetTypeAndTargetId(userId, "POST", postId);
-        PostEntity post = postRepository.findById(postId).orElse(null);
-        if (post != null) {
-            post.setLikeCount((int) likeRepository.countByTargetTypeAndTargetId("POST", postId));
-            postRepository.save(post);
-        }
+        post.setLikeCount((int) likeRepository.countByTargetTypeAndTargetId("POST", postId));
+        postRepository.save(post);
         return Map.of("liked", false);
     }
 
@@ -212,12 +210,10 @@ public class CommunityController {
     @DeleteMapping("/posts/{postId}/favorite")
     Map<String, Object> unfavorite(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
+        PostEntity post = requirePost(postId);
         favoriteRepository.deleteByUserIdAndTargetTypeAndTargetId(userId, "POST", postId);
-        PostEntity post = postRepository.findById(postId).orElse(null);
-        if (post != null) {
-            post.setFavoriteCount((int) favoriteRepository.countByTargetTypeAndTargetId("POST", postId));
-            postRepository.save(post);
-        }
+        post.setFavoriteCount((int) favoriteRepository.countByTargetTypeAndTargetId("POST", postId));
+        postRepository.save(post);
         return Map.of("favorited", false);
     }
 

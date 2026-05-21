@@ -21,10 +21,21 @@ inline fun <T> safeCallToState(
             if (result == null) UiState.Empty
             else UiState.Success(result)
         } catch (e: Exception) {
-            val message = ErrorMessages.fromException(e)
-            if (message.contains("登录")) UiState.RequireLogin else UiState.Error(message)
+            exceptionToUiState(e)
         }
     }
+}
+
+fun <T> exceptionToUiState(e: Exception): UiState<T> = when (e) {
+    is ApiException -> when (e.code) {
+        "UNAUTHORIZED" -> UiState.RequireLogin
+        "FORBIDDEN" -> UiState.Forbidden
+        else -> UiState.Error(ErrorMessages.fromException(e))
+    }
+    is java.net.SocketTimeoutException,
+    is java.net.UnknownHostException,
+    is java.io.IOException -> UiState.WeakNetwork
+    else -> UiState.Error(ErrorMessages.fromException(e))
 }
 
 /** Safe call for list data — returns Empty when the list is empty. */
@@ -33,7 +44,7 @@ inline fun <T> safeCallToList(block: () -> List<T>): UiState<List<T>> {
         val result = block()
         if (result.isEmpty()) UiState.Empty else UiState.Success(result)
     } catch (e: Exception) {
-        UiState.Error(ErrorMessages.fromException(e))
+        exceptionToUiState(e)
     }
 }
 
