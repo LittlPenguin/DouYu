@@ -13,6 +13,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +32,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.edu.app.douyu.ui.theme.*
+
+fun disabledClick() = Unit
 
 // ── DoyuTopBar ──
 
@@ -100,7 +105,7 @@ fun DoyuPrimaryButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.97f else 1f,
+        targetValue = if (enabled && isPressed) 0.97f else 1f,
         animationSpec = SpringFast,
         label = "buttonScale"
     )
@@ -133,30 +138,138 @@ fun DoyuOutlinedButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     icon: ImageVector? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.97f else 1f,
+        targetValue = if (enabled && isPressed) 0.97f else 1f,
         animationSpec = SpringFast,
         label = "buttonScale"
     )
 
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .heightIn(min = 46.dp)
             .scale(scale),
         shape = MaterialTheme.shapes.medium,
         interactionSource = interactionSource,
-        border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(width = 1.dp)
+        border = ButtonDefaults.outlinedButtonBorder(enabled = enabled).copy(width = 1.dp)
     ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
         }
         Text(text)
+    }
+}
+
+// ── DoyuSearchField ──
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DoyuSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = { Text(placeholder) },
+        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+        trailingIcon = {
+            if (value.isNotEmpty()) {
+                IconButton(onClick = { onValueChange("") }) {
+                    Icon(Icons.Filled.Clear, contentDescription = "清除")
+                }
+            }
+        },
+        singleLine = true,
+        shape = MaterialTheme.shapes.large,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = LightSurfaceVariant.copy(alpha = 0.55f),
+            unfocusedContainerColor = LightSurfaceVariant.copy(alpha = 0.55f),
+            focusedBorderColor = LightPrimary.copy(alpha = 0.35f),
+            unfocusedBorderColor = Color.Transparent,
+            cursorColor = LightPrimary
+        ),
+        modifier = modifier.fillMaxWidth()
+    )
+}
+
+// ── DoyuSegmentedControl ──
+
+@Composable
+fun DoyuSegmentedControl(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        color = LightSurfaceVariant.copy(alpha = 0.7f)
+    ) {
+        Row(modifier = Modifier.padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            options.forEachIndexed { index, label ->
+                val selected = selectedIndex == index
+                Surface(
+                    onClick = { onSelected(index) },
+                    modifier = Modifier.weight(1f),
+                    shape = MaterialTheme.shapes.medium,
+                    color = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
+                    shadowElevation = if (selected) 1.dp else 0.dp
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (selected) LightPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                        modifier = Modifier.padding(vertical = 9.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ── DisabledFeatureNotice ──
+
+@Composable
+fun DisabledFeatureNotice(
+    title: String,
+    message: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = LightSurfaceVariant.copy(alpha = 0.65f),
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                Icons.Filled.Info,
+                contentDescription = null,
+                tint = LightPrimary,
+                modifier = Modifier.size(20.dp)
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                Text(message, style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }
 

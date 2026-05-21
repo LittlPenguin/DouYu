@@ -47,29 +47,14 @@ private fun MessageListScreenContent(navController: NavHostController?) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                        TextButton(onClick = { selectedTab = 0 }) {
-                            Text(
-                                "通知",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = if (selectedTab == 0) LightPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                        TextButton(onClick = { selectedTab = 1 }) {
-                            Text(
-                                "私信",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = if (selectedTab == 1) LightPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-            )
+            DoyuTopBar("消息") {
+                DoyuSegmentedControl(
+                    options = listOf("通知", "私信"),
+                    selectedIndex = selectedTab,
+                    onSelected = { selectedTab = it },
+                    modifier = Modifier.width(164.dp)
+                )
+            }
         }
     ) { padding ->
         Column(
@@ -343,11 +328,34 @@ private fun ConversationScreenContent(navController: NavHostController?, convers
                 else -> PageStateView(chatState)
             }
             DoyuCard {
-                OutlinedTextField(value = "", onValueChange = {}, label = { Text("输入私信") }, modifier = Modifier.fillMaxWidth())
+                DisabledFeatureNotice(
+                    title = "私信发送待接入",
+                    message = "当前会话只读展示，发送和举报入口会在后端链路确认后开放。",
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = {},
+                    enabled = false,
+                    label = { Text("输入私信") },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DoyuOutlinedButton("举报", onClick = {}, icon = Icons.Filled.Report, modifier = Modifier.weight(1f))
-                    DoyuPrimaryButton("发送", onClick = {}, icon = Icons.AutoMirrored.Filled.Send, modifier = Modifier.weight(1f))
+                    DoyuOutlinedButton(
+                        "举报",
+                        onClick = ::disabledClick,
+                        enabled = false,
+                        icon = Icons.Filled.Report,
+                        modifier = Modifier.weight(1f)
+                    )
+                    DoyuPrimaryButton(
+                        "发送",
+                        onClick = ::disabledClick,
+                        enabled = false,
+                        icon = Icons.AutoMirrored.Filled.Send,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }

@@ -35,7 +35,7 @@ import cn.edu.app.douyu.feature.message.*
 import cn.edu.app.douyu.feature.profile.*
 import cn.edu.app.douyu.ui.theme.*
 
-private const val TRANSITION_DURATION = 250
+private const val TRANSITION_DURATION = 150
 
 private data class TabUi(val tab: BottomTab, val icon: ImageVector, val selectedIcon: ImageVector)
 
@@ -151,7 +151,8 @@ private fun DoyuBottomNavBar(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 8.dp,
+        tonalElevation = 2.dp,
+        shadowElevation = 2.dp,
         color = MaterialTheme.colorScheme.surface
     ) {
         Row(

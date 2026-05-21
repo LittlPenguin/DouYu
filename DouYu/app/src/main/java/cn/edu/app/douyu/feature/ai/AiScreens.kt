@@ -36,7 +36,6 @@ import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.data.safeCallOrNull
 import cn.edu.app.douyu.core.network.requireSuccess
 import cn.edu.app.douyu.ui.theme.*
-import android.widget.Toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -449,7 +448,6 @@ fun AiParamsScreen(navController: NavHostController, uploadedFileId: String) { A
 
 @Composable
 private fun AiParamsScreenContent(navController: NavHostController?, uploadedFileId: String) {
-    val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
 
     var beadSize by remember { mutableStateOf("2.6mm") }
@@ -458,6 +456,7 @@ private fun AiParamsScreenContent(navController: NavHostController?, uploadedFil
     var palette by remember { mutableStateOf("豆屿通用 48 色") }
     var style by remember { mutableStateOf("还原") }
     var creating by remember { mutableStateOf(false) }
+    var createError by remember { mutableStateOf<String?>(null) }
 
     Scaffold(topBar = { DoyuTopBar("图纸参数", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
@@ -475,6 +474,15 @@ private fun AiParamsScreenContent(navController: NavHostController?, uploadedFil
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
+            createError?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Spacer(Modifier.height(8.dp))
 
             DoyuPrimaryButton(
@@ -482,6 +490,7 @@ private fun AiParamsScreenContent(navController: NavHostController?, uploadedFil
                 onClick = {
                     if (creating) return@DoyuPrimaryButton
                     creating = true
+                    createError = null
                     scope.launch {
                         try {
                             val request = CreatePatternJobRequest(
@@ -517,7 +526,7 @@ private fun AiParamsScreenContent(navController: NavHostController?, uploadedFil
                             navController?.navigate(AppRoute.aiProgress(job.jobId))
                         } catch (e: Exception) {
                             creating = false
-                            Toast.makeText(context, "创建失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            createError = "创建失败：${e.message ?: "请稍后重试"}"
                         }
                     }
                 },
@@ -563,13 +572,13 @@ fun AiProgressScreen(navController: NavHostController, jobId: String) { AiProgre
 
 @Composable
 private fun AiProgressScreenContent(navController: NavHostController?, jobId: String) {
-    val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<PatternJob?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var pollRevision by remember { mutableIntStateOf(0) }
     var canceling by remember { mutableStateOf(false) }
+    var cancelError by remember { mutableStateOf<String?>(null) }
 
     val infiniteTransition = rememberInfiniteTransition(label = "progressPulse")
     val shimmerAlpha by infiniteTransition.animateFloat(
@@ -631,6 +640,14 @@ private fun AiProgressScreenContent(navController: NavHostController?, jobId: St
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(32.dp)
                 ) {
+                    cancelError?.let {
+                        DisabledFeatureNotice(
+                            title = "取消失败",
+                            message = it,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    }
+
                     // Animation area
                     Box(
                         modifier = Modifier
@@ -715,6 +732,7 @@ private fun AiProgressScreenContent(navController: NavHostController?, jobId: St
                             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 DoyuOutlinedButton("取消", onClick = {
                                     canceling = true
+                                    cancelError = null
                                     scope.launch {
                                         try {
                                             withContext(Dispatchers.IO) {
@@ -722,10 +740,10 @@ private fun AiProgressScreenContent(navController: NavHostController?, jobId: St
                                             }
                                             navController?.popBackStack(BottomTab.AI.route, inclusive = false)
                                         } catch (e: Exception) {
-                                            Toast.makeText(context, "取消失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                                            cancelError = e.message ?: "请稍后重试"
                                         } finally { canceling = false }
                                     }
-                                }, modifier = Modifier.weight(1f))
+                                }, enabled = !canceling, modifier = Modifier.weight(1f))
                                 DoyuPrimaryButton("重试", onClick = { pollRevision++ }, icon = Icons.Filled.Refresh, modifier = Modifier.weight(1f))
                             }
                         }
@@ -744,6 +762,7 @@ private fun AiProgressScreenContent(navController: NavHostController?, jobId: St
                         else -> {
                             TextButton(onClick = {
                                 canceling = true
+                                cancelError = null
                                 scope.launch {
                                     try {
                                         withContext(Dispatchers.IO) {
@@ -751,10 +770,10 @@ private fun AiProgressScreenContent(navController: NavHostController?, jobId: St
                                         }
                                         navController?.popBackStack(BottomTab.AI.route, inclusive = false)
                                     } catch (e: Exception) {
-                                        Toast.makeText(context, "取消失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        cancelError = e.message ?: "请稍后重试"
                                     } finally { canceling = false }
                                 }
-                            }) {
+                            }, enabled = !canceling) {
                                 Text("取消任务")
                             }
                         }
@@ -776,41 +795,10 @@ fun PatternResultScreen(navController: NavHostController, patternId: String) { P
 
 @Composable
 private fun PatternResultScreenContent(navController: NavHostController?, patternId: String) {
-    val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     val patternState = safeCallToState(patternId) { repo.pattern(patternId) }.value
     var favorited by remember { mutableStateOf(false) }
-    var showCartDialog by remember { mutableStateOf(false) }
-
-    if (showCartDialog) {
-        val pattern = (patternState as? UiState.Success)?.data
-        AlertDialog(
-            onDismissRequest = { showCartDialog = false },
-            title = { Text("加入购物车") },
-            text = {
-                val materials = pattern?.materials
-                if (materials != null) {
-                    Column {
-                        Text("将以下材料加入购物车：")
-                        Spacer(Modifier.height(8.dp))
-                        materials.colors.forEach {
-                            Text("${it.colorCode} ${it.displayName} x${it.beadCount}", style = MaterialTheme.typography.bodySmall)
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text("共 ${materials.totalBeads} 颗", fontWeight = FontWeight.SemiBold)
-                    }
-                } else { Text("暂无材料信息") }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showCartDialog = false
-                    Toast.makeText(context, "已加入购物车", Toast.LENGTH_SHORT).show()
-                    navController?.navigate(AppRoute.CART)
-                }) { Text("确认") }
-            },
-            dismissButton = { TextButton(onClick = { showCartDialog = false }) { Text("取消") } }
-        )
-    }
+    var favoriteMessage by remember { mutableStateOf<String?>(null) }
 
     Scaffold(topBar = { DoyuTopBar("图纸结果", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
@@ -875,9 +863,9 @@ private fun PatternResultScreenContent(navController: NavHostController?, patter
                                         requireSuccess(DoyuAppContainer.apiClient.patternApi.favoritePattern(patternId))
                                     }
                                     favorited = true
-                                    Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                                    favoriteMessage = "已保存到我的图纸。"
                                 } catch (e: Exception) {
-                                    Toast.makeText(context, "保存失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    favoriteMessage = "保存失败：${e.message ?: "请稍后重试"}"
                                 }
                             }
                         },
@@ -885,17 +873,52 @@ private fun PatternResultScreenContent(navController: NavHostController?, patter
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !favorited
                     )
+                    favoriteMessage?.let {
+                        Text(
+                            it,
+                            color = if (favorited) LightPrimary else MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    DisabledFeatureNotice(
+                        title = "材料购买待接入",
+                        message = "图纸材料清单已展示，自动加购、PDF 导出和带图纸发帖将在真实链路接入后开放。"
+                    )
                     Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        DoyuOutlinedButton("加入购物车", onClick = { showCartDialog = true }, icon = Icons.Filled.ShoppingCart, modifier = Modifier.weight(1f))
-                        DoyuOutlinedButton("去购物车", onClick = { navController?.navigate(AppRoute.CART) }, icon = Icons.AutoMirrored.Filled.ArrowForward, modifier = Modifier.weight(1f))
+                        DoyuOutlinedButton(
+                            "加入购物车",
+                            onClick = ::disabledClick,
+                            enabled = false,
+                            icon = Icons.Filled.ShoppingCart,
+                            modifier = Modifier.weight(1f)
+                        )
+                        DoyuOutlinedButton(
+                            "去购物车",
+                            onClick = { navController?.navigate(AppRoute.CART) },
+                            icon = Icons.AutoMirrored.Filled.ArrowForward,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                     if (pattern.pdfFileId != null) {
                         Spacer(Modifier.height(10.dp))
-                        DoyuOutlinedButton("导出 PDF", onClick = { Toast.makeText(context, "PDF 导出功能开发中", Toast.LENGTH_SHORT).show() }, icon = Icons.Filled.PictureAsPdf, modifier = Modifier.fillMaxWidth())
+                        DoyuOutlinedButton(
+                            "导出 PDF",
+                            onClick = ::disabledClick,
+                            enabled = false,
+                            icon = Icons.Filled.PictureAsPdf,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                     Spacer(Modifier.height(10.dp))
-                    DoyuOutlinedButton("分享到社区", onClick = { navController?.navigate(AppRoute.POST_CREATE) }, icon = Icons.Filled.Share, modifier = Modifier.fillMaxWidth())
+                    DoyuOutlinedButton(
+                        "分享到社区",
+                        onClick = ::disabledClick,
+                        enabled = false,
+                        icon = Icons.Filled.Share,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
                 else -> PageStateView(patternState)
             }

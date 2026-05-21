@@ -122,24 +122,14 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Search bar (collapsible)
             AnimatedVisibility(visible = showSearch) {
-                OutlinedTextField(
+                DoyuSearchField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("搜索帖子...") },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Filled.Clear, contentDescription = "清除")
-                            }
-                        }
-                    },
-                    singleLine = true,
+                    placeholder = "搜索帖子...",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
                 )
             }
 
@@ -374,15 +364,25 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                         else -> PageStateView(commentsState)
                     }
 
-                    // Action buttons
+                    val linkedPatternId = state.data.linkedPatternId
                     DoyuPrimaryButton(
                         "收藏图纸",
-                        onClick = { navController?.navigate(AppRoute.patternResult(state.data.linkedPatternId ?: "pattern_001")) },
-                        modifier = Modifier.fillMaxWidth()
+                        onClick = {
+                            if (linkedPatternId != null) {
+                                navController?.navigate(AppRoute.patternResult(linkedPatternId))
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = linkedPatternId != null
+                    )
+                    DisabledFeatureNotice(
+                        title = "举报入口待接入",
+                        message = "当前详情页先保留内容安全提示，举报提交会在后续接入已有审核接口后开放。"
                     )
                     DoyuOutlinedButton(
                         "举报内容",
-                        onClick = {},
+                        onClick = ::disabledClick,
+                        enabled = false,
                         icon = Icons.Filled.Report,
                         modifier = Modifier.fillMaxWidth()
                     )

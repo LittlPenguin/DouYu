@@ -63,20 +63,10 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Search bar
-            OutlinedTextField(
+            DoyuSearchField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("搜索手作、图纸或材料包...") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Filled.Clear, contentDescription = "清除")
-                        }
-                    }
-                },
-                singleLine = true,
+                placeholder = "搜索手作、图纸或材料包...",
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -614,24 +604,15 @@ fun OrderConfirmScreen(navController: NavHostController) { OrderConfirmScreenCon
 @Composable
 private fun OrderConfirmScreenContent(navController: NavHostController?) {
     val cartState = safeCallToState { repo.cart() }.value
-    var createState by remember { mutableStateOf<UiState<Order>?>(null) }
-    val createScope = rememberCoroutineScope()
-    LaunchedEffect(createState) {
-        if (createState is UiState.Success) {
-            val orderId = (createState as UiState.Success<Order>).data.orderId
-            createState = null
-            navController?.navigate(AppRoute.paymentResult(orderId))
-        }
-    }
     Scaffold(topBar = { DoyuTopBar("确认订单", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             when (val state = cartState) {
                 is UiState.Success -> {
                     val cart = state.data
-                    DoyuCard {
-                        Text("收货信息", style = MaterialTheme.typography.titleMedium)
-                        Text("默认地址（后续接入地址管理）", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    DisabledFeatureNotice(
+                        title = "收货地址暂未接入",
+                        message = "当前 UI MVP 不伪装默认地址。地址管理接入前，订单创建和支付单创建保持禁用。"
+                    )
                     DoyuCard {
                         Text("订单商品", style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(10.dp))
@@ -646,24 +627,12 @@ private fun OrderConfirmScreenContent(navController: NavHostController?) {
                         Text("支付规则", style = MaterialTheme.typography.titleMedium)
                         Text("支付 SDK 当前为占位封装。客户端拉起后展示确认中，最终以服务端订单状态为准。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
-                    val createError = createState as? UiState.Error
-                    if (createError != null) {
-                        Text(createError.message, color = LightError, style = MaterialTheme.typography.labelMedium)
-                        Spacer(Modifier.height(8.dp))
-                    }
                     DoyuPrimaryButton(
                         "创建支付单 ${formatPriceCent(cart.payableAmountCent)}",
-                        onClick = {
-                            val itemIds = cart.items.mapNotNull { it.itemId.takeIf { _ -> true } }
-                            createScope.launch {
-                                createState = withContext(Dispatchers.IO) {
-                                    runCatching { repo.createOrder(itemIds, "") }
-                                        .fold(onSuccess = { UiState.Success(it) }, onFailure = { UiState.Error(it.message ?: "创建订单失败") })
-                                }
-                            }
-                        },
+                        onClick = ::disabledClick,
                         icon = Icons.Filled.Payments,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = false
                     )
                 }
                 is UiState.Empty -> EmptyContent("购物车为空", "请先添加商品到购物车。", showRetry = false)

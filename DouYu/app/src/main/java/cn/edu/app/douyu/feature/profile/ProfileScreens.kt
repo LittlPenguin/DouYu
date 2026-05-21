@@ -570,8 +570,16 @@ private fun SettingsScreenContent(navController: NavHostController?) {
         DoyuPage(padding) {
             DoyuCard {
                 SectionHeader("合规入口")
+                DisabledFeatureNotice(
+                    title = "生产合规材料待补齐",
+                    message = "当前阶段只保留入口清单，不展示为已完成的隐私政策、协议、SDK 清单或注销闭环。",
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                 listOf("隐私政策", "用户协议", "权限说明", "第三方 SDK 清单", "账号注销", "客服与反馈").forEach {
-                    Surface(onClick = {}, color = Color.Transparent) {
+                    Surface(
+                        color = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ) {
                         Row(
                             Modifier
                                 .fillMaxWidth()
@@ -579,7 +587,7 @@ private fun SettingsScreenContent(navController: NavHostController?) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(it, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                            Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("待接入", style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
