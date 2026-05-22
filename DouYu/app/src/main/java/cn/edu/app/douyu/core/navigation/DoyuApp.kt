@@ -55,6 +55,7 @@ fun DoyuApp() {
     val showBottomBar = destination?.route in BottomTab.entries.map { it.route }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             if (showBottomBar) {
                 DoyuBottomNavBar(destination, tabItems) { tab ->

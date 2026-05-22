@@ -204,19 +204,21 @@ fun DoyuSearchField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    height: Dp = 52.dp
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp),
+            .height(height),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, LightOutlineVariant)
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .height(height)
                 .padding(start = 14.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

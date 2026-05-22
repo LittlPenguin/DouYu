@@ -46,7 +46,8 @@
 
 ## 当前不能认为完成
 
-- App Shell、消息页和我的页已完成第二轮代码基线，仍需要模拟器/真机视觉 QA 和 360dp、390dp、430dp 手工验收。
+- App Shell、消息页和我的页已完成第二轮代码基线，TopBar、Search、消息未登录态和退出登录返回已列为本轮视觉 QA 对象；仍需要 360dp、390dp、430dp 手工验收。
+- 已定位 ADB 路径 `D:\AndroidChace\platform-tools\adb.exe`，但当前 `adb devices` 无在线模拟器/真机；本轮截图视觉 QA 标记为阻塞，不能写成通过。
 - Android debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在 `.env.emulator` / `.env.phone` 模板间切换并重新构建；登录态仍使用内存 TokenStore。
 - Android Studio / Gradle JVM 如果误选到 VS Code Red Hat Java 扩展内置精简 JRE，会触发 `jlink.exe does not exist`；本地构建必须按协作规范选择完整 JDK/JBR 21。
 - 社区、消息和我的样板链路已开始消除空点击和假成功；商城、AI 仍需继续搜索空点击、假成功 Toast、开发中按钮或弱占位。
@@ -85,8 +86,9 @@
 
 P0：第二轮 UI 统一基线验收
 
-- 复查 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、FAB、卡片、按钮、Chip、搜索、加载/空/错误/未登录状态在主要页面的表现。
+- 复查 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、FAB、卡片、按钮、Chip、Search、加载/空/错误/未登录状态在主要页面的表现。
 - 手工验收消息页：通知/私信 Tab、列表密度、未读状态、空/错/未登录状态；私信发送未闭环时禁用或明确边界。
+- 手工验收退出登录返回：退出后返回路径明确，受保护页面回到未登录态或登录引导。
 - 手工验收我的页：个人资产中心结构、中文化、卡片层级、未闭环入口隐藏/禁用/明确开发态。
 - 在 360dp、390dp、430dp 下复查顶部栏、底部栏、列表项、按钮文字和卡片不挤压、不重叠。
 

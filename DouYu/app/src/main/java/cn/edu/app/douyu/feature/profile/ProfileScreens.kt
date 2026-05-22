@@ -63,6 +63,7 @@ import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.DashboardData
 import cn.edu.app.douyu.core.navigation.AppRoute
+import cn.edu.app.douyu.core.navigation.BottomTab
 import cn.edu.app.douyu.core.ui.BeadPattern
 import cn.edu.app.douyu.core.ui.DisabledFeatureNotice
 import cn.edu.app.douyu.core.ui.DoyuAnimatedCounter
@@ -895,8 +896,9 @@ private fun SettingsScreenContent(navController: NavHostController?) {
                     showLogoutDialog = false
                     scope.launch {
                         runCatching { DoyuAppContainer.authSessionManager.logout() }
-                        navController?.navigate(AppRoute.LOGIN) {
-                            popUpTo(0) { inclusive = true }
+                        navController?.navigate(BottomTab.PROFILE.route) {
+                            popUpTo(BottomTab.PROFILE.route) { inclusive = true }
+                            launchSingleTop = true
                         }
                     }
                 }) { Text("确定") }

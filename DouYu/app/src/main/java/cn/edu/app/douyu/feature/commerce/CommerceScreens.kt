@@ -3,7 +3,11 @@ package cn.edu.app.douyu.feature.commerce
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -65,11 +69,11 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                     .padding(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 4.dp)
             )
 
-            Row(
+            LazyRow(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                categories.forEachIndexed { index, name ->
+                itemsIndexed(categories) { index, name ->
                     val selected = index == selectedCategory
                     Surface(
                         onClick = { selectedCategory = index },
@@ -109,55 +113,61 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                             showRetry = false
                         )
                     } else {
-                        // Recommended section
-                        CommerceSectionHeader(modifier = Modifier.padding(horizontal = horizontalPadding)) {
-                            Text("推荐商品", style = MaterialTheme.typography.titleLarge)
-                        }
-
-                        // Featured cards (horizontal scroll)
-                        Row(
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = horizontalPadding),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
                         ) {
-                            filteredProducts.take(2).forEach { product ->
-                                FeaturedProductCard(
-                                    product = product,
-                                    modifier = Modifier.weight(1f),
-                                    onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) }
-                                )
+                            // Recommended section
+                            CommerceSectionHeader(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                                Text("推荐商品", style = MaterialTheme.typography.titleLarge)
                             }
-                        }
 
-                        Spacer(Modifier.height(10.dp))
-
-                        // Product grid
-                        CommerceSectionHeader(modifier = Modifier.padding(horizontal = horizontalPadding)) {
-                            Text("猜你喜欢", style = MaterialTheme.typography.titleLarge)
-                        }
-
-                        // 2-column grid
-                        val chunked = filteredProducts.drop(2).chunked(2)
-                        chunked.forEach { row ->
+                            // Featured cards
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = horizontalPadding),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                row.forEach { product ->
-                                    ProductCard(
+                                filteredProducts.take(2).forEach { product ->
+                                    FeaturedProductCard(
                                         product = product,
                                         modifier = Modifier.weight(1f),
                                         onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) }
                                     )
                                 }
-                                if (row.size == 1) {
-                                    Spacer(Modifier.weight(1f))
-                                }
                             }
-                            Spacer(Modifier.height(12.dp))
+
+                            Spacer(Modifier.height(10.dp))
+
+                            // Product grid
+                            CommerceSectionHeader(modifier = Modifier.padding(horizontal = horizontalPadding)) {
+                                Text("猜你喜欢", style = MaterialTheme.typography.titleLarge)
+                            }
+
+                            // 2-column grid
+                            val chunked = filteredProducts.drop(2).chunked(2)
+                            chunked.forEach { row ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = horizontalPadding),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    row.forEach { product ->
+                                        ProductCard(
+                                            product = product,
+                                            modifier = Modifier.weight(1f),
+                                            onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) }
+                                        )
+                                    }
+                                    if (row.size == 1) {
+                                        Spacer(Modifier.weight(1f))
+                                    }
+                                }
+                                Spacer(Modifier.height(12.dp))
+                            }
                         }
                     }
                 }
