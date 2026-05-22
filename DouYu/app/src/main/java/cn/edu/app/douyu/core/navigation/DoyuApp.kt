@@ -87,6 +87,16 @@ fun DoyuApp() {
             composable(BottomTab.MESSAGE.route) { MessageListScreen(navController) }
             composable(BottomTab.PROFILE.route) { ProfileScreen(navController) }
             composable(AppRoute.LOGIN) { LoginScreen(navController) }
+            composable(
+                AppRoute.LOGIN_ROUTE,
+                arguments = listOf(navArgument("returnTo") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) {
+                LoginScreen(navController, it.arguments?.getString("returnTo"))
+            }
             composable(AppRoute.POST_CREATE) { PostCreateScreen(navController) }
             composable(
                 AppRoute.POST_DETAIL,

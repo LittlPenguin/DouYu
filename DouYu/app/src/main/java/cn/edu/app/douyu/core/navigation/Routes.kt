@@ -1,5 +1,8 @@
 package cn.edu.app.douyu.core.navigation
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 enum class BottomTab(
     val route: String, val label: String
 ) {
@@ -16,6 +19,7 @@ enum class BottomTab(
 object AppRoute {
     const val SPLASH = "splash"
     const val LOGIN = "login"
+    const val LOGIN_ROUTE = "login_return?returnTo={returnTo}"
     const val POST_DETAIL = "post/{postId}"
     const val POST_CREATE = "post_create"
     const val IMAGE_SELECT = "image_select"
@@ -38,6 +42,7 @@ object AppRoute {
     val allRoutes = listOf(
         SPLASH,
         LOGIN,
+        LOGIN_ROUTE,
         POST_DETAIL,
         POST_CREATE,
         IMAGE_SELECT,
@@ -57,6 +62,13 @@ object AppRoute {
         MY_ORDERS,
         SETTINGS
     ) + BottomTab.entries.map { it.route }
+
+    fun login(returnTo: String): String {
+        val encodedReturnTo = URLEncoder
+            .encode(returnTo, StandardCharsets.UTF_8.name())
+            .replace("+", "%20")
+        return "login_return?returnTo=$encodedReturnTo"
+    }
 
     fun postDetail(postId: String) = "post/$postId"
     fun aiParams(uploadedFileId: String) = "ai_params/$uploadedFileId"

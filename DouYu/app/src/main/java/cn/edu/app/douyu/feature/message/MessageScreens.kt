@@ -33,6 +33,7 @@ import cn.edu.app.douyu.core.model.Conversation
 import cn.edu.app.douyu.core.model.NotificationMessage
 import cn.edu.app.douyu.core.model.NotificationType
 import cn.edu.app.douyu.core.navigation.AppRoute
+import cn.edu.app.douyu.core.navigation.BottomTab
 import cn.edu.app.douyu.core.network.PageResponse
 import cn.edu.app.douyu.core.ui.*
 import cn.edu.app.douyu.ui.theme.*
@@ -391,7 +392,7 @@ private fun MessageLoginPrompt(navController: NavHostController?) {
         Spacer(Modifier.height(18.dp))
         DoyuPrimaryButton(
             "去登录",
-            onClick = { navController?.navigate(AppRoute.LOGIN) },
+            onClick = { navController?.navigate(AppRoute.login(BottomTab.MESSAGE.route)) },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(16.dp))

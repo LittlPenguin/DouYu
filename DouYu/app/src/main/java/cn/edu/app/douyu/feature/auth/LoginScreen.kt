@@ -9,21 +9,52 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.model.SmsCodeRequest
 import cn.edu.app.douyu.core.model.SmsLoginRequest
+import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.navigation.BottomTab
 import cn.edu.app.douyu.core.ui.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private fun isValidPhone(phone: String): Boolean {
     return phone.matches(Regex("^1[3-9]\\d{9}$"))
 }
 
+fun loginSuccessRoute(returnTo: String?): String = returnTo ?: BottomTab.PROFILE.route
+
+private fun isBottomTabRoute(route: String): Boolean = BottomTab.entries.any { it.route == route }
+
+data class LoginNavigationSpec(
+    val targetRoute: String,
+    val resetBottomTabStack: Boolean,
+    val popUpToRoute: String?
+)
+
+fun loginNavigationSpec(returnTo: String?): LoginNavigationSpec {
+    val targetRoute = loginSuccessRoute(returnTo)
+    return if (isBottomTabRoute(targetRoute)) {
+        LoginNavigationSpec(
+            targetRoute = targetRoute,
+            resetBottomTabStack = true,
+            popUpToRoute = null
+        )
+    } else {
+        LoginNavigationSpec(
+            targetRoute = targetRoute,
+            resetBottomTabStack = false,
+            popUpToRoute = if (returnTo.isNullOrBlank()) AppRoute.LOGIN else AppRoute.LOGIN_ROUTE
+        )
+    }
+}
+
 @Composable
-fun LoginScreen(navController: NavHostController) {
-    LoginScreenContent(navController)
+fun LoginScreen(navController: NavHostController, returnTo: String? = null) {
+    LoginScreenContent(navController, returnTo)
 }
 
 @Preview
@@ -33,7 +64,7 @@ private fun LoginScreenPreview() {
 }
 
 @Composable
-fun LoginScreenContent(navController: NavHostController?) {
+fun LoginScreenContent(navController: NavHostController?, returnTo: String? = null) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var phone by remember { mutableStateOf("") }
@@ -116,8 +147,21 @@ fun LoginScreenContent(navController: NavHostController?) {
                                         SmsLoginRequest(phone, code)
                                     )
                                 }.onSuccess {
-                                    navController?.navigate(BottomTab.PROFILE.route) {
-                                        popUpTo(BottomTab.PROFILE.route) { inclusive = true }
+                                    val controller = navController
+                                    val navigation = loginNavigationSpec(returnTo)
+                                    withContext(Dispatchers.Main.immediate) {
+                                        controller?.navigate(navigation.targetRoute) {
+                                            if (navigation.resetBottomTabStack) {
+                                                popUpTo(controller.graph.findStartDestination().id) {
+                                                    saveState = false
+                                                }
+                                            } else {
+                                                popUpTo(navigation.popUpToRoute ?: AppRoute.LOGIN) {
+                                                    inclusive = true
+                                                }
+                                            }
+                                            launchSingleTop = true
+                                        }
                                     }
                                 }.onFailure {
                                     error = ErrorMessages.fromException(it as Exception)
