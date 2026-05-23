@@ -626,6 +626,22 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void productQaSeedDataCoversSelfOperatedPlayerSecondHandAndCustomService() throws Exception {
+        String content = mockMvc.perform(get("/api/v1/products"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode products = objectMapper.readTree(content);
+        JsonNode items = products.at("/data/items");
+
+        org.assertj.core.api.Assertions.assertThat(items)
+                .anySatisfy(item -> org.assertj.core.api.Assertions.assertThat(item.path("type").asText()).isEqualTo("SELF_OPERATED"))
+                .anySatisfy(item -> org.assertj.core.api.Assertions.assertThat(item.path("type").asText()).isEqualTo("PLAYER_SECOND_HAND"))
+                .anySatisfy(item -> org.assertj.core.api.Assertions.assertThat(item.path("type").asText()).isEqualTo("PLAYER_CUSTOM_SERVICE"));
+    }
+
+    @Test
     void openApiDocsContainAllEndpointTags() throws Exception {
         String docs = mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())

@@ -50,6 +50,7 @@
 - App Shell、消息页和我的页已完成第二轮代码基线，TopBar、Search、消息未登录态和退出登录返回已列为视觉 QA 对象；仍需要 360dp、390dp、430dp 手工验收。
 - 第三轮商城收敛的代码验收以主 Agent 实际命令和真机/模拟器结果为准；文档侧当前只定义商城 UI/API 基线和 QA 清单，不能替代 Android 构建或设备 smoke 结论。
 - 已定位 ADB 路径 `D:\AndroidChace\platform-tools\adb.exe`；第三轮验收以主 Agent 实际 `adb devices`、安装和 smoke 输出为准。无在线模拟器/真机时，截图或设备 QA 不能写成通过。
+- 本地 QA 种子商品已覆盖 `SELF_OPERATED`、`PLAYER_SECOND_HAND`、`PLAYER_CUSTOM_SERVICE`；真机商城 smoke 已验证玩家二手 / 定制商品只展示信息并禁用标准购物车。
 - Android debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在 `.env.emulator` / `.env.phone` 模板间切换并重新构建；登录态仍使用内存 TokenStore。
 - Android Studio / Gradle JVM 如果误选到 VS Code Red Hat Java 扩展内置精简 JRE，会触发 `jlink.exe does not exist`；本地构建必须按协作规范选择完整 JDK/JBR 21。
 - 社区、消息和我的样板链路已开始消除空点击和假成功；第三轮继续治理商城空点击、假成功 Toast、弱占位、误导性默认地址和误导性支付成功。
