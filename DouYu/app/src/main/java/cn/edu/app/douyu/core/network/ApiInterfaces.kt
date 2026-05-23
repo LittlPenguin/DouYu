@@ -127,16 +127,16 @@ interface CartApi {
     suspend fun cart(): ApiResponse<Cart>
 
     @POST("/api/v1/cart/items")
-    suspend fun addItem(@Body request: AddCartItemRequest): ApiResponse<Cart>
+    suspend fun addItem(@Body request: AddCartItemRequest): ApiResponse<CartMutationResult>
 
     @PATCH("/api/v1/cart/items/{itemId}")
     suspend fun updateItem(
         @Path("itemId") itemId: String,
         @Body request: UpdateCartItemRequest
-    ): ApiResponse<Cart>
+    ): ApiResponse<CartMutationResult>
 
     @DELETE("/api/v1/cart/items/{itemId}")
-    suspend fun removeItem(@Path("itemId") itemId: String): ApiResponse<Cart>
+    suspend fun removeItem(@Path("itemId") itemId: String): ApiResponse<CartMutationResult>
 }
 
 interface OrderApi {

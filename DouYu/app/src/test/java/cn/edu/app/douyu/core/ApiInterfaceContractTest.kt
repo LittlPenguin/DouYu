@@ -105,6 +105,75 @@ class ApiInterfaceContractTest {
     }
 
     @Test
+    fun cartMutationDtosMatchBackendWriteResponses() {
+        val addResponse = DoyuJson.decodeFromString<ApiResponse<CartMutationResult>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": { "itemId": "cart_1", "quantity": 2 },
+              "traceId": "trace_cart_add"
+            }
+            """.trimIndent()
+        )
+        assertEquals("cart_1", addResponse.data?.itemId)
+        assertEquals(2, addResponse.data?.quantity)
+        assertNull(addResponse.data?.deleted)
+
+        val deleteResponse = DoyuJson.decodeFromString<ApiResponse<CartMutationResult>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": { "deleted": true },
+              "traceId": "trace_cart_delete"
+            }
+            """.trimIndent()
+        )
+        assertEquals(true, deleteResponse.data?.deleted)
+        assertNull(deleteResponse.data?.itemId)
+    }
+
+    @Test
+    fun cartDtoAcceptsBackendProductSummary() {
+        val cartResponse = DoyuJson.decodeFromString<ApiResponse<Cart>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": {
+                "items": [
+                  {
+                    "itemId": "cart_1",
+                    "skuId": "sku_bead_red",
+                    "sku": {
+                      "skuId": "sku_bead_red",
+                      "productId": "product_bead_red",
+                      "specName": "2.6mm",
+                      "priceCent": 1200,
+                      "stock": 100,
+                      "status": "ON_SALE"
+                    },
+                    "productId": "product_bead_red",
+                    "product": {
+                      "title": "2.6mm 豆子豆沙红",
+                      "imageUrl": ""
+                    },
+                    "quantity": 2
+                  }
+                ]
+              },
+              "traceId": "trace_cart"
+            }
+            """.trimIndent()
+        )
+        val item = cartResponse.data?.items?.single()
+        assertEquals("cart_1", item?.itemId)
+        assertEquals("2.6mm 豆子豆沙红", item?.product?.title)
+        assertEquals(2400, cartResponse.data?.payableAmountCent)
+    }
+
+    @Test
     fun apiErrorCodesMapToExplicitUiStates() {
         assertEquals(
             UiState.RequireLogin,

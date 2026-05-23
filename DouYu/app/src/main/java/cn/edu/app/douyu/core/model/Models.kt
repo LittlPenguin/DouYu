@@ -317,12 +317,19 @@ data class Product(
 }
 
 @Serializable
+data class CartProductSummary(
+    val title: String = "",
+    val imageUrl: String? = null,
+    val swatchColor: Long = 0
+)
+
+@Serializable
 data class CartItem(
     val itemId: String,
     val sku: ProductSku? = null,
     val quantity: Int,
     val productId: String? = null,
-    val product: Product? = null
+    val product: CartProductSummary? = null
 ) {
     val lineAmountCent: Int
         get() = (sku?.priceCent ?: 0) * quantity
@@ -335,6 +342,13 @@ data class Cart(
     val payableAmountCent: Int
         get() = items.sumOf { it.lineAmountCent }
 }
+
+@Serializable
+data class CartMutationResult(
+    val itemId: String? = null,
+    val quantity: Int? = null,
+    val deleted: Boolean? = null
+)
 
 @Serializable
 data class AddCartItemRequest(

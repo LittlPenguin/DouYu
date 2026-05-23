@@ -341,15 +341,27 @@
 
 - `itemId`：购物车项 ID。
 - `productId`：商品 ID。
-- `product`：商品摘要对象。
+- `product`：商品摘要对象，不是完整商品详情。
 - `skuId`：SKU ID。
 - `quantity`：数量。
+
+购物车商品摘要字段（联调口径）：
+
+- `title`：商品标题。
+- `imageUrl`：商品图片 URL，可为空。
 
 SKU 字段（联调口径）：
 
 - `skuId`：SKU ID。
 - `priceCent`：价格（分）。
 - `stock`：库存（`@SerialName("stock")`，客户端字段名为 `availableStock`）。
+
+购物车写接口响应字段（联调口径）：
+
+- `POST /cart/items` 返回变更结果 `{ itemId, quantity }`，不是完整 `Cart`。
+- `PATCH /cart/items/{itemId}` 返回变更结果 `{ itemId, quantity }`，不是完整 `Cart`。
+- `DELETE /cart/items/{itemId}` 返回变更结果 `{ deleted }`，不是完整 `Cart`。
+- Android 写入成功后必须重新请求 `GET /cart` 刷新完整购物车 UI，不得按写接口响应直接解析为完整购物车。
 
 ## 订单与支付接口
 

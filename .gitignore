@@ -50,3 +50,4 @@ venv/
 *.log
 tmp/
 temp/
+.qa-output/

@@ -73,14 +73,20 @@ class RealCommerceRepository(
     override fun product(productId: String): Product = apiCall { productApi.product(productId) }
     override fun cart(): Cart = apiCall { cartApi.cart() }
 
-    override fun addItemToCart(productId: String, skuId: String, quantity: Int): Cart =
-        apiCall { cartApi.addItem(AddCartItemRequest(productId, skuId, quantity)) }
+    override fun addItemToCart(productId: String, skuId: String, quantity: Int): Cart {
+        apiCall<CartMutationResult> { cartApi.addItem(AddCartItemRequest(productId, skuId, quantity)) }
+        return cart()
+    }
 
-    override fun updateCartItem(itemId: String, quantity: Int): Cart =
-        apiCall { cartApi.updateItem(itemId, UpdateCartItemRequest(quantity)) }
+    override fun updateCartItem(itemId: String, quantity: Int): Cart {
+        apiCall<CartMutationResult> { cartApi.updateItem(itemId, UpdateCartItemRequest(quantity)) }
+        return cart()
+    }
 
-    override fun removeCartItem(itemId: String): Cart =
-        apiCall { cartApi.removeItem(itemId) }
+    override fun removeCartItem(itemId: String): Cart {
+        apiCall<CartMutationResult> { cartApi.removeItem(itemId) }
+        return cart()
+    }
 
     override fun orders(): PageResponse<Order> = apiCall { orderApi.orders() }
 

@@ -291,7 +291,10 @@ object MockData {
             CartItem(
                 itemId = "cart_item_${index + 1}",
                 productId = product.productId,
-                product = product,
+                product = CartProductSummary(
+                    title = product.title,
+                    swatchColor = product.swatchColor
+                ),
                 sku = sku,
                 quantity = index + 1
             )
@@ -442,7 +445,10 @@ class MockCommerceRepository : CommerceRepository {
         val newItem = CartItem(
             itemId = "cart_item_new_${System.currentTimeMillis()}",
             productId = productId,
-            product = product,
+            product = CartProductSummary(
+                title = product?.title.orEmpty(),
+                swatchColor = product?.swatchColor ?: 0
+            ),
             sku = sku,
             quantity = quantity
         )

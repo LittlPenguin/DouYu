@@ -130,6 +130,8 @@ NavHost 页面切换动画时长为 150ms（`tween(TRANSITION_DURATION)`），�
 - 空车、加载失败、库存不足、数量修改、删除购物车项、结算入口都必须有明确状态。
 - 购物车只容纳自营商品；发现玩家商品类型时，应阻断加入并展示明确提示。
 - 库存边界以服务端返回为准，客户端不能仅靠本地数量判断最终可买。
+- `GET /cart` 返回的 `product` 是购物车商品摘要，只包含标题和图片等展示字段，不按完整 `Product` 解析。
+- `POST/PATCH/DELETE /cart/items` 返回的是变更结果；`RealCommerceRepository` 写入成功后必须重新调用 `GET /cart` 刷新完整购物车状态。
 
 订单确认：
 
