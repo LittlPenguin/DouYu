@@ -783,7 +783,7 @@ private fun OrderConfirmScreenContent(navController: NavHostController?) {
                     }
                     DoyuCard {
                         Text("支付规则", style = MaterialTheme.typography.titleMedium)
-                        Text("当前不拉起微信/支付宝，也不展示真实支付成功。后续只展示联调支付单和服务端确认状态。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                        Text("当前不拉起微信/支付宝，也不展示渠道完成态。仅展示联调支付单和服务端确认状态。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
                     DoyuPrimaryButton(
                         "暂不能下单 · ${formatPriceCent(cart.payableAmountCent)}",

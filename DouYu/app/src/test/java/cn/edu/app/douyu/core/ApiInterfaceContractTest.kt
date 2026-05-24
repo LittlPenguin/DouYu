@@ -45,6 +45,7 @@ class ApiInterfaceContractTest {
         assertPost(method<OrderApi>("createOrder"), "/api/v1/orders")
         assertGet(method<OrderApi>("orders"), "/api/v1/orders")
         assertPost(method<OrderApi>("cancelOrder"), "/api/v1/orders/{orderId}/cancel")
+        assertPost(method<PaymentApi>("createPayment"), "/api/v1/payments")
         assertGet(method<PaymentApi>("payment"), "/api/v1/payments/{paymentId}")
 
         assertPost(method<MessageApi>("markNotificationsRead"), "/api/v1/messages/notifications/read")
@@ -171,6 +172,43 @@ class ApiInterfaceContractTest {
         assertEquals("cart_1", item?.itemId)
         assertEquals("2.6mm 豆子豆沙红", item?.product?.title)
         assertEquals(2400, cartResponse.data?.payableAmountCent)
+    }
+
+    @Test
+    fun orderAndPaymentDtosMatchCommerceBoundaryContract() {
+        val orderRequestJson = DoyuJson.encodeToString(CreateOrderRequest(listOf("cart_1", "cart_2"), "addr_test_1"))
+        assertTrue(orderRequestJson.contains("\"itemIds\":[\"cart_1\",\"cart_2\"]"))
+        assertTrue(orderRequestJson.contains("\"addressId\":\"addr_test_1\""))
+        assertTrue(!orderRequestJson.contains("\"remark\""))
+
+        val paymentResponse = DoyuJson.decodeFromString<ApiResponse<Payment>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": {
+                "paymentId": "pay_1",
+                "orderId": "ord_1",
+                "channel": "WECHAT_APP",
+                "status": "CREATED",
+                "amountCent": 2400,
+                "payParams": { "provider": "STUB", "payload": "stub-pay-payload-pay_1" },
+                "channelTradeNo": "",
+                "paidAt": null
+              },
+              "traceId": "trace_payment"
+            }
+            """.trimIndent()
+        )
+
+        val payment = paymentResponse.data
+        assertEquals("pay_1", payment?.paymentId)
+        assertEquals("ord_1", payment?.orderId)
+        assertEquals(PaymentChannel.WECHAT_APP, payment?.channel)
+        assertEquals(PaymentStatus.CREATED, payment?.status)
+        assertEquals(2400, payment?.amountCent)
+        assertEquals("STUB", payment?.payParams?.get("provider"))
+        assertTrue(PaymentStatus.entries.map { it.name }.containsAll(listOf("CREATED", "PROCESSING", "SUCCEEDED", "FAILED", "CLOSED")))
     }
 
     @Test

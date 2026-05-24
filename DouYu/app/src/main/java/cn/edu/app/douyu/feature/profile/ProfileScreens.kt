@@ -214,7 +214,7 @@ private fun ProfileDashboardContent(
             ),
             ProfileActionSpec(
                 title = "订单记录",
-                subtitle = "只展示服务端订单状态，不代表真实支付成功",
+                subtitle = "只展示服务端订单和联调支付状态",
                 icon = Icons.AutoMirrored.Filled.ReceiptLong,
                 iconBgColor = LightTertiaryContainer,
                 iconColor = LightTertiary,

@@ -229,6 +229,16 @@ class DouyuBackendContractTests {
                 {"orderId":"%s","channel":"WECHAT_APP"}
                 """.formatted(orderId));
         String paymentId = payment.at("/data/paymentId").asText();
+        org.assertj.core.api.Assertions.assertThat(payment.at("/data/orderId").asText()).isEqualTo(orderId);
+        org.assertj.core.api.Assertions.assertThat(payment.at("/data/status").asText()).isEqualTo("CREATED");
+        org.assertj.core.api.Assertions.assertThat(payment.at("/data/amountCent").asInt()).isEqualTo(first.at("/data/payableAmountCent").asInt());
+
+        mockMvc.perform(get("/api/v1/payments/{paymentId}", paymentId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.paymentId", equalTo(paymentId)))
+                .andExpect(jsonPath("$.data.status", equalTo("CREATED")))
+                .andExpect(jsonPath("$.data.amountCent", equalTo(first.at("/data/payableAmountCent").asInt())));
 
         mockMvc.perform(post("/api/v1/payments/callbacks/wechat")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -255,6 +265,35 @@ class DouyuBackendContractTests {
                                 """.formatted(orderId, paymentId)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code", equalTo("CONFLICT")));
+    }
+
+    @Test
+    void playerProductCannotEnterStandardCartOrOrder() throws Exception {
+        String token = login("13800000022", "AGE_18_PLUS");
+
+        mockMvc.perform(post("/api/v1/cart/items")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"skuId":"sku_player_second_hand_kit","quantity":1}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code", equalTo("CONFLICT")));
+
+        JsonNode selfAdd = postJsonWithToken("/api/v1/cart/items", token, """
+                {"skuId":"sku_bead_white","quantity":1}
+                """);
+        String cartItemId = selfAdd.at("/data/itemId").asText();
+
+        mockMvc.perform(post("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .header("Idempotency-Key", "order-player-boundary")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"itemIds":["missing_player_cart_item","%s"],"addressId":"addr_test_1"}
+                                """.formatted(cartItemId)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
     }
 
     @Test
