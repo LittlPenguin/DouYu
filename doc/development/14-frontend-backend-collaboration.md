@@ -218,9 +218,24 @@ cd D:\Studio\SpellBean\DouYu
 当前状态：
 
 - 开发环境使用 Local OSS Provider，本地存储文件。
+- 后端已提供 Aliyun OSS Provider 骨架，可在本机私有 `.env` 中把 `DOUYU_OSS_PROVIDER` 从 `local` 切到 `aliyun`；Android 不接 Aliyun SDK，也不保存 OSS 密钥。
 - BeadPatternEngine 已能生成预览图、色号图、材料清单和 PDF 文件。
 - AI Provider 抽象、Router、Cache 已存在。
 - `AliyunBailianProvider` 仍是占位实现，尚未完成真实阿里云百炼/通义万相 API 调用。
+
+Aliyun OSS 本机私有配置示例：
+
+```env
+DOUYU_OSS_PROVIDER=aliyun
+DOUYU_ALIYUN_OSS_ENDPOINT=https://oss-cn-hangzhou.aliyuncs.com
+DOUYU_ALIYUN_OSS_REGION=cn-hangzhou
+DOUYU_ALIYUN_OSS_BUCKET=<your-dev-bucket>
+DOUYU_ALIYUN_OSS_ACCESS_KEY_ID=<local-only>
+DOUYU_ALIYUN_OSS_ACCESS_KEY_SECRET=<local-only>
+DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL=https://<bucket-or-cdn-domain>
+```
+
+切换 Provider 后必须重启后端。若 Android debug base URL 或 HTTP 白名单也发生变化，还必须重新构建并安装 debug 包。Aliyun OSS Bucket 需要允许 Android 对预签名 URL 发起 `PUT`，并在 CORS 中放行 `PUT` 和 `Content-Type` 请求头；真实生产环境的 STS、最小权限、防盗链、CDN、图片审核和缩略图处理仍是后续生产化任务。
 
 ## 订单和支付链路
 
@@ -266,6 +281,7 @@ Android 未登录状态应展示登录引导或 guest 占位，不应直接显�
 | 模拟器连不上后端 | `.env` 是否由 `.env.emulator` 复制而来；`DOUYU_ANDROID_API_BASE_URL` 是否为 `http://10.0.2.2:8081/`；后端是否已启动在 `8081`；改 `.env` 后是否重新构建 debug 包 |
 | 真机连不上后端 | `.env` 是否由 `.env.phone` 复制而来；IP 是否为电脑当前 Wi-Fi/LAN IPv4；手机和电脑是否同一局域网；Windows 防火墙是否放行 `8081`；后端 `DOUYU_SERVER_ADDRESS` 是否为 `0.0.0.0` |
 | 图片、上传或预览 URL 不通 | `DOUYU_STORAGE_BASE_URL` 是否与当前运行目标一致：模拟器用 `http://10.0.2.2:8081`，真机用 `http://<电脑 Wi-Fi IP>:8081`；后端是否在切换 `.env` 后重启 |
+| Aliyun OSS 预签名上传失败 | `.env` 是否设置 `DOUYU_OSS_PROVIDER=aliyun`；endpoint、region、bucket、public base URL 是否匹配；AccessKey 是否只在本机私有 `.env`；Bucket CORS 是否允许 Android `PUT` 和 `Content-Type` |
 | `cleartext traffic not permitted` | 是否安装 debug 包；`DOUYU_ANDROID_CLEARTEXT_HOSTS` 是否包含当前 host，且只写 host，不写协议和端口；改 `.env` 后是否重新构建 debug 包 |
 | 改 `.env` 后 App 没生效 | Android `BuildConfig.API_BASE_URL` 是构建期写入；必须重新构建并安装 debug 包。后端 Local OSS URL 也要重启后端才会更新 |
 | `jlink.exe does not exist` | Gradle JVM 选到了 VS Code Red Hat Java 扩展内置 JRE；改为 Android Studio JBR 或完整 JDK 21 后重新运行 `.\gradlew.bat --version` 和 `:app:assembleDebug` |

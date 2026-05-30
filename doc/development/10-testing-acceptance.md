@@ -493,8 +493,24 @@ Android 验收：
 
 - 上传后审核拒绝。
 - 私有文件不可公开访问。
-- 真实对象存储验真。
+- 真实对象存储验真：第五轮前置已补 Aliyun OSS Provider 单元测试和配置选择测试，但尚未用真实 Bucket / AccessKey / CORS 做端到端上传 smoke。
 - 病毒扫描、EXIF 清理和缩略图处理。
+
+### Aliyun OSS Provider 前置验收
+
+第五轮前置只验收后端 Provider 骨架，不迁移 seed 图片，不改变 Android 上传 API。
+
+已覆盖：
+
+- `AliyunOssProviderTest`：生成 PUT 预签名 URL，返回 `Content-Type` 上传头；`publicBaseUrl + fileKey` 会按路径段编码。
+- `OssProviderConfigTest`：`douyu.oss.provider` 缺省走 Local OSS，`stub` 可用于测试，`aliyun` 在配置齐全时可创建 Aliyun OSS Provider。
+- `mvn test`：后端全量测试必须继续通过，确保 `/api/v1/uploads/presign` 和 `/api/v1/uploads/confirm` 契约不变。
+
+未关闭：
+
+- 真实 Aliyun Bucket 端到端上传。
+- Bucket CORS、最小权限 RAM / STS、CDN、防盗链、图片审核、病毒扫描、EXIF 清理和缩略图处理。
+- 第四轮 seed assets 迁移到云对象存储。
 
 ### 商城支付测试
 

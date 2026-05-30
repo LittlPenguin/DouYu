@@ -9,7 +9,8 @@ public record DouyuProperties(
         Jwt jwt,
         Sms sms,
         Admin admin,
-        Storage storage
+        Storage storage,
+        Oss oss
 ) {
     public record Jwt(
             String issuer,
@@ -26,5 +27,18 @@ public record DouyuProperties(
     }
 
     public record Storage(String localPath, String baseUrl) {
+    }
+
+    public record Oss(String provider, Aliyun aliyun) {
+    }
+
+    public record Aliyun(
+            String endpoint,
+            String region,
+            String bucket,
+            String accessKeyId,
+            String accessKeySecret,
+            String publicBaseUrl
+    ) {
     }
 }

@@ -5,19 +5,19 @@
 
 ## 阶段结论
 
-豆屿 Doyu 当前进入 **第四轮登录态持久化 + 常驻真实图文数据收敛阶段**。
+豆屿 Doyu 当前进入 **第五轮前置 Aliyun OSS Provider 最小闭环阶段**。
 
-第一轮已经把 **文档契约 + 登录/社区样板链路** 稳住：登录 + 社区接口以 `doc/development/05-api-contract.md` 为唯一契约源，社区 Feed、详情、发布、评论、点赞和收藏已作为可复制样板推进。第二轮已经把同一套 UI 方法推广到 App Shell、通用组件、消息页和我的页，形成 UI 统一基线。第三轮聚焦商城首页/商品列表、商品详情、购物车、订单确认、订单列表和支付单状态，商城主体验收已关闭为“可联调、边界清楚、不误导支付”的 MVP 链路。第四轮聚焦两个缺口：Android 登录态从重启即失效的临时令牌状态收敛到 DataStore 持久化；社区和商城常驻 seed 数据提供真实可渲染图文，避免商品卡、购物车和 Feed 长期依赖色块或空图占位。
+第一轮已经把 **文档契约 + 登录/社区样板链路** 稳住：登录 + 社区接口以 `doc/development/05-api-contract.md` 为唯一契约源，社区 Feed、详情、发布、评论、点赞和收藏已作为可复制样板推进。第二轮已经把同一套 UI 方法推广到 App Shell、通用组件、消息页和我的页，形成 UI 统一基线。第三轮聚焦商城首页/商品列表、商品详情、购物车、订单确认、订单列表和支付单状态，商城主体验收已关闭为“可联调、边界清楚、不误导支付”的 MVP 链路。第四轮把 Android 登录态从重启即失效的临时令牌状态收敛到 DataStore 持久化，并为社区和商城常驻 seed 数据提供真实可渲染图文。第五轮前置只补后端对象存储 Provider 切换骨架，让现有上传链路可通过 `.env` 从 Local OSS 切到 Aliyun OSS。
 
 本阶段默认策略：
 
 - 采用 **MVP 收敛**，不是全入口保留，也不是重做全部信息架构。
 - 第三轮商城 UI/API 主体路径记录为已关闭；后续仅保留多宽度视觉复查和生产化能力缺口。
-- 第四轮只聚焦登录态持久化 + 常驻真实图文数据：DataStore token 保存/恢复/刷新/清理、商品 `imageUrl`、帖子 `coverImageUrl`、购物车商品摘要图片、seed assets 和图片来源记录。
+- 第五轮前置只聚焦 Aliyun OSS Provider 最小闭环：`DOUYU_OSS_PROVIDER=local|stub|aliyun` 配置切换、Aliyun PUT 预签名、公开 URL 映射、配置测试和联调文档。
 - 登录 + 社区接口继续以 `doc/development/05-api-contract.md` 为唯一契约源。
 - 视觉参考使用 `doc/stitch_document_app_generator/` 下 Stitch 设计稿。
 - 最终 UI 权威规范仍沉淀到 `doc/development/11-ui-style-guide.md`。
-- 暂不做真实 AI Provider、真实微信/支付宝支付、生产合规上线、增强审核风控、完整地址管理、玩家交易完整闭环。
+- 暂不做真实 AI Provider、真实微信/支付宝支付、生产合规上线、增强审核风控、完整地址管理、玩家交易完整闭环；真实 Bucket 上传 smoke、STS/最小权限、CDN、防盗链、图片审核、缩略图和 seed assets 云迁移也不在第五轮前置内关闭。
 
 ## 功能完成度矩阵
 
@@ -48,7 +48,7 @@
 - 商城订单 / 支付边界已补契约测试：Android 锁定订单请求和支付响应 DTO，后端锁定订单幂等、支付单 `CREATED` 状态、金额一致和玩家商品不能进入标准购物车/标准订单。
 - 第三轮已登录真机 App 内路径已补证：购物车有商品态、订单确认地址缺口、我的订单入口和联调支付状态页均已在真机路径中验证；Android DTO/API 已对齐后端 `SELF_OPERATED`、对象型 `addressSnapshot` 和订单/支付写接口 `Idempotency-Key`。
 - Android 已将 `DoyuAppContainer` 切到 DataStore 启动 hydrate；单元测试已覆盖保存、hydrate 和 clear，2026-05-30 真机复测已确认登录后强杀重启仍保持登录态、退出登录后强杀重启不会恢复旧登录。
-- `AGENTS.md` 仍是仓库级有效约束入口；已同步第四轮阶段标题、ADB 真机调试前置规则、Agent Team 自动派发规则和 doc 职责映射。
+- `AGENTS.md` 仍是仓库级有效约束入口；已同步第五轮前置阶段标题、ADB 真机调试前置规则、Agent Team 自动派发规则和 doc 职责映射。
 
 ## 当前不能认为完成
 
@@ -79,7 +79,7 @@
 - 后端端口：`8081`。
 - PostgreSQL 宿主机端口：`5433`，容器内端口仍为 `5432`。
 - API 前缀：`/api/v1`。
-- 本地 OSS：开发环境使用 Local OSS Provider，生产仍需接入真实对象存储；第四轮 seed assets 只用于本地 QA/演示，必须记录图片来源、用途和关联商品/帖子。
+- 本地 OSS：开发环境默认使用 Local OSS Provider；第五轮前置已补 Aliyun OSS Provider 骨架，可通过本机私有 `.env` 启用，但真实 Bucket 端到端上传、CORS、STS/最小权限、CDN、防盗链、图片审核、病毒扫描、缩略图和 seed assets 云迁移仍未关闭。第四轮 seed assets 只用于本地 QA/演示，必须记录图片来源、用途和关联商品/帖子。
 - AI：自研拼豆算法已落地，视觉理解 Provider 仍需真实接入。
 - 支付：支付单和回调骨架已存在，真实微信/支付宝 SDK/API 未接入。
 
@@ -92,11 +92,18 @@
 - 不补完整玩家二手/定制交易闭环、担保、评价、纠纷、提现或卖家资质审核。
 - 不把玩家二手/定制商品接入标准购物车混单。
 - 不把地址管理写成本轮已完成；订单确认继续以地址缺口和禁用伪下单为边界。
-- 不新增后端公共 API；第四轮优先在已有 `/products`、`/cart`、`/posts/feed`、`/auth/*` 响应字段和 Android 本地持久化上收敛。
+- 不新增后端公共 API；第五轮前置只在已有上传抽象、Provider 配置和联调文档上收敛。
 
 ## 下一步优先级
 
-P0：第四轮登录态持久化 + 常驻真实图文数据
+P0：第五轮前置 Aliyun OSS Provider 最小闭环
+
+- 后端：`DOUYU_OSS_PROVIDER=local|stub|aliyun` 可选择对象存储 Provider；Aliyun Provider 只由后端持有 AccessKey，继续复用 `/uploads/presign -> PUT uploadUrl -> /uploads/confirm`。
+- 后端：Aliyun Provider 生成 PUT 预签名 URL，返回 Android 直传所需 `headers`，confirm 后返回 `publicBaseUrl + fileKey`。
+- 文档：`.env.example` 只保留 Aliyun 占位变量，不提交真实 AccessKey；联调文档写清 Bucket CORS 和 Provider 切换后重启后端。
+- 未完成：真实 Bucket 上传 smoke、STS/最小权限、CDN、防盗链、图片审核、缩略图和 seed assets 云迁移。
+
+P1：第四轮登录态持久化 + 常驻真实图文数据回归
 
 - Android：把 `DoyuAppContainer` 的 tokenStore 接入 DataStore，启动时 hydrate；登录保存 access/refresh token，401 refresh 成功后更新 DataStore，退出登录和鉴权过期时清理 DataStore。
 - Android：补登录态单元测试和真机 smoke，覆盖登录后重启 App 仍识别登录态、退出后重启不恢复登录态、refresh token 更新后持久化。
@@ -105,19 +112,19 @@ P0：第四轮登录态持久化 + 常驻真实图文数据
 - Android：商品卡、商品详情、购物车项和社区 Feed 优先渲染 `imageUrl` / `coverImageUrl`，图片为空或加载失败时才回退到现有 swatch/占位视觉。
 - QA：验收清单必须同时包含 Android 单测/构建、后端测试/API smoke、真机重启登录态与图文渲染 smoke；无在线设备时不得把真机 QA 写成通过。
 
-P1：第三轮商城收口回归
+P2：第三轮商城收口回归
 
 - 保留第三轮商城搜索/分类、自营加购、玩家商品禁用标准购物车、订单确认地址缺口、订单列表和联调支付状态回归。
 - 后续多宽度 QA：在 360dp、390dp、430dp 模拟器竖屏下复查商城列表、详情、购物车、订单确认和支付状态页不挤压、不重叠；未跑前不能写成通过。
 
-P2：保留并复查第二轮 UI 统一基线
+P3：保留并复查第二轮 UI 统一基线
 
 - 复查 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、FAB、卡片、按钮、Chip、Search、加载/空/错误/未登录状态在主要页面的表现。
 - 手工验收消息页：通知/私信 Tab、列表密度、未读状态、空/错/未登录状态；私信发送未闭环时禁用或明确边界。
 - 手工验收退出登录返回：退出后返回路径明确，受保护页面回到未登录态或登录引导。
 - 手工验收我的页：个人资产中心结构、中文化、卡片层级、未闭环入口隐藏/禁用/明确开发态。
 
-P3：保留并复查第一轮登录 + 社区基线
+P4：保留并复查第一轮登录 + 社区基线
 
 - 保持 `05-api-contract.md`、后端 Controller/DTO、Android DTO/Repository、UI 和测试一致。
 - 登录继续传 `ageGroup=AGE_18_PLUS`，登录响应用户字段使用 `avatarUrl`。

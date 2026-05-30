@@ -1,7 +1,7 @@
 package cn.edu.app.douyu.server.upload;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,7 +17,7 @@ import java.nio.file.Paths;
  * 接收客户端上传的文件并存储到本地 temp 目录。
  */
 @RestController
-@Profile("dev")
+@ConditionalOnProperty(prefix = "douyu.oss", name = "provider", havingValue = "local", matchIfMissing = true)
 public class LocalOssUploadController {
 
     private final Path uploadDir;

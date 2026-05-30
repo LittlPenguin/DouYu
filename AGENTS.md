@@ -6,16 +6,17 @@
 
 ## 当前阶段
 
-当前项目处于 **第四轮登录态持久化 + 常驻真实图文数据收敛阶段**。
+当前项目处于 **第五轮前置 Aliyun OSS Provider 最小闭环阶段**。
 
 阶段目标：
 
-- 在第一轮登录 + 社区契约样板、第二轮 App Shell / 消息 / 我的 UI 统一基线、第三轮商城 UI/API 主体链路验收关闭之后，继续收口登录态持久化和常驻真实图文数据。
+- 在第一轮登录 + 社区契约样板、第二轮 App Shell / 消息 / 我的 UI 统一基线、第三轮商城 UI/API 主体链路验收关闭、第四轮登录态持久化和常驻真实图文数据收敛之后，补齐后端对象存储 Provider 切换骨架。
 - 按 `doc/stitch_document_app_generator/` 的 Stitch 设计探索稿和 `doc/development/11-ui-style-guide.md` 统一 Android UI 口径。
 - 以 `doc/development/11-ui-style-guide.md` 作为唯一 UI 权威规范。
 - 以 `doc/development/05-api-contract.md` 作为接口契约源；登录 + 社区第一轮样板链路继续严格追该文档。
-- 把 Android 登录 token 从纯内存状态推进到 DataStore 持久化，并明确重启 App 后的登录态恢复、刷新和退出清理验收口径。
-- 让社区 Feed 和商城常驻种子数据具备真实可渲染图片字段：商品 `imageUrl`、帖子 `coverImageUrl`、购物车商品摘要图片和本地 seed assets 来源记录。
+- 保持 Android 登录态 DataStore 持久化、社区/商城真实图文 seed、第三轮商城订单/支付边界不回退。
+- 让后端 OSS Provider 可通过 `.env` 在 `local`、`stub`、`aliyun` 间切换；默认开发仍走 Local OSS，测试走 Stub OSS。
+- Aliyun OSS 只由后端持有 AccessKey，继续复用现有 `/api/v1/uploads/presign -> PUT uploadUrl -> /uploads/confirm` 流程，不新增公共 API。
 - 继续优先消除空点击、假成功 Toast、误导性支付、误导性合规入口和半成品功能暴露。
 
 本阶段不做：
@@ -26,7 +27,8 @@
 - 不补齐备案、隐私政策、用户协议、SDK 清单、版权投诉等生产合规材料。
 - 不补完整玩家二手/定制交易闭环、担保、评价、纠纷、提现或卖家资质审核。
 - 不把地址管理写成本轮已完成；订单确认仍只能清楚表达地址缺口。
-- 不新增后端公共 API；第四轮优先在已有 `/api/v1` 响应字段、seed 数据和 Android DTO/UI 上收敛。
+- 不把 Aliyun OSS Provider 骨架写成生产对象存储已完成；真实 Bucket 端到端上传、CORS、STS/最小权限、CDN、防盗链、图片审核、病毒扫描、缩略图和 seed assets 云迁移仍是后续任务。
+- 不新增后端公共 API；第五轮前置只在已有上传抽象和配置层收敛。
 
 阶段状态以 `doc/development/current-status.md` 为准。
 如果本节与 `doc/development/current-status.md` 冲突，以 `current-status.md` 和当前代码为准，并优先修正文档口径。
@@ -160,7 +162,7 @@ cd DouYu
 - 目录：`DouYu/`。
 - 技术栈：Kotlin、Jetpack Compose、单 Activity、Navigation Compose、Retrofit、OkHttp、Kotlinx Serialization、Coil、CameraX、Photo Picker。
 - 当前依赖装配：`DoyuAppContainer` 服务定位器；MVVM 是目标架构，不代表所有页面已完全 ViewModel 化。
-- 当前问题：debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在模拟器/真机模板间切换并重新构建；第四轮正在把 TokenStore 从内存实现收敛到 DataStore 登录态持久化，并补齐商品/帖子真实图片字段；多个页面仍有半成品 UI 和未接 Repository 的功能。
+- 当前问题：debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在模拟器/真机模板间切换并重新构建；TokenStore 已收敛到 DataStore 登录态持久化，商品/帖子真实图片字段已补齐；多个页面仍有半成品 UI 和未接 Repository 的功能。
 - UI 权威规范：`doc/development/11-ui-style-guide.md`。
 - Stitch 设计稿只作为视觉参考：`doc/stitch_document_app_generator/`。
 
@@ -178,7 +180,7 @@ cd DouYu
 ### 外部服务状态
 
 - 短信验证码为 Stub，开发环境固定 `123456`。
-- 开发环境对象存储使用 Local OSS Provider；生产仍需接真实对象存储。
+- 开发环境对象存储默认使用 Local OSS Provider；Aliyun OSS Provider 骨架可通过本机私有 `.env` 启用，但客户端不得保存 OSS 密钥，生产仍需补 STS/最小权限、CORS、CDN、防盗链、审核、缩略图和运维监控。
 - AI 真实视觉 Provider 未完成；客户端不得直连模型供应商。
 - 微信/支付宝支付仍是 Stub / 联调骨架；不能用于真实收款、退款或对账。
 

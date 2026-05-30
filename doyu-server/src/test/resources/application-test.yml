@@ -28,3 +28,5 @@ douyu:
   storage:
     local-path: ./target/doyu-test-storage
     base-url: http://localhost:8081
+  oss:
+    provider: stub

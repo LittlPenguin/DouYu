@@ -43,6 +43,13 @@ douyu:
     bootstrap-password: ${DOUYU_ADMIN_BOOTSTRAP_PASSWORD:admin123}
   oss:
     provider: ${DOUYU_OSS_PROVIDER:local}
+    aliyun:
+      endpoint: ${DOUYU_ALIYUN_OSS_ENDPOINT:}
+      region: ${DOUYU_ALIYUN_OSS_REGION:}
+      bucket: ${DOUYU_ALIYUN_OSS_BUCKET:}
+      access-key-id: ${DOUYU_ALIYUN_OSS_ACCESS_KEY_ID:}
+      access-key-secret: ${DOUYU_ALIYUN_OSS_ACCESS_KEY_SECRET:}
+      public-base-url: ${DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL:}
   ai:
     provider:
       name: ${DOUYU_AI_PROVIDER:stub}

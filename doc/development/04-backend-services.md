@@ -112,7 +112,7 @@ Spring Security 配置位于 `common/SecurityConfig.java`。
 
 当前开发环境：
 
-- 使用 Local OSS Provider。
+- 默认使用 Local OSS Provider；`douyu.oss.provider` 默认值为 `local`。
 - 后端签发上传地址。
 - Android 直传文件。
 - 后端 confirm 后生成 `FileAsset`。
@@ -120,11 +120,15 @@ Spring Security 配置位于 `common/SecurityConfig.java`。
 - 第四轮新增本地 seed assets：`src/main/resources/static/seed/` 下提交社区和商城演示图片，`ATTRIBUTION.md` 记录来源和许可说明；这些图片只用于本地 QA/演示，不代表生产对象存储或真实用户上传链路。
 - 第四轮商品和帖子 seed 数据通过 Flyway 字段 `products.image_url`、`posts.cover_image_url` 暴露图片 URL。商品列表/详情返回 `imageUrl`，购物车商品摘要返回 `product.imageUrl`，社区 Feed/详情返回 `coverImageUrl`。
 
-生产目标：
+第五轮前置能力：
 
-- 接入真实对象存储，例如阿里云 OSS。
+- 后端已提供 Aliyun OSS Provider 骨架，可通过 `.env` 私有配置 `DOUYU_OSS_PROVIDER=aliyun` 启用。
+- Aliyun OSS Provider 复用现有 `/api/v1/uploads/presign`、客户端 PUT 直传和 `/api/v1/uploads/confirm` 流程，不新增公共 API。
+- Aliyun OSS 必填配置为 `DOUYU_ALIYUN_OSS_ENDPOINT`、`DOUYU_ALIYUN_OSS_REGION`、`DOUYU_ALIYUN_OSS_BUCKET`、`DOUYU_ALIYUN_OSS_ACCESS_KEY_ID`、`DOUYU_ALIYUN_OSS_ACCESS_KEY_SECRET`、`DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL`。
+- Local OSS 仍是 dev 默认；test profile 使用 Stub OSS，后端测试不依赖云服务。
 - 客户端不得持有 OSS Secret。
 - 上传文件默认按不可信输入处理，必须经过类型、大小、用途和审核校验。
+- 第四轮 seed assets 暂不迁移到 Aliyun OSS；生产 CDN、防盗链、STS 临时凭证、图片审核和缩略图处理仍是后续生产化任务。
 
 ## AI 拼豆
 
@@ -183,7 +187,7 @@ Spring Security 配置位于 `common/SecurityConfig.java`。
 | 能力 | 当前状态 | 生产要求 |
 |---|---|---|
 | 短信 | Stub 验证码 `123456` | 接入真实短信供应商、限流、防刷 |
-| OSS | Local OSS Provider | 接入真实对象存储和 CDN |
+| OSS | Local OSS Provider；Aliyun OSS Provider 骨架可按 `.env` 私有配置启用 | 补齐 STS/权限、CORS、CDN、防盗链、图片审核、缩略图和运维监控 |
 | AI | Stub + 自研算法，Aliyun provider 占位 | 接入真实视觉 Provider |
 | 微信支付 | Stub 参数和回调骨架 | 官方 SDK/API、验签、查询、退款、对账 |
 | 支付宝支付 | Stub 参数和回调骨架 | 官方 SDK/API、验签、查询、退款、对账 |
