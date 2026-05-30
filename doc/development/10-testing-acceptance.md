@@ -156,11 +156,14 @@
 - 已登录 App 内路径已追加覆盖：短信 Stub 登录、购物车有商品态、订单确认地址缺口、我的订单入口、联调支付状态页创建和查询。截图/XML 包括 `cart-auth-items.png`、`order-confirm-address-gap-auth.png`、`my-orders-with-payment-entry-final2.png`、`payment-status-before-create-final.png`、`payment-status-stub-auth-final.png`。
 - 本次 QA 修正了真实联调中暴露的 Android 契约差异：订单列表增加“查看联调支付状态”入口；`SellerType` 接收后端 `SELF_OPERATED`；`addressSnapshot` 按对象解析；`POST /orders` 和 `POST /payments` 发送 `Idempotency-Key`。
 - 支付状态 App 内证据：联调订单 `ord_866d2498f0064353928346c8d2405b31` 进入支付页后，显式点击创建联调支付单才出现 `paymentId=pay_1743fe0e77354b5881fc34e908ca7675`，状态为 `CREATED`，渠道为 `WECHAT_APP`，金额 `1200` 分；页面只展示服务端状态和联调边界。
+- 竖屏追加记录：`MainActivity` 已锁定 `portrait`，真机即使系统自动旋转开启也按竖屏主流程验收；`dumpsys activity` 已看到 `requestedOrientation=SCREEN_ORIENTATION_PORTRAIT`。
+- 真机 `10.64.241.158:42861` 追加覆盖商城搜索/分类：使用英文键盘源输入 `beads` 得到自营豆子结果，输入 `zzzz` 得到“没有找到商品 / 换个关键词试试？”空态；分类切换“材料包”展示自营商品，“成品手作”展示玩家二手商品。截图/XML 包括 `commerce-search-keyboard-source-phone.png`、`commerce-search-empty-phone.png`、`commerce-category-material-phone.png`、`commerce-category-handmade-phone.png`。
+- 本轮按用户要求不启动模拟器；360dp、390dp、430dp 多宽度模拟器视觉 QA 未跑，仍作为后续单独验收项。
 
 | QA 对象 | 本轮关闭标准 | 记录方式 |
 |---|---|---|
 | 商城首页 | 顶部栏、购物车入口、搜索框、分类 Chip、Banner、双列商品卡、底部导航不遮挡 | 已截图 `commerce-home.png` |
-| 搜索 / 分类 | 输入关键词或切换分类后，列表状态清楚，不挤压、不空白遮挡 | 已截图 `commerce-search.png`；筛选结果未作为最终证据，后续复查 |
+| 搜索 / 分类 | 输入关键词或切换分类后，列表状态清楚，不挤压、不空白遮挡 | 真机竖屏已截图 `commerce-search-keyboard-source-phone.png`、`commerce-search-empty-phone.png`、`commerce-category-material-phone.png`、`commerce-category-handmade-phone.png`；模拟器多宽度后续复查 |
 | 自营商品详情 | 价格、库存、销量、SKU、数量选择、加入购物车状态正确 | 已截图 `product-detail-self.png` |
 | 玩家商品详情 | 展示“不支持标准购物车”边界，加购按钮禁用，无假成功 | 已截图 `product-detail-player.png` |
 | 购物车 | 未登录、空车或有商品状态清楚，数量/删除/结算入口可识别 | 已截图 `cart-items.png`、`cart-auth-items.png`；本次覆盖登录后有商品态和结算入口 |

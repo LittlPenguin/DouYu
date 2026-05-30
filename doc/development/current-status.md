@@ -54,7 +54,7 @@
 - 第三轮商城真机优先 QA 以主 Agent 实际 `adb devices`、安装、截图和 smoke 输出为准；已在线真机时可以关闭真机优先路径，不能用文档替代设备结论。
 - 第三轮商城多宽度视觉 QA 仍待补：360dp、390dp、430dp 模拟器复查不作为本轮真机优先 QA 的阻塞项，后续单独关闭。
 - 已定位 ADB 路径 `D:\AndroidChace\platform-tools\adb.exe`；无在线模拟器/真机时，截图或设备 QA 不能写成通过，必须先告知用户。
-- 2026-05-30 真机优先 QA 已覆盖在线真机安装启动、商城首页、玩家商品禁用标准购物车、自营商品详情、未登录加购拦截、已登录购物车、订单确认地址缺口、我的订单入口和联调支付状态页；搜索筛选结果仍按 `10-testing-acceptance.md` 记录为后续复查。
+- 2026-05-30 真机优先 QA 已覆盖在线真机安装启动、商城首页、搜索有结果和空态、分类切换、玩家商品禁用标准购物车、自营商品详情、未登录加购拦截、已登录购物车、订单确认地址缺口、我的订单入口和联调支付状态页；模拟器多宽度复查仍按 `10-testing-acceptance.md` 记录为后续复查。
 - 本地 QA 种子商品已覆盖 `SELF_OPERATED`、`PLAYER_SECOND_HAND`、`PLAYER_CUSTOM_SERVICE`；真机商城 smoke 已验证玩家二手 / 定制商品只展示信息并禁用标准购物车。
 - Android debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在 `.env.emulator` / `.env.phone` 模板间切换并重新构建；登录态仍使用内存 TokenStore。
 - Android Studio / Gradle JVM 如果误选到 VS Code Red Hat Java 扩展内置精简 JRE，会触发 `jlink.exe does not exist`；本地构建必须按协作规范选择完整 JDK/JBR 21。
@@ -102,7 +102,7 @@ P0：第三轮商城 UI/API 收敛验收
 - 真机优先 QA：订单确认明确地址管理缺口；没有真实地址时禁用创建订单，不伪装“默认地址”、不创建订单或支付单。
 - 真机优先 QA：支付状态页显式创建联调支付单，展示 paymentId、channel、amount、status 和服务端确认文案，不自动伪装渠道完成态。
 - Android 商城契约：订单列表必须能进入联调支付状态；`sellerType=SELF_OPERATED`、对象型 `addressSnapshot` 和订单/支付写接口 `Idempotency-Key` 必须继续由单元测试覆盖。
-- 后续多宽度 QA：在 360dp、390dp、430dp 下复查商城列表、详情、购物车、订单确认和支付状态页不挤压、不重叠。
+- 后续多宽度 QA：在 360dp、390dp、430dp 模拟器竖屏下复查商城列表、详情、购物车、订单确认和支付状态页不挤压、不重叠；本轮按用户要求不启动模拟器，未把该项写成通过。
 
 P1：保留并复查第二轮 UI 统一基线
 

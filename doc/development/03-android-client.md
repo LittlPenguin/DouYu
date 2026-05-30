@@ -33,6 +33,8 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 
 **真机 HTTP 联调**：Android main 配置保持 HTTPS only；debug 包通过 Gradle 从 `.env` 的 `DOUYU_ANDROID_CLEARTEXT_HOSTS` 生成 `network_security_config.xml`，对当前开发机 IP 添加 `domain-config cleartextTrafficPermitted="true"`。如果真机浏览器能访问后端，但 App 显示网络异常，优先检查 `baseUrl`、debug 包、logcat 中的 cleartext 配置错误。
 
+**屏幕方向**：当前手机端 MVP 固定竖屏，`.MainActivity` 在 Manifest 中使用 `android:screenOrientation="portrait"`。真机系统自动旋转不作为 QA 前置要求；横屏、平板和大屏适配属于后期扩展，不纳入第三轮商城验收。
+
 **Repository 层**：已从 Mock Repository 切换到真实 Repository：
 
 - `RealCommunityRepository` → CommunityApi
