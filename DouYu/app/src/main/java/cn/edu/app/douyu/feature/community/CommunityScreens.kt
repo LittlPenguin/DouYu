@@ -55,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,6 +63,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import coil.compose.SubcomposeAsyncImage
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.ContentStatus
@@ -265,15 +267,13 @@ private fun PostCard(post: Post, onClick: () -> Unit) {
         interactionSource = interactionSource
     ) {
         Column {
-            Box(
+            PostCoverImage(
+                post = post,
+                beadSize = 42.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(0.78f + (post.likeCount % 3) * 0.12f)
-                    .background(LightSurfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                BeadCluster(42.dp)
-            }
+            )
 
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
@@ -660,15 +660,46 @@ private fun PostCreateScreenContent(navController: NavHostController?) {
 
 @Composable
 private fun PostHero(post: Post) {
-    Box(
+    PostCoverImage(
+        post = post,
+        beadSize = 72.dp,
         modifier = Modifier
             .fillMaxWidth()
             .height(280.dp)
             .clip(MaterialTheme.shapes.large)
-            .background(LightSurfaceVariant),
+    )
+}
+
+@Composable
+private fun PostCoverImage(post: Post, beadSize: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    val fallbackContent: @Composable () -> Unit = {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(LightSurfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            BeadCluster(beadSize)
+        }
+    }
+
+    Box(
+        modifier = modifier.background(LightSurfaceVariant),
         contentAlignment = Alignment.Center
     ) {
-        BeadCluster(72.dp)
+        val coverUrl = post.coverImageUrl
+        if (coverUrl.isNullOrBlank()) {
+            fallbackContent()
+        } else {
+            SubcomposeAsyncImage(
+                model = coverUrl,
+                contentDescription = post.title.ifBlank { "作品图片" },
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                loading = { fallbackContent() },
+                error = { fallbackContent() }
+            )
+        }
     }
 }
 

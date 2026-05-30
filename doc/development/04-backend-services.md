@@ -117,6 +117,8 @@ Spring Security 配置位于 `common/SecurityConfig.java`。
 - Android 直传文件。
 - 后端 confirm 后生成 `FileAsset`。
 - `/uploads/**` 用于本地开发访问文件。
+- 第四轮新增本地 seed assets：`src/main/resources/static/seed/` 下提交社区和商城演示图片，`ATTRIBUTION.md` 记录来源和许可说明；这些图片只用于本地 QA/演示，不代表生产对象存储或真实用户上传链路。
+- 第四轮商品和帖子 seed 数据通过 Flyway 字段 `products.image_url`、`posts.cover_image_url` 暴露图片 URL。商品列表/详情返回 `imageUrl`，购物车商品摘要返回 `product.imageUrl`，社区 Feed/详情返回 `coverImageUrl`。
 
 生产目标：
 

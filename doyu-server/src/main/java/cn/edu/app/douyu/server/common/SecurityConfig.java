@@ -44,6 +44,7 @@ public class SecurityConfig {
                                 "/api/v1/posts/following",
                                 "/api/v1/products",
                                 "/api/v1/products/*",
+                                "/seed/**",
                                 "/uploads/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/*").permitAll()

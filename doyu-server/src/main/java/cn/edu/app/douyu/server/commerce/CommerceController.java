@@ -129,7 +129,7 @@ public class CommerceController {
             itemData.put("skuId", item.getSkuId());
             itemData.put("sku", sku != null ? skuView(sku) : Map.of());
             itemData.put("productId", sku != null ? sku.getProductId() : "");
-            itemData.put("product", product != null ? Map.of("title", product.getTitle(), "imageUrl", "") : Map.of());
+            itemData.put("product", product != null ? cartProductView(product) : Map.of());
             itemData.put("quantity", item.getQuantity());
             return itemData;
         }).toList();
@@ -218,12 +218,20 @@ public class CommerceController {
         view.put("sellerId", product.getSellerId());
         view.put("title", product.getTitle());
         view.put("description", product.getDescription());
+        view.put("imageUrl", valueOrEmpty(product.getImageUrl()));
         view.put("categoryId", product.getCategoryId());
         view.put("categoryName", product.getCategoryId());
         view.put("status", product.getStatus());
         view.put("auditStatus", product.getAuditStatus());
         view.put("skus", productSkus.stream().map(this::skuView).toList());
         view.put("swatchColor", 0xFF6B8E7B);
+        return view;
+    }
+
+    private Map<String, Object> cartProductView(ProductEntity product) {
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("title", product.getTitle());
+        view.put("imageUrl", valueOrEmpty(product.getImageUrl()));
         return view;
     }
 
@@ -242,6 +250,10 @@ public class CommerceController {
         int from = Math.max(0, (page - 1) * size);
         int to = Math.min(items.size(), from + size);
         return from >= items.size() ? List.of() : items.subList(from, to);
+    }
+
+    private String valueOrEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     public record ProductRequest(@NotBlank String type, @NotBlank String title, String description, @Valid ProductSkuRequest sku) {

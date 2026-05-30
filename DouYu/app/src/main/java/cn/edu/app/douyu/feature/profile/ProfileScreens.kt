@@ -246,11 +246,11 @@ private fun ProfileDashboardContent(
             ),
             ProfileActionSpec(
                 title = "登录保持",
-                subtitle = "当前 TokenStore 仍为内存实现，重启后可能需要重新登录",
+                subtitle = "TokenStore 已接入 DataStore，应用启动时会尝试恢复登录态",
                 icon = Icons.Filled.Lock,
                 iconBgColor = LightSurfaceVariant,
                 iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                status = "开发态",
+                status = "已接入",
                 enabled = false
             )
         )
@@ -310,8 +310,8 @@ private fun GuestProfileContent(
     }
     ProfileStatsRow("图纸", 0, "订单", 0, "豆子", 0)
     DisabledFeatureNotice(
-        title = "登录态仍是开发态",
-        message = "当前登录令牌保存在内存中，重启应用后可能需要重新登录；本轮不补 DataStore 持久化。"
+        title = "登录态可在重启后恢复",
+        message = "登录成功后令牌会保存到本机 DataStore；退出登录或服务端判定过期时会清理本机令牌。"
     )
     ProfileActionGroup(
         title = "个人资料",
@@ -918,8 +918,8 @@ private fun SettingsScreenContent(navController: NavHostController?) {
                 )
                 Spacer(Modifier.height(10.dp))
                 DisabledFeatureNotice(
-                    title = "登录保持仍为开发态",
-                    message = "当前 TokenStore 是内存实现，重启应用后可能需要重新登录；本轮不补 DataStore 持久化。"
+                    title = "登录保持已接入",
+                    message = "登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore；Preview 和无 Context 测试场景仍回退内存实现。"
                 )
                 Spacer(Modifier.height(12.dp))
                 SettingsStatusRow(

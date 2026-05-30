@@ -681,6 +681,50 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void seedAssetUrlsAreReturnedByProductPostAndCartApis() throws Exception {
+        mockMvc.perform(get("/api/v1/products/{productId}", "prod_bead_red"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.imageUrl", equalTo("http://localhost:8081/seed/commerce/bead-red.jpg")));
+
+        mockMvc.perform(get("/api/v1/posts/{postId}", "post_seed_1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.coverImageUrl", equalTo("http://localhost:8081/seed/community/newbie-guide.jpg")));
+
+        String token = login("13800000023", "AGE_18_PLUS");
+        postJsonWithToken("/api/v1/cart/items", token, """
+                {"skuId":"sku_bead_red","quantity":1}
+                """);
+
+        mockMvc.perform(get("/api/v1/cart")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].product.imageUrl", equalTo("http://localhost:8081/seed/commerce/bead-red.jpg")));
+
+        mockMvc.perform(get("/seed/commerce/bead-red.jpg"))
+                .andExpect(status().isOk());
+
+        String productsContent = mockMvc.perform(get("/api/v1/products"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode products = objectMapper.readTree(productsContent).at("/data/items");
+        org.assertj.core.api.Assertions.assertThat(products).hasSize(6);
+        org.assertj.core.api.Assertions.assertThat(products)
+                .allSatisfy(product -> org.assertj.core.api.Assertions.assertThat(product.path("imageUrl").asText()).startsWith("http://localhost:8081/seed/commerce/"));
+
+        String feedContent = mockMvc.perform(get("/api/v1/posts/feed"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode posts = objectMapper.readTree(feedContent).at("/data/items");
+        org.assertj.core.api.Assertions.assertThat(posts).hasSize(4);
+        org.assertj.core.api.Assertions.assertThat(posts)
+                .allSatisfy(post -> org.assertj.core.api.Assertions.assertThat(post.path("coverImageUrl").asText()).startsWith("http://localhost:8081/seed/community/"));
+    }
+
+    @Test
     void openApiDocsContainAllEndpointTags() throws Exception {
         String docs = mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())

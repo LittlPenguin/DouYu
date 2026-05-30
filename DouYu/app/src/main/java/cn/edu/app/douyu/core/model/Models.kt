@@ -165,7 +165,8 @@ data class Post(
     val status: ContentStatus,
     val likeCount: Int,
     val favoriteCount: Int,
-    val commentCount: Int
+    val commentCount: Int,
+    val coverImageUrl: String? = null
 )
 
 @Serializable
@@ -307,7 +308,8 @@ data class Product(
     val status: ProductStatus,
     val auditStatus: AuditStatus,
     val skus: List<ProductSku>,
-    val swatchColor: Long = 0
+    val swatchColor: Long = 0,
+    val imageUrl: String? = null
 ) {
     val priceCent: Int
         get() = skus.minOfOrNull { it.priceCent } ?: 0

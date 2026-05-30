@@ -25,6 +25,9 @@ public class PostEntity {
     @Column(name = "media_file_ids", length = 1000)
     private String mediaFileIds;
 
+    @Column(name = "cover_image_url", length = 500)
+    private String coverImageUrl;
+
     @Column(name = "topic_ids", length = 1000)
     private String topicIds;
 
@@ -84,6 +87,8 @@ public class PostEntity {
     public void setContent(String content) { this.content = content; }
     public String getMediaFileIds() { return mediaFileIds; }
     public void setMediaFileIds(String mediaFileIds) { this.mediaFileIds = mediaFileIds; }
+    public String getCoverImageUrl() { return coverImageUrl; }
+    public void setCoverImageUrl(String coverImageUrl) { this.coverImageUrl = coverImageUrl; }
     public String getTopicIds() { return topicIds; }
     public void setTopicIds(String topicIds) { this.topicIds = topicIds; }
     public String getLinkedPatternId() { return linkedPatternId; }

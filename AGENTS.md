@@ -6,16 +6,17 @@
 
 ## 当前阶段
 
-当前项目处于 **第三轮商城 UI/API 收敛 / UI MVP 验收收口阶段**。
+当前项目处于 **第四轮登录态持久化 + 常驻真实图文数据收敛阶段**。
 
 阶段目标：
 
-- 在第一轮登录 + 社区契约样板、第二轮 App Shell / 消息 / 我的 UI 统一基线之后，继续收口第三轮商城 UI/API。
+- 在第一轮登录 + 社区契约样板、第二轮 App Shell / 消息 / 我的 UI 统一基线、第三轮商城 UI/API 主体链路验收关闭之后，继续收口登录态持久化和常驻真实图文数据。
 - 按 `doc/stitch_document_app_generator/` 的 Stitch 设计探索稿和 `doc/development/11-ui-style-guide.md` 统一 Android UI 口径。
 - 以 `doc/development/11-ui-style-guide.md` 作为唯一 UI 权威规范。
 - 以 `doc/development/05-api-contract.md` 作为接口契约源；登录 + 社区第一轮样板链路继续严格追该文档。
-- 把商城首页、商品详情、购物车、订单确认、订单列表和联调支付状态收敛为可演示、可联调、边界清楚的 Android UI MVP。
-- 优先消除空点击、假成功 Toast、误导性支付、误导性合规入口和半成品功能暴露。
+- 把 Android 登录 token 从纯内存状态推进到 DataStore 持久化，并明确重启 App 后的登录态恢复、刷新和退出清理验收口径。
+- 让社区 Feed 和商城常驻种子数据具备真实可渲染图片字段：商品 `imageUrl`、帖子 `coverImageUrl`、购物车商品摘要图片和本地 seed assets 来源记录。
+- 继续优先消除空点击、假成功 Toast、误导性支付、误导性合规入口和半成品功能暴露。
 
 本阶段不做：
 
@@ -24,7 +25,8 @@
 - 不接入真实微信支付、支付宝支付、退款、对账或支付 SDK。
 - 不补齐备案、隐私政策、用户协议、SDK 清单、版权投诉等生产合规材料。
 - 不补完整玩家二手/定制交易闭环、担保、评价、纠纷、提现或卖家资质审核。
-- 不新增后端公共 API；后续源码阶段优先接入已有 `/api/v1` 能力。
+- 不把地址管理写成本轮已完成；订单确认仍只能清楚表达地址缺口。
+- 不新增后端公共 API；第四轮优先在已有 `/api/v1` 响应字段、seed 数据和 Android DTO/UI 上收敛。
 
 阶段状态以 `doc/development/current-status.md` 为准。
 如果本节与 `doc/development/current-status.md` 冲突，以 `current-status.md` 和当前代码为准，并优先修正文档口径。
@@ -158,7 +160,7 @@ cd DouYu
 - 目录：`DouYu/`。
 - 技术栈：Kotlin、Jetpack Compose、单 Activity、Navigation Compose、Retrofit、OkHttp、Kotlinx Serialization、Coil、CameraX、Photo Picker。
 - 当前依赖装配：`DoyuAppContainer` 服务定位器；MVVM 是目标架构，不代表所有页面已完全 ViewModel 化。
-- 当前问题：debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在模拟器/真机模板间切换并重新构建；TokenStore 仍是内存实现，多个页面仍有半成品 UI 和未接 Repository 的功能。
+- 当前问题：debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在模拟器/真机模板间切换并重新构建；第四轮正在把 TokenStore 从内存实现收敛到 DataStore 登录态持久化，并补齐商品/帖子真实图片字段；多个页面仍有半成品 UI 和未接 Repository 的功能。
 - UI 权威规范：`doc/development/11-ui-style-guide.md`。
 - Stitch 设计稿只作为视觉参考：`doc/stitch_document_app_generator/`。
 

@@ -108,7 +108,8 @@ object MockData {
             status = ContentStatus.VISIBLE,
             likeCount = 238,
             favoriteCount = 92,
-            commentCount = 31
+            commentCount = 31,
+            coverImageUrl = "http://10.0.2.2:8081/seed/community/newbie-guide.jpg"
         ),
         Post(
             postId = "post_002",
@@ -124,7 +125,8 @@ object MockData {
             status = ContentStatus.VISIBLE,
             likeCount = 96,
             favoriteCount = 44,
-            commentCount = 12
+            commentCount = 12,
+            coverImageUrl = "http://10.0.2.2:8081/seed/community/color-palette.jpg"
         )
     )
 
@@ -255,7 +257,8 @@ object MockData {
             status = ProductStatus.ON_SALE,
             auditStatus = AuditStatus.PASS,
             skus = listOf(sku("sku_001_basic", "product_001", "2.6mm 入门套装", 6990, 128)),
-            swatchColor = 0xFFF6A6B2
+            swatchColor = 0xFFF6A6B2,
+            imageUrl = "http://10.0.2.2:8081/seed/commerce/starter-kit.jpg"
         ),
         Product(
             productId = "product_002",
@@ -268,7 +271,8 @@ object MockData {
             status = ProductStatus.ON_SALE,
             auditStatus = AuditStatus.PASS,
             skus = listOf(sku("sku_002_palette", "product_002", "48 色套组", 4590, 76)),
-            swatchColor = 0xFFA8DADC
+            swatchColor = 0xFFA8DADC,
+            imageUrl = "http://10.0.2.2:8081/seed/commerce/bead-white.jpg"
         ),
         Product(
             productId = "product_003",
@@ -281,7 +285,8 @@ object MockData {
             status = ProductStatus.ON_SALE,
             auditStatus = AuditStatus.PASS,
             skus = listOf(sku("sku_003_custom", "product_003", "咨询定金", 0, 1)),
-            swatchColor = 0xFFFFD7C2
+            swatchColor = 0xFFFFD7C2,
+            imageUrl = "http://10.0.2.2:8081/seed/commerce/player-custom-service.jpg"
         )
     )
 
@@ -293,6 +298,7 @@ object MockData {
                 productId = product.productId,
                 product = CartProductSummary(
                     title = product.title,
+                    imageUrl = product.imageUrl,
                     swatchColor = product.swatchColor
                 ),
                 sku = sku,

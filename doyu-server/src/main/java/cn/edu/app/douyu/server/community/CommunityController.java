@@ -286,6 +286,7 @@ public class CommunityController {
         view.put("title", post.getTitle() == null ? "" : post.getTitle());
         view.put("content", post.getContent());
         view.put("mediaFileIds", splitList(post.getMediaFileIds()));
+        view.put("coverImageUrl", post.getCoverImageUrl() == null ? "" : post.getCoverImageUrl());
         view.put("mediaColors", List.of());
         view.put("topicIds", splitList(post.getTopicIds()));
         view.put("topicNames", List.of());

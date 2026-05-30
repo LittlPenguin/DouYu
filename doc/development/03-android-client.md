@@ -4,7 +4,7 @@
 
 Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图、AI 拼豆图生成、商城购买、玩家私信、订单和个人资产。
 
-当前阶段的 Android 工作重心是 **第三轮商城 UI/API 收敛**：在第一轮登录 + 社区样板稳定、第二轮 App Shell/通用组件/消息页/我的页 UI 统一基线落地之后，把商城首页/商品列表、商品详情、购物车、订单确认、订单列表和支付单状态收敛成可联调、边界清楚、不误导真实支付的 MVP 链路。在不新增真实 AI Provider、真实支付、增强审核、合规风控和完整玩家交易闭环的前提下，把已有开发态能力包装成可演示、可联调、边界清楚的 App。
+当前阶段的 Android 工作重心是 **第四轮登录态持久化 + 常驻真实图文数据收敛**：第三轮商城 UI/API 主体验收已关闭，本轮把登录态从重启即失效的临时令牌状态收口到 DataStore，并让社区 Feed、商品卡、商品详情和购物车渲染后端返回的真实图片字段。在不新增真实 AI Provider、真实支付、地址管理、增强审核、合规风控和完整玩家交易闭环的前提下，把已有开发态能力包装成可演示、可联调、边界清楚的 App。
 
 ## 模块结构
 
@@ -27,13 +27,13 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 
 ## 当前实现状态
 
-**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、`InMemoryTokenStore`、`AuthSessionManager` 和 5 个真实 Repository 实例。Debug 包的 Retrofit `baseUrl` 从仓库根目录 `.env` 的 `DOUYU_ANDROID_API_BASE_URL` 在 Gradle 构建期生成到 `BuildConfig.API_BASE_URL`；模拟器联调使用 `http://10.0.2.2:8081/`，真机联调使用电脑当前 Wi-Fi/LAN IPv4，例如 `http://10.64.241.153:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
+**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、可切换 TokenStore、`AuthSessionManager` 和 5 个真实 Repository 实例。真实 App 启动时由 `DoyuApplication` hydrate `DataStoreTokenStore`，登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore；无 Context 的 Preview / 单元测试场景默认回退内存实现。Debug 包的 Retrofit `baseUrl` 从仓库根目录 `.env` 的 `DOUYU_ANDROID_API_BASE_URL` 在 Gradle 构建期生成到 `BuildConfig.API_BASE_URL`；模拟器联调使用 `http://10.0.2.2:8081/`，真机联调使用电脑当前 Wi-Fi/LAN IPv4，例如 `http://10.64.241.153:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
 
 **环境切换**：`.env` 是唯一生效文件，`.env.emulator` 和 `.env.phone` 只作为本机私有模板。模拟器和真机切换不是运行时动态能力；复制目标模板为 `.env` 后，必须重启后端并重新构建、安装 debug 包，Android 侧的 `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单才会更新。
 
 **真机 HTTP 联调**：Android main 配置保持 HTTPS only；debug 包通过 Gradle 从 `.env` 的 `DOUYU_ANDROID_CLEARTEXT_HOSTS` 生成 `network_security_config.xml`，对当前开发机 IP 添加 `domain-config cleartextTrafficPermitted="true"`。如果真机浏览器能访问后端，但 App 显示网络异常，优先检查 `baseUrl`、debug 包、logcat 中的 cleartext 配置错误。
 
-**屏幕方向**：当前手机端 MVP 固定竖屏，`.MainActivity` 在 Manifest 中使用 `android:screenOrientation="portrait"`。真机系统自动旋转不作为 QA 前置要求；横屏、平板和大屏适配属于后期扩展，不纳入第三轮商城验收。
+**屏幕方向**：当前手机端 MVP 固定竖屏，`.MainActivity` 在 Manifest 中使用 `android:screenOrientation="portrait"`。真机系统自动旋转不作为 QA 前置要求；横屏、平板和大屏适配属于后期扩展，不纳入当前验收。
 
 **Repository 层**：已从 Mock Repository 切换到真实 Repository：
 
@@ -45,12 +45,12 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 
 **当前主要缺口**：
 
-- 登录态仍使用 `InMemoryTokenStore`，App 重启后不可恢复。
+- 登录态已切到 `DataStoreTokenStore` 启动 hydrate；单元测试覆盖保存、恢复和清理，验证码登录后的真机重启保持体验仍需手工复测。
 - 多数页面仍在 Composable 内直接管理副作用和 Repository 调用，MVVM 尚未完全落地。
 - 多个 Feature 文件体量偏大，页面、子组件、网络状态、副作用混在同一文件中。
 - 第一轮已把社区发帖、评论、点赞、收藏补到 `CommunityRepository`，并接入社区样板页。
 - 第二轮已把 App Shell、消息页和我的页统一成同一套状态与组件语言。
-- 第三轮需要把商城首页/列表、详情、购物车、订单确认、订单列表和支付状态页的 UI/API 边界收紧，重点消除玩家商品误加购、伪默认地址、自动伪支付成功、空点击、假成功 Toast、开发中按钮或弱占位。
+- 第四轮已把 `Product.imageUrl`、`CartProductSummary.imageUrl` 和 `Post.coverImageUrl` 接到真实 UI：商品卡、商品详情、购物车项、社区 Feed 卡和帖子详情优先显示 Coil 加载的真实图片，图片字段为空或加载失败时回退现有 swatch/拼豆占位，不出现空白卡片。
 
 ## 页面导航
 
@@ -360,7 +360,7 @@ UI MVP 阶段支付流程：
 - AI 任务列表可缓存。
 - 订单状态需要每次进入详情刷新。
 - 支付状态不得只依赖本地缓存。
-- 登录态后续应从 `InMemoryTokenStore` 迁移到 DataStore。
+- 登录态使用 DataStore 持久化；退出登录、刷新失败和 401 过期清理必须同步清空本机令牌。
 
 ## 埋点
 

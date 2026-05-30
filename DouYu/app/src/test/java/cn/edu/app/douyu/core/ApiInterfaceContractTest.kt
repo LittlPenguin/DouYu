@@ -178,6 +178,80 @@ class ApiInterfaceContractTest {
     }
 
     @Test
+    fun previewImageDtosMatchBackendDisplayContract() {
+        val productResponse = DoyuJson.decodeFromString<ApiResponse<Product>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": {
+                "productId": "product_image_contract",
+                "type": "SELF_OPERATED",
+                "sellerId": null,
+                "title": "新手材料包",
+                "description": "含常用色和基础工具。",
+                "categoryId": "cat_beginner",
+                "categoryName": "新手套装",
+                "status": "ON_SALE",
+                "auditStatus": "PASS",
+                "imageUrl": "https://cdn.example.test/products/starter-kit.jpg",
+                "skus": [
+                  {
+                    "skuId": "sku_starter",
+                    "productId": "product_image_contract",
+                    "specName": "2.6mm 入门套装",
+                    "priceCent": 6990,
+                    "stock": 20,
+                    "status": "ON_SALE"
+                  }
+                ],
+                "swatchColor": 4294358706
+              },
+              "traceId": "trace_product_image"
+            }
+            """.trimIndent()
+        )
+        assertEquals("https://cdn.example.test/products/starter-kit.jpg", productResponse.data?.imageUrl)
+
+        val postResponse = DoyuJson.decodeFromString<ApiResponse<Post>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": {
+                "postId": "post_image_contract",
+                "authorId": "user_contract",
+                "author": {
+                  "userId": "user_contract",
+                  "nickname": "契约用户",
+                  "avatarUrl": null,
+                  "bio": "",
+                  "level": 1,
+                  "isMinor": false,
+                  "followingCount": 0,
+                  "followerCount": 0
+                },
+                "title": "晒一个新作品",
+                "content": "真实图片应优先展示。",
+                "coverImageUrl": "https://cdn.example.test/posts/work-cover.jpg",
+                "mediaFileIds": ["file_post_cover"],
+                "mediaColors": [4294358706],
+                "topicIds": ["topic_work"],
+                "topicNames": ["作品"],
+                "linkedPatternId": null,
+                "status": "VISIBLE",
+                "likeCount": 8,
+                "favoriteCount": 2,
+                "commentCount": 1
+              },
+              "traceId": "trace_post_image"
+            }
+            """.trimIndent()
+        )
+        assertEquals("https://cdn.example.test/posts/work-cover.jpg", postResponse.data?.coverImageUrl)
+    }
+
+    @Test
     fun orderAndPaymentDtosMatchCommerceBoundaryContract() {
         val orderRequestJson = DoyuJson.encodeToString(CreateOrderRequest(listOf("cart_1", "cart_2"), "addr_test_1"))
         assertTrue(orderRequestJson.contains("\"itemIds\":[\"cart_1\",\"cart_2\"]"))

@@ -89,7 +89,7 @@
 
 - `sms-code`、`login/sms`、`refresh` 为公开接口。
 - `logout` 需要有效 access token；refresh token 用于撤销会话。
-- 当前 Android 使用 `InMemoryTokenStore`，登录态持久化到 DataStore 是 P1 缺口，不属于本轮账号体系扩展。
+- 当前 Android 已接入 `DataStoreTokenStore` 启动 hydrate，用于保存 access/refresh token；登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore。无 Context 的 Preview / 单元测试场景可回退内存实现。
 
 ## 用户接口
 
@@ -177,6 +177,7 @@
 - `postId`：帖子 ID。
 - `title`：标题。
 - `content`：正文。
+- `coverImageUrl`：帖子封面 URL，可为空；第四轮常驻 seed 帖子返回本地静态图 URL，完整媒体上传/审核策略仍按 `mediaFileIds` / FileAsset 后续收敛。
 - `author`：作者对象，包含 `userId`、`nickname`、`avatarUrl`、`bio`、`level`、`isMinor`、`followingCount`、`followerCount`。
 - `status`：帖子状态。
 - `likeCount`、`commentCount`、`favoriteCount`：互动计数。
@@ -336,6 +337,18 @@
 - `SELF_OPERATED`
 - `PLAYER_SECOND_HAND`
 - `PLAYER_CUSTOM_SERVICE`
+
+商品响应字段（联调口径）：
+
+- `productId`：商品 ID。
+- `type`：商品类型。
+- `sellerId`：卖家 ID，自营可为空。
+- `title`：商品标题。
+- `description`：商品描述。
+- `imageUrl`：商品图片 URL，可为空；第四轮常驻 seed 商品返回本地静态图 URL。
+- `categoryId` / `categoryName`：分类。
+- `status` / `auditStatus`：商品状态和审核状态。
+- `skus`：SKU 列表。
 
 购物车响应字段（联调口径）：
 

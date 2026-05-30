@@ -44,6 +44,33 @@ class InMemoryTokenStore : TokenStore {
     }
 }
 
+class SwitchableTokenStore(
+    initialTokenStore: TokenStore = InMemoryTokenStore()
+) : TokenStore {
+    @Volatile
+    private var delegate: TokenStore = initialTokenStore
+
+    fun switchTo(tokenStore: TokenStore) {
+        delegate = tokenStore
+    }
+
+    override fun accessToken(): String? = delegate.accessToken()
+
+    override fun refreshToken(): String? = delegate.refreshToken()
+
+    override suspend fun save(session: AuthSession) {
+        delegate.save(session)
+    }
+
+    override suspend fun save(pair: TokenPair) {
+        delegate.save(pair)
+    }
+
+    override suspend fun clear() {
+        delegate.clear()
+    }
+}
+
 class DataStoreTokenStore(
     private val dataStore: DataStore<Preferences>
 ) : TokenStore {

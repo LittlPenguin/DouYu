@@ -1,10 +1,28 @@
 package cn.edu.app.douyu.core.data
 
+import android.content.Context
+import androidx.datastore.preferences.preferencesDataStore
 import cn.edu.app.douyu.BuildConfig
 import cn.edu.app.douyu.core.network.*
 
+private val Context.doyuAuthTokenDataStore by preferencesDataStore(name = "doyu_auth_tokens")
+
 object DoyuAppContainer {
-    private val tokenStore = InMemoryTokenStore()
+    private val tokenStore = SwitchableTokenStore()
+    @Volatile
+    private var persistentTokenStoreHydrated = false
+
+    suspend fun hydrateTokenStore(context: Context? = null) {
+        val appContext = context?.applicationContext ?: return
+        if (persistentTokenStoreHydrated) return
+
+        val persistentStore = DataStoreTokenStore(appContext.doyuAuthTokenDataStore)
+        persistentStore.hydrate()
+        if (!persistentTokenStoreHydrated) {
+            tokenStore.switchTo(persistentStore)
+            persistentTokenStoreHydrated = true
+        }
+    }
 
     val isLoggedIn: Boolean get() = tokenStore.accessToken() != null
 

@@ -25,3 +25,6 @@ douyu:
   admin:
     bootstrap-username: admin
     bootstrap-password: admin123
+  storage:
+    local-path: ./target/doyu-test-storage
+    base-url: http://localhost:8081

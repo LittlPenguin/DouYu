@@ -52,6 +52,7 @@
 | title | 标题 |
 | content | 正文 |
 | mediaFileIds | 图片或视频 |
+| coverImageUrl | 第四轮本地 seed / 演示封面 URL，可为空；完整媒体体系仍以 FileAsset 为目标 |
 | topicIds | 话题 |
 | linkedPatternId | 关联图纸 |
 | status | 内容状态 |
@@ -185,6 +186,7 @@
 | sellerId | 卖家，自营可为空或平台账号 |
 | title | 标题 |
 | description | 描述 |
+| imageUrl | 第四轮商品展示图 URL，可为空；购物车摘要同步返回该字段 |
 | categoryId | 分类 |
 | status | 商品状态 |
 | auditStatus | 审核状态 |

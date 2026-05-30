@@ -17,13 +17,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import coil.compose.SubcomposeAsyncImage
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.*
@@ -72,6 +76,73 @@ private fun ProductType.label(): String = when (this) {
 
 private fun cartToUiState(cart: Cart): UiState<Cart> =
     if (cart.items.isEmpty()) UiState.Empty else UiState.Success(cart)
+
+@Composable
+private fun ProductImageFrame(
+    product: Product,
+    modifier: Modifier = Modifier,
+    beadSize: Dp,
+    fallback: @Composable BoxScope.() -> Unit = { BeadCluster(beadSize) }
+) {
+    CommerceImageFrame(
+        imageUrl = product.imageUrl,
+        contentDescription = product.title,
+        swatchColor = product.swatchColor,
+        beadSize = beadSize,
+        modifier = modifier,
+        fallback = fallback
+    )
+}
+
+@Composable
+private fun CartProductImage(product: CartProductSummary?, modifier: Modifier = Modifier) {
+    CommerceImageFrame(
+        imageUrl = product?.imageUrl,
+        contentDescription = product?.title ?: "商品图片",
+        swatchColor = product?.swatchColor ?: 0xFFF6A6B2,
+        beadSize = 28.dp,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun CommerceImageFrame(
+    imageUrl: String?,
+    contentDescription: String,
+    swatchColor: Long,
+    beadSize: Dp,
+    modifier: Modifier = Modifier,
+    fallback: @Composable BoxScope.() -> Unit = { BeadCluster(beadSize) }
+) {
+    val fallbackContent: @Composable () -> Unit = {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(swatchColor).copy(alpha = 0.2f)),
+            contentAlignment = Alignment.Center
+        ) {
+            fallback()
+        }
+    }
+
+    Box(
+        modifier = modifier.background(Color(swatchColor).copy(alpha = 0.2f)),
+        contentAlignment = Alignment.Center
+    ) {
+        if (imageUrl.isNullOrBlank()) {
+            fallbackContent()
+        } else {
+            SubcomposeAsyncImage(
+                model = imageUrl,
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                loading = { fallbackContent() },
+                error = { fallbackContent() }
+            )
+        }
+    }
+}
 
 @Preview
 @Composable
@@ -263,10 +334,11 @@ private fun FeaturedProductCard(product: Product, modifier: Modifier = Modifier,
         shadowElevation = 2.dp
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Box(
+            ProductImageFrame(
+                product = product,
+                beadSize = 64.dp,
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(product.swatchColor).copy(alpha = 0.3f))
             )
             Column(
                 modifier = Modifier
@@ -312,15 +384,13 @@ private fun ProductCard(product: Product, modifier: Modifier = Modifier, onClick
         shadowElevation = 1.dp
     ) {
         Column {
-            Box(
+            ProductImageFrame(
+                product = product,
+                beadSize = 48.dp,
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .background(Color(product.swatchColor).copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                BeadCluster(48.dp)
-            }
+            )
 
             Column(modifier = Modifier.padding(12.dp)) {
                 TagChip(product.type.label(), selected = product.type == ProductType.SELF_OPERATED)
@@ -420,12 +490,13 @@ private fun ProductListItem(product: Product, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
+            ProductImageFrame(
+                product = product,
+                beadSize = 36.dp,
                 modifier = Modifier
                     .size(64.dp)
-                    .background(Color(product.swatchColor).copy(alpha = 0.2f), MaterialTheme.shapes.small),
-                contentAlignment = Alignment.Center
-            ) { BeadCluster(36.dp) }
+                    .clip(MaterialTheme.shapes.small)
+            )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -498,13 +569,15 @@ private fun ProductDetailScreenContent(navController: NavHostController?, produc
                             product.status == ProductStatus.ON_SALE &&
                             product.auditStatus == AuditStatus.PASS &&
                             sku != null
-                    Box(
+                    ProductImageFrame(
+                        product = product,
+                        beadSize = 72.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
-                            .background(Color(product.swatchColor).copy(alpha = 0.3f), MaterialTheme.shapes.extraLarge),
-                        contentAlignment = Alignment.Center
-                    ) { BeadPattern(Modifier.size(120.dp)) }
+                            .clip(MaterialTheme.shapes.extraLarge),
+                        fallback = { BeadPattern(Modifier.size(120.dp)) }
+                    )
 
                     DoyuCard {
                         TagChip(product.type.label(), selected = canUseCart)
@@ -667,7 +740,12 @@ private fun CartScreenContent(navController: NavHostController?) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                BeadDot(Color(item.product?.swatchColor ?: 0xFFF6A6B2), size = 40.dp)
+                                CartProductImage(
+                                    product = item.product,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(MaterialTheme.shapes.small)
+                                )
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(item.product?.title ?: "商品", style = MaterialTheme.typography.titleMedium)

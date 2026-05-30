@@ -2,13 +2,14 @@
 
 ## 测试目标
 
-当前阶段的测试目标是支撑 **第三轮商城 UI/API 收敛**：在第一轮登录 + 社区样板链路稳定、第二轮 App Shell/通用组件/消息页/我的页 UI 统一基线落地之后，把商城首页/商品列表、商品详情、购物车、订单确认、订单列表和支付单状态收紧为可联调、边界清楚、不误导真实支付的 MVP 链路；不可用能力不能以空点击、假成功或误导性文案暴露给用户。
+当前阶段的测试目标是支撑 **第四轮登录态持久化 + 常驻真实图文数据收敛**：第三轮商城 UI/API 主体验收已关闭，本轮重点验证 DataStore 登录态保存/恢复/清理，以及社区 Feed、商品列表/详情、购物车对 `coverImageUrl` / `imageUrl` 的真实图片渲染和 fallback；不可用能力不能以空点击、假成功或误导性文案暴露给用户。
 
 当前已有后端契约测试、图纸算法测试、AI Stub Provider 测试和 Android 单元测试。本文档区分：
 
 - 第一轮登录 + 社区基线验收。
 - 第二轮 UI 统一基线验收。
-- 第三轮商城 UI/API 收敛验收。
+- 第四轮登录态持久化与真实图文 seed 验收。
+- 第三轮商城 UI/API 收敛回归。
 - 后续阶段才需要补齐的 AI、真实支付、退款对账、审核、合规和风控验收。
 
 ## 第一轮登录 + 社区基线验收
@@ -308,7 +309,7 @@ rg -n "onClick = \\{ \\}|开发中|后续接入|TODO|placeholder|Toast" DouYu/ap
 
 - 登录：发送验证码、输入验证码、登录成功、退出登录。
 - 退出登录返回：退出后返回路径明确，受保护页面回到未登录态或登录引导。
-- 登录态：后续源码阶段需验证重启 App 后仍保持登录态；当前 `InMemoryTokenStore` 阶段应记录为未完成。
+- 登录态：第四轮需验证登录后重启 App 仍保持登录态，退出登录后重启不恢复登录态，401 / refresh 失败会清理本机 token。
 - 社区：Feed、详情、发布、评论、点赞、收藏有明确状态，作为回归项保留。
 - 社区提交：发帖和评论提交后展示“审核中”，不假装立即公开。
 - 消息：通知列表、私信列表、会话详情无空点击；发送未闭环时禁用或明确边界。
@@ -324,6 +325,53 @@ rg -n "onClick = \\{ \\}|开发中|后续接入|TODO|placeholder|Toast" DouYu/ap
 - AI：上传、参数选择、创建任务、进度、失败、取消、成功结果页可跑。
 - AI 结果：预览图、色号清单、材料清单、保存入口清楚；加购、PDF、分享未闭环时禁用。
 - 真实支付：微信/支付宝 SDK、沙箱或正式渠道、支付后返回 App、退款和对账专项验收。
+
+## 第四轮登录态与真实图文验收
+
+第四轮验收只关闭登录态持久化和常驻真实图文数据，不关闭真实 AI Provider、真实微信/支付宝支付、地址管理、玩家交易闭环或上线生产化。
+
+必跑命令：
+
+```powershell
+cd D:\Studio\SpellBean\DouYu
+.\gradlew.bat --version
+.\gradlew.bat :app:testDebugUnitTest --console=plain
+.\gradlew.bat :app:assembleDebug --console=plain
+
+cd D:\Studio\SpellBean\doyu-server
+mvn test
+```
+
+后端验收：
+
+- Flyway 包含 `products.image_url` 和 `posts.cover_image_url`。
+- `GET /api/v1/products` 至少返回 6 条本地 QA 商品，`imageUrl` 非空。
+- `GET /api/v1/posts/feed` 至少返回 4 条常驻帖子，`coverImageUrl` 非空。
+- `GET /api/v1/cart` 的 `product.imageUrl` 与商品图一致。
+- `src/main/resources/static/seed/ATTRIBUTION.md` 记录图片来源和许可说明。
+
+Android 验收：
+
+- `DataStoreTokenStore` 保存、hydrate、clear 有单元测试。
+- 登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore。
+- `Product.imageUrl`、`CartProductSummary.imageUrl`、`Post.coverImageUrl` DTO 可解析。
+- 商品卡、商品详情、购物车项、社区 Feed 和帖子详情优先渲染真实图片；图片为空或加载失败时回退现有 swatch/拼豆占位。
+
+真机 smoke：
+
+- 先运行 `D:\AndroidChace\platform-tools\adb.exe devices -l`；无在线真机不得写成通过。
+- 登录后强制关闭并重启 App，应保持登录态。
+- 退出登录后强制关闭并重启 App，应回到未登录态。
+- 社区和商城页面能显示真实 seed 图片；后端关闭或图片加载失败时不崩溃、不空白。
+
+2026-05-30 第四轮实际记录：
+
+- 已跑：`.\gradlew.bat --version`、`.\gradlew.bat :app:testDebugUnitTest --console=plain`、`.\gradlew.bat :app:assembleDebug --console=plain`。
+- 已跑：`mvn clean test` 和 `mvn test`，后端测试 44 个通过；`/seed/**` 已纳入匿名静态资源访问契约。
+- 已跑：真机 `10.64.241.158:42861` 安装启动 debug 包，前台确认为 `cn.edu.app.douyu/.MainActivity`。
+- 已跑：开发后端在 `.env.phone` 下返回 6 条商品和 4 条帖子，`imageUrl` / `coverImageUrl` 使用 `DOUYU_STORAGE_BASE_URL=http://10.64.241.153:8081` 拼绝对 URL；首个商品图和帖子封面图 HTTP 200 可访问。
+- 截图：`.qa-output/fourth-round-after-seed-fix.png` 已保存为本地 QA 证据，不提交。
+- 未完全自动关闭：验证码登录后的“重启仍保持登录态”和“退出登录后重启清空登录态”需要用户或后续真机手工复测确认；单元测试已覆盖 DataStore 保存、hydrate 和 clear。
 
 ## Android 兼容性测试
 
