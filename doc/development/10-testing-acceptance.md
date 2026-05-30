@@ -152,8 +152,10 @@
 - 真机 `10.64.241.158:41551` 已在线，debug 包已安装启动到 `cn.edu.app.douyu/.MainActivity`；设备当前宽度约 `sw369dp`。
 - 真机 UI 已覆盖商城首页、商品详情、自营商品未登录加购拦截、玩家二手商品禁用标准购物车；截图包括 `commerce-home.png`、`commerce-search.png`、`product-detail-self.png`、`product-detail-player.png`、`cart-items.png`。
 - 搜索输入在当前真机上进入输入法组合态，未把筛选结果作为最终证据；分类/列表状态仍需后续在稳定输入条件下复查。
-- 订单确认地址缺口和支付状态页的完整 App 内路径受当前未登录状态限制，未作为完整真机 UI 证据；本轮用 API smoke 复核订单/支付服务端边界，并保留客户端缺地址禁用下单策略。
 - API smoke 已确认自营 SKU 可加入购物车、服务端联调订单为 `WAITING_PAYMENT`、联调支付单为 `CREATED` 且查询状态来自服务端；玩家二手/定制 SKU 均通过 `409 CONFLICT` 阻断标准购物车。
+- 已登录 App 内路径已追加覆盖：短信 Stub 登录、购物车有商品态、订单确认地址缺口、我的订单入口、联调支付状态页创建和查询。截图/XML 包括 `cart-auth-items.png`、`order-confirm-address-gap-auth.png`、`my-orders-with-payment-entry-final2.png`、`payment-status-before-create-final.png`、`payment-status-stub-auth-final.png`。
+- 本次 QA 修正了真实联调中暴露的 Android 契约差异：订单列表增加“查看联调支付状态”入口；`SellerType` 接收后端 `SELF_OPERATED`；`addressSnapshot` 按对象解析；`POST /orders` 和 `POST /payments` 发送 `Idempotency-Key`。
+- 支付状态 App 内证据：联调订单 `ord_866d2498f0064353928346c8d2405b31` 进入支付页后，显式点击创建联调支付单才出现 `paymentId=pay_1743fe0e77354b5881fc34e908ca7675`，状态为 `CREATED`，渠道为 `WECHAT_APP`，金额 `1200` 分；页面只展示服务端状态和联调边界。
 
 | QA 对象 | 本轮关闭标准 | 记录方式 |
 |---|---|---|
@@ -161,9 +163,9 @@
 | 搜索 / 分类 | 输入关键词或切换分类后，列表状态清楚，不挤压、不空白遮挡 | 已截图 `commerce-search.png`；筛选结果未作为最终证据，后续复查 |
 | 自营商品详情 | 价格、库存、销量、SKU、数量选择、加入购物车状态正确 | 已截图 `product-detail-self.png` |
 | 玩家商品详情 | 展示“不支持标准购物车”边界，加购按钮禁用，无假成功 | 已截图 `product-detail-player.png` |
-| 购物车 | 未登录、空车或有商品状态清楚，数量/删除/结算入口可识别 | 已截图 `cart-items.png`，本次覆盖未登录加购拦截 |
-| 订单确认 | 显示地址缺口，暂不能下单，不能创建订单或支付单 | 当前未登录 UI 路径未完整进入；保留 2026-05-23 订单确认截图记录，服务端订单 API smoke 已复核 |
-| 支付状态 | 只展示联调支付单和服务端状态，不展示正式渠道完成态 | 当前未登录 UI 路径未完整进入；API smoke 已复核支付单 `CREATED` 和查询状态 |
+| 购物车 | 未登录、空车或有商品状态清楚，数量/删除/结算入口可识别 | 已截图 `cart-items.png`、`cart-auth-items.png`；本次覆盖登录后有商品态和结算入口 |
+| 订单确认 | 显示地址缺口，暂不能下单，不能创建订单或支付单 | 已截图 `order-confirm-address-gap-auth.png`；缺地址时按钮禁用，不调用创建订单或支付单 |
+| 支付状态 | 只展示联调支付单和服务端状态，不展示正式渠道完成态 | 已截图 `payment-status-before-create-final.png`、`payment-status-stub-auth-final.png`；支付单需显式创建，状态来自服务端 |
 
 ## 文档检查
 

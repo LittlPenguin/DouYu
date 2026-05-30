@@ -45,6 +45,7 @@
 - 第二轮已把 App Shell、通用组件、消息页和我的页落成 UI 统一基线，不把 AI、支付和上线生产化纳入第二轮实现。
 - 第三轮已明确商城 UI/API 基线：商城首页/商品列表对齐 Stitch `_2` 的搜索、分类、Banner 和双列商品卡；自营商品保留标准加购；玩家二手/定制不走标准购物车；订单确认不伪装默认地址；支付状态只展示联调支付单和服务端确认。
 - 商城订单 / 支付边界已补契约测试：Android 锁定订单请求和支付响应 DTO，后端锁定订单幂等、支付单 `CREATED` 状态、金额一致和玩家商品不能进入标准购物车/标准订单。
+- 第三轮已登录真机 App 内路径已补证：购物车有商品态、订单确认地址缺口、我的订单入口和联调支付状态页均已在真机路径中验证；Android DTO/API 已对齐后端 `SELF_OPERATED`、对象型 `addressSnapshot` 和订单/支付写接口 `Idempotency-Key`。
 - `AGENTS.md` 仍是仓库级有效约束入口；已同步第三轮阶段标题、ADB 真机调试前置规则、Agent Team 自动派发规则和 doc 职责映射。
 
 ## 当前不能认为完成
@@ -53,7 +54,7 @@
 - 第三轮商城真机优先 QA 以主 Agent 实际 `adb devices`、安装、截图和 smoke 输出为准；已在线真机时可以关闭真机优先路径，不能用文档替代设备结论。
 - 第三轮商城多宽度视觉 QA 仍待补：360dp、390dp、430dp 模拟器复查不作为本轮真机优先 QA 的阻塞项，后续单独关闭。
 - 已定位 ADB 路径 `D:\AndroidChace\platform-tools\adb.exe`；无在线模拟器/真机时，截图或设备 QA 不能写成通过，必须先告知用户。
-- 2026-05-30 真机优先 QA 已覆盖在线真机安装启动、商城首页、玩家商品禁用标准购物车、自营商品详情和未登录加购拦截；搜索筛选结果、订单确认和支付状态完整 App 内路径仍按 `10-testing-acceptance.md` 记录为后续复查或 API smoke 辅证。
+- 2026-05-30 真机优先 QA 已覆盖在线真机安装启动、商城首页、玩家商品禁用标准购物车、自营商品详情、未登录加购拦截、已登录购物车、订单确认地址缺口、我的订单入口和联调支付状态页；搜索筛选结果仍按 `10-testing-acceptance.md` 记录为后续复查。
 - 本地 QA 种子商品已覆盖 `SELF_OPERATED`、`PLAYER_SECOND_HAND`、`PLAYER_CUSTOM_SERVICE`；真机商城 smoke 已验证玩家二手 / 定制商品只展示信息并禁用标准购物车。
 - Android debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在 `.env.emulator` / `.env.phone` 模板间切换并重新构建；登录态仍使用内存 TokenStore。
 - Android Studio / Gradle JVM 如果误选到 VS Code Red Hat Java 扩展内置精简 JRE，会触发 `jlink.exe does not exist`；本地构建必须按协作规范选择完整 JDK/JBR 21。
@@ -100,6 +101,7 @@ P0：第三轮商城 UI/API 收敛验收
 - 购物车联调契约已按真实后端收敛：写接口返回变更结果，Android 写后重新拉取 `GET /cart`；购物车项里的 `product` 是摘要对象，不按完整商品解析。
 - 真机优先 QA：订单确认明确地址管理缺口；没有真实地址时禁用创建订单，不伪装“默认地址”、不创建订单或支付单。
 - 真机优先 QA：支付状态页显式创建联调支付单，展示 paymentId、channel、amount、status 和服务端确认文案，不自动伪装渠道完成态。
+- Android 商城契约：订单列表必须能进入联调支付状态；`sellerType=SELF_OPERATED`、对象型 `addressSnapshot` 和订单/支付写接口 `Idempotency-Key` 必须继续由单元测试覆盖。
 - 后续多宽度 QA：在 360dp、390dp、430dp 下复查商城列表、详情、购物车、订单确认和支付状态页不挤压、不重叠。
 
 P1：保留并复查第二轮 UI 统一基线

@@ -52,7 +52,7 @@ enum class ProductStatus { DRAFT, ON_SALE, OFF_SALE, SOLD_OUT, DELETED }
 enum class SkuStatus { ON_SALE, OFF_SALE, SOLD_OUT, DELETED }
 
 @Serializable
-enum class SellerType { PLATFORM, PLAYER }
+enum class SellerType { SELF_OPERATED, PLATFORM, PLAYER }
 
 @Serializable
 enum class OrderType { SELF_OPERATED, PLAYER_TRADE, CUSTOM_SERVICE }
@@ -382,6 +382,12 @@ data class OrderItem(
 }
 
 @Serializable
+data class AddressSnapshot(
+    val addressId: String? = null,
+    val raw: String? = null
+)
+
+@Serializable
 data class Order(
     val orderId: String,
     val buyerId: String,
@@ -392,7 +398,7 @@ data class Order(
     val totalAmountCent: Int,
     val payableAmountCent: Int,
     val items: List<OrderItem>,
-    val addressSnapshot: String? = null
+    val addressSnapshot: AddressSnapshot? = null
 )
 
 @Serializable

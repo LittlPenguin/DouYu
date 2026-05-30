@@ -4,6 +4,7 @@ import cn.edu.app.douyu.core.model.*
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -141,7 +142,10 @@ interface CartApi {
 
 interface OrderApi {
     @POST("/api/v1/orders")
-    suspend fun createOrder(@Body request: CreateOrderRequest): ApiResponse<Order>
+    suspend fun createOrder(
+        @Header(ApiHeaders.IDEMPOTENCY_KEY) idempotencyKey: String,
+        @Body request: CreateOrderRequest
+    ): ApiResponse<Order>
 
     @GET("/api/v1/orders")
     suspend fun orders(
@@ -158,7 +162,10 @@ interface OrderApi {
 
 interface PaymentApi {
     @POST("/api/v1/payments")
-    suspend fun createPayment(@Body request: CreatePaymentRequest): ApiResponse<Payment>
+    suspend fun createPayment(
+        @Header(ApiHeaders.IDEMPOTENCY_KEY) idempotencyKey: String,
+        @Body request: CreatePaymentRequest
+    ): ApiResponse<Payment>
 
     @GET("/api/v1/payments/{paymentId}")
     suspend fun payment(@Path("paymentId") paymentId: String): ApiResponse<Payment>

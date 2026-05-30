@@ -957,6 +957,12 @@ private fun MyOrdersScreenContent(navController: NavHostController?) {
                                         style = MaterialTheme.typography.titleMedium,
                                         color = DoyuCoral
                                     )
+                                    Spacer(Modifier.height(10.dp))
+                                    DoyuOutlinedButton(
+                                        "查看联调支付状态",
+                                        onClick = { navController?.navigate(AppRoute.paymentResult(order.orderId)) },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
                                 }
                             }
                         }

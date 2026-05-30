@@ -321,7 +321,7 @@ object MockData {
                 quantity = item.quantity
             )
         },
-        addressSnapshot = "上海市 浦东新区 豆屿路 16 号"
+        addressSnapshot = AddressSnapshot(addressId = "mock_address_001")
     )
 
     val payment = Payment(

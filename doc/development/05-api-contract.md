@@ -389,7 +389,7 @@ SKU 字段（联调口径）：
 - `title`：商品标题。
 - `specName`：规格名称。
 - `sellerId`：卖家 ID。
-- `addressSnapshot`：收货地址快照。
+- `addressSnapshot`：收货地址快照对象；当前至少包含 `addressId`，客户端必须按对象解析并容忍未知字段。
 - `status`：订单状态。
 - `payableAmountCent`：应付金额（分）。
 

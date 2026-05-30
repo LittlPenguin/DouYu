@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
+import java.util.UUID
 
 private val errorJson = Json { ignoreUnknownKeys = true; explicitNulls = false }
 
@@ -32,6 +33,8 @@ private fun <T> apiCall(block: suspend () -> ApiResponse<T>): T {
 }
 
 class ApiException(val code: String, override val message: String, val traceId: String?) : RuntimeException("$code: $message")
+
+private fun idempotencyKey(prefix: String): String = "$prefix-${UUID.randomUUID()}"
 
 class RealCommunityRepository(private val api: CommunityApi) : CommunityRepository {
     override fun feed(): PageResponse<Post> = apiCall { api.feed() }
@@ -99,10 +102,10 @@ class RealCommerceRepository(
     override fun order(orderId: String): Order = apiCall { orderApi.order(orderId) }
 
     override fun createOrder(itemIds: List<String>, addressId: String): Order =
-        apiCall { orderApi.createOrder(CreateOrderRequest(itemIds, addressId)) }
+        apiCall { orderApi.createOrder(idempotencyKey("order"), CreateOrderRequest(itemIds, addressId)) }
 
     override fun createPayment(orderId: String, channel: PaymentChannel): Payment =
-        apiCall { paymentApi.createPayment(CreatePaymentRequest(orderId, channel)) }
+        apiCall { paymentApi.createPayment(idempotencyKey("payment"), CreatePaymentRequest(orderId, channel)) }
 
     override fun paymentStatus(paymentId: String): Payment =
         apiCall { paymentApi.payment(paymentId) }

@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import java.net.UnknownHostException
@@ -43,9 +44,11 @@ class ApiInterfaceContractTest {
         assertDelete(method<CartApi>("removeItem"), "/api/v1/cart/items/{itemId}")
 
         assertPost(method<OrderApi>("createOrder"), "/api/v1/orders")
+        assertHeader(method<OrderApi>("createOrder"), ApiHeaders.IDEMPOTENCY_KEY)
         assertGet(method<OrderApi>("orders"), "/api/v1/orders")
         assertPost(method<OrderApi>("cancelOrder"), "/api/v1/orders/{orderId}/cancel")
         assertPost(method<PaymentApi>("createPayment"), "/api/v1/payments")
+        assertHeader(method<PaymentApi>("createPayment"), ApiHeaders.IDEMPOTENCY_KEY)
         assertGet(method<PaymentApi>("payment"), "/api/v1/payments/{paymentId}")
 
         assertPost(method<MessageApi>("markNotificationsRead"), "/api/v1/messages/notifications/read")
@@ -209,6 +212,51 @@ class ApiInterfaceContractTest {
         assertEquals(2400, payment?.amountCent)
         assertEquals("STUB", payment?.payParams?.get("provider"))
         assertTrue(PaymentStatus.entries.map { it.name }.containsAll(listOf("CREATED", "PROCESSING", "SUCCEEDED", "FAILED", "CLOSED")))
+
+        val orderResponse = DoyuJson.decodeFromString<ApiResponse<PageResponse<Order>>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": {
+                "items": [
+                  {
+                    "orderId": "ord_1",
+                    "buyerId": "user_1",
+                    "sellerType": "SELF_OPERATED",
+                    "sellerId": null,
+                    "orderType": "SELF_OPERATED",
+                    "status": "WAITING_PAYMENT",
+                    "totalAmountCent": 2400,
+                    "payableAmountCent": 2400,
+                    "items": [
+                      {
+                        "orderItemId": "oi_1",
+                        "productId": "prod_1",
+                        "skuId": "sku_1",
+                        "title": "2.6mm 豆子豆沙红",
+                        "specName": "1000颗",
+                        "priceCent": 1200,
+                        "quantity": 2
+                      }
+                    ],
+                    "addressSnapshot": { "addressId": "addr_test_1" }
+                  }
+                ],
+                "page": 1,
+                "size": 20,
+                "total": 1,
+                "hasMore": false
+              },
+              "traceId": "trace_order"
+            }
+            """.trimIndent()
+        )
+        val order = orderResponse.data?.items?.single()
+        assertEquals(SellerType.SELF_OPERATED, order?.sellerType)
+        assertEquals(OrderStatus.WAITING_PAYMENT, order?.status)
+        assertEquals(2400, order?.payableAmountCent)
+        assertEquals("addr_test_1", order?.addressSnapshot?.addressId)
     }
 
     @Test
@@ -245,5 +293,13 @@ class ApiInterfaceContractTest {
 
     private fun assertDelete(method: java.lang.reflect.Method, path: String) {
         assertEquals(path, method.getAnnotation(DELETE::class.java)?.value)
+    }
+
+    private fun assertHeader(method: java.lang.reflect.Method, header: String) {
+        assertTrue(
+            method.parameterAnnotations
+                .flatMap { annotations -> annotations.filterIsInstance<Header>() }
+                .any { it.value == header }
+        )
     }
 }
