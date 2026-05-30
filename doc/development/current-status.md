@@ -47,7 +47,7 @@
 - 第三轮商城 UI/API 主体验收已关闭：商城首页/商品列表对齐 Stitch `_2` 的搜索、分类、Banner 和双列商品卡；自营商品保留标准加购；玩家二手/定制不走标准购物车；订单确认不伪装默认地址；支付状态只展示联调支付单和服务端确认。
 - 商城订单 / 支付边界已补契约测试：Android 锁定订单请求和支付响应 DTO，后端锁定订单幂等、支付单 `CREATED` 状态、金额一致和玩家商品不能进入标准购物车/标准订单。
 - 第三轮已登录真机 App 内路径已补证：购物车有商品态、订单确认地址缺口、我的订单入口和联调支付状态页均已在真机路径中验证；Android DTO/API 已对齐后端 `SELF_OPERATED`、对象型 `addressSnapshot` 和订单/支付写接口 `Idempotency-Key`。
-- Android 已将 `DoyuAppContainer` 切到 DataStore 启动 hydrate；单元测试已覆盖保存、hydrate 和 clear，验证码登录后的真机重启保持/退出清理仍需手工复测确认。
+- Android 已将 `DoyuAppContainer` 切到 DataStore 启动 hydrate；单元测试已覆盖保存、hydrate 和 clear，2026-05-30 真机复测已确认登录后强杀重启仍保持登录态、退出登录后强杀重启不会恢复旧登录。
 - `AGENTS.md` 仍是仓库级有效约束入口；已同步第四轮阶段标题、ADB 真机调试前置规则、Agent Team 自动派发规则和 doc 职责映射。
 
 ## 当前不能认为完成
@@ -57,7 +57,7 @@
 - 已定位 ADB 路径 `D:\AndroidChace\platform-tools\adb.exe`；无在线模拟器/真机时，截图或设备 QA 不能写成通过，必须先告知用户。
 - 2026-05-30 真机优先 QA 已覆盖在线真机安装启动、商城首页、搜索有结果和空态、分类切换、玩家商品禁用标准购物车、自营商品详情、未登录加购拦截、已登录购物车、订单确认地址缺口、我的订单入口和联调支付状态页；模拟器多宽度复查仍按 `10-testing-acceptance.md` 记录为后续复查。
 - 本地 QA 种子商品已覆盖 `SELF_OPERATED`、`PLAYER_SECOND_HAND`、`PLAYER_CUSTOM_SERVICE`；真机商城 smoke 已验证玩家二手 / 定制商品只展示信息并禁用标准购物车。
-- Android debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在 `.env.emulator` / `.env.phone` 模板间切换并重新构建；登录态已接入 DataStore 启动 hydrate，仍需验证码登录后的真机重启路径复测。
+- Android debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在 `.env.emulator` / `.env.phone` 模板间切换并重新构建；登录态已接入 DataStore 启动 hydrate，验证码登录后的真机重启路径已在 2026-05-30 复测通过。
 - Android Studio / Gradle JVM 如果误选到 VS Code Red Hat Java 扩展内置精简 JRE，会触发 `jlink.exe does not exist`；本地构建必须按协作规范选择完整 JDK/JBR 21。
 - 社区、消息和我的样板链路已开始消除空点击和假成功；第三轮已将商城订单确认和联调支付状态收口到禁用缺地址下单、显式创建联调支付单和服务端状态展示。
 - 文件预览 URL 策略不完整，图纸预览、头像等 fileId 不一定能直接展示为图片；第四轮已收敛 Feed 和商城 MVP 所需的 `coverImageUrl` / `imageUrl`，但这不等于完整媒体服务生产化。

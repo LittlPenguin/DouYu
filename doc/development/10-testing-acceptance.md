@@ -371,7 +371,9 @@ Android 验收：
 - 已跑：真机 `10.64.241.158:42861` 安装启动 debug 包，前台确认为 `cn.edu.app.douyu/.MainActivity`。
 - 已跑：开发后端在 `.env.phone` 下返回 6 条商品和 4 条帖子，`imageUrl` / `coverImageUrl` 使用 `DOUYU_STORAGE_BASE_URL=http://10.64.241.153:8081` 拼绝对 URL；首个商品图和帖子封面图 HTTP 200 可访问。
 - 截图：`.qa-output/fourth-round-after-seed-fix.png` 已保存为本地 QA 证据，不提交。
-- 未完全自动关闭：验证码登录后的“重启仍保持登录态”和“退出登录后重启清空登录态”需要用户或后续真机手工复测确认；单元测试已覆盖 DataStore 保存、hydrate 和 clear。
+- 已跑：验证码登录手机号 `13800000088`、验证码 `123456` 成功进入“我的”已登录态；强杀 App 并重启后仍显示“豆友 / 我的工坊 / 等级与奖励”，确认 DataStore 登录恢复生效。
+- 已跑：设置页退出登录后回到“我的”未登录态；再次强杀 App 并重启后仍显示“未登录 / 去登录”，确认退出登录会清理持久化 token。
+- 截图：`.qa-output/login-persistence-after-restart-logged.png`、`.qa-output/login-persistence-after-restart-guest.png` 已保存为本地 QA 证据，不提交。
 
 ## Android 兼容性测试
 
