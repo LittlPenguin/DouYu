@@ -6,14 +6,15 @@
 
 ## 当前阶段
 
-当前项目处于 **第一轮重构基线 / UI MVP 收敛阶段**。
+当前项目处于 **第三轮商城 UI/API 收敛 / UI MVP 验收收口阶段**。
 
 阶段目标：
 
-- 根据 `doc/stitch_document_app_generator/` 的 Stitch 设计探索稿重建 Android UI 口径。
+- 在第一轮登录 + 社区契约样板、第二轮 App Shell / 消息 / 我的 UI 统一基线之后，继续收口第三轮商城 UI/API。
+- 按 `doc/stitch_document_app_generator/` 的 Stitch 设计探索稿和 `doc/development/11-ui-style-guide.md` 统一 Android UI 口径。
 - 以 `doc/development/11-ui-style-guide.md` 作为唯一 UI 权威规范。
-- 以 `doc/development/05-api-contract.md` 作为登录 + 社区第一轮样板链路的唯一接口契约源。
-- 把现有开发态能力收敛为可演示、主链路可跑、不可用能力不误导用户的 Android UI MVP。
+- 以 `doc/development/05-api-contract.md` 作为接口契约源；登录 + 社区第一轮样板链路继续严格追该文档。
+- 把商城首页、商品详情、购物车、订单确认、订单列表和联调支付状态收敛为可演示、可联调、边界清楚的 Android UI MVP。
 - 优先消除空点击、假成功 Toast、误导性支付、误导性合规入口和半成品功能暴露。
 
 本阶段不做：
@@ -26,6 +27,7 @@
 - 不新增后端公共 API；后续源码阶段优先接入已有 `/api/v1` 能力。
 
 阶段状态以 `doc/development/current-status.md` 为准。
+如果本节与 `doc/development/current-status.md` 冲突，以 `current-status.md` 和当前代码为准，并优先修正文档口径。
 
 ## 开发前必读
 
@@ -47,6 +49,16 @@
 | 商城 / 订单 / 支付 | `doc/development/08-commerce-payment.md` |
 | 权限 / 隐私 / 审核 / 未成年人 | `doc/development/09-security-compliance.md` |
 | 前后端联调 | `doc/development/14-frontend-backend-collaboration.md` |
+
+## 文档职责映射
+
+- 任务需求和阶段任务：以 `doc/development/current-status.md` 和 `doc/development/10-testing-acceptance.md` 为准。
+- API 文档和字段契约：以 `doc/development/05-api-contract.md` 为准；后端 Controller/DTO、Android DTO、Repository、UI 和测试必须与其对齐。
+- 阶段未完成内容和本轮不做内容：以 `doc/development/current-status.md` 为准。
+- Android 页面行为和 UI 状态：以 `doc/development/03-android-client.md` 与 `doc/development/11-ui-style-guide.md` 为准。
+- 商城、订单、支付和玩家交易边界：以 `doc/development/08-commerce-payment.md` 为准。
+- 调试步骤、环境配置、真机/模拟器联调和排障：以 `doc/development/14-frontend-backend-collaboration.md` 为准。
+- 测试、验收、真机 QA 记录和未关闭验收项：以 `doc/development/10-testing-acceptance.md` 为准。
 
 ## 事实优先级
 
@@ -87,6 +99,19 @@ Copy-Item .env.phone .env -Force
 
 - 切换 `.env` 后必须重启后端并重新构建 debug 包。后端 Local OSS URL 在启动时读取环境变量，Android `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单在 Gradle 构建期写入，不是运行时动态切换。
 
+## ADB 真机调试
+
+- 本项目允许使用 ADB 进行远程真机调试，默认 ADB 路径为 `D:\AndroidChace\platform-tools\adb.exe`。
+- 执行任何真机 QA、安装、截图、日志或交互前，必须先运行：
+
+```powershell
+D:\AndroidChace\platform-tools\adb.exe devices -l
+```
+
+- 如果没有在线设备，必须先告诉用户“当前无在线真机，不能执行真机验收”，不得把设备 QA、截图或真机 smoke 写成通过。
+- `.qa-output/` 只用于本地临时截图和日志，按 `.gitignore` 忽略，不提交。
+- 无线调试端口、配对码和一次性设备连接信息不得写入文档或提交记录；文档只保留通用命令和排障原则。
+
 ## Android Studio / Gradle JDK
 
 - Android Studio 使用 Gradle Wrapper 构建；Gradle JVM 必须是完整 JDK 21，必须包含 `bin\java.exe`、`bin\javac.exe` 和 `bin\jlink.exe`。
@@ -107,7 +132,7 @@ cd DouYu
 
 ## Agent Team 协作规则
 
-- 当任务明显可拆分、文件/职责边界清楚且并行安全时，Agent 应先用一句话告知用户将开启 Agent Team，然后直接派发，不再等待用户再次说“开”。
+- 当任务明显可拆分、文件/职责边界清楚且并行安全时，Agent 可以直接执行 Agent Team：先用一句话告知用户将开启 Agent Team，然后直接派发，不再等待用户再次说“开”。
 - Agent Team 必须由主 Agent 总控：拆分非重叠职责、集成结果、解决冲突、统一验证、提交和推送。
 - 不得让多个 Agent 同时修改同一文件或同一职责边界；如果必须触碰同一文件，改为主 Agent 串行处理。
 - 若当前运行模式、工具权限或更高优先级规则限制派发 Agent，应说明限制并改用单 Agent 执行。
@@ -178,6 +203,10 @@ cd DouYu
 ## 文档同步
 
 修改实现时必须同步对应文档：
+
+- 任务需求、调试步骤、注意事项、接口变更、阶段目标、阶段未完成项和验收结论都必须同步到对应 `doc/development` 分册。
+- 改变计划、新增能力、调整边界或改变验收标准时，必须先更新对应文档；若影响仓库级规则，再同步 `AGENTS.md`。
+- 不允许只改代码不改文档，也不允许只在对话里说明新规则而不沉淀到文档。
 
 | 改动范围 | 同步文档 |
 |---|---|

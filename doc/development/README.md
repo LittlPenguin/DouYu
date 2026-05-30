@@ -2,7 +2,7 @@
 
 本目录保存豆屿 Doyu 当前有效的工程规范、接口契约、数据模型、联调手册、测试验收和当前状态。
 
-当前阶段是 **UI 重构准备 / MVP 收敛阶段**：先根据 `doc/stitch_document_app_generator/` 的设计探索稿重建 Android UI 口径，把现有开发态能力收敛成可演示、主链路可跑、不可用能力不误导用户的 MVP。
+当前阶段是 **第三轮商城 UI/API 收敛 / UI MVP 验收收口阶段**：在第一轮登录 + 社区契约样板和第二轮 App Shell / 消息 / 我的 UI 统一基线之后，继续把商城首页、商品详情、购物车、订单确认、订单列表和联调支付状态收敛成可演示、可联调、边界清楚且不误导真实支付的 MVP。
 
 产品目标、商业闭环和阶段方向以 `../豆屿App商业技术执行计划.md` 为总纲；当前工程事实以代码、`../../AGENTS.md` 和 `current-status.md` 为准。`../../CLAUDE.md` 只作为 Claude Code 的转发入口，要求先读 `../../AGENTS.md`。
 
@@ -36,6 +36,20 @@
 - 接口、数据模型、支付、AI、安全合规等变更必须同步更新对应分册。
 - 如果文档与代码冲突，先以代码和 `current-status.md` 判断当前事实，再修正文档。
 - 新增计划外能力前，先更新产品总纲或对应分册，明确范围、风险和验收标准。
+- 任务需求、调试步骤、注意事项、阶段目标、阶段未完成项和验收结论必须沉淀到对应文档，不能只留在对话里。
+
+## 文档职责映射
+
+| 内容 | 权威文档 |
+|---|---|
+| 任务需求 / 阶段任务 | `current-status.md`、`10-testing-acceptance.md` |
+| API 文档 / 字段契约 | `05-api-contract.md` |
+| 阶段未完成内容 / 本轮不做 | `current-status.md` |
+| Android 页面行为 | `03-android-client.md` |
+| UI 风格和组件规则 | `11-ui-style-guide.md` |
+| 商城 / 订单 / 支付边界 | `08-commerce-payment.md` |
+| 联调 / ADB / 真机 / 模拟器排障 | `14-frontend-backend-collaboration.md` |
+| 验证命令 / 真机 QA 记录 | `10-testing-acceptance.md` |
 
 ## 分册清单
 

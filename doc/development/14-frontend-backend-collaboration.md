@@ -91,6 +91,38 @@ Android：
 - Debug 包的 `baseUrl` 和 HTTP 白名单由根目录 `.env` 在构建时生成。
 - 当前默认联调目标是模拟器，因此 `.env` 默认应使用 `.env.emulator`。
 
+## ADB 真机调试
+
+本项目允许使用 ADB 进行远程真机调试，默认 ADB 路径为：
+
+```powershell
+D:\AndroidChace\platform-tools\adb.exe
+```
+
+执行真机安装、截图、日志或交互前，必须先确认设备在线：
+
+```powershell
+D:\AndroidChace\platform-tools\adb.exe devices -l
+```
+
+验收规则：
+
+- 没有在线设备时，必须先告诉用户当前不能执行真机验收，不得把设备 QA 写成通过。
+- 无线调试可由用户在手机上开启；配对码、临时端口和一次性连接信息不得写入文档或提交记录。
+- 真机截图、XML、logcat 等临时证据保存到 `.qa-output/`，该目录不提交。
+- 真机能访问电脑后端但 App 失败时，优先检查 `.env.phone`、debug 包是否重建、HTTP 白名单和 Windows 防火墙。
+
+常用命令：
+
+```powershell
+$adb = "D:\AndroidChace\platform-tools\adb.exe"
+& $adb devices -l
+& $adb install -r D:\Studio\SpellBean\DouYu\app\build\outputs\apk\debug\app-debug.apk
+& $adb shell monkey -p cn.edu.app.douyu -c android.intent.category.LAUNCHER 1
+New-Item -ItemType Directory -Force -Path D:\Studio\SpellBean\.qa-output | Out-Null
+& $adb exec-out screencap -p > D:\Studio\SpellBean\.qa-output\current-screen.png
+```
+
 ## Debug HTTP 与 Release HTTPS
 
 - `main` 网络安全配置保持 HTTPS only。
