@@ -486,6 +486,7 @@ Android 验收：
 - 上传重试。
 - 文件大小超限。
 - 文件类型不支持。
+- 未登录点击 AI 图片上传时展示登录引导，不显示泛化网络失败。
 - 上传后确认返回 `fileId`。
 - 业务提交使用 `fileId`，不能把 `fileKey` 当业务 ID。
 
@@ -493,7 +494,7 @@ Android 验收：
 
 - 上传后审核拒绝。
 - 私有文件不可公开访问。
-- 真实对象存储验真：第五轮前置已补 Aliyun OSS Provider 单元测试和配置选择测试，但尚未用真实 Bucket / AccessKey / CORS 做端到端上传 smoke。
+- 真实对象存储验真：第五轮前置已补 Aliyun OSS Provider 单元测试和配置选择测试；2026-05-31 已用当前开发环境完成单台真机 AI_INPUT 上传到真实 Bucket 的 smoke，但生产化对象存储能力仍未关闭。
 - 病毒扫描、EXIF 清理和缩略图处理。
 
 ### Aliyun OSS Provider 前置验收
@@ -506,11 +507,13 @@ Android 验收：
 - `OssProviderConfigTest`：`douyu.oss.provider` 缺省走 Local OSS，`stub` 可用于测试，`aliyun` 在配置齐全时可创建 Aliyun OSS Provider。
 - `DouyuBackendContractTests`：`/api/v1/uploads/confirm` 保留 `fileId/fileKey/auditStatus`，并补齐 Android `FileAsset` 需要的 `ownerId/usage/storageKey/mimeType/sizeBytes/publicUrl` 等字段。
 - `mvn test`：后端全量测试必须继续通过，确保 `/api/v1/uploads/presign` 和 `/api/v1/uploads/confirm` 契约不回退。
+- 2026-05-31 真机 smoke：登录态下 AI 图片上传已通过 Aliyun OSS 预签名 PUT 和 `/uploads/confirm` 返回 `fileId`；公开 OSS URL `HEAD` 返回 200，数据库 `file_assets` 记录为 `AI_INPUT` / `NEED_MANUAL_REVIEW`。
+- 2026-05-31 Android 单元测试：`AiUploadNavigationTest` 覆盖未登录上传先进入登录引导、登录后回到图片选择页、上传成功 `fileId` 可构造参数页路由。
 
 未关闭：
 
-- 真实 Aliyun Bucket 端到端上传。
-- Bucket CORS、最小权限 RAM / STS、CDN、防盗链、图片审核、病毒扫描、EXIF 清理和缩略图处理。
+- 本次改动后的“继续设置参数”真机前台点击 smoke；执行时真机已离线，不能写成通过，后续需在在线真机上补一次安装启动和 App 内点击验证。
+- Aliyun OSS 生产化：Bucket CORS 最终收敛、STS / 最小权限 RAM、CDN、防盗链、图片审核、病毒扫描、EXIF 清理和缩略图处理。
 - 第四轮 seed assets 迁移到云对象存储。
 
 ### 商城支付测试

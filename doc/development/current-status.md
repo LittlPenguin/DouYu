@@ -17,7 +17,7 @@
 - 登录 + 社区接口继续以 `doc/development/05-api-contract.md` 为唯一契约源。
 - 视觉参考使用 `doc/stitch_document_app_generator/` 下 Stitch 设计稿。
 - 最终 UI 权威规范仍沉淀到 `doc/development/11-ui-style-guide.md`。
-- 暂不做真实 AI Provider、真实微信/支付宝支付、生产合规上线、增强审核风控、完整地址管理、玩家交易完整闭环；真实 Bucket 上传 smoke、STS/最小权限、CDN、防盗链、图片审核、缩略图和 seed assets 云迁移也不在第五轮前置内关闭。
+- 暂不做真实 AI Provider、真实微信/支付宝支付、生产合规上线、增强审核风控、完整地址管理、玩家交易完整闭环；单台真机真实 Bucket 上传 smoke 已作为开发联调证据补齐，但 STS/最小权限、CDN、防盗链、图片审核、缩略图和 seed assets 云迁移不在第五轮前置内关闭。
 
 ## 功能完成度矩阵
 
@@ -79,7 +79,7 @@
 - 后端端口：`8081`。
 - PostgreSQL 宿主机端口：`5433`，容器内端口仍为 `5432`。
 - API 前缀：`/api/v1`。
-- 本地 OSS：开发环境默认使用 Local OSS Provider；第五轮前置已补 Aliyun OSS Provider 骨架，可通过本机私有 `.env` 启用，但真实 Bucket 端到端上传、CORS、STS/最小权限、CDN、防盗链、图片审核、病毒扫描、缩略图和 seed assets 云迁移仍未关闭。第四轮 seed assets 只用于本地 QA/演示，必须记录图片来源、用途和关联商品/帖子。
+- 本地 OSS：开发环境默认使用 Local OSS Provider；第五轮前置已补 Aliyun OSS Provider 骨架，可通过本机私有 `.env` 启用，且单台真机 AI_INPUT 上传到真实 Bucket 的开发 smoke 已补齐；CORS 最终收敛、STS/最小权限、CDN、防盗链、图片审核、病毒扫描、缩略图和 seed assets 云迁移仍未关闭。第四轮 seed assets 只用于本地 QA/演示，必须记录图片来源、用途和关联商品/帖子。
 - AI：自研拼豆算法已落地，视觉理解 Provider 仍需真实接入。
 - 支付：支付单和回调骨架已存在，真实微信/支付宝 SDK/API 未接入。
 
@@ -101,7 +101,8 @@ P0：第五轮前置 Aliyun OSS Provider 最小闭环
 - 后端：`DOUYU_OSS_PROVIDER=local|stub|aliyun` 可选择对象存储 Provider；Aliyun Provider 只由后端持有 AccessKey，继续复用 `/uploads/presign -> PUT uploadUrl -> /uploads/confirm`。
 - 后端：Aliyun Provider 生成 PUT 预签名 URL，返回 Android 直传所需 `headers`，confirm 后返回完整 `FileAsset` 字段，并通过 `publicUrl=publicBaseUrl + fileKey` 暴露公开图片 URL。
 - 文档：`.env.example` 只保留 Aliyun 占位变量，不提交真实 AccessKey；联调文档写清广州 Bucket 示例、Bucket CORS、公共读边界和 Provider 切换后重启后端。
-- 未完成：真实 Bucket 上传 smoke、STS/最小权限、CDN、防盗链、图片审核、缩略图和 seed assets 云迁移。
+- 已补：单台真机 AI_INPUT 图片上传已完成 Aliyun OSS 预签名 PUT、`/uploads/confirm`、数据库 `file_assets` 和公开 URL `HEAD 200` smoke；Android 已补未登录上传登录引导和 `fileId -> ai_params/{uploadedFileId}` 路由单元测试。
+- 未完成：STS/最小权限、CDN、防盗链、图片审核、缩略图和 seed assets 云迁移。
 
 P1：第四轮登录态持久化 + 常驻真实图文数据回归
 

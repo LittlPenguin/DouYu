@@ -250,7 +250,7 @@ private fun ImageSelectScreenPreview() { ImageSelectScreenContent(navController 
 @Composable
 fun ImageSelectScreen(navController: NavHostController) { ImageSelectScreenContent(navController) }
 
-private enum class UploadState { IDLE, UPLOADING, SUCCESS, FAILED }
+private enum class UploadState { IDLE, UPLOADING, SUCCESS, FAILED, REQUIRE_LOGIN }
 
 @Composable
 private fun ImageSelectScreenContent(navController: NavHostController?) {
@@ -323,11 +323,15 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                             icon = Icons.Filled.Refresh,
                             modifier = Modifier.weight(1f)
                         )
-                        if (uploadState == UploadState.IDLE || uploadState == UploadState.FAILED) {
+                        if (uploadState == UploadState.IDLE || uploadState == UploadState.FAILED || uploadState == UploadState.REQUIRE_LOGIN) {
                             DoyuPrimaryButton(
                                 if (uploadState == UploadState.FAILED) "重试上传" else "上传并继续",
                                 onClick = {
                                     val uri = selectedUri ?: return@DoyuPrimaryButton
+                                    if (!canStartAiUpload(DoyuAppContainer.isLoggedIn, hasSelectedImage = true)) {
+                                        uploadState = UploadState.REQUIRE_LOGIN
+                                        return@DoyuPrimaryButton
+                                    }
                                     uploadState = UploadState.UPLOADING
                                     uploadProgress = 0f
                                     scope.launch {
@@ -403,18 +407,35 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                     }
                 }
 
+                if (uploadState == UploadState.REQUIRE_LOGIN) {
+                    DoyuCard {
+                        Text("需要登录", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(4.dp))
+                        Text("登录后才能上传图片并生成图纸。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(12.dp))
+                        DoyuPrimaryButton(
+                            "去登录",
+                            onClick = { navController?.navigate(aiUploadLoginRoute()) },
+                            icon = Icons.AutoMirrored.Filled.ArrowForward,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
                 if (uploadState == UploadState.SUCCESS) {
                     DoyuCard {
                         Text("上传完成", style = MaterialTheme.typography.titleMedium, color = LightPrimary)
                         Spacer(Modifier.height(4.dp))
                         Text("fileId: ${uploadedFileId ?: "..."}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    DoyuPrimaryButton(
-                        "继续设置参数",
-                        onClick = { navController?.navigate(AppRoute.aiParams(uploadedFileId!!)) },
-                        icon = Icons.AutoMirrored.Filled.ArrowForward,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    aiParamsRouteOrNull(uploadedFileId)?.let { paramsRoute ->
+                        DoyuPrimaryButton(
+                            "继续设置参数",
+                            onClick = { navController?.navigate(paramsRoute) },
+                            icon = Icons.AutoMirrored.Filled.ArrowForward,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
 
