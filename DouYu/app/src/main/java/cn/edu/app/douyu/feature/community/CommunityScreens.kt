@@ -13,6 +13,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -42,9 +43,11 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AlternateEmail
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ChatBubbleOutline
@@ -56,8 +59,10 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Mood
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -83,6 +88,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
@@ -123,6 +130,8 @@ import cn.edu.app.douyu.ui.theme.LightOnPrimary
 import cn.edu.app.douyu.ui.theme.LightOnPrimaryContainer
 import cn.edu.app.douyu.ui.theme.LightPrimary
 import cn.edu.app.douyu.ui.theme.LightPrimaryContainer
+import cn.edu.app.douyu.ui.theme.LightSecondary
+import cn.edu.app.douyu.ui.theme.LightSecondaryContainer
 import cn.edu.app.douyu.ui.theme.LightSurfaceVariant
 import cn.edu.app.douyu.ui.theme.SpringFast
 import kotlinx.coroutines.Dispatchers
@@ -887,29 +896,27 @@ private fun CommentComposer(
     onSubmit: () -> Unit
 ) {
     val canSubmit = !posting && (value.isNotBlank() || images.isNotEmpty())
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp,
-        shadowElevation = 4.dp
-    ) {
+    val toolTint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.76f)
+    val shellShape = RoundedCornerShape(28.dp)
+    Surface(color = MaterialTheme.colorScheme.background.copy(alpha = 0.96f)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .animateContentSize(
                     animationSpec = spring(
-                        dampingRatio = 0.82f,
-                        stiffness = 420f
+                        dampingRatio = 0.78f,
+                        stiffness = 360f
                     )
                 )
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             AnimatedVisibility(visible = expanded && images.isNotEmpty()) {
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 8.dp)
+                        .padding(bottom = 10.dp)
                 ) {
                     items(images, key = { it.uri.toString() }) { image ->
                         PendingCommentImageChip(
@@ -925,81 +932,175 @@ private fun CommentComposer(
                     }
                 }
             }
-            Row(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .height(if (expanded) 58.dp else 56.dp),
+                shape = shellShape,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+                shadowElevation = 9.dp,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.34f)
+                )
             ) {
-                IconButton(
-                    onClick = {
-                        if (expanded && value.isBlank() && images.isEmpty()) {
-                            onToggleExpanded()
-                        } else {
-                            onPickImages()
-                        }
-                    },
-                    enabled = !posting,
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Icon(
-                        if (expanded) Icons.Filled.PhotoLibrary else Icons.Filled.Edit,
-                        contentDescription = if (expanded) "添加评论图片" else "展开评论工具条",
-                        tint = LightPrimary
-                    )
-                }
-                Surface(
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .widthIn(min = if (expanded) 0.dp else 140.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    color = LightSurfaceVariant.copy(alpha = if (expanded) 0.66f else 0.46f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, LightPrimaryContainer.copy(alpha = 0.48f))
-                ) {
-                    OutlinedTextField(
-                        value = value,
-                        onValueChange = {
-                            onValueChange(it)
-                            if (!expanded) onToggleExpanded()
-                        },
-                        placeholder = {
-                            Text(
-                                if (expanded) "写下你的评论，也可以只发图片" else "写评论",
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        maxLines = 1,
-                        singleLine = true,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                if (expanded && (value.isNotBlank() || images.isNotEmpty()) && !posting) {
-                    IconButton(
-                        onClick = {
-                            onValueChange("")
-                            onClearImages()
-                        },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(Icons.Filled.Close, contentDescription = "清空评论", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                IconButton(
-                    onClick = onSubmit,
-                    enabled = canSubmit,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    if (posting) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "提交评论",
-                            tint = if (canSubmit) LightPrimary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        .fillMaxSize()
+                        .then(
+                            if (!expanded && !posting) Modifier.clickable(onClick = onToggleExpanded) else Modifier
                         )
+                        .padding(horizontal = if (expanded) 8.dp else 10.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CommentAvatarPlaceholder(expanded = expanded)
+
+                    AnimatedVisibility(visible = expanded) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            CommentToolButton(
+                                icon = Icons.Filled.Image,
+                                contentDescription = "添加评论图片",
+                                enabled = !posting,
+                                tint = toolTint,
+                                onClick = onPickImages
+                            )
+                            CommentToolButton(
+                                icon = Icons.Filled.AlternateEmail,
+                                contentDescription = "提及好友",
+                                enabled = false,
+                                tint = toolTint,
+                                onClick = {}
+                            )
+                            CommentToolButton(
+                                icon = Icons.Filled.Tag,
+                                contentDescription = "添加话题",
+                                enabled = false,
+                                tint = toolTint,
+                                onClick = {}
+                            )
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        shape = RoundedCornerShape(22.dp),
+                        color = LightSurfaceVariant.copy(alpha = if (expanded) 0.34f else 0.22f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (expanded) LightSecondaryContainer.copy(alpha = 0.78f)
+                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.32f)
+                        ),
+                        onClick = {
+                            if (!expanded) onToggleExpanded()
+                        }
+                    ) {
+                        if (expanded) {
+                            BasicTextField(
+                                value = value,
+                                onValueChange = onValueChange,
+                                singleLine = true,
+                                enabled = !posting,
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSurface
+                                ),
+                                cursorBrush = SolidColor(LightSecondary),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .onFocusChanged { focusState ->
+                                        if (focusState.isFocused && !expanded) onToggleExpanded()
+                                    }
+                                    .padding(horizontal = 14.dp),
+                                decorationBox = { innerTextField ->
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        if (value.isBlank()) {
+                                            Text(
+                                                "写下你的评论",
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
+                                }
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable(enabled = !posting, onClick = onToggleExpanded)
+                                    .padding(horizontal = 14.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text(
+                                    "写下你的评论",
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+
+                    CommentToolButton(
+                        icon = Icons.Filled.Mood,
+                        contentDescription = "表情",
+                        enabled = false,
+                        tint = toolTint,
+                        onClick = {}
+                    )
+
+                    if (expanded && (value.isNotBlank() || images.isNotEmpty()) && !posting) {
+                        CommentToolButton(
+                            icon = Icons.Filled.Close,
+                            contentDescription = "清空评论",
+                            enabled = true,
+                            tint = toolTint,
+                            onClick = {
+                                onValueChange("")
+                                onClearImages()
+                            }
+                        )
+                    }
+
+                    AnimatedVisibility(visible = expanded || canSubmit) {
+                        Surface(
+                            onClick = onSubmit,
+                            enabled = canSubmit,
+                            modifier = Modifier.size(44.dp),
+                            shape = CircleShape,
+                            color = if (canSubmit) LightSecondary else LightSecondaryContainer.copy(alpha = 0.54f),
+                            contentColor = if (canSubmit) LightOnPrimary else LightSecondary.copy(alpha = 0.52f),
+                            shadowElevation = if (canSubmit) 7.dp else 0.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                if (posting) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp,
+                                        color = LightOnPrimary
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = "提交评论",
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1008,10 +1109,46 @@ private fun CommentComposer(
                     notice,
                     color = if (notice.contains("失败") || notice.contains("无法")) MaterialTheme.colorScheme.error else LightPrimary,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 52.dp, top = 6.dp, end = 16.dp)
+                    modifier = Modifier.padding(start = 56.dp, top = 8.dp, end = 16.dp)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CommentAvatarPlaceholder(expanded: Boolean) {
+    Surface(
+        modifier = Modifier.size(if (expanded) 40.dp else 36.dp),
+        shape = CircleShape,
+        color = LightSecondaryContainer.copy(alpha = 0.86f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, LightSecondary.copy(alpha = 0.22f))
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            BeadCluster(if (expanded) 22.dp else 20.dp)
+        }
+    }
+}
+
+@Composable
+private fun CommentToolButton(
+    icon: ImageVector,
+    contentDescription: String,
+    enabled: Boolean,
+    tint: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(34.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = contentDescription,
+            tint = if (enabled) tint else tint.copy(alpha = 0.32f),
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 
@@ -1023,10 +1160,10 @@ private fun PendingCommentImageChip(
 ) {
     Box(
         modifier = Modifier
-            .size(64.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(LightSurfaceVariant)
-            .border(1.dp, LightPrimaryContainer.copy(alpha = 0.52f), RoundedCornerShape(16.dp))
+            .size(68.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, LightSecondaryContainer.copy(alpha = 0.78f), RoundedCornerShape(18.dp))
     ) {
         SubcomposeAsyncImage(
             model = image.uri,
@@ -1040,7 +1177,7 @@ private fun PendingCommentImageChip(
             },
             error = {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Image, contentDescription = null, tint = LightPrimary)
+                    Icon(Icons.Filled.Image, contentDescription = null, tint = LightSecondary)
                 }
             }
         )
@@ -1073,7 +1210,7 @@ private fun PendingCommentImageChip(
             enabled = !posting,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .size(24.dp)
+                .size(26.dp)
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.88f), CircleShape)
         ) {
             Icon(Icons.Filled.Close, contentDescription = "移除图片", modifier = Modifier.size(14.dp))
@@ -1086,13 +1223,13 @@ private fun AddCommentImageChip(enabled: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(64.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = LightPrimaryContainer.copy(alpha = 0.44f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, LightPrimary.copy(alpha = 0.22f))
+        modifier = Modifier.size(68.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = LightSecondaryContainer.copy(alpha = 0.5f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, LightSecondary.copy(alpha = 0.22f))
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(Icons.Filled.Add, contentDescription = "继续添加图片", tint = LightPrimary)
+            Icon(Icons.Filled.Add, contentDescription = "继续添加图片", tint = LightSecondary)
         }
     }
 }
