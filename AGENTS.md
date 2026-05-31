@@ -61,7 +61,7 @@
 - 阶段未完成内容和本轮不做内容：以 `doc/development/current-status.md` 为准。
 - Android 页面行为和 UI 状态：以 `doc/development/03-android-client.md` 与 `doc/development/11-ui-style-guide.md` 为准。
 - 商城、订单、支付和玩家交易边界：以 `doc/development/08-commerce-payment.md` 为准。
-- 调试步骤、环境配置、真机/模拟器联调和排障：以 `doc/development/14-frontend-backend-collaboration.md` 为准。
+- 调试步骤、环境配置、真机联调和排障：以 `doc/development/14-frontend-backend-collaboration.md` 为准。
 - 测试、验收、真机 QA 记录和未关闭验收项：以 `doc/development/10-testing-acceptance.md` 为准。
 
 ## 事实优先级
@@ -87,21 +87,17 @@
 ## 本地环境配置
 
 - 仓库根目录 `.env` 是本地联调唯一生效文件，由 `doyu-server/start-dev.bat` 和 Android debug Gradle 构建读取；`.env` 不提交。
-- `.env.emulator` 和 `.env.phone` 只作为本机私有切换模板，按 `.gitignore` 忽略，不提交；提交模板只能是 `.env.example`。
-- 当前默认开发目标是 Android 模拟器，`.env` 应优先使用：
-  - `DOUYU_ANDROID_API_BASE_URL=http://10.0.2.2:8081/`
-  - `DOUYU_STORAGE_BASE_URL=http://10.0.2.2:8081`
-- 真机模板使用电脑当前 Wi-Fi/LAN IPv4，例如本机当前可写为：
+- 本项目从第五轮起默认只维护真机联调配置；不再维护 `.env.emulator` / `.env.phone` 双模板。提交模板只能是 `.env.example`。
+- `.env` 使用电脑当前 Wi-Fi/LAN IPv4，例如本机当前可写为：
   - `DOUYU_ANDROID_API_BASE_URL=http://10.64.241.153:8081/`
   - `DOUYU_STORAGE_BASE_URL=http://10.64.241.153:8081`
-- 切换模板时只复制目标模板为 `.env`：
+- 需要重建本机 `.env` 时，从 `.env.example` 复制后手工改成当前 Wi-Fi/LAN IPv4：
 
 ```powershell
-Copy-Item .env.emulator .env -Force
-Copy-Item .env.phone .env -Force
+Copy-Item .env.example .env -Force
 ```
 
-- 切换 `.env` 后必须重启后端并重新构建 debug 包。后端 Local OSS URL 在启动时读取环境变量，Android `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单在 Gradle 构建期写入，不是运行时动态切换。
+- 修改 `.env` 后必须重启后端并重新构建 debug 包。后端 Local OSS URL 在启动时读取环境变量，Android `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单在 Gradle 构建期写入，不是运行时动态切换。
 
 ## ADB 真机调试
 
@@ -163,7 +159,7 @@ cd DouYu
 - 目录：`DouYu/`。
 - 技术栈：Kotlin、Jetpack Compose、单 Activity、Navigation Compose、Retrofit、OkHttp、Kotlinx Serialization、Coil、CameraX、Photo Picker。
 - 当前依赖装配：`DoyuAppContainer` 服务定位器；MVVM 是目标架构，不代表所有页面已完全 ViewModel 化。
-- 当前问题：debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在模拟器/真机模板间切换并重新构建；TokenStore 已收敛到 DataStore 登录态持久化，商品/帖子真实图片字段已补齐；多个页面仍有半成品 UI 和未接 Repository 的功能。
+- 当前问题：debug API Base URL 已支持 `.env` 构建期注入，当前只维护真机联调配置；修改 `.env` 后仍需重新构建 debug 包。TokenStore 已收敛到 DataStore 登录态持久化，商品/帖子真实图片字段已补齐；多个页面仍有半成品 UI 和未接 Repository 的功能。
 - UI 权威规范：`doc/development/11-ui-style-guide.md`。
 - Stitch 设计稿只作为视觉参考：`doc/stitch_document_app_generator/`。
 
@@ -237,7 +233,7 @@ cd DouYu
 git diff --check
 rg -n "17-ui-red[e]sign|12-front[e]nd|13-back[e]nd|16-ph[a]se|18-bug[f]ix|Leaders[P]rompt" doc AGENTS.md CLAUDE.md -g "!doc/development/10-testing-acceptance.md"
 rg -n '登录请求只传手机号和验证[码]|不再传 `age[G]roup`|不再传 age[G]roup' doc AGENTS.md
-git check-ignore -v .env .env.emulator .env.phone
+git check-ignore -v .env .env.* .qa-output
 ```
 
 Android 改动至少运行：

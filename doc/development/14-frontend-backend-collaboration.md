@@ -14,48 +14,25 @@
 
 ## 环境
 
-仓库根目录使用本机私有 `.env` 管理本地联调地址；`.env` 是唯一生效文件，提交模板只有 `.env.example`。`.env`、`.env.emulator`、`.env.phone` 和其他 `.env.*` 均被 `.gitignore` 忽略，不提交。
+仓库根目录使用本机私有 `.env` 管理本地联调地址；`.env` 是唯一生效文件，提交模板只有 `.env.example`。`.env` 和其他 `.env.*` 均被 `.gitignore` 忽略，不提交。
 
-推荐本机维护两个私有模板：
-
-- `.env.emulator`：模拟器模板，当前默认主配置。
-- `.env.phone`：真机模板，使用电脑当前 Wi-Fi/LAN IPv4。
-
-切换时只复制目标模板为 `.env`：
+当前项目默认只维护真机联调配置，不再维护 `.env.emulator` / `.env.phone` 双模板。需要重建本机配置时，从 `.env.example` 复制为 `.env`，再改成电脑当前 Wi-Fi/LAN IPv4：
 
 ```powershell
-# 模拟器
-Copy-Item .env.emulator .env -Force
-
-# 真机
-Copy-Item .env.phone .env -Force
+Copy-Item .env.example .env -Force
 ```
 
-切换 `.env` 后必须重新启动后端并重新构建 debug 包。后端 Local OSS URL 在启动时读取环境变量，Android debug 包的 `BuildConfig.API_BASE_URL` 和 HTTP 白名单由 Gradle 构建期写入，不是运行时动态切换。
+修改 `.env` 后必须重新启动后端并重新构建 debug 包。后端 Local OSS URL 在启动时读取环境变量，Android debug 包的 `BuildConfig.API_BASE_URL` 和 HTTP 白名单由 Gradle 构建期写入，不是运行时动态切换。
 
 关键字段：
 
-- `DOUYU_BACKEND_HOST`：当前开发机可被 Android 设备访问的 IP。真机使用电脑 Wi-Fi/LAN IPv4，模拟器通常使用 `10.0.2.2`。
+- `DOUYU_BACKEND_HOST`：当前开发机可被 Android 真机访问的 Wi-Fi/LAN IPv4。
 - `DOUYU_BACKEND_PORT`：后端端口，默认 `8081`。
 - `DOUYU_ANDROID_API_BASE_URL`：Android debug Retrofit baseUrl，必须以 `/` 结尾。
 - `DOUYU_ANDROID_CLEARTEXT_HOSTS`：Android debug HTTP 明文访问白名单，逗号分隔。
 - `DOUYU_STORAGE_BASE_URL`：后端 Local OSS 返回给 Android 的上传和资源访问 URL。
 
-模拟器模板示例：
-
-```env
-DOUYU_BACKEND_HOST=10.0.2.2
-DOUYU_BACKEND_PORT=8081
-DOUYU_SERVER_ADDRESS=0.0.0.0
-
-DOUYU_ANDROID_API_BASE_URL=http://10.0.2.2:8081/
-DOUYU_ANDROID_CLEARTEXT_HOSTS=10.0.2.2,localhost
-DOUYU_STORAGE_BASE_URL=http://10.0.2.2:8081
-
-DOUYU_ANDROID_RELEASE_API_BASE_URL=https://api.example.invalid/
-```
-
-真机模板示例：
+真机 `.env` 示例：
 
 ```env
 DOUYU_BACKEND_HOST=10.64.241.153
@@ -63,7 +40,7 @@ DOUYU_BACKEND_PORT=8081
 DOUYU_SERVER_ADDRESS=0.0.0.0
 
 DOUYU_ANDROID_API_BASE_URL=http://10.64.241.153:8081/
-DOUYU_ANDROID_CLEARTEXT_HOSTS=10.64.241.153,10.0.2.2,localhost
+DOUYU_ANDROID_CLEARTEXT_HOSTS=10.64.241.153,localhost
 DOUYU_STORAGE_BASE_URL=http://10.64.241.153:8081
 
 DOUYU_ANDROID_RELEASE_API_BASE_URL=https://api.example.invalid/
@@ -85,11 +62,10 @@ Android：
 - 工程路径：`DouYu/`
 - Debug 构建：`.\gradlew.bat :app:assembleDebug`
 - 单元测试：`.\gradlew.bat :app:testDebugUnitTest`
-- 模拟器访问电脑后端：`http://10.0.2.2:8081/`
 - 真机访问电脑后端：`http://<电脑 Wi-Fi IP>:8081/`
 - Retrofit `baseUrl` 必须以 `/` 结尾。
 - Debug 包的 `baseUrl` 和 HTTP 白名单由根目录 `.env` 在构建时生成。
-- 当前默认联调目标是模拟器，因此 `.env` 默认应使用 `.env.emulator`。
+- 当前默认联调目标是真机；执行真机 QA 前必须先确认 ADB 设备在线。
 
 ## ADB 真机调试
 
@@ -110,7 +86,7 @@ D:\AndroidChace\platform-tools\adb.exe devices -l
 - 没有在线设备时，必须先告诉用户当前不能执行真机验收，不得把设备 QA 写成通过。
 - 无线调试可由用户在手机上开启；配对码、临时端口和一次性连接信息不得写入文档或提交记录。
 - 真机截图、XML、logcat 等临时证据保存到 `.qa-output/`，该目录不提交。
-- 真机能访问电脑后端但 App 失败时，优先检查 `.env.phone`、debug 包是否重建、HTTP 白名单和 Windows 防火墙。
+- 真机能访问电脑后端但 App 失败时，优先检查 `.env`、debug 包是否重建、HTTP 白名单和 Windows 防火墙。
 
 常用命令：
 
@@ -227,15 +203,15 @@ Aliyun OSS 本机私有配置示例：
 
 ```env
 DOUYU_OSS_PROVIDER=aliyun
-DOUYU_ALIYUN_OSS_ENDPOINT=https://oss-cn-hangzhou.aliyuncs.com
-DOUYU_ALIYUN_OSS_REGION=cn-hangzhou
+DOUYU_ALIYUN_OSS_ENDPOINT=https://oss-cn-guangzhou.aliyuncs.com
+DOUYU_ALIYUN_OSS_REGION=cn-guangzhou
 DOUYU_ALIYUN_OSS_BUCKET=<your-dev-bucket>
 DOUYU_ALIYUN_OSS_ACCESS_KEY_ID=<local-only>
 DOUYU_ALIYUN_OSS_ACCESS_KEY_SECRET=<local-only>
-DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL=https://<bucket-or-cdn-domain>
+DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL=https://<your-dev-bucket>.oss-cn-guangzhou.aliyuncs.com
 ```
 
-切换 Provider 后必须重启后端。若 Android debug base URL 或 HTTP 白名单也发生变化，还必须重新构建并安装 debug 包。Aliyun OSS Bucket 需要允许 Android 对预签名 URL 发起 `PUT`，并在 CORS 中放行 `PUT` 和 `Content-Type` 请求头；真实生产环境的 STS、最小权限、防盗链、CDN、图片审核和缩略图处理仍是后续生产化任务。
+切换 Provider 后必须重启后端。若 Android debug base URL 或 HTTP 白名单也发生变化，还必须重新构建并安装 debug 包。Aliyun OSS Bucket 需要允许 Android 对预签名 URL 发起 `PUT`，并在 CORS 中放行 `GET`、`PUT`、`HEAD` 和请求头 `*`；开发桶若使用公开图片 URL，需要关闭“阻止公共访问”并设置“公共读”，禁止公共读写。真实生产环境的 STS、最小权限、防盗链、CDN、图片审核和缩略图处理仍是后续生产化任务。
 
 ## 订单和支付链路
 
@@ -278,9 +254,8 @@ Android 未登录状态应展示登录引导或 guest 占位，不应直接显�
 
 | 现象 | 优先排查 |
 |---|---|
-| 模拟器连不上后端 | `.env` 是否由 `.env.emulator` 复制而来；`DOUYU_ANDROID_API_BASE_URL` 是否为 `http://10.0.2.2:8081/`；后端是否已启动在 `8081`；改 `.env` 后是否重新构建 debug 包 |
-| 真机连不上后端 | `.env` 是否由 `.env.phone` 复制而来；IP 是否为电脑当前 Wi-Fi/LAN IPv4；手机和电脑是否同一局域网；Windows 防火墙是否放行 `8081`；后端 `DOUYU_SERVER_ADDRESS` 是否为 `0.0.0.0` |
-| 图片、上传或预览 URL 不通 | `DOUYU_STORAGE_BASE_URL` 是否与当前运行目标一致：模拟器用 `http://10.0.2.2:8081`，真机用 `http://<电脑 Wi-Fi IP>:8081`；后端是否在切换 `.env` 后重启 |
+| 真机连不上后端 | `.env` 是否写成电脑当前 Wi-Fi/LAN IPv4；手机和电脑是否同一局域网；Windows 防火墙是否放行 `8081`；后端 `DOUYU_SERVER_ADDRESS` 是否为 `0.0.0.0`；改 `.env` 后是否重新构建 debug 包 |
+| 图片、上传或预览 URL 不通 | `DOUYU_STORAGE_BASE_URL` 是否为 `http://<电脑 Wi-Fi IP>:8081`；Aliyun OSS 上传是否使用 `DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL`；后端是否在修改 `.env` 后重启 |
 | Aliyun OSS 预签名上传失败 | `.env` 是否设置 `DOUYU_OSS_PROVIDER=aliyun`；endpoint、region、bucket、public base URL 是否匹配；AccessKey 是否只在本机私有 `.env`；Bucket CORS 是否允许 Android `PUT` 和 `Content-Type` |
 | `cleartext traffic not permitted` | 是否安装 debug 包；`DOUYU_ANDROID_CLEARTEXT_HOSTS` 是否包含当前 host，且只写 host，不写协议和端口；改 `.env` 后是否重新构建 debug 包 |
 | 改 `.env` 后 App 没生效 | Android `BuildConfig.API_BASE_URL` 是构建期写入；必须重新构建并安装 debug 包。后端 Local OSS URL 也要重启后端才会更新 |

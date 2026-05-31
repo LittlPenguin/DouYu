@@ -133,7 +133,17 @@
 
 - `fileId`
 - `fileKey`
+- `ownerId`
+- `usage`
+- `storageKey`
+- `mimeType`
+- `sizeBytes`
+- `width`
+- `height`
 - `auditStatus`
+- `publicUrl`
+
+兼容说明：`fileKey` 保留给旧联调脚本使用；Android DTO 以 `storageKey` 和 `publicUrl` 作为完整 `FileAsset` 字段。Aliyun OSS Provider 启用时，`publicUrl` 为 `DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL + fileKey`，访问是否成功取决于 Bucket 公共读或后续签名下载策略。
 
 上传用途枚举：
 

@@ -93,7 +93,19 @@ public class UploadController {
         file.setCreatedAt(now);
         file.setUpdatedAt(now);
         fileAssetRepository.save(file);
-        return Map.of("fileId", file.getId(), "fileKey", file.getStorageKey(), "auditStatus", file.getAuditStatus());
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("fileId", file.getId());
+        response.put("fileKey", file.getStorageKey());
+        response.put("ownerId", file.getOwnerId());
+        response.put("usage", file.getUsage());
+        response.put("storageKey", file.getStorageKey());
+        response.put("mimeType", file.getMimeType());
+        response.put("sizeBytes", file.getSizeBytes());
+        response.put("width", file.getWidth());
+        response.put("height", file.getHeight());
+        response.put("auditStatus", file.getAuditStatus());
+        response.put("publicUrl", file.getPublicUrl());
+        return response;
     }
 
     private void validateUsage(String usage) {

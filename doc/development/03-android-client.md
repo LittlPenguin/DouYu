@@ -27,9 +27,9 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 
 ## 当前实现状态
 
-**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、可切换 TokenStore、`AuthSessionManager` 和 5 个真实 Repository 实例。真实 App 启动时由 `DoyuApplication` hydrate `DataStoreTokenStore`，登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore；无 Context 的 Preview / 单元测试场景默认回退内存实现。Debug 包的 Retrofit `baseUrl` 从仓库根目录 `.env` 的 `DOUYU_ANDROID_API_BASE_URL` 在 Gradle 构建期生成到 `BuildConfig.API_BASE_URL`；模拟器联调使用 `http://10.0.2.2:8081/`，真机联调使用电脑当前 Wi-Fi/LAN IPv4，例如 `http://10.64.241.153:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
+**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、可切换 TokenStore、`AuthSessionManager` 和 5 个真实 Repository 实例。真实 App 启动时由 `DoyuApplication` hydrate `DataStoreTokenStore`，登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore；无 Context 的 Preview / 单元测试场景默认回退内存实现。Debug 包的 Retrofit `baseUrl` 从仓库根目录 `.env` 的 `DOUYU_ANDROID_API_BASE_URL` 在 Gradle 构建期生成到 `BuildConfig.API_BASE_URL`；当前默认只维护真机联调配置，使用电脑当前 Wi-Fi/LAN IPv4，例如 `http://10.64.241.153:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
 
-**环境切换**：`.env` 是唯一生效文件，`.env.emulator` 和 `.env.phone` 只作为本机私有模板。模拟器和真机切换不是运行时动态能力；复制目标模板为 `.env` 后，必须重启后端并重新构建、安装 debug 包，Android 侧的 `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单才会更新。
+**环境配置**：`.env` 是唯一生效文件，提交模板只有 `.env.example`。本阶段不再维护模拟器/真机双模板；如电脑局域网 IP 变化，直接修改本机 `.env` 后，必须重启后端并重新构建、安装 debug 包，Android 侧的 `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单才会更新。
 
 **真机 HTTP 联调**：Android main 配置保持 HTTPS only；debug 包通过 Gradle 从 `.env` 的 `DOUYU_ANDROID_CLEARTEXT_HOSTS` 生成 `network_security_config.xml`，对当前开发机 IP 添加 `domain-config cleartextTrafficPermitted="true"`。如果真机浏览器能访问后端，但 App 显示网络异常，优先检查 `baseUrl`、debug 包、logcat 中的 cleartext 配置错误。
 

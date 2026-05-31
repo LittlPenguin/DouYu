@@ -92,7 +92,13 @@ class DouyuBackendContractTests {
         JsonNode confirmData = confirmed.path("data");
         org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("fileId")).isTrue();
         org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("fileKey")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("ownerId")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("usage")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("storageKey")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("mimeType")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("sizeBytes")).isTrue();
         org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("auditStatus")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(confirmData.path("fileKey").asText()).isEqualTo(confirmData.path("storageKey").asText());
 
         JsonNode created = postJsonWithToken("/api/v1/patterns/jobs", token, """
                 {"inputFileId":"%s","beadSize":"MM_2_6","targetSize":"16x16","difficulty":"BEGINNER","paletteId":"default","style":"CUTE"}

@@ -60,7 +60,7 @@
 | Search 组件 | 待手工验收 | 纳入本轮视觉 QA 对象；需确认搜索框高度、占位文案、清除/返回入口和弱状态在主要页面表现一致。 |
 | 消息未登录态 | 待手工验收 | 纳入本轮视觉 QA 对象；需确认未登录时显示登录引导，不出现空白页、空点击或假成功反馈。 |
 | 退出登录返回 | 待手工验收 | 纳入本轮视觉 QA 对象；需确认退出登录后返回路径明确，受保护页面回到未登录/登录引导状态。 |
-| 截图视觉 QA | 以主 Agent 实际设备输出为准 | 已定位 ADB：`D:\AndroidChace\platform-tools\adb.exe`；有在线模拟器/真机时可安装 debug 包做 smoke，无在线设备时不能写成通过。 |
+| 截图视觉 QA | 以主 Agent 实际设备输出为准 | 已定位 ADB：`D:\AndroidChace\platform-tools\adb.exe`；有在线真机时可安装 debug 包做 smoke，无在线真机时不能写成通过。 |
 | Android 构建/单测 | 主 Agent 验证 | 本轮代码验证以主 Agent 实际命令输出为准；文档 Agent 不单独判定 Android 通过。 |
 
 ## 第三轮商城 UI/API 收敛验收
@@ -117,7 +117,7 @@
 
 ### 第三轮手工真机 smoke
 
-手工 smoke 至少覆盖一台真机或在线模拟器：
+手工 smoke 至少覆盖一台在线真机：
 
 - 从底部 Tab 进入商城，检查搜索、分类、Banner、双列卡在 360dp、390dp、430dp 下不挤压、不重叠。
 - 打开自营商品详情，选择 SKU，加入购物车，检查库存边界和成功/失败反馈。
@@ -149,7 +149,7 @@
 - QA 前必须运行 `D:\AndroidChace\platform-tools\adb.exe devices -l`；无在线设备时不得把真机 smoke 或截图 QA 写成通过。
 - 本轮真机优先关闭对象：商城首页、搜索/分类、商品详情、自营加购、玩家商品禁用标准购物车、购物车、订单确认地址缺口、联调支付状态边界。
 - 截图和 XML 证据只保存到本地 `.qa-output/`，该目录不提交。
-- 360dp、390dp、430dp 多宽度模拟器视觉 QA 不作为本轮真机优先关闭条件，继续作为后续复查项。
+- 360dp、390dp、430dp 多宽度模拟器视觉 QA 不再作为当前默认流程；如后续需要多宽度覆盖，单独开任务准备设备或模拟器。
 - 真机 `10.64.241.158:41551` 已在线，debug 包已安装启动到 `cn.edu.app.douyu/.MainActivity`；设备当前宽度约 `sw369dp`。
 - 真机 UI 已覆盖商城首页、商品详情、自营商品未登录加购拦截、玩家二手商品禁用标准购物车；截图包括 `commerce-home.png`、`commerce-search.png`、`product-detail-self.png`、`product-detail-player.png`、`cart-items.png`。
 - 搜索输入在当前真机上进入输入法组合态，未把筛选结果作为最终证据；分类/列表状态仍需后续在稳定输入条件下复查。
@@ -159,12 +159,12 @@
 - 支付状态 App 内证据：联调订单 `ord_866d2498f0064353928346c8d2405b31` 进入支付页后，显式点击创建联调支付单才出现 `paymentId=pay_1743fe0e77354b5881fc34e908ca7675`，状态为 `CREATED`，渠道为 `WECHAT_APP`，金额 `1200` 分；页面只展示服务端状态和联调边界。
 - 竖屏追加记录：`MainActivity` 已锁定 `portrait`，真机即使系统自动旋转开启也按竖屏主流程验收；`dumpsys activity` 已看到 `requestedOrientation=SCREEN_ORIENTATION_PORTRAIT`。
 - 真机 `10.64.241.158:42861` 追加覆盖商城搜索/分类：使用英文键盘源输入 `beads` 得到自营豆子结果，输入 `zzzz` 得到“没有找到商品 / 换个关键词试试？”空态；分类切换“材料包”展示自营商品，“成品手作”展示玩家二手商品。截图/XML 包括 `commerce-search-keyboard-source-phone.png`、`commerce-search-empty-phone.png`、`commerce-category-material-phone.png`、`commerce-category-handmade-phone.png`。
-- 本轮按用户要求不启动模拟器；360dp、390dp、430dp 多宽度模拟器视觉 QA 未跑，仍作为后续单独验收项。
+- 本轮按用户要求不启动模拟器；后续默认继续使用真机竖屏验收。
 
 | QA 对象 | 本轮关闭标准 | 记录方式 |
 |---|---|---|
 | 商城首页 | 顶部栏、购物车入口、搜索框、分类 Chip、Banner、双列商品卡、底部导航不遮挡 | 已截图 `commerce-home.png` |
-| 搜索 / 分类 | 输入关键词或切换分类后，列表状态清楚，不挤压、不空白遮挡 | 真机竖屏已截图 `commerce-search-keyboard-source-phone.png`、`commerce-search-empty-phone.png`、`commerce-category-material-phone.png`、`commerce-category-handmade-phone.png`；模拟器多宽度后续复查 |
+| 搜索 / 分类 | 输入关键词或切换分类后，列表状态清楚，不挤压、不空白遮挡 | 真机竖屏已截图 `commerce-search-keyboard-source-phone.png`、`commerce-search-empty-phone.png`、`commerce-category-material-phone.png`、`commerce-category-handmade-phone.png`；后续默认真机复查 |
 | 自营商品详情 | 价格、库存、销量、SKU、数量选择、加入购物车状态正确 | 已截图 `product-detail-self.png` |
 | 玩家商品详情 | 展示“不支持标准购物车”边界，加购按钮禁用，无假成功 | 已截图 `product-detail-player.png` |
 | 购物车 | 未登录、空车或有商品状态清楚，数量/删除/结算入口可识别 | 已截图 `cart-items.png`、`cart-auth-items.png`；本次覆盖登录后有商品态和结算入口 |
@@ -198,14 +198,14 @@ UI MVP 重构前必须先确认本地环境和构建稳定。
 环境文件忽略规则：
 
 ```powershell
-git check-ignore -v .env .env.emulator .env.phone
+git check-ignore -v .env .env.* .qa-output
 ```
 
 验收标准：
 
-- `.env`、`.env.emulator`、`.env.phone` 均被 `.gitignore` 命中。
+- `.env`、`.env.*`、`.qa-output/` 均被 `.gitignore` 命中。
 - `.env.example` 不应被忽略，且不得写入个人真实 IP、密钥、Token 或本机私有路径。
-- 当前默认开发目标是模拟器时，`.env` 应由 `.env.emulator` 复制而来；切换真机时再复制 `.env.phone`。
+- 当前默认开发目标是真机，`.env` 直接维护电脑当前 Wi-Fi/LAN IPv4；不再维护 `.env.emulator` / `.env.phone` 双模板。
 
 Android Studio 构建设置：
 
@@ -251,7 +251,7 @@ cd D:\Studio\SpellBean\doyu-server
 
 - 后端读取当前 `.env`。
 - 服务启动在 `8081`。
-- `DOUYU_STORAGE_BASE_URL` 与当前模拟器/真机模板一致。
+- `DOUYU_STORAGE_BASE_URL` 与当前真机联调 IP 一致。
 
 ## 源码执行阶段检查
 
@@ -369,7 +369,7 @@ Android 验收：
 - 已跑：`.\gradlew.bat --version`、`.\gradlew.bat :app:testDebugUnitTest --console=plain`、`.\gradlew.bat :app:assembleDebug --console=plain`。
 - 已跑：`mvn clean test` 和 `mvn test`，后端测试 44 个通过；`/seed/**` 已纳入匿名静态资源访问契约。
 - 已跑：真机 `10.64.241.158:42861` 安装启动 debug 包，前台确认为 `cn.edu.app.douyu/.MainActivity`。
-- 已跑：开发后端在 `.env.phone` 下返回 6 条商品和 4 条帖子，`imageUrl` / `coverImageUrl` 使用 `DOUYU_STORAGE_BASE_URL=http://10.64.241.153:8081` 拼绝对 URL；首个商品图和帖子封面图 HTTP 200 可访问。
+- 已跑：开发后端在真机 `.env` 下返回 6 条商品和 4 条帖子，`imageUrl` / `coverImageUrl` 使用 `DOUYU_STORAGE_BASE_URL=http://10.64.241.153:8081` 拼绝对 URL；首个商品图和帖子封面图 HTTP 200 可访问。
 - 截图：`.qa-output/fourth-round-after-seed-fix.png` 已保存为本地 QA 证据，不提交。
 - 已跑：验证码登录手机号 `13800000088`、验证码 `123456` 成功进入“我的”已登录态；强杀 App 并重启后仍显示“豆友 / 我的工坊 / 等级与奖励”，确认 DataStore 登录恢复生效。
 - 已跑：设置页退出登录后回到“我的”未登录态；再次强杀 App 并重启后仍显示“未登录 / 去登录”，确认退出登录会清理持久化 token。
@@ -380,7 +380,7 @@ Android 验收：
 当前 UI MVP 至少覆盖：
 
 - 360dp、390dp、430dp 宽度。
-- Android 模拟器和一台真机。
+- 一台在线 Android 真机。
 - 相机权限允许和拒绝。
 - Photo Picker 选图。
 - 拍照方向修正。
@@ -504,7 +504,8 @@ Android 验收：
 
 - `AliyunOssProviderTest`：生成 PUT 预签名 URL，返回 `Content-Type` 上传头；`publicBaseUrl + fileKey` 会按路径段编码。
 - `OssProviderConfigTest`：`douyu.oss.provider` 缺省走 Local OSS，`stub` 可用于测试，`aliyun` 在配置齐全时可创建 Aliyun OSS Provider。
-- `mvn test`：后端全量测试必须继续通过，确保 `/api/v1/uploads/presign` 和 `/api/v1/uploads/confirm` 契约不变。
+- `DouyuBackendContractTests`：`/api/v1/uploads/confirm` 保留 `fileId/fileKey/auditStatus`，并补齐 Android `FileAsset` 需要的 `ownerId/usage/storageKey/mimeType/sizeBytes/publicUrl` 等字段。
+- `mvn test`：后端全量测试必须继续通过，确保 `/api/v1/uploads/presign` 和 `/api/v1/uploads/confirm` 契约不回退。
 
 未关闭：
 

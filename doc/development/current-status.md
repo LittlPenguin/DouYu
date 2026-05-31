@@ -53,11 +53,11 @@
 ## 当前不能认为完成
 
 - App Shell、消息页和我的页已完成第二轮代码基线，TopBar、Search、消息未登录态和退出登录返回已列为视觉 QA 对象；仍需要 360dp、390dp、430dp 手工验收。
-- 第三轮商城真机优先 QA 已有 `10-testing-acceptance.md` 记录作为主体验收关闭依据；多宽度视觉 QA 仍待补，360dp、390dp、430dp 模拟器复查不影响第三轮主体关闭，但不能写成已通过。
-- 已定位 ADB 路径 `D:\AndroidChace\platform-tools\adb.exe`；无在线模拟器/真机时，截图或设备 QA 不能写成通过，必须先告知用户。
-- 2026-05-30 真机优先 QA 已覆盖在线真机安装启动、商城首页、搜索有结果和空态、分类切换、玩家商品禁用标准购物车、自营商品详情、未登录加购拦截、已登录购物车、订单确认地址缺口、我的订单入口和联调支付状态页；模拟器多宽度复查仍按 `10-testing-acceptance.md` 记录为后续复查。
+- 第三轮商城真机优先 QA 已有 `10-testing-acceptance.md` 记录作为主体验收关闭依据；后续视觉复查以真机为主，不再维护模拟器 `.env` 模板。
+- 已定位 ADB 路径 `D:\AndroidChace\platform-tools\adb.exe`；无在线真机时，截图或设备 QA 不能写成通过，必须先告知用户。
+- 2026-05-30 真机优先 QA 已覆盖在线真机安装启动、商城首页、搜索有结果和空态、分类切换、玩家商品禁用标准购物车、自营商品详情、未登录加购拦截、已登录购物车、订单确认地址缺口、我的订单入口和联调支付状态页。
 - 本地 QA 种子商品已覆盖 `SELF_OPERATED`、`PLAYER_SECOND_HAND`、`PLAYER_CUSTOM_SERVICE`；真机商城 smoke 已验证玩家二手 / 定制商品只展示信息并禁用标准购物车。
-- Android debug API Base URL 已支持 `.env` 构建期注入，但本地仍需在 `.env.emulator` / `.env.phone` 模板间切换并重新构建；登录态已接入 DataStore 启动 hydrate，验证码登录后的真机重启路径已在 2026-05-30 复测通过。
+- Android debug API Base URL 已支持 `.env` 构建期注入；本地默认只维护真机 `.env`，修改 IP 或 Provider 后仍需重启后端并重新构建 debug 包。登录态已接入 DataStore 启动 hydrate，验证码登录后的真机重启路径已在 2026-05-30 复测通过。
 - Android Studio / Gradle JVM 如果误选到 VS Code Red Hat Java 扩展内置精简 JRE，会触发 `jlink.exe does not exist`；本地构建必须按协作规范选择完整 JDK/JBR 21。
 - 社区、消息和我的样板链路已开始消除空点击和假成功；第三轮已将商城订单确认和联调支付状态收口到禁用缺地址下单、显式创建联调支付单和服务端状态展示。
 - 文件预览 URL 策略不完整，图纸预览、头像等 fileId 不一定能直接展示为图片；第四轮已收敛 Feed 和商城 MVP 所需的 `coverImageUrl` / `imageUrl`，但这不等于完整媒体服务生产化。
@@ -74,7 +74,7 @@
 - Android：Kotlin、Jetpack Compose、单 Activity、Navigation Compose、Retrofit、OkHttp、Kotlinx Serialization、Coil、CameraX、Photo Picker。
 - Android 当前依赖装配：`DoyuAppContainer` 服务定位器；MVVM 是目标架构，不代表所有页面已完全 ViewModel 化。
 - Android 登录态：第四轮已切换到 DataStore 持久化 access/refresh token；自动测试覆盖保存、hydrate 和 clear，真机登录重启 smoke 仍按 `10-testing-acceptance.md` 记录为手工复测项。
-- Android 本地联调默认模拟器使用 `10.0.2.2`；真机使用电脑当前 Wi-Fi/LAN IPv4。debug 包的 Retrofit `baseUrl` 由仓库根目录 `.env` 在 Gradle 构建期写入 `BuildConfig.API_BASE_URL`，切换模拟器/真机模板后必须重新构建。
+- Android 本地联调默认使用真机和电脑当前 Wi-Fi/LAN IPv4。debug 包的 Retrofit `baseUrl` 由仓库根目录 `.env` 在 Gradle 构建期写入 `BuildConfig.API_BASE_URL`，修改 `.env` 后必须重新构建。
 - 后端：Java 21、Spring Boot、Spring Security、JWT、Spring Data JPA、Flyway、PostgreSQL、Redis。
 - 后端端口：`8081`。
 - PostgreSQL 宿主机端口：`5433`，容器内端口仍为 `5432`。
@@ -99,8 +99,8 @@
 P0：第五轮前置 Aliyun OSS Provider 最小闭环
 
 - 后端：`DOUYU_OSS_PROVIDER=local|stub|aliyun` 可选择对象存储 Provider；Aliyun Provider 只由后端持有 AccessKey，继续复用 `/uploads/presign -> PUT uploadUrl -> /uploads/confirm`。
-- 后端：Aliyun Provider 生成 PUT 预签名 URL，返回 Android 直传所需 `headers`，confirm 后返回 `publicBaseUrl + fileKey`。
-- 文档：`.env.example` 只保留 Aliyun 占位变量，不提交真实 AccessKey；联调文档写清 Bucket CORS 和 Provider 切换后重启后端。
+- 后端：Aliyun Provider 生成 PUT 预签名 URL，返回 Android 直传所需 `headers`，confirm 后返回完整 `FileAsset` 字段，并通过 `publicUrl=publicBaseUrl + fileKey` 暴露公开图片 URL。
+- 文档：`.env.example` 只保留 Aliyun 占位变量，不提交真实 AccessKey；联调文档写清广州 Bucket 示例、Bucket CORS、公共读边界和 Provider 切换后重启后端。
 - 未完成：真实 Bucket 上传 smoke、STS/最小权限、CDN、防盗链、图片审核、缩略图和 seed assets 云迁移。
 
 P1：第四轮登录态持久化 + 常驻真实图文数据回归
@@ -115,7 +115,7 @@ P1：第四轮登录态持久化 + 常驻真实图文数据回归
 P2：第三轮商城收口回归
 
 - 保留第三轮商城搜索/分类、自营加购、玩家商品禁用标准购物车、订单确认地址缺口、订单列表和联调支付状态回归。
-- 后续多宽度 QA：在 360dp、390dp、430dp 模拟器竖屏下复查商城列表、详情、购物车、订单确认和支付状态页不挤压、不重叠；未跑前不能写成通过。
+- 后续视觉 QA：以在线真机竖屏为主复查商城列表、详情、购物车、订单确认和支付状态页不挤压、不重叠；如未来需要多宽度覆盖，单独开任务准备设备或模拟器，不再作为当前默认流程。
 
 P3：保留并复查第二轮 UI 统一基线
 

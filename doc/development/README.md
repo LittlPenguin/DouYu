@@ -48,7 +48,7 @@
 | Android 页面行为 | `03-android-client.md` |
 | UI 风格和组件规则 | `11-ui-style-guide.md` |
 | 商城 / 订单 / 支付边界 | `08-commerce-payment.md` |
-| 联调 / ADB / 真机 / 模拟器排障 | `14-frontend-backend-collaboration.md` |
+| 联调 / ADB / 真机排障 | `14-frontend-backend-collaboration.md` |
 | 验证命令 / 真机 QA 记录 | `10-testing-acceptance.md` |
 
 ## 分册清单
