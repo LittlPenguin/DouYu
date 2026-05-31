@@ -32,13 +32,15 @@ public class MessageController {
     private final NotificationRepository notificationRepository;
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
+    private final FollowRepository followRepository;
     private final IdGenerator idGenerator;
 
     public MessageController(NotificationRepository notificationRepository, ConversationRepository conversationRepository,
-                             UserRepository userRepository, IdGenerator idGenerator) {
+                             UserRepository userRepository, FollowRepository followRepository, IdGenerator idGenerator) {
         this.notificationRepository = notificationRepository;
         this.conversationRepository = conversationRepository;
         this.userRepository = userRepository;
+        this.followRepository = followRepository;
         this.idGenerator = idGenerator;
     }
 
@@ -77,7 +79,9 @@ public class MessageController {
     Map<String, Object> conversation(Authentication authentication, @PathVariable String conversationId) {
         String userId = CurrentUser.userId(authentication);
         ConversationEntity conv = requireConversation(conversationId, userId);
-        return Map.of("conversation", conversationView(conv, userId), "messages", List.of());
+        List<Map<String, Object>> messages = notificationRepository.findByConversationIdOrderByCreatedAtAsc(conversationId).stream()
+                .map(message -> chatMessageView(message, userId)).toList();
+        return Map.of("conversation", conversationView(conv, userId), "messages", messages);
     }
 
     @Operation(summary = "发送私信")
@@ -85,19 +89,29 @@ public class MessageController {
     @PostMapping("/conversations/{conversationId}")
     Map<String, Object> send(Authentication authentication, @PathVariable String conversationId, @Valid @RequestBody SendMessageRequest request) {
         String userId = CurrentUser.userId(authentication);
-        requireConversation(conversationId, userId);
+        ConversationEntity conv = requireConversation(conversationId, userId);
+        String peerId = peerId(conv, userId);
+        boolean mutualFollow = mutualFollow(userId, peerId);
+        long sentByMe = notificationRepository.countByConversationIdAndSenderId(conversationId, userId);
+        if (!mutualFollow && sentByMe >= 3) {
+            throw new BizException(ErrorCode.NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED, "互相关注后可继续聊天");
+        }
         Instant now = Instant.now();
         NotificationEntity message = new NotificationEntity();
         message.setId(idGenerator.next("msg"));
-        message.setUserId(userId);
+        message.setUserId(peerId);
         message.setConversationId(conversationId);
+        message.setSenderId(userId);
+        message.setRecipientId(peerId);
         message.setType("PRIVATE");
         message.setTitle("私信");
         message.setContent(request.content());
         message.setCreatedAt(now);
         message.setUpdatedAt(now);
         notificationRepository.save(message);
-        return Map.of("messageId", message.getId(), "conversationId", conversationId, "sent", true);
+        conv.setUpdatedAt(now);
+        conversationRepository.save(conv);
+        return chatMessageView(message, userId);
     }
 
     private Map<String, Object> notificationView(NotificationEntity message) {
@@ -115,15 +129,50 @@ public class MessageController {
     }
 
     private Map<String, Object> conversationView(ConversationEntity conversation, String currentUserId) {
-        String peerId = conversation.getUserAId().equals(currentUserId) ? conversation.getUserBId() : conversation.getUserAId();
+        String peerId = peerId(conversation, currentUserId);
         var peer = userRepository.findById(peerId).orElse(null);
+        boolean mutualFollow = mutualFollow(currentUserId, peerId);
+        long sentByMe = notificationRepository.countByConversationIdAndSenderId(conversation.getId(), currentUserId);
+        long remaining = mutualFollow ? 999 : Math.max(0, 3 - sentByMe);
         Map<String, Object> view = new java.util.LinkedHashMap<>();
         view.put("conversationId", conversation.getId());
+        view.put("userAId", conversation.getUserAId());
+        view.put("userBId", conversation.getUserBId());
         view.put("peerUserId", peerId);
         view.put("peerName", peer != null && peer.getNickname() != null ? peer.getNickname() : "");
-        view.put("lastMessage", "");
+        view.put("peerAvatarUrl", null);
+        view.put("lastMessage", notificationRepository.findFirstByConversationIdOrderByCreatedAtDesc(conversation.getId())
+                .map(NotificationEntity::getContent)
+                .orElse(""));
         view.put("unreadCount", 0);
+        view.put("mutualFollow", mutualFollow);
+        view.put("remainingNonMutualMessages", remaining);
+        view.put("canSend", mutualFollow || remaining > 0);
         view.put("riskHint", null);
+        view.put("updatedAt", conversation.getUpdatedAt() == null ? null : conversation.getUpdatedAt().toString());
+        return view;
+    }
+
+    private String peerId(ConversationEntity conversation, String currentUserId) {
+        return conversation.getUserAId().equals(currentUserId) ? conversation.getUserBId() : conversation.getUserAId();
+    }
+
+    private boolean mutualFollow(String userId, String peerId) {
+        return followRepository.findByUserIdAndTargetUserId(userId, peerId).isPresent()
+                && followRepository.findByUserIdAndTargetUserId(peerId, userId).isPresent();
+    }
+
+    private Map<String, Object> chatMessageView(NotificationEntity message, String currentUserId) {
+        String senderId = message.getSenderId() != null ? message.getSenderId() : message.getUserId();
+        var sender = userRepository.findById(senderId).orElse(null);
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("messageId", message.getId());
+        view.put("conversationId", message.getConversationId());
+        view.put("senderId", senderId);
+        view.put("senderName", sender != null && sender.getNickname() != null ? sender.getNickname() : "");
+        view.put("content", message.getContent());
+        view.put("mine", senderId.equals(currentUserId));
+        view.put("createdAt", message.getCreatedAt() == null ? null : message.getCreatedAt().toString());
         return view;
     }
 

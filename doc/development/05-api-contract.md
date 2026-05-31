@@ -114,6 +114,18 @@
 - `isMinor`：是否未成年。
 - `followingCount`：关注数。
 - `followerCount`：粉丝数。
+- `followedByMe`：当前登录用户是否已关注该用户，可为空；未登录或无法判断时客户端按 `false` 展示。
+- `followsMe`：该用户是否关注当前登录用户，可为空；用于展示互关关系。
+- `mutualFollow`：双方是否互相关注，可为空；第六轮“好友”展示以该字段为准，不引入好友申请状态机。
+
+关注响应字段（联调口径）：
+
+- `targetUserId`：被关注用户 ID。
+- `followedByMe`：当前操作后是否已关注。
+- `followsMe`：对方是否关注当前用户。
+- `mutualFollow`：双方是否互相关注。
+
+> 当前口径：第六轮“好友”能力只做关注/互相关注表达，不做好友申请、同意/拒绝、黑名单、复杂反骚扰风控或图片私信。
 
 ## 上传接口
 
@@ -215,18 +227,22 @@
 - `author`：作者对象，字段同用户响应。
 - `parentId`
 - `content`
+- `mediaFileIds`：评论图片文件 ID 列表，最多 9 个，可为空。
+- `mediaAssets`：评论图片渲染对象列表，按 `mediaFileIds` 顺序返回；每项至少包含 `fileId`、`publicUrl`、`mimeType`、`width`、`height`、`auditStatus`。
 - `status`
 
 发表评论请求字段：
 
-- `content`：评论内容，必填。
+- `content`：评论文字，可为空；文字和图片不能同时为空。
 - `parentId`：父评论 ID，可为空。
+- `mediaFileIds`：评论图片文件 ID 列表，可为空，最多 9 个；必须是当前用户已通过 `/uploads/confirm` 确认的 `POST_IMAGE` 图片文件。
 
 发表评论响应：
 
 - 返回完整 `Comment`。
 - 新评论默认 `status=REVIEWING`。
 - Android 必须展示“评论已提交，等待审核”，不得假装立即公开。
+- 当前只支持图片评论，不支持视频评论、表情包、@ 用户或生产级图片审核闭环。
 
 互动响应字段：
 
@@ -459,9 +475,41 @@ SKU 字段（联调口径）：
 - `conversationId`：会话 ID。
 - `peerUserId`：对方用户 ID。
 - `peerName`：对方昵称。
+- `peerAvatarUrl`：对方头像 URL，可为空。
+- `mutualFollow`：是否互相关注；用于决定私信输入框提示和发送限制。
+- `remainingNonMutualMessages`：未互关时当前发送者还可发送的消息数量，互关时可为空。
 - `lastMessage`：最后一条消息摘要。
 - `unreadCount`：未读消息数。
 - `riskHint`：风控提示（可选）。
+
+会话详情字段（联调口径）：
+
+- `conversationId`：会话 ID。
+- `peer`：对方用户摘要，至少包含 `userId`、`nickname`、`avatarUrl`、`mutualFollow`。
+- `messages`：消息列表，不得固定返回空数组占位。
+- `canSend`：当前用户是否可发送。
+- `sendDisabledReason`：不可发送原因，可为空。
+- `remainingNonMutualMessages`：未互关时剩余可发送条数。
+
+消息字段（联调口径）：
+
+- `messageId`：消息 ID。
+- `senderId`：发送者 ID。
+- `content`：文本内容。
+- `createdAt`：创建时间。
+- `readAt`：已读时间，可为空。
+
+发送私信请求字段：
+
+- `content`：文本内容，必填。
+
+发送私信错误：
+
+- 未登录：`401 UNAUTHORIZED`。
+- 会话不存在：`404 NOT_FOUND`。
+- 未互关且超过 3 条限制：`409 CONFLICT`，错误码建议 `NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED`，文案为“互相关注后可继续聊天”。
+
+> 当前口径：私信第六轮只支持文本消息和未互关 3 条限制；不做图片消息、撤回、复杂已读、黑名单和生产级反骚扰。
 
 ## 成长接口
 

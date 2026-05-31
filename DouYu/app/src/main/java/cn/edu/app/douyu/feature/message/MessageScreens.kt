@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -30,6 +32,7 @@ import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.ChatMessage
 import cn.edu.app.douyu.core.model.Conversation
+import cn.edu.app.douyu.core.model.ConversationDetail
 import cn.edu.app.douyu.core.model.NotificationMessage
 import cn.edu.app.douyu.core.model.NotificationType
 import cn.edu.app.douyu.core.navigation.AppRoute
@@ -37,6 +40,7 @@ import cn.edu.app.douyu.core.navigation.BottomTab
 import cn.edu.app.douyu.core.network.PageResponse
 import cn.edu.app.douyu.core.ui.*
 import cn.edu.app.douyu.ui.theme.*
+import kotlinx.coroutines.launch
 
 private val repo = DoyuAppContainer.messageRepository
 
@@ -52,11 +56,16 @@ private fun MessageListScreenContent(navController: NavHostController?) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var notificationsRetryCount by remember { mutableIntStateOf(0) }
     var conversationsRetryCount by remember { mutableIntStateOf(0) }
+    var refreshDrag by remember { mutableFloatStateOf(0f) }
     val notificationsState: UiState<PageResponse<NotificationMessage>> =
         safeCallToState(notificationsRetryCount) { repo.notifications() }.value
     val conversationsState: UiState<PageResponse<Conversation>> =
         safeCallToState(conversationsRetryCount) { repo.conversations() }.value
     val isUnauthenticated = notificationsState is UiState.RequireLogin || conversationsState is UiState.RequireLogin
+    val currentRefreshing = when (selectedTab) {
+        0 -> notificationsState is UiState.Loading
+        else -> conversationsState is UiState.Loading
+    }
 
     Scaffold(
         topBar = {
@@ -83,9 +92,32 @@ private fun MessageListScreenContent(navController: NavHostController?) {
                     },
                     label = "tabSwitch"
                 ) { tab ->
-                    when (tab) {
-                        0 -> NotificationList(notificationsState, onRetry = { notificationsRetryCount++ })
-                        1 -> ConversationList(conversationsState, navController, onRetry = { conversationsRetryCount++ })
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(currentRefreshing, tab) {
+                                detectDragGestures(
+                                    onDragEnd = {
+                                        if (refreshDrag > 90f && !currentRefreshing) {
+                                            if (tab == 0) notificationsRetryCount++ else conversationsRetryCount++
+                                        }
+                                        refreshDrag = 0f
+                                    },
+                                    onDragCancel = { refreshDrag = 0f },
+                                    onDrag = { change, dragAmount ->
+                                        if (dragAmount.y > 0) refreshDrag += dragAmount.y
+                                        change.consume()
+                                    }
+                                )
+                            }
+                    ) {
+                        when (tab) {
+                            0 -> NotificationList(notificationsState, onRetry = { notificationsRetryCount++ })
+                            1 -> ConversationList(conversationsState, navController, onRetry = { conversationsRetryCount++ })
+                        }
+                        if (currentRefreshing) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = LightPrimary)
+                        }
                     }
                 }
             }
@@ -308,7 +340,9 @@ private fun ConversationRow(conversation: Conversation, navController: NavHostCo
                     ReadOnlyBadge()
                 }
                 Text(
-                    "只读会话，进入查看历史消息",
+                    conversation.lastMessage.ifBlank {
+                        if (conversation.mutualFollow) "互相关注，可以继续交流" else "未互关最多发送 3 条消息"
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -453,36 +487,87 @@ fun ConversationScreen(navController: NavHostController, conversationId: String)
 private fun ConversationScreenContent(navController: NavHostController?, conversationId: String) {
     Scaffold(topBar = { DoyuTopBar("会话", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
-            val chatState: UiState<PageResponse<ChatMessage>> =
-                safeCallToState(conversationId) { repo.chat(conversationId) }.value
-            when (val cs = chatState) {
+            var refreshKey by remember { mutableIntStateOf(0) }
+            var input by remember { mutableStateOf("") }
+            var sendState by remember { mutableStateOf<UiState<ChatMessage>?>(null) }
+            val sendScope = rememberCoroutineScope()
+            val detailState: UiState<ConversationDetail> =
+                safeCallToState(conversationId, refreshKey) { repo.conversation(conversationId) }.value
+            when (val cs = detailState) {
                 is UiState.Success -> {
-                    if (cs.data.items.isEmpty()) {
+                    val detail = cs.data
+                    val conversation = detail.conversation
+                    val messages = detail.messages
+                    if (messages.isEmpty()) {
                         EmptyContent("还没有会话内容", "这条私信会话目前没有历史消息。", showRetry = false)
                     } else {
-                        cs.data.items.forEach { ChatBubble(it) }
+                        messages.forEach { ChatBubble(it) }
                     }
+                    ConversationComposer(
+                        conversation = conversation,
+                        input = input,
+                        sendState = sendState,
+                        onInputChange = { input = it },
+                        onSend = {
+                            val content = input.trim()
+                            if (content.isBlank()) return@ConversationComposer
+                            sendState = UiState.Loading
+                            sendScope.launch {
+                                sendState = runCatching { repo.sendMessage(conversationId, content) }
+                                    .fold(
+                                        onSuccess = {
+                                            input = ""
+                                            refreshKey++
+                                            UiState.Success(it)
+                                        },
+                                        onFailure = { UiState.Error(it.message ?: "发送失败") }
+                                    )
+                            }
+                        }
+                    )
                 }
                 is UiState.Empty -> PageStateView(UiState.Empty)
-                else -> PageStateView(chatState)
+                else -> PageStateView(detailState, onRetry = { refreshKey++ })
             }
-            DoyuCard {
-                DisabledFeatureNotice(
-                    title = "私信发送待接入",
-                    message = "当前会话只读展示，发送和举报入口会在后端链路确认后开放。",
-                    modifier = Modifier.padding(bottom = 10.dp)
-                )
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
-                    enabled = false,
-                    label = { Text("私信发送未开放") },
-                    trailingIcon = {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+        }
+    }
+}
+
+@Composable
+private fun ConversationComposer(
+    conversation: Conversation?,
+    input: String,
+    sendState: UiState<ChatMessage>?,
+    onInputChange: (String) -> Unit,
+    onSend: () -> Unit
+) {
+    val canSend = conversation?.canSend != false
+    val helper = when {
+        conversation == null -> "正在确认会话关系"
+        conversation.mutualFollow -> "你们已互相关注，可以继续交流。"
+        conversation.remainingNonMutualMessages > 0 -> "未互关还可发送 ${conversation.remainingNonMutualMessages} 条消息。"
+        else -> "互相关注后可继续聊天。"
+    }
+    DoyuCard {
+        Text(helper, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = input,
+            onValueChange = onInputChange,
+            enabled = canSend && sendState !is UiState.Loading,
+            label = { Text(if (canSend) "输入私信" else "已达未互关私信上限") },
+            trailingIcon = {
+                IconButton(onClick = onSend, enabled = canSend && input.isNotBlank() && sendState !is UiState.Loading) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "发送")
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 1,
+            maxLines = 4
+        )
+        if (sendState is UiState.Error) {
+            Spacer(Modifier.height(6.dp))
+            Text(sendState.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }
     }
 }
@@ -550,8 +635,10 @@ private fun compactTimeLabel(value: String): String {
 }
 
 private fun conversationTitle(conversation: Conversation): String =
-    if (conversation.userBId.contains("support", ignoreCase = true)) {
-        "豆屿客服"
-    } else {
-        "拼豆同好 ${conversation.userBId.takeLast(3).uppercase()}"
+    conversation.peerName.ifBlank {
+        if (conversation.userBId.contains("support", ignoreCase = true)) {
+            "豆屿客服"
+        } else {
+            "拼豆同好 ${conversation.userBId.takeLast(3).uppercase()}"
+        }
     }

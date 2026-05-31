@@ -40,12 +40,14 @@ public class CommunityController {
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
     private final RewardAccountRepository rewardAccountRepository;
+    private final FileAssetRepository fileAssetRepository;
     private final IdGenerator idGenerator;
 
     public CommunityController(PostRepository postRepository, CommentRepository commentRepository,
                                LikeRepository likeRepository, FavoriteRepository favoriteRepository,
                                UserRepository userRepository, FollowRepository followRepository,
-                               RewardAccountRepository rewardAccountRepository, IdGenerator idGenerator) {
+                               RewardAccountRepository rewardAccountRepository, FileAssetRepository fileAssetRepository,
+                               IdGenerator idGenerator) {
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.likeRepository = likeRepository;
@@ -53,6 +55,7 @@ public class CommunityController {
         this.userRepository = userRepository;
         this.followRepository = followRepository;
         this.rewardAccountRepository = rewardAccountRepository;
+        this.fileAssetRepository = fileAssetRepository;
         this.idGenerator = idGenerator;
     }
 
@@ -241,9 +244,13 @@ public class CommunityController {
     Map<String, Object> comment(Authentication authentication, @PathVariable String postId, @Valid @RequestBody CommentRequest request) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
+        List<String> mediaFileIds = request.mediaFileIds() == null ? List.of() : request.mediaFileIds();
+        String content = request.content() == null ? "" : request.content().trim();
+        validateCommentPayload(userId, content, mediaFileIds);
         Instant now = Instant.now();
         CommentEntity comment = new CommentEntity(idGenerator.next("cmt"), postId, userId, request.parentId(),
-                request.content(), "REVIEWING", now, now);
+                content, "REVIEWING", now, now);
+        comment.setMediaFileIds(joinList(mediaFileIds));
         commentRepository.save(comment);
         post.setCommentCount((int) commentRepository.countByPostIdAndStatusNot(postId, "DELETED"));
         postRepository.save(post);
@@ -337,8 +344,53 @@ public class CommunityController {
         view.put("author", authorInfo(comment.getAuthorId()));
         view.put("parentId", comment.getParentId());
         view.put("content", comment.getContent());
+        List<String> mediaFileIds = splitList(comment.getMediaFileIds());
+        view.put("mediaFileIds", mediaFileIds);
+        view.put("mediaAssets", mediaFileIds.stream().map(this::commentMediaAssetView).toList());
         view.put("status", comment.getStatus());
         return view;
+    }
+
+    private Map<String, Object> commentMediaAssetView(String fileId) {
+        FileAssetEntity file = fileAssetRepository.findById(fileId).orElse(null);
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("fileId", fileId);
+        if (file == null) {
+            view.put("publicUrl", "");
+            view.put("mimeType", "");
+            view.put("width", null);
+            view.put("height", null);
+            view.put("auditStatus", "NEED_MANUAL_REVIEW");
+            return view;
+        }
+        view.put("publicUrl", file.getPublicUrl() == null ? "" : file.getPublicUrl());
+        view.put("mimeType", file.getMimeType());
+        view.put("width", file.getWidth());
+        view.put("height", file.getHeight());
+        view.put("auditStatus", file.getAuditStatus());
+        return view;
+    }
+
+    private void validateCommentPayload(String userId, String content, List<String> mediaFileIds) {
+        if (content.isBlank() && mediaFileIds.isEmpty()) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "评论内容或图片不能同时为空");
+        }
+        if (mediaFileIds.size() > 9) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "单条评论最多添加 9 张图片");
+        }
+        if (mediaFileIds.stream().distinct().count() != mediaFileIds.size()) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "评论图片不能重复");
+        }
+        for (String fileId : mediaFileIds) {
+            FileAssetEntity file = fileAssetRepository.findById(fileId)
+                    .orElseThrow(() -> new BizException(ErrorCode.INVALID_ARGUMENT, "评论图片不存在"));
+            if (!file.getOwnerId().equals(userId)) {
+                throw new BizException(ErrorCode.FORBIDDEN, "只能使用自己上传的评论图片");
+            }
+            if (!"POST_IMAGE".equals(file.getUsage()) || !file.getMimeType().startsWith("image/")) {
+                throw new BizException(ErrorCode.INVALID_ARGUMENT, "评论只支持 POST_IMAGE 图片");
+            }
+        }
     }
 
     private <T> List<T> slice(List<T> items, int page, int size) {
@@ -360,6 +412,6 @@ public class CommunityController {
                               List<String> mediaFileIds, List<String> topicIds, String linkedPatternId) {
     }
 
-    public record CommentRequest(@NotBlank String content, String parentId) {
+    public record CommentRequest(String content, String parentId, List<String> mediaFileIds) {
     }
 }

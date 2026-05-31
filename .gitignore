@@ -51,3 +51,4 @@ venv/
 tmp/
 temp/
 .qa-output/
+do.md

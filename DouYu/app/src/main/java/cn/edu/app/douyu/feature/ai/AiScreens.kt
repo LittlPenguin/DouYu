@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -258,6 +259,7 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
     var uploadState by remember { mutableStateOf(UploadState.IDLE) }
     var uploadProgress by remember { mutableFloatStateOf(0f) }
     var uploadedFileId by remember { mutableStateOf<String?>(null) }
+    var previewRotation by remember { mutableFloatStateOf(0f) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -265,6 +267,8 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
         if (uri != null) {
             selectedUri = uri
             uploadState = UploadState.IDLE
+            uploadedFileId = null
+            previewRotation = 0f
         }
     }
 
@@ -274,6 +278,8 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
         if (capturedUriStr != null) {
             selectedUri = Uri.parse(capturedUriStr)
             uploadState = UploadState.IDLE
+            uploadedFileId = null
+            previewRotation = 0f
             savedStateHandle.remove<String>("captured_uri")
         }
     }
@@ -307,9 +313,31 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                         contentDescription = "选中图片预览",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(1f)
+                            .heightIn(min = 260.dp, max = 420.dp)
+                            .rotate(previewRotation)
                             .clip(MaterialTheme.shapes.small),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Fit
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                        DoyuOutlinedButton(
+                            "左转",
+                            onClick = { previewRotation -= 90f },
+                            icon = Icons.AutoMirrored.Filled.RotateLeft,
+                            modifier = Modifier.weight(1f)
+                        )
+                        DoyuOutlinedButton(
+                            "右转",
+                            onClick = { previewRotation += 90f },
+                            icon = Icons.AutoMirrored.Filled.RotateRight,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "拍照图片按原始比例预览；如系统相册方向不一致，可先旋转预览再继续。",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
                     )
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -319,6 +347,7 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                                 selectedUri = null
                                 uploadState = UploadState.IDLE
                                 uploadedFileId = null
+                                previewRotation = 0f
                             },
                             icon = Icons.Filled.Refresh,
                             modifier = Modifier.weight(1f)
@@ -428,22 +457,10 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                         Spacer(Modifier.height(4.dp))
                         Text("fileId: ${uploadedFileId ?: "..."}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    aiParamsRouteOrNull(uploadedFileId)?.let { paramsRoute ->
-                        DoyuPrimaryButton(
-                            "继续设置参数",
-                            onClick = { navController?.navigate(paramsRoute) },
-                            icon = Icons.AutoMirrored.Filled.ArrowForward,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                    uploadedFileId?.let { fileId ->
+                        AiParamsContent(navController = navController, uploadedFileId = fileId)
                     }
                 }
-            }
-
-            DoyuCard {
-                SectionHeader("上传流程")
-                Text("Photo Picker/拍照 -> /uploads/presign -> 直传对象存储 -> /uploads/confirm 返回 fileId。", style = MaterialTheme.typography.bodySmall)
-                Spacer(Modifier.height(8.dp))
-                Text("创建 AI 任务时只传 inputFileId，不直接传 fileKey。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -460,6 +477,15 @@ fun AiParamsScreen(navController: NavHostController, uploadedFileId: String) { A
 
 @Composable
 private fun AiParamsScreenContent(navController: NavHostController?, uploadedFileId: String) {
+    Scaffold(topBar = { DoyuTopBar("图纸参数", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
+        DoyuPage(padding) {
+            AiParamsContent(navController = navController, uploadedFileId = uploadedFileId)
+        }
+    }
+}
+
+@Composable
+private fun AiParamsContent(navController: NavHostController?, uploadedFileId: String) {
     val scope = rememberCoroutineScope()
 
     var beadSize by remember { mutableStateOf("2.6mm") }
@@ -470,8 +496,7 @@ private fun AiParamsScreenContent(navController: NavHostController?, uploadedFil
     var creating by remember { mutableStateOf(false) }
     var createError by remember { mutableStateOf<String?>(null) }
 
-    Scaffold(topBar = { DoyuTopBar("图纸参数", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
-        DoyuPage(padding) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             ParamSection("豆子规格", listOf("2.6mm", "5mm"), beadSize) { beadSize = it }
             ParamSection("成品尺寸", listOf("小挂件", "中等摆件", "大幅作品"), targetSize) { targetSize = it }
             ParamSection("难度", listOf("新手", "普通", "进阶"), difficulty) { difficulty = it }
@@ -546,7 +571,6 @@ private fun AiParamsScreenContent(navController: NavHostController?, uploadedFil
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !creating
             )
-        }
     }
 }
 

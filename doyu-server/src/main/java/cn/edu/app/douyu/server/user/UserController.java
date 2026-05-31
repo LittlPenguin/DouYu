@@ -96,7 +96,8 @@ public class UserController {
         Instant now = Instant.now();
         followRepository.findByUserIdAndTargetUserId(currentUserId, userId).orElseGet(() ->
                 followRepository.save(new FollowEntity(idGenerator.next("flw"), currentUserId, userId, now, now)));
-        return Map.of("followed", true);
+        boolean followsMe = followRepository.findByUserIdAndTargetUserId(userId, currentUserId).isPresent();
+        return Map.of("followed", true, "followedByMe", true, "followsMe", followsMe, "mutualFollow", followsMe);
     }
 
     @Operation(summary = "取消关注")
@@ -108,7 +109,8 @@ public class UserController {
     Map<String, Object> unfollow(Authentication authentication, @PathVariable String userId) {
         String currentUserId = CurrentUser.userId(authentication);
         followRepository.deleteByUserIdAndTargetUserId(currentUserId, userId);
-        return Map.of("followed", false);
+        boolean followsMe = followRepository.findByUserIdAndTargetUserId(userId, currentUserId).isPresent();
+        return Map.of("followed", false, "followedByMe", false, "followsMe", followsMe, "mutualFollow", false);
     }
 
     @Operation(summary = "提交实名信息", description = "提交真实姓名和身份证号进行实名认证")

@@ -18,6 +18,8 @@ interface CommunityRepository {
     fun unlikePost(postId: String): PostInteractionResult
     fun favoritePost(postId: String): PostInteractionResult
     fun unfavoritePost(postId: String): PostInteractionResult
+    fun followUser(userId: String): FollowResult
+    fun unfollowUser(userId: String): FollowResult
 }
 
 interface PatternRepository {
@@ -46,7 +48,9 @@ interface CommerceRepository {
 interface MessageRepository {
     fun notifications(): PageResponse<NotificationMessage>
     fun conversations(): PageResponse<Conversation>
+    fun conversation(conversationId: String): ConversationDetail
     fun chat(conversationId: String): PageResponse<ChatMessage>
+    fun sendMessage(conversationId: String, content: String): ChatMessage
 }
 
 interface ProfileRepository {
@@ -345,8 +349,28 @@ object MockData {
     )
 
     val conversations = listOf(
-        Conversation("conv_001", "user_001", "user_002"),
-        Conversation("conv_002", "user_001", "support_001")
+        Conversation(
+            conversationId = "conv_001",
+            userAId = "user_001",
+            userBId = "user_002",
+            peerUserId = "user_002",
+            peerName = "小岛手作",
+            lastMessage = "想做成生日礼物，预算 100 左右。",
+            mutualFollow = false,
+            remainingNonMutualMessages = 1,
+            canSend = true
+        ),
+        Conversation(
+            conversationId = "conv_002",
+            userAId = "user_001",
+            userBId = "support_001",
+            peerUserId = "support_001",
+            peerName = "豆屿客服",
+            lastMessage = "订单问题可以在这里留言。",
+            mutualFollow = true,
+            remainingNonMutualMessages = 999,
+            canSend = true
+        )
     )
 
     val badges = listOf(
@@ -411,7 +435,8 @@ class MockCommunityRepository : CommunityRepository {
             author = MockData.user,
             parentId = request.parentId,
             content = request.content,
-            status = ContentStatus.REVIEWING
+            status = ContentStatus.REVIEWING,
+            mediaFileIds = request.mediaFileIds
         )
 
     override fun likePost(postId: String): PostInteractionResult = PostInteractionResult(liked = true)
@@ -421,6 +446,12 @@ class MockCommunityRepository : CommunityRepository {
     override fun favoritePost(postId: String): PostInteractionResult = PostInteractionResult(favorited = true)
 
     override fun unfavoritePost(postId: String): PostInteractionResult = PostInteractionResult(favorited = false)
+
+    override fun followUser(userId: String): FollowResult =
+        FollowResult(followed = true, followedByMe = true)
+
+    override fun unfollowUser(userId: String): FollowResult =
+        FollowResult(followed = false, followedByMe = false)
 }
 
 class MockPatternRepository : PatternRepository {
@@ -492,6 +523,11 @@ class MockMessageRepository : MessageRepository {
     override fun conversations(): PageResponse<Conversation> =
         PageResponse(MockData.conversations, 1, 20, MockData.conversations.size, false)
 
+    override fun conversation(conversationId: String): ConversationDetail {
+        val conversation = MockData.conversations.firstOrNull { it.conversationId == conversationId } ?: MockData.conversations.first()
+        return ConversationDetail(conversation = conversation, messages = chat(conversation.conversationId).items)
+    }
+
     override fun chat(conversationId: String): PageResponse<ChatMessage> {
         val conversation = MockData.conversations.firstOrNull { it.conversationId == conversationId } ?: MockData.conversations.first()
         val peerId = if (conversation.userAId == MockData.user.userId) conversation.userBId else conversation.userAId
@@ -501,6 +537,9 @@ class MockMessageRepository : MessageRepository {
         )
         return PageResponse(items, 1, 20, items.size, false)
     }
+
+    override fun sendMessage(conversationId: String, content: String): ChatMessage =
+        ChatMessage("chat_preview_${System.currentTimeMillis()}", conversationId, MockData.user.userId, "我", content, true)
 }
 
 class MockProfileRepository : ProfileRepository {

@@ -23,9 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -72,7 +75,7 @@ fun DoyuTopBar(
                     }
                     Spacer(Modifier.width(4.dp))
                 } else {
-                    BeadCluster(size = 28.dp)
+                    DoyuBrandMark(size = 30.dp)
                     Spacer(Modifier.width(10.dp))
                 }
                 Text(
@@ -507,14 +510,21 @@ fun EmptyContent(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        BeadPattern(
+        DoyuBrandMark(
             modifier = Modifier
-                .size(108.dp)
-                .clip(MaterialTheme.shapes.extraLarge)
-                .background(LightSurfaceVariant)
-                .padding(16.dp)
+                .size(104.dp)
+                .clip(MaterialTheme.shapes.extraLarge),
+            showContainer = true,
+            beadSize = 8.dp
         )
         Spacer(Modifier.height(16.dp))
+        Text(
+            "豆屿",
+            style = MaterialTheme.typography.labelLarge,
+            color = LightPrimary,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(Modifier.height(8.dp))
         Text(
             title,
             style = MaterialTheme.typography.titleMedium,
@@ -565,6 +575,103 @@ fun BeadPattern(modifier: Modifier = Modifier) {
                 index++
             }
         }
+    }
+}
+
+// ── DoyuBrandMark ──
+
+@Composable
+fun DoyuBrandMark(
+    modifier: Modifier = Modifier,
+    size: Dp = 42.dp,
+    showContainer: Boolean = false,
+    beadSize: Dp = 5.dp
+) {
+    Box(
+        modifier = modifier.size(size),
+        contentAlignment = Alignment.Center
+    ) {
+        if (showContainer) {
+            Canvas(modifier = Modifier.matchParentSize()) {
+                val canvasSize = this.size
+                drawRoundRect(
+                    brush = Brush.linearGradient(
+                        listOf(
+                            LightSecondaryContainer.copy(alpha = 0.9f),
+                            LightPrimaryContainer.copy(alpha = 0.72f),
+                            LightTertiaryContainer.copy(alpha = 0.82f)
+                        )
+                    ),
+                    cornerRadius = CornerRadius(canvasSize.minDimension * 0.24f, canvasSize.minDimension * 0.24f)
+                )
+                drawCircle(
+                    color = Color.White.copy(alpha = 0.42f),
+                    radius = canvasSize.minDimension * 0.26f,
+                    center = Offset(canvasSize.width * 0.72f, canvasSize.height * 0.22f)
+                )
+            }
+        }
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(if (showContainer) size * 0.18f else 0.dp)
+        ) {
+            val w = this.size.width
+            val h = this.size.height
+            val island = Path().apply {
+                moveTo(w * 0.14f, h * 0.66f)
+                cubicTo(w * 0.24f, h * 0.42f, w * 0.42f, h * 0.32f, w * 0.55f, h * 0.34f)
+                cubicTo(w * 0.72f, h * 0.36f, w * 0.86f, h * 0.5f, w * 0.92f, h * 0.68f)
+                cubicTo(w * 0.75f, h * 0.82f, w * 0.32f, h * 0.82f, w * 0.14f, h * 0.66f)
+                close()
+            }
+            drawPath(island, LightSecondary.copy(alpha = 0.95f))
+            drawOval(
+                color = Color(0xFFE8C48E),
+                topLeft = Offset(w * 0.18f, h * 0.58f),
+                size = Size(w * 0.68f, h * 0.24f)
+            )
+            drawRoundRect(
+                color = LightPrimary,
+                topLeft = Offset(w * 0.22f, h * 0.62f),
+                size = Size(w * 0.16f, h * 0.16f),
+                cornerRadius = CornerRadius(w * 0.018f, w * 0.018f)
+            )
+            drawRoundRect(
+                color = LightTertiary,
+                topLeft = Offset(w * 0.42f, h * 0.56f),
+                size = Size(w * 0.16f, h * 0.16f),
+                cornerRadius = CornerRadius(w * 0.018f, w * 0.018f)
+            )
+            drawRoundRect(
+                color = LightSurface,
+                topLeft = Offset(w * 0.62f, h * 0.62f),
+                size = Size(w * 0.16f, h * 0.16f),
+                cornerRadius = CornerRadius(w * 0.018f, w * 0.018f)
+            )
+            drawCircle(
+                color = LightPrimary.copy(alpha = 0.88f),
+                radius = w * 0.08f,
+                center = Offset(w * 0.37f, h * 0.32f)
+            )
+            drawCircle(
+                color = LightSecondary.copy(alpha = 0.9f),
+                radius = w * 0.085f,
+                center = Offset(w * 0.51f, h * 0.24f)
+            )
+            drawCircle(
+                color = LightTertiary.copy(alpha = 0.9f),
+                radius = w * 0.08f,
+                center = Offset(w * 0.66f, h * 0.35f)
+            )
+        }
+        BeadDot(
+            color = Color.White.copy(alpha = 0.9f),
+            size = beadSize,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(y = -(size * 0.12f))
+        )
     }
 }
 

@@ -6,29 +6,32 @@
 
 ## 当前阶段
 
-当前项目处于 **第五轮前置 Aliyun OSS Provider 最小闭环阶段**。
+当前项目处于 **第六轮 UI/品牌与主链路展示收敛阶段**。
 
 阶段目标：
 
-- 在第一轮登录 + 社区契约样板、第二轮 App Shell / 消息 / 我的 UI 统一基线、第三轮商城 UI/API 主体链路验收关闭、第四轮登录态持久化和常驻真实图文数据收敛之后，补齐后端对象存储 Provider 切换骨架。
+- 在第一轮登录 + 社区契约样板、第二轮 App Shell / 消息 / 我的 UI 统一基线、第三轮商城 UI/API 主体链路验收关闭、第四轮登录态持久化和常驻真实图文数据收敛、第五轮 Aliyun OSS Provider 前置骨架之后，收敛前端观感、品牌识别、主链路展示和基础互动。
 - 按 `doc/stitch_document_app_generator/` 的 Stitch 设计探索稿和 `doc/development/11-ui-style-guide.md` 统一 Android UI 口径。
 - 以 `doc/development/11-ui-style-guide.md` 作为唯一 UI 权威规范。
 - 以 `doc/development/05-api-contract.md` 作为接口契约源；登录 + 社区第一轮样板链路继续严格追该文档。
 - 保持 Android 登录态 DataStore 持久化、社区/商城真实图文 seed、第三轮商城订单/支付边界不回退。
-- 让后端 OSS Provider 可通过 `.env` 在 `local`、`stub`、`aliyun` 间切换；默认开发仍走 Local OSS，测试走 Stub OSS。
-- Aliyun OSS 只由后端持有 AccessKey，继续复用现有 `/api/v1/uploads/presign -> PUT uploadUrl -> /uploads/confirm` 流程，不新增公共 API。
+- 品牌视觉优先落地“拼豆小岛”方向的 Logo、应用图标和 App 内品牌标识，避免版权风险素材。
+- 主链路五页优先统一：社区、商城、AI、消息、我的首屏、空态、加载、错误、未登录和禁用状态必须可演示、边界清楚。
+- 好友第一版采用“关注 / 互相关注”语义，不做好友申请审批；未互关私信同一发送者对同一会话最多 3 条，超过后必须后端返回明确错误，Android 清楚提示或禁用发送。
+- 继续保持后端 OSS Provider 可通过 `.env` 在 `local`、`stub`、`aliyun` 间切换；Aliyun OSS 只由后端持有 AccessKey，客户端不得保存密钥。
 - 继续优先消除空点击、假成功 Toast、误导性支付、误导性合规入口和半成品功能暴露。
 
 本阶段不做：
 
 - 不接入真实 AI Provider。
+- 不接入地图 API 或真实地理服务。
 - 不增强生产级内容审核、图片审核、版权识别、诈骗识别或交易风控。
 - 不接入真实微信支付、支付宝支付、退款、对账或支付 SDK。
 - 不补齐备案、隐私政策、用户协议、SDK 清单、版权投诉等生产合规材料。
 - 不补完整玩家二手/定制交易闭环、担保、评价、纠纷、提现或卖家资质审核。
 - 不把地址管理写成本轮已完成；订单确认仍只能清楚表达地址缺口。
 - 不把 Aliyun OSS Provider 骨架写成生产对象存储已完成；单台真机真实 Bucket 上传 smoke 只能证明当前开发环境可联调，CORS 最终收敛、STS/最小权限、CDN、防盗链、图片审核、病毒扫描、缩略图和 seed assets 云迁移仍是后续任务。
-- 不新增后端公共 API；第五轮前置只在已有上传抽象和配置层收敛。
+- 不新增地图、真实支付、真实 AI Provider 相关公共 API；第六轮只允许为关注关系、互关私信限制、页面展示状态补充必要的非破坏性字段或错误码。
 
 阶段状态以 `doc/development/current-status.md` 为准。
 如果本节与 `doc/development/current-status.md` 冲突，以 `current-status.md` 和当前代码为准，并优先修正文档口径。
@@ -102,6 +105,7 @@ Copy-Item .env.example .env -Force
 ## ADB 真机调试
 
 - 本项目允许使用 ADB 进行远程真机调试，默认 ADB 路径为 `D:\AndroidChace\platform-tools\adb.exe`。
+- 默认只在用户指定的真机 IP `10.64.241.158` 下执行安装、启动、截图、日志和 App 内 QA；除非用户额外要求，不要运行、安装到或验收其他模拟器/真机。
 - 执行任何真机 QA、安装、截图、日志或交互前，必须先运行：
 
 ```powershell
@@ -111,6 +115,12 @@ D:\AndroidChace\platform-tools\adb.exe devices -l
 - 如果没有在线设备，必须先告诉用户“当前无在线真机，不能执行真机验收”，不得把设备 QA、截图或真机 smoke 写成通过。
 - `.qa-output/` 只用于本地临时截图和日志，按 `.gitignore` 忽略，不提交。
 - 无线调试端口、配对码和一次性设备连接信息不得写入文档或提交记录；文档只保留通用命令和排障原则。
+
+## 本地任务清单
+
+- 用户可能在仓库根目录放置 `do.md` 作为本地临时任务清单；该文件不是项目文件，必须按 `.gitignore` 忽略，不提交。
+- 当用户说“`do.md` 下有几个任务，去做”或类似指令时，先读取 `do.md`，按清单逐项修复或新增；完成某项后，从 `do.md` 清空对应任务，保留未完成任务。
+- `do.md` 中的任务仍必须遵守本文件和 `doc/development` 文档约束；如果任务与当前阶段、API 契约或安全边界冲突，先同步说明冲突并按文档优先级处理。
 
 ## Android Studio / Gradle JDK
 

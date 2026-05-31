@@ -2,6 +2,8 @@ package cn.edu.app.douyu.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.edu.app.douyu.server.common.entity.ConversationEntity;
+import cn.edu.app.douyu.server.common.entity.ConversationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,6 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -38,6 +41,9 @@ class DouyuBackendContractTests {
 
     @Autowired
     RequestMappingHandlerMapping requestMappingHandlerMapping;
+
+    @Autowired
+    ConversationRepository conversationRepository;
 
     @Test
     void openApiDocsExposeApiV1EndpointsAndUploadPatternContractFields() throws Exception {
@@ -584,6 +590,70 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void nonMutualConversationAllowsThreeMessagesThenRequiresMutualFollow() throws Exception {
+        String tokenA = login("13800000024", "AGE_18_PLUS");
+        String tokenB = login("13800000025", "AGE_18_PLUS");
+        String userAId = getJsonWithToken("/api/v1/users/me", tokenA).at("/data/userId").asText();
+        String userBId = getJsonWithToken("/api/v1/users/me", tokenB).at("/data/userId").asText();
+
+        ConversationEntity conversation = new ConversationEntity();
+        conversation.setId("conv_contract_non_mutual_limit");
+        conversation.setUserAId(userAId);
+        conversation.setUserBId(userBId);
+        conversation.setCreatedAt(Instant.now());
+        conversation.setUpdatedAt(Instant.now());
+        conversationRepository.save(conversation);
+
+        for (int i = 1; i <= 3; i++) {
+            mockMvc.perform(post("/api/v1/messages/conversations/{conversationId}", conversation.getId())
+                            .header("Authorization", "Bearer " + tokenA)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"content":"hello %d"}
+                                    """.formatted(i)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.mine", equalTo(true)))
+                    .andExpect(jsonPath("$.data.senderId", equalTo(userAId)));
+        }
+
+        mockMvc.perform(post("/api/v1/messages/conversations/{conversationId}", conversation.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"blocked"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code", equalTo("NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED")));
+
+        mockMvc.perform(post("/api/v1/users/{userId}/follow", userBId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.followedByMe", equalTo(true)));
+        mockMvc.perform(post("/api/v1/users/{userId}/follow", userAId)
+                        .header("Authorization", "Bearer " + tokenB))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.mutualFollow", equalTo(true)));
+
+        mockMvc.perform(post("/api/v1/messages/conversations/{conversationId}", conversation.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"mutual follow message"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content", equalTo("mutual follow message")));
+
+        mockMvc.perform(get("/api/v1/messages/conversations/{conversationId}", conversation.getId())
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.conversation.mutualFollow", equalTo(true)))
+                .andExpect(jsonPath("$.data.conversation.canSend", equalTo(true)))
+                .andExpect(jsonPath("$.data.conversation.lastMessage", equalTo("mutual follow message")))
+                .andExpect(jsonPath("$.data.messages[0].content", equalTo("hello 1")))
+                .andExpect(jsonPath("$.data.messages[3].content", equalTo("mutual follow message")));
+    }
+
+    @Test
     void errorScenariosReturnCorrectCodes() throws Exception {
         mockMvc.perform(get("/api/v1/users/me"))
                 .andExpect(status().isUnauthorized())
@@ -749,6 +819,78 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/{userId}/follow")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/reports")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/refunds")).isTrue();
+    }
+
+    @Test
+    void commentsSupportTextImageAndMixedMediaWithValidation() throws Exception {
+        String token = login("13800000024", "AGE_18_PLUS");
+        String otherToken = login("13800000025", "AGE_18_PLUS");
+        String imageFileId = confirmedFile(token, "POST_IMAGE");
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"","mediaFileIds":["%s"]}
+                                """.formatted(imageFileId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content", equalTo("")))
+                .andExpect(jsonPath("$.data.mediaFileIds[0]", equalTo(imageFileId)))
+                .andExpect(jsonPath("$.data.mediaAssets[0].fileId", equalTo(imageFileId)))
+                .andExpect(jsonPath("$.data.mediaAssets[0].publicUrl", org.hamcrest.Matchers.containsString("/stub/post_image/")));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"图文评论","mediaFileIds":["%s"]}
+                                """.formatted(imageFileId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content", equalTo("图文评论")))
+                .andExpect(jsonPath("$.data.mediaAssets[0].mimeType", equalTo("image/png")));
+
+        mockMvc.perform(get("/api/v1/posts/{postId}/comments", "post_seed_1")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].mediaAssets[0].fileId", equalTo(imageFileId)));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"   ","mediaFileIds":[]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"太多图片","mediaFileIds":["1","2","3","4","5","6","7","8","9","10"]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+
+        String otherImageFileId = confirmedFile(otherToken, "POST_IMAGE");
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"不能使用别人的图","mediaFileIds":["%s"]}
+                                """.formatted(otherImageFileId)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")));
+
+        String aiFileId = confirmedFile(token, "AI_INPUT");
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"用途不对","mediaFileIds":["%s"]}
+                                """.formatted(aiFileId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
     }
 
     @Test

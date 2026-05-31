@@ -2,12 +2,13 @@
 
 ## 测试目标
 
-当前阶段的测试目标是支撑 **第四轮登录态持久化 + 常驻真实图文数据收敛**：第三轮商城 UI/API 主体验收已关闭，本轮重点验证 DataStore 登录态保存/恢复/清理，以及社区 Feed、商品列表/详情、购物车对 `coverImageUrl` / `imageUrl` 的真实图片渲染和 fallback；不可用能力不能以空点击、假成功或误导性文案暴露给用户。
+当前阶段的测试目标是支撑 **第六轮 UI/品牌与主链路展示收敛**：第三轮商城 UI/API 主体验收已关闭，第四轮登录态持久化和真实图文 seed、第五轮 Aliyun OSS Provider 骨架已作为既有基线保留；本轮重点验证主链路展示、好友/私信边界、作品详情评论工具条和图片评论能力。不可用能力不能以空点击、假成功或误导性文案暴露给用户。
 
 当前已有后端契约测试、图纸算法测试、AI Stub Provider 测试和 Android 单元测试。本文档区分：
 
 - 第一轮登录 + 社区基线验收。
 - 第二轮 UI 统一基线验收。
+- 第六轮 UI/品牌与主链路展示收敛验收。
 - 第四轮登录态持久化与真实图文 seed 验收。
 - 第三轮商城 UI/API 收敛回归。
 - 后续阶段才需要补齐的 AI、真实支付、退款对账、审核、合规和风控验收。
@@ -374,6 +375,46 @@ Android 验收：
 - 已跑：验证码登录手机号 `13800000088`、验证码 `123456` 成功进入“我的”已登录态；强杀 App 并重启后仍显示“豆友 / 我的工坊 / 等级与奖励”，确认 DataStore 登录恢复生效。
 - 已跑：设置页退出登录后回到“我的”未登录态；再次强杀 App 并重启后仍显示“未登录 / 去登录”，确认退出登录会清理持久化 token。
 - 截图：`.qa-output/login-persistence-after-restart-logged.png`、`.qa-output/login-persistence-after-restart-guest.png` 已保存为本地 QA 证据，不提交。
+
+## 第六轮 UI / 评论图片验收
+
+第六轮验收只关闭主链路展示收敛和作品详情图片评论，不关闭视频评论、表情包、@ 用户、图片私信、生产级图片审核、真实 AI Provider、真实支付或地址管理。
+
+必跑命令：
+
+```powershell
+cd D:\Studio\SpellBean\DouYu
+.\gradlew.bat :app:testDebugUnitTest --console=plain
+.\gradlew.bat :app:assembleDebug --console=plain
+
+cd D:\Studio\SpellBean\doyu-server
+mvn test
+```
+
+作品详情评论工具条验收：
+
+- 默认态为底部紧凑横向工具条，不遮挡帖子正文、评论列表或系统导航。
+- 点击输入或图片按钮后，工具条以平滑动画横向展开；缩略图单独横向排列，不挤压文字输入框。
+- 支持纯文字、纯图片和图文混合评论；文字和图片不能同时为空。
+- 系统 Photo Picker 单次最多选择 9 张图片；第 10 张不能进入提交列表。
+- 图片上传复用 `/uploads/presign -> PUT -> /uploads/confirm`，usage 为 `POST_IMAGE`，客户端只提交 `mediaFileIds`。
+- 任意图片上传失败时整组评论不提交，已选缩略图保留，并提示用户重试。
+- 评论提交后仍按审核中状态展示，不假装立即公开。
+- 评论列表渲染 `mediaAssets.publicUrl`；图片加载失败时显示拼豆占位，不出现空白卡片。
+
+后端契约验收：
+
+- 文本评论、纯图评论、图文评论均可创建。
+- 空文字 + 空图片返回参数错误。
+- 超过 9 张图片返回参数错误。
+- 非当前用户文件、非 `POST_IMAGE` 文件、非 `image/*` 文件不能用于评论。
+- 评论列表和发布评论响应均返回 `mediaFileIds` 与 `mediaAssets`。
+
+真机 smoke：
+
+- 先运行 `D:\AndroidChace\platform-tools\adb.exe devices -l`；无 `10.64.241.158` 在线真机不得写成通过。
+- 只使用 `10.64.241.158:<当前端口>` 安装和截图，不启动模拟器或其他设备。
+- 截图保存到 `.qa-output/`，不提交。
 
 ## Android 兼容性测试
 

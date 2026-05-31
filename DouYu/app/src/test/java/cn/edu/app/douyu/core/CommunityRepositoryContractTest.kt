@@ -7,11 +7,16 @@ import cn.edu.app.douyu.core.model.Comment
 import cn.edu.app.douyu.core.model.ContentStatus
 import cn.edu.app.douyu.core.model.CreateCommentRequest
 import cn.edu.app.douyu.core.model.CreatePostRequest
+import cn.edu.app.douyu.core.model.CommentMediaAsset
+import cn.edu.app.douyu.core.model.FollowResult
 import cn.edu.app.douyu.core.model.Post
 import cn.edu.app.douyu.core.model.PostInteractionResult
+import cn.edu.app.douyu.core.model.AuditStatus
+import cn.edu.app.douyu.core.model.UserProfile
 import cn.edu.app.douyu.core.network.ApiResponse
 import cn.edu.app.douyu.core.network.CommunityApi
 import cn.edu.app.douyu.core.network.PageResponse
+import cn.edu.app.douyu.core.network.UserApi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -19,7 +24,7 @@ import org.junit.Test
 class CommunityRepositoryContractTest {
     @Test
     fun repositoryExposesCommunityWriteContract() {
-        val repository = RealCommunityRepository(FakeCommunityApi())
+        val repository = RealCommunityRepository(FakeCommunityApi(), FakeUserApi())
 
         val created = repository.createPost(
             CreatePostRequest(
@@ -34,14 +39,21 @@ class CommunityRepositoryContractTest {
         assertEquals(false, repository.unlikePost(created.postId).liked)
         assertEquals(true, repository.favoritePost(created.postId).favorited)
         assertEquals(false, repository.unfavoritePost(created.postId).favorited)
+        assertEquals(true, repository.followUser(MockData.user.userId).followedByMe)
+        assertEquals(false, repository.unfollowUser(MockData.user.userId).followedByMe)
 
-        val comment = repository.createComment(created.postId, CreateCommentRequest("contract comment"))
+        val comment = repository.createComment(
+            created.postId,
+            CreateCommentRequest(content = "", mediaFileIds = listOf("file_comment_001"))
+        )
         assertEquals(ContentStatus.REVIEWING, comment.status)
+        assertEquals(listOf("file_comment_001"), comment.mediaFileIds)
+        assertEquals("http://127.0.0.1/comment-image.png", comment.mediaAssets.first().publicUrl)
     }
 
     @Test
     fun repositoryPreservesBackendErrorCodeAndTraceId() {
-        val repository = RealCommunityRepository(FakeCommunityApi(failCreate = true))
+        val repository = RealCommunityRepository(FakeCommunityApi(failCreate = true), FakeUserApi())
 
         val error = assertThrows(ApiException::class.java) {
             repository.createPost(CreatePostRequest("bad", "bad", emptyList()))
@@ -49,6 +61,17 @@ class CommunityRepositoryContractTest {
 
         assertEquals("INVALID_ARGUMENT", error.code)
         assertEquals("trace_contract_error", error.traceId)
+    }
+
+    private class FakeUserApi : UserApi {
+        override suspend fun me(): ApiResponse<UserProfile> =
+            ApiResponse("OK", "success", MockData.user, "trace_me")
+
+        override suspend fun follow(userId: String): ApiResponse<FollowResult> =
+            ApiResponse("OK", "success", FollowResult(followed = true, followedByMe = true), "trace_follow")
+
+        override suspend fun unfollow(userId: String): ApiResponse<FollowResult> =
+            ApiResponse("OK", "success", FollowResult(followed = false, followedByMe = false), "trace_unfollow")
     }
 
     private class FakeCommunityApi(
@@ -106,6 +129,17 @@ class CommunityRepositoryContractTest {
                     authorId = MockData.user.userId,
                     author = MockData.user,
                     content = request.content,
+                    mediaFileIds = request.mediaFileIds,
+                    mediaAssets = request.mediaFileIds.map {
+                        CommentMediaAsset(
+                            fileId = it,
+                            publicUrl = "http://127.0.0.1/comment-image.png",
+                            mimeType = "image/png",
+                            width = 64,
+                            height = 64,
+                            auditStatus = AuditStatus.NEED_MANUAL_REVIEW
+                        )
+                    },
                     status = ContentStatus.REVIEWING
                 ),
                 "trace_comment"

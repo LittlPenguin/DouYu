@@ -27,6 +27,12 @@ interface AuthApi {
 interface UserApi {
     @GET("/api/v1/users/me")
     suspend fun me(): ApiResponse<UserProfile>
+
+    @POST("/api/v1/users/{userId}/follow")
+    suspend fun follow(@Path("userId") userId: String): ApiResponse<FollowResult>
+
+    @DELETE("/api/v1/users/{userId}/follow")
+    suspend fun unfollow(@Path("userId") userId: String): ApiResponse<FollowResult>
 }
 
 interface UploadApi {

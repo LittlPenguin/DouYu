@@ -16,11 +16,11 @@ public class StubOssProvider implements OssProvider {
 
     @Override
     public String confirm(String fileKey) {
-        return null;
+        return getPublicUrl(fileKey);
     }
 
     @Override
     public String getPublicUrl(String fileKey) {
-        return null;
+        return "https://oss-stub.douyu.local/" + fileKey;
     }
 }

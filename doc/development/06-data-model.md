@@ -77,7 +77,11 @@
 | authorId | 作者 |
 | parentId | 父评论 |
 | content | 内容 |
+| mediaFileIds | 第六轮评论图片文件 ID 列表，最多 9 个，可为空；文字和图片不能同时为空 |
+| mediaAssets | 接口响应中的评论图片渲染对象，包含 `fileId`、`publicUrl`、`mimeType`、`width`、`height`、`auditStatus` |
 | status | 审核状态 |
+
+评论图片当前只支持 `POST_IMAGE` 类型的图片 FileAsset；视频评论、表情包、@ 用户和生产级图片审核不在第六轮关闭。
 
 ### Follow / Like / Favorite
 
@@ -89,6 +93,13 @@
 - 创建时间。
 
 目标类型包括帖子、图纸、商品、用户。
+
+第六轮好友语义：
+
+- `Follow(targetType=USER)` 是当前“好友”能力的数据基础。
+- 当前不新增好友申请状态机；`mutualFollow = A 关注 B 且 B 关注 A`。
+- 关注关系需要唯一约束：同一用户对同一目标只能存在一条有效关注记录。
+- 取消关注后互关状态实时失效；历史私信不删除。
 
 ## 文件域
 
@@ -287,6 +298,37 @@
 | title | 标题 |
 | content | 内容 |
 | readAt | 已读时间 |
+
+### Conversation
+
+| 字段 | 说明 |
+|---|---|
+| id | 会话 ID |
+| participantAId | 参与用户 A |
+| participantBId | 参与用户 B |
+| lastMessageId | 最后一条私信，可为空 |
+| unreadCount | 当前用户视角未读数由查询层计算 |
+| createdAt | 创建时间 |
+| updatedAt | 更新时间 |
+
+### DirectMessage
+
+| 字段 | 说明 |
+|---|---|
+| id | 私信 ID |
+| conversationId | 会话 ID |
+| senderId | 发送者 |
+| receiverId | 接收者 |
+| content | 文本内容 |
+| readAt | 已读时间 |
+| createdAt | 创建时间 |
+
+未互关私信限制：
+
+- 互关判断基于 `Follow(targetType=USER)` 双向关系。
+- 未互关时，同一发送者对同一会话最多发送 3 条 `DirectMessage`。
+- 达到限制后不写入新消息，后端返回业务错误；互关后限制解除。
+- 本轮不建模图片私信、撤回、删除、黑名单和复杂风控状态。
 
 ### RewardLedger
 

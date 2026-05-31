@@ -36,7 +36,10 @@ class ApiException(val code: String, override val message: String, val traceId: 
 
 private fun idempotencyKey(prefix: String): String = "$prefix-${UUID.randomUUID()}"
 
-class RealCommunityRepository(private val api: CommunityApi) : CommunityRepository {
+class RealCommunityRepository(
+    private val api: CommunityApi,
+    private val userApi: UserApi
+) : CommunityRepository {
     override fun feed(): PageResponse<Post> = apiCall { api.feed() }
     override fun post(postId: String): Post = apiCall { api.post(postId) }
     override fun comments(postId: String): PageResponse<Comment> = apiCall { api.comments(postId) }
@@ -48,6 +51,8 @@ class RealCommunityRepository(private val api: CommunityApi) : CommunityReposito
     override fun unlikePost(postId: String): PostInteractionResult = apiCall { api.unlikePost(postId) }
     override fun favoritePost(postId: String): PostInteractionResult = apiCall { api.favoritePost(postId) }
     override fun unfavoritePost(postId: String): PostInteractionResult = apiCall { api.unfavoritePost(postId) }
+    override fun followUser(userId: String): FollowResult = apiCall { userApi.follow(userId) }
+    override fun unfollowUser(userId: String): FollowResult = apiCall { userApi.unfollow(userId) }
 }
 
 class RealPatternRepository(private val api: PatternApi) : PatternRepository {
@@ -114,10 +119,14 @@ class RealCommerceRepository(
 class RealMessageRepository(private val api: MessageApi) : MessageRepository {
     override fun notifications(): PageResponse<NotificationMessage> = apiCall { api.notifications() }
     override fun conversations(): PageResponse<Conversation> = apiCall { api.conversations() }
+    override fun conversation(conversationId: String): ConversationDetail = apiCall { api.conversation(conversationId) }
     override fun chat(conversationId: String): PageResponse<ChatMessage> {
-        val detail = apiCall { api.conversation(conversationId) }
+        val detail = conversation(conversationId)
         return PageResponse(detail.messages, 1, detail.messages.size, detail.messages.size, false)
     }
+
+    override fun sendMessage(conversationId: String, content: String): ChatMessage =
+        apiCall { api.sendMessage(conversationId, SendMessageRequest(content)) }
 }
 
 class RealProfileRepository(

@@ -12,6 +12,8 @@ public class NotificationEntity {
     @Id @Column(name = "id", length = 64) private String id;
     @Column(name = "user_id", length = 64, nullable = false) private String userId;
     @Column(name = "conversation_id", length = 64) private String conversationId;
+    @Column(name = "sender_id", length = 64) private String senderId;
+    @Column(name = "recipient_id", length = 64) private String recipientId;
     @Column(name = "type", length = 32, nullable = false) private String type;
     @Column(name = "title", length = 160, nullable = false) private String title;
     @Column(name = "content", length = 2000, nullable = false) private String content;
@@ -24,6 +26,8 @@ public class NotificationEntity {
     public String getId() { return id; } public void setId(String id) { this.id = id; }
     public String getUserId() { return userId; } public void setUserId(String userId) { this.userId = userId; }
     public String getConversationId() { return conversationId; } public void setConversationId(String conversationId) { this.conversationId = conversationId; }
+    public String getSenderId() { return senderId; } public void setSenderId(String senderId) { this.senderId = senderId; }
+    public String getRecipientId() { return recipientId; } public void setRecipientId(String recipientId) { this.recipientId = recipientId; }
     public String getType() { return type; } public void setType(String type) { this.type = type; }
     public String getTitle() { return title; } public void setTitle(String title) { this.title = title; }
     public String getContent() { return content; } public void setContent(String content) { this.content = content; }

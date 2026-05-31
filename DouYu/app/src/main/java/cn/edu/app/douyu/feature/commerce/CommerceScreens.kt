@@ -2,6 +2,7 @@ package cn.edu.app.douyu.feature.commerce
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -19,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -157,6 +159,8 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
     var searchQuery by remember { mutableStateOf("") }
     var productsRetryCount by remember { mutableIntStateOf(0) }
     val productsState = safeCallToState(productsRetryCount) { repo.products() }.value
+    var refreshDrag by remember { mutableFloatStateOf(0f) }
+    val productsRefreshing = productsState is UiState.Loading
 
     Scaffold(
         topBar = {
@@ -172,7 +176,22 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                 .fillMaxSize()
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
+                .pointerInput(productsRefreshing) {
+                    detectVerticalDragGestures(
+                        onDragEnd = {
+                            if (refreshDrag > 90f && !productsRefreshing) productsRetryCount++
+                            refreshDrag = 0f
+                        },
+                        onDragCancel = { refreshDrag = 0f },
+                        onVerticalDrag = { _, dragAmount ->
+                            if (dragAmount > 0) refreshDrag += dragAmount
+                        }
+                    )
+                }
         ) {
+            if (productsRefreshing) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = LightPrimary)
+            }
             DoyuSearchField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -847,7 +866,7 @@ private fun OrderConfirmScreenContent(navController: NavHostController?) {
                     }
                     DisabledFeatureNotice(
                         title = "收货地址暂未接入",
-                        message = "当前 UI MVP 不伪装默认地址。地址管理接入前不会创建订单，也不会创建支付单。"
+                        message = "当前 UI MVP 不伪装默认地址。地址管理接入前无法提交订单，也不会创建支付单。"
                     )
                     DoyuCard {
                         Text("订单商品", style = MaterialTheme.typography.titleMedium)
@@ -864,7 +883,7 @@ private fun OrderConfirmScreenContent(navController: NavHostController?) {
                         Text("当前不拉起微信/支付宝，也不展示渠道完成态。仅展示联调支付单和服务端确认状态。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
                     DoyuPrimaryButton(
-                        "暂不能下单 · ${formatPriceCent(cart.payableAmountCent)}",
+                        "缺少收货地址 · ${formatPriceCent(cart.payableAmountCent)}",
                         onClick = ::disabledClick,
                         icon = Icons.Filled.Payments,
                         modifier = Modifier.fillMaxWidth(),

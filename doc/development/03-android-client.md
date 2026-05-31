@@ -4,7 +4,7 @@
 
 Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图、AI 拼豆图生成、商城购买、玩家私信、订单和个人资产。
 
-当前阶段的 Android 工作重心是 **第四轮登录态持久化 + 常驻真实图文数据收敛**：第三轮商城 UI/API 主体验收已关闭，本轮把登录态从重启即失效的临时令牌状态收口到 DataStore，并让社区 Feed、商品卡、商品详情和购物车渲染后端返回的真实图片字段。在不新增真实 AI Provider、真实支付、地址管理、增强审核、合规风控和完整玩家交易闭环的前提下，把已有开发态能力包装成可演示、可联调、边界清楚的 App。
+当前阶段的 Android 工作重心是 **第六轮 UI/品牌与主链路展示收敛**：在第三轮商城 UI/API 主体验收关闭、第四轮登录态持久化和真实图文 seed 收敛、第五轮 Aliyun OSS Provider 骨架补齐之后，继续打磨社区、商城、AI、消息、我的五个主链路的可演示产品感。本轮新增作品详情底部横向评论工具条和图片评论能力，但仍不新增真实 AI Provider、真实支付、地址管理、生产审核、合规风控和完整玩家交易闭环。
 
 ## 模块结构
 
@@ -51,6 +51,9 @@ Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图
 - 第一轮已把社区发帖、评论、点赞、收藏补到 `CommunityRepository`，并接入社区样板页。
 - 第二轮已把 App Shell、消息页和我的页统一成同一套状态与组件语言。
 - 第四轮已把 `Product.imageUrl`、`CartProductSummary.imageUrl` 和 `Post.coverImageUrl` 接到真实 UI：商品卡、商品详情、购物车项、社区 Feed 卡和帖子详情优先显示 Coil 加载的真实图片，图片字段为空或加载失败时回退现有 swatch/拼豆占位，不出现空白卡片。
+- 第六轮已把作品详情评论输入收敛为底部固定的横向展开工具条：默认态紧凑，展开态显示图片选择、最多 9 张横向缩略图、单行文字输入、清空/关闭和发送按钮，并使用平滑宽度/内容动画避免突兀跳变。
+- 评论支持纯文字、纯图片和图文混合；文字和图片不能同时为空。图片上传复用 `/uploads/presign -> PUT -> /uploads/confirm`，usage 固定为 `POST_IMAGE`；任意图片上传失败时整组评论阻断提交，保留已选缩略图并提示重试。
+- 评论列表会渲染后端返回的 `mediaAssets.publicUrl`，图片加载失败时显示拼豆占位，不出现空白卡片。本轮不做视频评论、表情包、@ 用户、图片私信或生产级图片审核闭环。
 
 ## 页面导航
 
@@ -202,6 +205,7 @@ P4：商城 MVP
 | 点赞/取消 | `POST/DELETE /api/v1/posts/{postId}/like` | 帖子卡和详情页接入乐观或确认后更新 |
 | 收藏/取消 | `POST/DELETE /api/v1/posts/{postId}/favorite` | 帖子卡和详情页接入 |
 | 评论发布 | `POST /api/v1/posts/{postId}/comments` | 详情页评论输入接入，提交后展示审核中 |
+| 评论图片 | `/uploads/presign -> PUT -> /uploads/confirm` + `POST /api/v1/posts/{postId}/comments` | 使用 `POST_IMAGE` 上传并提交 `mediaFileIds`，单条评论最多 9 张 |
 | 通知已读 | `POST /api/v1/messages/notifications/read` | 消息页切换或点击后标记已读 |
 | 私信发送 | `POST /api/v1/messages/conversations/{conversationId}` | 后端仍半占位，UI 不做强聊天体验 |
 | 签到 | `POST /api/v1/checkins` | 我的页如接入，必须显示真实成功/已签到状态 |
@@ -299,7 +303,7 @@ private inline fun <T> safeCall(block: () -> T): T? =
 
 ## 上传
 
-上传流程：
+上传链路：
 
 1. 客户端请求 `/api/v1/uploads/presign`。
 2. 后端返回上传 URL、fileKey、headers、过期时间。

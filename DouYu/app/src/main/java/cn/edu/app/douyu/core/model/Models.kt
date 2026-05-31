@@ -186,13 +186,26 @@ data class Comment(
     val author: UserProfile,
     val parentId: String? = null,
     val content: String,
-    val status: ContentStatus
+    val status: ContentStatus,
+    val mediaFileIds: List<String> = emptyList(),
+    val mediaAssets: List<CommentMediaAsset> = emptyList()
+)
+
+@Serializable
+data class CommentMediaAsset(
+    val fileId: String,
+    val publicUrl: String? = null,
+    val mimeType: String = "",
+    val width: Int? = null,
+    val height: Int? = null,
+    val auditStatus: AuditStatus = AuditStatus.NEED_MANUAL_REVIEW
 )
 
 @Serializable
 data class CreateCommentRequest(
     val content: String,
-    val parentId: String? = null
+    val parentId: String? = null,
+    val mediaFileIds: List<String> = emptyList()
 )
 
 @Serializable
@@ -434,8 +447,17 @@ data class MarkNotificationsReadRequest(val notificationIds: List<String>)
 @Serializable
 data class Conversation(
     val conversationId: String,
-    val userAId: String,
-    val userBId: String,
+    val userAId: String = "",
+    val userBId: String = "",
+    val peerUserId: String = "",
+    val peerName: String = "",
+    val peerAvatarUrl: String? = null,
+    val lastMessage: String = "",
+    val unreadCount: Int = 0,
+    val mutualFollow: Boolean = false,
+    val remainingNonMutualMessages: Int = 0,
+    val canSend: Boolean = false,
+    val riskHint: String? = null,
     val updatedAt: String? = null
 )
 
@@ -452,11 +474,20 @@ data class ChatMessage(
     val senderId: String,
     val senderName: String,
     val content: String,
-    val mine: Boolean
+    val mine: Boolean,
+    val createdAt: String? = null
 )
 
 @Serializable
 data class SendMessageRequest(val content: String)
+
+@Serializable
+data class FollowResult(
+    val followed: Boolean = false,
+    val followedByMe: Boolean = false,
+    val followsMe: Boolean = false,
+    val mutualFollow: Boolean = false
+)
 
 @Serializable
 data class CheckinStatus(

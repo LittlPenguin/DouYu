@@ -25,6 +25,9 @@ public class CommentEntity {
     @Column(name = "content", length = 1000, nullable = false)
     private String content;
 
+    @Column(name = "media_file_ids", length = 1200)
+    private String mediaFileIds;
+
     @Column(name = "status", length = 32, nullable = false)
     private String status;
 
@@ -43,6 +46,7 @@ public class CommentEntity {
         this.authorId = authorId;
         this.parentId = parentId;
         this.content = content;
+        this.mediaFileIds = null;
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -58,6 +62,8 @@ public class CommentEntity {
     public void setParentId(String parentId) { this.parentId = parentId; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+    public String getMediaFileIds() { return mediaFileIds; }
+    public void setMediaFileIds(String mediaFileIds) { this.mediaFileIds = mediaFileIds; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public Instant getCreatedAt() { return createdAt; }

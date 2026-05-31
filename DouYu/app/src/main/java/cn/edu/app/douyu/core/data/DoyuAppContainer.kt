@@ -41,7 +41,7 @@ object DoyuAppContainer {
         apiClient.uploadApi, apiClient.patternApi, uploadTransport
     )
 
-    val communityRepository: CommunityRepository = RealCommunityRepository(apiClient.communityApi)
+    val communityRepository: CommunityRepository = RealCommunityRepository(apiClient.communityApi, apiClient.userApi)
     val patternRepository: PatternRepository = RealPatternRepository(apiClient.patternApi)
     val commerceRepository: CommerceRepository = RealCommerceRepository(
         apiClient.productApi, apiClient.cartApi, apiClient.orderApi, apiClient.paymentApi
