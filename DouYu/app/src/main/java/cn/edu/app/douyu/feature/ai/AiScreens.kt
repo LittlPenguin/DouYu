@@ -550,24 +550,34 @@ private fun AiParamsScreenContent(navController: NavHostController?, uploadedFil
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ParamSection(title: String, options: List<String>, selected: String, onSelect: (String) -> Unit) {
     DoyuCard {
         Text(title, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(10.dp))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            options.forEach { option ->
-                val isSelected = option == selected
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { onSelect(option) },
-                    label = { Text(option) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = LightPrimaryContainer,
-                        selectedLabelColor = LightOnPrimaryContainer
-                    )
-                )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            options.chunked(2).forEach { rowOptions ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowOptions.forEach { option ->
+                        val isSelected = option == selected
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { onSelect(option) },
+                            label = { Text(option) },
+                            modifier = Modifier.weight(1f),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = LightPrimaryContainer,
+                                selectedLabelColor = LightOnPrimaryContainer
+                            )
+                        )
+                    }
+                    if (rowOptions.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
