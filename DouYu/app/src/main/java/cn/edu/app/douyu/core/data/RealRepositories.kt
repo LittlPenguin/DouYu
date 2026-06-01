@@ -46,6 +46,14 @@ class RealCommunityRepository(
     override fun createPost(request: CreatePostRequest): Post = apiCall { api.createPost(request) }
     override fun createComment(postId: String, request: CreateCommentRequest): Comment =
         apiCall { api.createComment(postId, request) }
+    override fun searchUsers(keyword: String): PageResponse<UserProfile> = apiCall { userApi.searchUsers(keyword) }
+    override fun topics(keyword: String): PageResponse<Topic> = apiCall { api.topics(keyword) }
+    override fun topicPosts(topicId: String): PageResponse<Post> = apiCall { api.topicPosts(topicId) }
+    override fun stickerPacks(): PageResponse<StickerPack> = apiCall { api.stickerPacks() }
+    override fun likedPosts(): PageResponse<Post> = apiCall { userApi.likedPosts() }
+    override fun commentedPosts(): PageResponse<Post> = apiCall { userApi.commentedPosts() }
+    override fun favoritePosts(): PageResponse<Post> = apiCall { userApi.favoritePosts() }
+    override fun followedPosts(): PageResponse<Post> = apiCall { userApi.followedPosts() }
 
     override fun likePost(postId: String): PostInteractionResult = apiCall { api.likePost(postId) }
     override fun unlikePost(postId: String): PostInteractionResult = apiCall { api.unlikePost(postId) }

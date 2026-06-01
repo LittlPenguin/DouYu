@@ -5,5 +5,6 @@ import java.util.List;
 
 public interface CommentRepository extends JpaRepository<CommentEntity, String> {
     List<CommentEntity> findByPostIdAndStatusNotOrderByCreatedAtAsc(String postId, String status);
+    List<CommentEntity> findByAuthorIdAndStatusNotOrderByCreatedAtDesc(String authorId, String status);
     long countByPostIdAndStatusNot(String postId, String status);
 }

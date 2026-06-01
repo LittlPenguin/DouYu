@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<UserEntity, String> {
     Optional<UserEntity> findByPhone(String phone);
     Page<UserEntity> findByNicknameContainingIgnoreCase(String keyword, Pageable pageable);
+    Page<UserEntity> findByPhoneContainingOrNicknameContainingIgnoreCase(String phone, String nickname, Pageable pageable);
 }

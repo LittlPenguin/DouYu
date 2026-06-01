@@ -67,7 +67,7 @@ enum class PaymentChannel { WECHAT_APP, ALIPAY_APP }
 enum class PaymentStatus { CREATED, PROCESSING, SUCCEEDED, FAILED, CLOSED }
 
 @Serializable
-enum class NotificationType { SYSTEM, COMMENT, LIKE, FAVORITE, FOLLOW, ORDER, AI_TASK, REPORT }
+enum class NotificationType { SYSTEM, COMMENT, LIKE, FAVORITE, FOLLOW, MENTION, ORDER, AI_TASK, REPORT }
 
 @Serializable
 data class UserProfile(
@@ -166,7 +166,10 @@ data class Post(
     val likeCount: Int,
     val favoriteCount: Int,
     val commentCount: Int,
-    val coverImageUrl: String? = null
+    val coverImageUrl: String? = null,
+    val likedByMe: Boolean = false,
+    val favoritedByMe: Boolean = false,
+    val followedAuthorByMe: Boolean = false
 )
 
 @Serializable
@@ -188,7 +191,47 @@ data class Comment(
     val content: String,
     val status: ContentStatus,
     val mediaFileIds: List<String> = emptyList(),
-    val mediaAssets: List<CommentMediaAsset> = emptyList()
+    val mediaAssets: List<CommentMediaAsset> = emptyList(),
+    val mentions: List<CommentMention> = emptyList(),
+    val topics: List<CommentTopic> = emptyList(),
+    val stickers: List<Sticker> = emptyList()
+)
+
+@Serializable
+data class Topic(
+    val topicId: String,
+    val name: String,
+    val description: String = "",
+    val postCount: Int = 0
+)
+
+@Serializable
+data class CommentMention(
+    val userId: String,
+    val nickname: String,
+    val avatarUrl: String? = null
+)
+
+@Serializable
+data class CommentTopic(
+    val topicId: String,
+    val name: String
+)
+
+@Serializable
+data class StickerPack(
+    val packId: String,
+    val name: String,
+    val stickers: List<Sticker> = emptyList()
+)
+
+@Serializable
+data class Sticker(
+    val stickerId: String,
+    val packId: String = "",
+    val name: String,
+    val imageUrl: String? = null,
+    val emojiText: String = ""
 )
 
 @Serializable
@@ -205,7 +248,10 @@ data class CommentMediaAsset(
 data class CreateCommentRequest(
     val content: String,
     val parentId: String? = null,
-    val mediaFileIds: List<String> = emptyList()
+    val mediaFileIds: List<String> = emptyList(),
+    val mentionUserIds: List<String> = emptyList(),
+    val topicIds: List<String> = emptyList(),
+    val stickerIds: List<String> = emptyList()
 )
 
 @Serializable

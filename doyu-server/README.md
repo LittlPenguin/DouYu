@@ -16,20 +16,26 @@
 
 ### 推荐：dev profile + PostgreSQL/Redis
 
-仓库根目录 `.env` 是唯一生效文件，`start-dev.bat` 会读取它。推荐本机维护两个不提交的私有模板：
+仓库根目录 `.env` 是唯一生效文件，`start-dev.bat` 会读取它并把其中的 `DOUYU_BACKEND_HOST`、`DOUYU_BACKEND_PORT`、`DOUYU_SERVER_ADDRESS`、`DOUYU_STORAGE_BASE_URL` 等变量传给 Spring Boot。当前默认只维护真机联调配置，不再维护 `.env.emulator` / `.env.phone` 双模板。
 
-- `.env.emulator`：模拟器模板，默认使用 `10.0.2.2`。
-- `.env.phone`：真机模板，使用电脑当前 Wi-Fi/LAN IPv4。
-
-切换时复制目标模板为 `.env`，再重启后端：
+需要重建本机配置时，从根目录模板复制为 `.env`，再把 host 改成电脑当前 Wi-Fi/LAN IPv4：
 
 ```powershell
-# 模拟器
-Copy-Item ..\.env.emulator ..\.env -Force
-
-# 真机
-Copy-Item ..\.env.phone ..\.env -Force
+Copy-Item ..\.env.example ..\.env -Force
 ```
+
+真机联调时关键字段应保持同一个 LAN IP，例如：
+
+```env
+DOUYU_BACKEND_HOST=192.168.1.100
+DOUYU_BACKEND_PORT=8081
+DOUYU_SERVER_ADDRESS=0.0.0.0
+DOUYU_ANDROID_API_BASE_URL=http://192.168.1.100:8081/
+DOUYU_ANDROID_CLEARTEXT_HOSTS=192.168.1.100,localhost
+DOUYU_STORAGE_BASE_URL=http://192.168.1.100:8081
+```
+
+修改 `.env` 后必须重启后端。后端 seed 图片 URL 和 Local OSS URL 在启动时读取 `DOUYU_STORAGE_BASE_URL`，不会在运行时自动刷新。
 
 ```powershell
 cd D:\Studio\SpellBean\doyu-server
@@ -41,8 +47,11 @@ cd D:\Studio\SpellBean\doyu-server
 ```powershell
 cd D:\Studio\SpellBean\doyu-server
 docker compose up -d postgres redis
-mvn spring-boot:run -Dspring-boot.run.profiles=dev `
-  -Dspring-boot.run.jvmArguments="-DDOUYU_STORAGE_BASE_URL=http://<当前开发机IP>:8081"
+$env:DOUYU_BACKEND_HOST="<当前开发机IP>"
+$env:DOUYU_BACKEND_PORT="8081"
+$env:DOUYU_SERVER_ADDRESS="0.0.0.0"
+$env:DOUYU_STORAGE_BASE_URL="http://<当前开发机IP>:8081"
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 dev profile 会连接本机 Docker Compose 中的：

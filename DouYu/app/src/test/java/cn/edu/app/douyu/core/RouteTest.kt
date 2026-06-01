@@ -24,6 +24,19 @@ class RouteTest {
     }
 
     @Test
+    fun profileInteractionPostAssetRoutesKeepSmokeContract() {
+        assertEquals(
+            listOf(
+                AppRoute.LIKED_POSTS,
+                AppRoute.COMMENTED_POSTS,
+                AppRoute.FAVORITE_POSTS,
+                AppRoute.FOLLOWED_POSTS
+            ),
+            AppRoute.profileInteractionPostAssetRoutes
+        )
+    }
+
+    @Test
     fun loginRouteCanCarryBottomTabReturnTarget() {
         assertEquals("login_return?returnTo=message", AppRoute.login(BottomTab.MESSAGE.route))
     }

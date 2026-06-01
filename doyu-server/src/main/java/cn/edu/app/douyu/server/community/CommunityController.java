@@ -41,12 +41,23 @@ public class CommunityController {
     private final FollowRepository followRepository;
     private final RewardAccountRepository rewardAccountRepository;
     private final FileAssetRepository fileAssetRepository;
+    private final TopicRepository topicRepository;
+    private final CommentMentionRepository commentMentionRepository;
+    private final CommentTopicRepository commentTopicRepository;
+    private final StickerPackRepository stickerPackRepository;
+    private final StickerRepository stickerRepository;
+    private final CommentStickerRepository commentStickerRepository;
+    private final NotificationRepository notificationRepository;
     private final IdGenerator idGenerator;
 
     public CommunityController(PostRepository postRepository, CommentRepository commentRepository,
                                LikeRepository likeRepository, FavoriteRepository favoriteRepository,
                                UserRepository userRepository, FollowRepository followRepository,
                                RewardAccountRepository rewardAccountRepository, FileAssetRepository fileAssetRepository,
+                               TopicRepository topicRepository, CommentMentionRepository commentMentionRepository,
+                               CommentTopicRepository commentTopicRepository, StickerPackRepository stickerPackRepository,
+                               StickerRepository stickerRepository, CommentStickerRepository commentStickerRepository,
+                               NotificationRepository notificationRepository,
                                IdGenerator idGenerator) {
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
@@ -56,6 +67,13 @@ public class CommunityController {
         this.followRepository = followRepository;
         this.rewardAccountRepository = rewardAccountRepository;
         this.fileAssetRepository = fileAssetRepository;
+        this.topicRepository = topicRepository;
+        this.commentMentionRepository = commentMentionRepository;
+        this.commentTopicRepository = commentTopicRepository;
+        this.stickerPackRepository = stickerPackRepository;
+        this.stickerRepository = stickerRepository;
+        this.commentStickerRepository = commentStickerRepository;
+        this.notificationRepository = notificationRepository;
         this.idGenerator = idGenerator;
     }
 
@@ -64,7 +82,7 @@ public class CommunityController {
     @GetMapping("/posts/feed")
     PageResult<Map<String, Object>> feed(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         List<PostEntity> visible = postRepository.findByStatusOrderByPinnedDescCreatedAtDesc("VISIBLE");
-        List<Map<String, Object>> items = visible.stream().map(this::postView).toList();
+        List<Map<String, Object>> items = visible.stream().map(post -> postView(post, null)).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
@@ -80,7 +98,7 @@ public class CommunityController {
                 .map(FollowEntity::getTargetUserId).toList();
         List<PostEntity> items = followed.isEmpty() ? List.of()
                 : postRepository.findByAuthorIdInAndStatusOrderByCreatedAtDesc(followed, "VISIBLE");
-        List<Map<String, Object>> views = items.stream().map(this::postView).toList();
+        List<Map<String, Object>> views = items.stream().map(post -> postView(post, userId)).toList();
         return PageResult.of(slice(views, page, size), page, size, views.size());
     }
 
@@ -98,7 +116,7 @@ public class CommunityController {
                 joinList(request.mediaFileIds()), joinList(request.topicIds()), request.linkedPatternId(),
                 "REVIEWING", 0, 0, 0, false, now, now);
         postRepository.save(post);
-        return postView(post);
+        return postView(post, userId);
     }
 
     @Operation(summary = "帖子详情")
@@ -107,8 +125,8 @@ public class CommunityController {
             @ApiResponse(responseCode = "404", description = "帖子不存在")
     })
     @GetMapping("/posts/{postId}")
-    Map<String, Object> post(@PathVariable String postId) {
-        return postView(requirePost(postId));
+    Map<String, Object> post(Authentication authentication, @PathVariable String postId) {
+        return postView(requirePost(postId), optionalUserId(authentication));
     }
 
     @Operation(summary = "编辑帖子")
@@ -132,7 +150,7 @@ public class CommunityController {
         if (request.linkedPatternId() != null) post.setLinkedPatternId(request.linkedPatternId());
         post.setStatus("REVIEWING");
         postRepository.save(post);
-        return postView(post);
+        return postView(post, userId);
     }
 
     @Operation(summary = "删除帖子")
@@ -245,13 +263,38 @@ public class CommunityController {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
         List<String> mediaFileIds = request.mediaFileIds() == null ? List.of() : request.mediaFileIds();
+        List<String> mentionUserIds = normalizedIds(request.mentionUserIds());
+        List<String> topicIds = normalizedIds(request.topicIds());
+        List<String> stickerIds = normalizedIds(request.stickerIds());
         String content = request.content() == null ? "" : request.content().trim();
-        validateCommentPayload(userId, content, mediaFileIds);
+        validateCommentPayload(userId, content, mediaFileIds, mentionUserIds, topicIds, stickerIds);
         Instant now = Instant.now();
         CommentEntity comment = new CommentEntity(idGenerator.next("cmt"), postId, userId, request.parentId(),
                 content, "REVIEWING", now, now);
         comment.setMediaFileIds(joinList(mediaFileIds));
         commentRepository.save(comment);
+        for (String mentionedUserId : mentionUserIds) {
+            commentMentionRepository.save(new CommentMentionEntity(idGenerator.next("cmn"), comment.getId(), mentionedUserId, now));
+            if (!mentionedUserId.equals(userId)) {
+                NotificationEntity notification = new NotificationEntity();
+                notification.setId(idGenerator.next("ntf"));
+                notification.setUserId(mentionedUserId);
+                notification.setSenderId(userId);
+                notification.setRecipientId(mentionedUserId);
+                notification.setType("MENTION");
+                notification.setTitle("有人在评论中提到了你");
+                notification.setContent(content.isBlank() ? "你被一条贴纸/图片评论提及" : content);
+                notification.setCreatedAt(now);
+                notification.setUpdatedAt(now);
+                notificationRepository.save(notification);
+            }
+        }
+        for (String topicId : topicIds) {
+            commentTopicRepository.save(new CommentTopicEntity(idGenerator.next("ctp"), comment.getId(), topicId, now));
+        }
+        for (String stickerId : stickerIds) {
+            commentStickerRepository.save(new CommentStickerEntity(idGenerator.next("cst"), comment.getId(), stickerId, now));
+        }
         post.setCommentCount((int) commentRepository.countByPostIdAndStatusNot(postId, "DELETED"));
         postRepository.save(post);
         return commentView(comment);
@@ -277,6 +320,57 @@ public class CommunityController {
         return Map.of("deleted", true);
     }
 
+    @Operation(summary = "话题列表")
+    @GetMapping("/topics")
+    PageResult<Map<String, Object>> topics(@RequestParam(defaultValue = "") String keyword,
+                                           @RequestParam(defaultValue = "1") int page,
+                                           @RequestParam(defaultValue = "20") int size) {
+        List<TopicEntity> allTopics = topicRepository.findAllByOrderByPostCountDescNameAsc();
+        List<TopicEntity> topics;
+        if (keyword == null || keyword.isBlank()) {
+            topics = allTopics;
+        } else {
+            String normalizedKeyword = keyword.trim().toLowerCase();
+            topics = allTopics.stream()
+                    .filter(topic -> containsIgnoreCase(topic.getId(), normalizedKeyword)
+                            || containsIgnoreCase(topic.getName(), normalizedKeyword)
+                            || containsIgnoreCase(topic.getDescription(), normalizedKeyword))
+                    .toList();
+        }
+        List<Map<String, Object>> items = topics.stream().map(this::topicView).toList();
+        return PageResult.of(slice(items, page, size), page, size, items.size());
+    }
+
+    @Operation(summary = "话题作品列表")
+    @GetMapping("/topics/{topicId}/posts")
+    PageResult<Map<String, Object>> topicPosts(@PathVariable String topicId,
+                                               @RequestParam(defaultValue = "1") int page,
+                                               @RequestParam(defaultValue = "20") int size) {
+        requireTopic(topicId);
+        List<Map<String, Object>> items = postRepository
+                .findByStatusAndTopicIdsContainingOrderByCreatedAtDesc("VISIBLE", topicId).stream()
+                .map(post -> postView(post, null))
+                .toList();
+        return PageResult.of(slice(items, page, size), page, size, items.size());
+    }
+
+    @Operation(summary = "内置贴纸表情包")
+    @GetMapping("/sticker-packs")
+    PageResult<Map<String, Object>> stickerPacks() {
+        List<Map<String, Object>> items = stickerPackRepository.findAllByOrderBySortOrderAsc().stream()
+                .map(pack -> {
+                    Map<String, Object> view = new java.util.LinkedHashMap<>();
+                    view.put("packId", pack.getId());
+                    view.put("name", pack.getName());
+                    view.put("stickers", stickerRepository.findByPackIdOrderBySortOrderAsc(pack.getId()).stream()
+                            .map(this::stickerView)
+                            .toList());
+                    return view;
+                })
+                .toList();
+        return PageResult.of(items, 1, items.size(), items.size());
+    }
+
     private PostEntity requirePost(String postId) {
         PostEntity post = postRepository.findById(postId).orElse(null);
         if (post == null || "DELETED".equals(post.getStatus())) {
@@ -285,7 +379,7 @@ public class CommunityController {
         return post;
     }
 
-    private Map<String, Object> postView(PostEntity post) {
+    public Map<String, Object> postView(PostEntity post, String currentUserId) {
         Map<String, Object> view = new java.util.LinkedHashMap<>();
         view.put("postId", post.getId());
         view.put("authorId", post.getAuthorId());
@@ -302,6 +396,9 @@ public class CommunityController {
         view.put("likeCount", post.getLikeCount());
         view.put("favoriteCount", post.getFavoriteCount());
         view.put("commentCount", post.getCommentCount());
+        view.put("likedByMe", currentUserId != null && likeRepository.findByUserIdAndTargetTypeAndTargetId(currentUserId, "POST", post.getId()).isPresent());
+        view.put("favoritedByMe", currentUserId != null && favoriteRepository.findByUserIdAndTargetTypeAndTargetId(currentUserId, "POST", post.getId()).isPresent());
+        view.put("followedAuthorByMe", currentUserId != null && followRepository.findByUserIdAndTargetUserId(currentUserId, post.getAuthorId()).isPresent());
         view.put("createdAt", post.getCreatedAt().toString());
         view.put("updatedAt", post.getUpdatedAt().toString());
         return view;
@@ -347,6 +444,25 @@ public class CommunityController {
         List<String> mediaFileIds = splitList(comment.getMediaFileIds());
         view.put("mediaFileIds", mediaFileIds);
         view.put("mediaAssets", mediaFileIds.stream().map(this::commentMediaAssetView).toList());
+        view.put("mentions", commentMentionRepository.findByCommentId(comment.getId()).stream()
+                .map(mention -> userRepository.findById(mention.getUserId())
+                        .<Map<String, Object>>map(user -> {
+                            Map<String, Object> mentionView = new java.util.LinkedHashMap<>();
+                            mentionView.put("userId", user.getId());
+                            mentionView.put("nickname", user.getNickname() == null ? "" : user.getNickname());
+                            mentionView.put("avatarUrl", user.getAvatarFileId() == null ? "" : user.getAvatarFileId());
+                            return mentionView;
+                        })
+                        .orElseGet(() -> Map.of("userId", mention.getUserId(), "nickname", "", "avatarUrl", "")))
+                .toList());
+        view.put("topics", commentTopicRepository.findByCommentId(comment.getId()).stream()
+                .map(link -> topicRepository.findById(link.getTopicId()).map(this::commentTopicView)
+                        .orElseGet(() -> Map.of("topicId", link.getTopicId(), "name", "")))
+                .toList());
+        view.put("stickers", commentStickerRepository.findByCommentId(comment.getId()).stream()
+                .map(link -> stickerRepository.findById(link.getStickerId()).map(this::stickerView)
+                        .orElseGet(() -> Map.of("stickerId", link.getStickerId(), "packId", "", "name", "", "imageUrl", "", "emojiText", "")))
+                .toList());
         view.put("status", comment.getStatus());
         return view;
     }
@@ -371,8 +487,9 @@ public class CommunityController {
         return view;
     }
 
-    private void validateCommentPayload(String userId, String content, List<String> mediaFileIds) {
-        if (content.isBlank() && mediaFileIds.isEmpty()) {
+    private void validateCommentPayload(String userId, String content, List<String> mediaFileIds,
+                                        List<String> mentionUserIds, List<String> topicIds, List<String> stickerIds) {
+        if (content.isBlank() && mediaFileIds.isEmpty() && stickerIds.isEmpty()) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "评论内容或图片不能同时为空");
         }
         if (mediaFileIds.size() > 9) {
@@ -391,6 +508,24 @@ public class CommunityController {
                 throw new BizException(ErrorCode.INVALID_ARGUMENT, "评论只支持 POST_IMAGE 图片");
             }
         }
+        for (String mentionUserId : mentionUserIds) {
+            if (userRepository.findById(mentionUserId).isEmpty()) {
+                throw new BizException(ErrorCode.INVALID_ARGUMENT, "提及用户不存在");
+            }
+        }
+        for (String topicId : topicIds) {
+            requireTopic(topicId);
+        }
+        for (String stickerId : stickerIds) {
+            if (stickerRepository.findById(stickerId).isEmpty()) {
+                throw new BizException(ErrorCode.INVALID_ARGUMENT, "贴纸不存在");
+            }
+        }
+    }
+
+    private TopicEntity requireTopic(String topicId) {
+        return topicRepository.findById(topicId)
+                .orElseThrow(() -> new BizException(ErrorCode.INVALID_ARGUMENT, "话题不存在"));
     }
 
     private <T> List<T> slice(List<T> items, int page, int size) {
@@ -408,10 +543,55 @@ public class CommunityController {
         return Arrays.asList(csv.split(","));
     }
 
+    private List<String> normalizedIds(List<String> ids) {
+        if (ids == null) return List.of();
+        return ids.stream().filter(id -> id != null && !id.isBlank()).distinct().toList();
+    }
+
+    private boolean containsIgnoreCase(String value, String normalizedKeyword) {
+        return value != null && value.toLowerCase().contains(normalizedKeyword);
+    }
+
+    private String optionalUserId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) return null;
+        try {
+            return CurrentUser.userId(authentication);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private Map<String, Object> topicView(TopicEntity topic) {
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("topicId", topic.getId());
+        view.put("name", topic.getName());
+        view.put("description", topic.getDescription() == null ? "" : topic.getDescription());
+        view.put("postCount", topic.getPostCount());
+        return view;
+    }
+
+    private Map<String, Object> commentTopicView(TopicEntity topic) {
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("topicId", topic.getId());
+        view.put("name", topic.getName());
+        return view;
+    }
+
+    private Map<String, Object> stickerView(StickerEntity sticker) {
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("stickerId", sticker.getId());
+        view.put("packId", sticker.getPackId());
+        view.put("name", sticker.getName());
+        view.put("imageUrl", sticker.getImageUrl() == null ? "" : sticker.getImageUrl());
+        view.put("emojiText", sticker.getEmojiText() == null ? "" : sticker.getEmojiText());
+        return view;
+    }
+
     public record PostRequest(String title, @NotBlank String content,
                               List<String> mediaFileIds, List<String> topicIds, String linkedPatternId) {
     }
 
-    public record CommentRequest(String content, String parentId, List<String> mediaFileIds) {
+    public record CommentRequest(String content, String parentId, List<String> mediaFileIds,
+                                 List<String> mentionUserIds, List<String> topicIds, List<String> stickerIds) {
     }
 }

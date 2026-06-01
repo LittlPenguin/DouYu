@@ -2,6 +2,7 @@ package cn.edu.app.douyu.feature.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,6 +21,8 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
@@ -54,16 +58,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import coil.compose.SubcomposeAsyncImage
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.DashboardData
+import cn.edu.app.douyu.core.model.Post
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.navigation.BottomTab
+import cn.edu.app.douyu.core.network.PageResponse
 import cn.edu.app.douyu.core.ui.BeadPattern
 import cn.edu.app.douyu.core.ui.DisabledFeatureNotice
 import cn.edu.app.douyu.core.ui.DoyuAnimatedCounter
@@ -92,6 +100,7 @@ import cn.edu.app.douyu.ui.theme.LightTertiaryContainer
 import kotlinx.coroutines.launch
 
 private val repo = DoyuAppContainer.profileRepository
+private val communityRepo = DoyuAppContainer.communityRepository
 
 @Preview
 @Composable
@@ -165,6 +174,47 @@ private fun ProfileDashboardContent(
         secondValue = dashboard.orderCount,
         thirdLabel = "豆子",
         thirdValue = dashboard.reward.points
+    )
+    ProfileActionGroup(
+        title = "互动资产",
+        actions = listOf(
+            ProfileActionSpec(
+                title = "点赞作品",
+                subtitle = "查看我点过赞的社区作品",
+                icon = Icons.Filled.Favorite,
+                iconBgColor = LightSecondaryContainer,
+                iconColor = LightSecondary,
+                status = "进入",
+                onClick = { navController?.navigate(AppRoute.LIKED_POSTS) }
+            ),
+            ProfileActionSpec(
+                title = "评论作品",
+                subtitle = "查看我参与评论过的作品",
+                icon = Icons.Filled.ChatBubble,
+                iconBgColor = LightPrimaryContainer,
+                iconColor = LightPrimary,
+                status = "进入",
+                onClick = { navController?.navigate(AppRoute.COMMENTED_POSTS) }
+            ),
+            ProfileActionSpec(
+                title = "收藏作品",
+                subtitle = "查看我收藏的社区作品",
+                icon = Icons.Filled.Bookmark,
+                iconBgColor = LightTertiaryContainer,
+                iconColor = LightTertiary,
+                status = "进入",
+                onClick = { navController?.navigate(AppRoute.FAVORITE_POSTS) }
+            ),
+            ProfileActionSpec(
+                title = "关注作品",
+                subtitle = "当前关注作者发布的可见作品",
+                icon = Icons.Filled.Person,
+                iconBgColor = LightSurfaceVariant,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                status = "进入",
+                onClick = { navController?.navigate(AppRoute.FOLLOWED_POSTS) }
+            )
+        )
     )
     WorkshopCard(navController)
     RewardSummaryCard(dashboard)
@@ -707,6 +757,7 @@ private fun ProfileAction(action: ProfileActionSpec) {
         Row(
             Modifier
                 .fillMaxWidth()
+                .heightIn(min = 72.dp)
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -865,6 +916,273 @@ private fun FavoritesScreenContent(navController: NavHostController?) {
                 else -> PageStateView(favoritesState)
             }
         }
+    }
+}
+
+// ── Interaction post asset screens ──
+
+@Composable
+fun LikedPostsScreen(navController: NavHostController) {
+    ProfilePostAssetScreen(
+        title = "点赞作品",
+        emptyMessage = "还没有点赞过作品。去社区遇到喜欢的拼豆作品时点个赞，它会沉淀在这里。",
+        navController = navController,
+        loader = { communityRepo.likedPosts() }
+    )
+}
+
+@Composable
+fun CommentedPostsScreen(navController: NavHostController) {
+    ProfilePostAssetScreen(
+        title = "评论作品",
+        emptyMessage = "还没有评论过作品。参与过讨论的作品会显示在这里，方便回看互动。",
+        navController = navController,
+        loader = { communityRepo.commentedPosts() }
+    )
+}
+
+@Composable
+fun FavoritePostsScreen(navController: NavHostController) {
+    ProfilePostAssetScreen(
+        title = "收藏作品",
+        emptyMessage = "还没有收藏作品。收藏社区作品后，可以从这里继续查看详情。",
+        navController = navController,
+        loader = { communityRepo.favoritePosts() }
+    )
+}
+
+@Composable
+fun FollowedPostsScreen(navController: NavHostController) {
+    ProfilePostAssetScreen(
+        title = "关注作品",
+        emptyMessage = "关注作者发布的可见作品会显示在这里；这里不是关注关系列表。",
+        navController = navController,
+        loader = { communityRepo.followedPosts() }
+    )
+}
+
+@Composable
+private fun ProfilePostAssetScreen(
+    title: String,
+    emptyMessage: String,
+    navController: NavHostController?,
+    loader: () -> PageResponse<Post>
+) {
+    var retryCount by remember(title) { mutableIntStateOf(0) }
+    val postsState = safeCallToState(retryCount, title) { loader() }.value
+
+    Scaffold(
+        topBar = {
+            DoyuTopBar(
+                title = title,
+                canGoBack = true,
+                onBack = { navController?.popBackStack() }
+            )
+        }
+    ) { padding ->
+        DoyuPage(padding) {
+            when (val state = postsState) {
+                is UiState.Success -> {
+                    if (state.data.items.isEmpty()) {
+                        ProfilePostAssetEmpty(message = emptyMessage)
+                    } else {
+                        state.data.items.forEach { post ->
+                            ProfilePostCard(
+                                post = post,
+                                onClick = { navController?.navigate(AppRoute.postDetail(post.postId)) }
+                            )
+                        }
+                    }
+                }
+
+                else -> PageStateView(postsState, onRetry = { retryCount++ })
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfilePostAssetEmpty(message: String) {
+    DoyuCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(22.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(LightSurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.Favorite,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            Text(
+                "这里还没有内容",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfilePostCard(
+    post: Post,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ProfilePostCover(
+                post = post,
+                modifier = Modifier
+                    .width(96.dp)
+                    .aspectRatio(1f)
+                    .clip(MaterialTheme.shapes.medium)
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                Text(
+                    post.title.ifBlank { "未命名作品" },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    post.content.ifBlank { "暂无作品说明" },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clip(CircleShape)
+                            .background(LightPrimaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            post.author.nickname.firstOrNull()?.toString().orEmpty(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = LightPrimary,
+                            maxLines = 1
+                        )
+                    }
+                    Text(
+                        post.author.nickname.ifBlank { "豆屿用户" },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ProfilePostMetric(Icons.Filled.Favorite, post.likeCount.toString())
+                    ProfilePostMetric(Icons.Filled.ChatBubble, post.commentCount.toString())
+                    ProfilePostMetric(Icons.Filled.Bookmark, post.favoriteCount.toString())
+                }
+            }
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfilePostCover(
+    post: Post,
+    modifier: Modifier = Modifier
+) {
+    val fallbackContent: @Composable () -> Unit = {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(LightSurfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            BeadPattern(Modifier.size(44.dp))
+        }
+    }
+
+    Box(
+        modifier = modifier.background(LightSurfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        val coverUrl = post.coverImageUrl
+        if (coverUrl.isNullOrBlank()) {
+            fallbackContent()
+        } else {
+            SubcomposeAsyncImage(
+                model = coverUrl,
+                contentDescription = post.title.ifBlank { "作品图片" },
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                loading = { fallbackContent() },
+                error = { fallbackContent() }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfilePostMetric(
+    icon: ImageVector,
+    text: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(15.dp)
+        )
+        Text(
+            text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

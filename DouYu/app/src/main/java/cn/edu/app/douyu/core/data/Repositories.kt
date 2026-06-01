@@ -14,6 +14,14 @@ interface CommunityRepository {
     fun comments(postId: String): PageResponse<Comment>
     fun createPost(request: CreatePostRequest): Post
     fun createComment(postId: String, request: CreateCommentRequest): Comment
+    fun searchUsers(keyword: String): PageResponse<UserProfile>
+    fun topics(keyword: String = ""): PageResponse<Topic>
+    fun topicPosts(topicId: String): PageResponse<Post>
+    fun stickerPacks(): PageResponse<StickerPack>
+    fun likedPosts(): PageResponse<Post>
+    fun commentedPosts(): PageResponse<Post>
+    fun favoritePosts(): PageResponse<Post>
+    fun followedPosts(): PageResponse<Post>
     fun likePost(postId: String): PostInteractionResult
     fun unlikePost(postId: String): PostInteractionResult
     fun favoritePost(postId: String): PostInteractionResult
@@ -348,6 +356,22 @@ object MockData {
         NotificationMessage("notice_002", NotificationType.FAVORITE, "你的帖子有新收藏", "猫猫小挂件被 12 位同好收藏。", unread = false)
     )
 
+    val topics = listOf(
+        Topic("topic_beginner", "新手教程", "入门拼豆技巧", 12),
+        Topic("topic_showcase", "作品展示", "晒出完成作品", 18)
+    )
+
+    val stickerPacks = listOf(
+        StickerPack(
+            packId = "pack_doyu_basic",
+            name = "豆屿基础",
+            stickers = listOf(
+                Sticker("sticker_like", "pack_doyu_basic", "喜欢", emojiText = "喜欢"),
+                Sticker("sticker_done", "pack_doyu_basic", "完成", emojiText = "完成")
+            )
+        )
+    )
+
     val conversations = listOf(
         Conversation(
             conversationId = "conv_001",
@@ -436,8 +460,31 @@ class MockCommunityRepository : CommunityRepository {
             parentId = request.parentId,
             content = request.content,
             status = ContentStatus.REVIEWING,
-            mediaFileIds = request.mediaFileIds
+            mediaFileIds = request.mediaFileIds,
+            mentions = request.mentionUserIds.map { CommentMention(it, "被提及用户") },
+            topics = request.topicIds.map { CommentTopic(it, MockData.topics.firstOrNull { topic -> topic.topicId == it }?.name ?: it) },
+            stickers = MockData.stickerPacks.flatMap { it.stickers }.filter { it.stickerId in request.stickerIds }
         )
+
+    override fun searchUsers(keyword: String): PageResponse<UserProfile> =
+        PageResponse(listOf(MockData.user, MockData.posts[1].author), 1, 20, 2, false)
+
+    override fun topics(keyword: String): PageResponse<Topic> =
+        PageResponse(MockData.topics.filter { keyword.isBlank() || it.topicId.contains(keyword) || it.name.contains(keyword) }, 1, 20, MockData.topics.size, false)
+
+    override fun topicPosts(topicId: String): PageResponse<Post> =
+        PageResponse(MockData.posts.filter { topicId in it.topicIds }, 1, 20, MockData.posts.size, false)
+
+    override fun stickerPacks(): PageResponse<StickerPack> =
+        PageResponse(MockData.stickerPacks, 1, 20, MockData.stickerPacks.size, false)
+
+    override fun likedPosts(): PageResponse<Post> = feed()
+
+    override fun commentedPosts(): PageResponse<Post> = feed()
+
+    override fun favoritePosts(): PageResponse<Post> = feed()
+
+    override fun followedPosts(): PageResponse<Post> = feed()
 
     override fun likePost(postId: String): PostInteractionResult = PostInteractionResult(liked = true)
 

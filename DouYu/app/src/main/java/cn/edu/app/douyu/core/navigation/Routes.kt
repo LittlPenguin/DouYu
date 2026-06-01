@@ -36,8 +36,19 @@ object AppRoute {
     const val CONVERSATION = "conversation/{conversationId}"
     const val MY_PATTERNS = "my_patterns"
     const val FAVORITES = "favorites"
+    const val LIKED_POSTS = "liked_posts"
+    const val COMMENTED_POSTS = "commented_posts"
+    const val FAVORITE_POSTS = "favorite_posts"
+    const val FOLLOWED_POSTS = "followed_posts"
     const val MY_ORDERS = "my_orders"
     const val SETTINGS = "settings"
+
+    val profileInteractionPostAssetRoutes = listOf(
+        LIKED_POSTS,
+        COMMENTED_POSTS,
+        FAVORITE_POSTS,
+        FOLLOWED_POSTS
+    )
 
     val allRoutes = listOf(
         SPLASH,
@@ -59,6 +70,10 @@ object AppRoute {
         CONVERSATION,
         MY_PATTERNS,
         FAVORITES,
+        LIKED_POSTS,
+        COMMENTED_POSTS,
+        FAVORITE_POSTS,
+        FOLLOWED_POSTS,
         MY_ORDERS,
         SETTINGS
     ) + BottomTab.entries.map { it.route }

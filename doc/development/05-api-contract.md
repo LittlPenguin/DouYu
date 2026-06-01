@@ -184,6 +184,9 @@
 | GET | `/posts/{postId}/comments` | 评论列表 |
 | POST | `/posts/{postId}/comments` | 发表评论 |
 | DELETE | `/comments/{commentId}` | 删除评论 |
+| GET | `/topics` | 话题列表 / 搜索（免登录） |
+| GET | `/topics/{topicId}/posts` | 话题作品列表（免登录） |
+| GET | `/sticker-packs` | 内置贴纸表情包列表（免登录） |
 | POST | `/reports` | 举报 |
 
 帖子状态：
@@ -203,6 +206,7 @@
 - `author`：作者对象，包含 `userId`、`nickname`、`avatarUrl`、`bio`、`level`、`isMinor`、`followingCount`、`followerCount`。
 - `status`：帖子状态。
 - `likeCount`、`commentCount`、`favoriteCount`：互动计数。
+- `likedByMe`、`favoritedByMe`、`followedAuthorByMe`：当前登录用户视角下是否已点赞、已收藏、已关注作者；未登录请求统一返回 `false`。
 - `createdAt`、`updatedAt`：时间戳。
 
 发帖请求字段：
@@ -229,20 +233,50 @@
 - `content`
 - `mediaFileIds`：评论图片文件 ID 列表，最多 9 个，可为空。
 - `mediaAssets`：评论图片渲染对象列表，按 `mediaFileIds` 顺序返回；每项至少包含 `fileId`、`publicUrl`、`mimeType`、`width`、`height`、`auditStatus`。
+- `mentions`：评论中选中的 @ 用户摘要列表，至少包含 `userId`、`nickname`、`avatarUrl`。
+- `topics`：评论中选中的话题摘要列表，至少包含 `topicId`、`name`。
+- `stickers`：评论中选中的贴纸列表，至少包含 `stickerId`、`packId`、`name`、`emojiText`、`imageUrl`。
 - `status`
 
 发表评论请求字段：
 
-- `content`：评论文字，可为空；文字和图片不能同时为空。
+- `content`：评论文字，可为空。
 - `parentId`：父评论 ID，可为空。
 - `mediaFileIds`：评论图片文件 ID 列表，可为空，最多 9 个；必须是当前用户已通过 `/uploads/confirm` 确认的 `POST_IMAGE` 图片文件。
+- `mentionUserIds`：被 @ 用户 ID 列表，可为空；必须是已存在用户。
+- `topicIds`：话题 ID 列表，可为空；必须是已存在话题。
+- `stickerIds`：贴纸 ID 列表，可为空；必须是已存在内置贴纸。
+
+评论有效性：
+
+- 文字、图片、贴纸三者至少一种存在；`mentionUserIds` / `topicIds` 只作为评论元数据，不能单独构成有效评论。
+- 单条评论最多 9 张图片；任意图片必须属于当前用户、usage 为 `POST_IMAGE` 且 `mimeType` 为 `image/*`。
 
 发表评论响应：
 
 - 返回完整 `Comment`。
 - 新评论默认 `status=REVIEWING`。
-- Android 必须展示“评论已提交，等待审核”，不得假装立即公开。
-- 当前只支持图片评论，不支持视频评论、表情包、@ 用户或生产级图片审核闭环。
+- Android 提交成功后只展示短提示“评论已提交，等待审核”；评论列表不展示“审核中”字样，不假装立即公开。
+- 评论中 @ 用户时，后端为每个被 @ 用户写入 `MENTION` 通知；本轮不做推送、不扩展已读以外的新通知状态机。
+- 当前不支持视频评论、用户自定义贴纸、付费表情包、话题运营后台、图片私信或生产级图片审核闭环。
+
+用户 / 话题 / 贴纸辅助接口：
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/users/search?keyword=&page=&size=` | 搜索可 @ 的用户；按昵称 / 手机号关键字查询，返回用户摘要分页 |
+| GET | `/topics?keyword=&page=&size=` | 搜索或列出 seed 话题，返回 `Topic(topicId,name,description,postCount)` 分页 |
+| GET | `/topics/{topicId}/posts?page=&size=` | 返回含该话题的可见作品分页 |
+| GET | `/sticker-packs` | 返回内置贴纸包分页，每个包包含 `Sticker(stickerId,packId,name,emojiText,imageUrl)` |
+
+个人互动作品接口：
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/users/me/liked-posts` | 当前用户点赞过的作品，按点赞时间倒序 |
+| GET | `/users/me/commented-posts` | 当前用户评论过的作品去重列表，按最近评论时间倒序 |
+| GET | `/users/me/favorite-posts` | 当前用户收藏过的作品，按收藏时间倒序 |
+| GET | `/users/me/followed-posts` | 当前用户关注作者发布的作品列表，不是关注关系列表 |
 
 互动响应字段：
 
@@ -287,10 +321,14 @@
 | token 刷新 | `refreshToken` | `AuthController#refresh` | `AuthSessionManager.refresh()` | 自动刷新或未登录态 | Android `AuthSessionManagerTest` |
 | 退出登录 | `refreshToken` | `AuthController#logout` | `AuthSessionManager.logout()` | 后续设置页/我的页接入 | 后端契约测试 |
 | Feed | `Page<Post>` | `CommunityController#feed` | `CommunityRepository.feed()` | 社区首页双列流 | 后端契约测试 + Android单元测试 |
-| 帖子详情 | `Post` | `CommunityController#post` | `CommunityRepository.post()` | 帖子详情 | 后端契约测试 |
+| 帖子详情 | `Post(likedByMe,favoritedByMe,followedAuthorByMe)` | `CommunityController#post` | `CommunityRepository.post()` | 帖子详情互动按钮高亮 | 后端契约测试 |
 | 发帖 | `CreatePostRequest` -> `Post(REVIEWING)` | `CommunityController#createPost` | `CommunityRepository.createPost()` | 发布页审核中结果 | 后端契约测试 + Android Repository 测试 |
 | 评论列表 | `Page<Comment>` | `CommunityController#comments` | `CommunityRepository.comments()` | 详情页评论区 | 后端契约测试 |
-| 发表评论 | `CreateCommentRequest` -> `Comment(REVIEWING)` | `CommunityController#comment` | `CommunityRepository.createComment()` | 评论输入框审核中提示 | 后端契约测试 + Android Repository 测试 |
+| 发表评论 | `CreateCommentRequest(content,mediaFileIds,mentionUserIds,topicIds,stickerIds)` -> `Comment(REVIEWING)` | `CommunityController#comment` | `CommunityRepository.createComment()` | 评论输入框短提示；评论列表隐藏审核中字样 | 后端契约测试 + Android Repository 测试 |
+| @ 用户搜索 | `Page<UserProfile>` | `UserController#search` | `CommunityRepository.searchUsers()` | 评论 @ 用户弹层 | 后端契约测试 + Android API/Repository 测试 |
+| 话题列表 / 话题作品 | `Page<Topic>` / `Page<Post>` | `CommunityController#topics/topicPosts` | `CommunityRepository.topics()/topicPosts()` | 评论 # 话题弹层；话题作品列表后续复用 | 后端契约测试 + Android API/Repository 测试 |
+| 贴纸包 | `Page<StickerPack>` | `CommunityController#stickerPacks` | `CommunityRepository.stickerPacks()` | 评论贴纸面板 | 后端契约测试 + Android API/Repository 测试 |
+| 个人互动作品 | `Page<Post>` | `UserController#likedPosts/commentedPosts/favoritePosts/followedPosts` | `CommunityRepository.likedPosts()/commentedPosts()/favoritePosts()/followedPosts()` | 我的页四个互动资产页 | 后端契约测试 + Android API/Repository 测试 |
 | 点赞/取消 | `{ liked }` | `like/unlike` | `PostInteractionResult.liked` | 详情页互动按钮 | 后端契约测试 + Android DTO/Repository 测试 |
 | 收藏/取消 | `{ favorited }` | `favorite/unfavorite` | `PostInteractionResult.favorited` | 详情页互动按钮 | 后端契约测试 + Android DTO/Repository 测试 |
 | 统一错误 | `{ code,message,traceId }` | `ApiResponse` / 全局异常处理 | `ApiException` -> `UiState` | 登录引导、错误、弱网 | Android 错误映射测试 |
@@ -469,6 +507,8 @@ SKU 字段（联调口径）：
 - `title`：标题。
 - `content`：内容。
 - `unread`：是否未读（`readAt == null` 时为 `true`）。
+
+通知类型当前包含互动通知和系统通知；评论 @ 用户会写入 `MENTION` 通知。本轮只要求列表展示和已读标记，不做推送、不做复杂通知中心。
 
 会话响应字段（联调口径）：
 

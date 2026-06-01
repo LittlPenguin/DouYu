@@ -15,18 +15,26 @@ public class DataInitializer implements ApplicationRunner {
     private final ProductRepository productRepository;
     private final SkuRepository skuRepository;
     private final AdminUserRepository adminUserRepository;
+    private final TopicRepository topicRepository;
+    private final StickerPackRepository stickerPackRepository;
+    private final StickerRepository stickerRepository;
     private final DouyuProperties properties;
     private final PasswordEncoder passwordEncoder;
 
     public DataInitializer(UserRepository userRepository, PostRepository postRepository,
                            ProductRepository productRepository, SkuRepository skuRepository,
-                           AdminUserRepository adminUserRepository, DouyuProperties properties,
+                           AdminUserRepository adminUserRepository, TopicRepository topicRepository,
+                           StickerPackRepository stickerPackRepository, StickerRepository stickerRepository,
+                           DouyuProperties properties,
                            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.productRepository = productRepository;
         this.skuRepository = skuRepository;
         this.adminUserRepository = adminUserRepository;
+        this.topicRepository = topicRepository;
+        this.stickerPackRepository = stickerPackRepository;
+        this.stickerRepository = stickerRepository;
         this.properties = properties;
         this.passwordEncoder = passwordEncoder;
     }
@@ -34,6 +42,13 @@ public class DataInitializer implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         Instant now = Instant.now();
+        seedTopic("topic_beginner", "新手教程", "拼豆入门、材料选择和基础技巧", 12, now);
+        seedTopic("topic_tutorial", "教程步骤", "图纸、熨烫和收纳步骤", 8, now);
+        seedTopic("topic_color", "配色灵感", "低饱和配色和色卡建议", 6, now);
+        seedTopic("topic_tools", "工具收纳", "桌面、镊子和材料收纳", 5, now);
+        seedTopic("topic_workspace", "工作台", "拼豆桌面和效率配置", 4, now);
+        seedTopic("topic_showcase", "作品展示", "晒完成品和复盘清单", 10, now);
+        seedStickerPack(now);
         if (adminUserRepository.findByUsername(properties.admin().bootstrapUsername()).isEmpty()) {
             adminUserRepository.save(new AdminUserEntity("admin_bootstrap",
                     properties.admin().bootstrapUsername(),
@@ -119,6 +134,35 @@ public class DataInitializer implements ApplicationRunner {
         post.setPinned(pinned);
         post.setUpdatedAt(now);
         postRepository.save(post);
+    }
+
+    private void seedTopic(String id, String name, String description, int postCount, Instant now) {
+        TopicEntity topic = topicRepository.findById(id).orElseGet(TopicEntity::new);
+        if (topic.getId() == null) {
+            topic.setId(id);
+            topic.setCreatedAt(now);
+        }
+        topic.setName(name);
+        topic.setDescription(description);
+        topic.setPostCount(postCount);
+        topic.setUpdatedAt(now);
+        topicRepository.save(topic);
+    }
+
+    private void seedStickerPack(Instant now) {
+        if (stickerPackRepository.findById("pack_doyu_basic").isEmpty()) {
+            stickerPackRepository.save(new StickerPackEntity("pack_doyu_basic", "豆屿基础", 1, now, now));
+        }
+        seedSticker("sticker_like", "喜欢", "喜欢", 1, now);
+        seedSticker("sticker_done", "完成", "完成", 2, now);
+        seedSticker("sticker_cheer", "加油", "加油", 3, now);
+        seedSticker("sticker_seed", "种草", "种草", 4, now);
+    }
+
+    private void seedSticker(String id, String name, String emojiText, int sortOrder, Instant now) {
+        if (stickerRepository.findById(id).isEmpty()) {
+            stickerRepository.save(new StickerEntity(id, "pack_doyu_basic", name, emojiText, null, sortOrder, now, now));
+        }
     }
 
     private void seedProduct(String id, String type, String sellerId, String title, String description,

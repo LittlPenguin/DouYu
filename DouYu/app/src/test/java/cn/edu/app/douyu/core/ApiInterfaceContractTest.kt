@@ -38,6 +38,14 @@ class ApiInterfaceContractTest {
         assertDelete(method<CommunityApi>("unfavoritePost"), "/api/v1/posts/{postId}/favorite")
         assertGet(method<CommunityApi>("comments"), "/api/v1/posts/{postId}/comments")
         assertPost(method<CommunityApi>("createComment"), "/api/v1/posts/{postId}/comments")
+        assertGet(method<CommunityApi>("topics"), "/api/v1/topics")
+        assertGet(method<CommunityApi>("topicPosts"), "/api/v1/topics/{topicId}/posts")
+        assertGet(method<CommunityApi>("stickerPacks"), "/api/v1/sticker-packs")
+        assertGet(method<UserApi>("searchUsers"), "/api/v1/users/search")
+        assertGet(method<UserApi>("likedPosts"), "/api/v1/users/me/liked-posts")
+        assertGet(method<UserApi>("commentedPosts"), "/api/v1/users/me/commented-posts")
+        assertGet(method<UserApi>("favoritePosts"), "/api/v1/users/me/favorite-posts")
+        assertGet(method<UserApi>("followedPosts"), "/api/v1/users/me/followed-posts")
 
         assertPost(method<CartApi>("addItem"), "/api/v1/cart/items")
         assertPatch(method<CartApi>("updateItem"), "/api/v1/cart/items/{itemId}")
@@ -106,6 +114,96 @@ class ApiInterfaceContractTest {
         )
         assertEquals(false, favoriteResponse.data?.favorited)
         assertNull(favoriteResponse.data?.liked)
+
+        val postResponse = DoyuJson.decodeFromString<ApiResponse<Post>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": {
+                "postId": "post_interaction",
+                "authorId": "user_author",
+                "author": {
+                  "userId": "user_author",
+                  "nickname": "作者",
+                  "avatarUrl": null,
+                  "bio": "",
+                  "level": 1,
+                  "isMinor": false,
+                  "followingCount": 0,
+                  "followerCount": 0
+                },
+                "title": "作品",
+                "content": "内容",
+                "coverImageUrl": "",
+                "mediaFileIds": [],
+                "mediaColors": [],
+                "topicIds": ["topic_beginner"],
+                "topicNames": ["新手教程"],
+                "linkedPatternId": null,
+                "status": "VISIBLE",
+                "likeCount": 8,
+                "favoriteCount": 2,
+                "commentCount": 1,
+                "likedByMe": true,
+                "favoritedByMe": true,
+                "followedAuthorByMe": true
+              },
+              "traceId": "trace_post_interaction"
+            }
+            """.trimIndent()
+        )
+        assertEquals(true, postResponse.data?.likedByMe)
+        assertEquals(true, postResponse.data?.favoritedByMe)
+        assertEquals(true, postResponse.data?.followedAuthorByMe)
+
+        val commentJson = DoyuJson.encodeToString(
+            CreateCommentRequest(
+                content = "带贴纸评论",
+                mentionUserIds = listOf("user_2"),
+                topicIds = listOf("topic_beginner"),
+                stickerIds = listOf("sticker_like")
+            )
+        )
+        assertTrue(commentJson.contains("\"mentionUserIds\":[\"user_2\"]"))
+        assertTrue(commentJson.contains("\"topicIds\":[\"topic_beginner\"]"))
+        assertTrue(commentJson.contains("\"stickerIds\":[\"sticker_like\"]"))
+
+        val commentResponse = DoyuJson.decodeFromString<ApiResponse<Comment>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": {
+                "commentId": "comment_1",
+                "postId": "post_1",
+                "authorId": "user_1",
+                "author": {
+                  "userId": "user_1",
+                  "nickname": "评论者",
+                  "avatarUrl": null,
+                  "bio": "",
+                  "level": 1,
+                  "isMinor": false,
+                  "followingCount": 0,
+                  "followerCount": 0
+                },
+                "parentId": null,
+                "content": "带贴纸评论",
+                "status": "REVIEWING",
+                "mediaFileIds": [],
+                "mediaAssets": [],
+                "mentions": [{ "userId": "user_2", "nickname": "被提及用户", "avatarUrl": null }],
+                "topics": [{ "topicId": "topic_beginner", "name": "新手教程" }],
+                "stickers": [{ "stickerId": "sticker_like", "packId": "pack_doyu_basic", "name": "喜欢", "imageUrl": null, "emojiText": "喜欢" }]
+              },
+              "traceId": "trace_comment_interaction"
+            }
+            """.trimIndent()
+        )
+        assertEquals("user_2", commentResponse.data?.mentions?.first()?.userId)
+        assertEquals("topic_beginner", commentResponse.data?.topics?.first()?.topicId)
+        assertEquals("sticker_like", commentResponse.data?.stickers?.first()?.stickerId)
     }
 
     @Test

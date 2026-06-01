@@ -894,6 +894,112 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void communityMentionTopicStickerAndInteractionAssetsWork() throws Exception {
+        String authorToken = login("13800000026", "AGE_18_PLUS");
+        String viewerToken = login("13800000027", "AGE_18_PLUS");
+        String mentionedToken = login("13800000028", "AGE_18_PLUS");
+
+        JsonNode authorMe = getJsonWithToken("/api/v1/users/me", authorToken).path("data");
+        JsonNode mentionedMe = getJsonWithToken("/api/v1/users/me", mentionedToken).path("data");
+        String authorId = authorMe.path("userId").asText();
+        String mentionedUserId = mentionedMe.path("userId").asText();
+
+        JsonNode created = postJsonWithToken("/api/v1/posts", authorToken, """
+                {"title":"interaction assets post","content":"community interaction asset source","mediaFileIds":[],"topicIds":["topic_beginner"]}
+                """);
+        String postId = created.at("/data/postId").asText();
+
+        mockMvc.perform(get("/api/v1/users/search")
+                        .header("Authorization", "Bearer " + viewerToken)
+                        .queryParam("keyword", "13800000028")
+                        .queryParam("page", "1")
+                        .queryParam("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].userId", equalTo(mentionedUserId)));
+
+        mockMvc.perform(get("/api/v1/topics")
+                        .queryParam("keyword", "beginner")
+                        .queryParam("page", "1")
+                        .queryParam("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].topicId", equalTo("topic_beginner")));
+
+        mockMvc.perform(get("/api/v1/topics/{topicId}/posts", "topic_beginner"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].topicIds[0]", equalTo("topic_beginner")));
+
+        String stickerPacksContent = mockMvc.perform(get("/api/v1/sticker-packs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].stickers[0].stickerId", notNullValue()))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode stickerPacks = objectMapper.readTree(stickerPacksContent);
+        String stickerId = stickerPacks.at("/data/items/0/stickers/0/stickerId").asText();
+
+        JsonNode comment = postJsonWithPath("/api/v1/posts/{postId}/comments", viewerToken, """
+                {"content":"@mention #topic sticker","mentionUserIds":["%s"],"topicIds":["topic_beginner"],"stickerIds":["%s"]}
+                """.formatted(mentionedUserId, stickerId), postId);
+        org.assertj.core.api.Assertions.assertThat(comment.at("/data/mentions/0/userId").asText()).isEqualTo(mentionedUserId);
+        org.assertj.core.api.Assertions.assertThat(comment.at("/data/topics/0/topicId").asText()).isEqualTo("topic_beginner");
+        org.assertj.core.api.Assertions.assertThat(comment.at("/data/stickers/0/stickerId").asText()).isEqualTo(stickerId);
+
+        mockMvc.perform(get("/api/v1/messages/notifications")
+                        .header("Authorization", "Bearer " + mentionedToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].type", equalTo("MENTION")));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
+                        .header("Authorization", "Bearer " + viewerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"   ","mentionUserIds":["%s"],"topicIds":["topic_beginner"],"stickerIds":[]}
+                                """.formatted(mentionedUserId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/like", postId)
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/posts/{postId}/favorite", postId)
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/users/{userId}/follow", authorId)
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/posts/{postId}", postId)
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.likedByMe", equalTo(true)))
+                .andExpect(jsonPath("$.data.favoritedByMe", equalTo(true)))
+                .andExpect(jsonPath("$.data.followedAuthorByMe", equalTo(true)));
+
+        mockMvc.perform(get("/api/v1/posts/{postId}", postId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.likedByMe", equalTo(false)))
+                .andExpect(jsonPath("$.data.favoritedByMe", equalTo(false)))
+                .andExpect(jsonPath("$.data.followedAuthorByMe", equalTo(false)));
+
+        mockMvc.perform(get("/api/v1/users/me/liked-posts")
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].postId", equalTo(postId)));
+        mockMvc.perform(get("/api/v1/users/me/commented-posts")
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].postId", equalTo(postId)));
+        mockMvc.perform(get("/api/v1/users/me/favorite-posts")
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].postId", equalTo(postId)));
+        mockMvc.perform(get("/api/v1/users/me/followed-posts")
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].authorId", equalTo(authorId)));
+    }
+
+    @Test
     void minorOrUnverifiedUsersCannotPublishPlayerTradeProducts() throws Exception {
         String minorToken = login("13800000006", "AGE_16_17");
 

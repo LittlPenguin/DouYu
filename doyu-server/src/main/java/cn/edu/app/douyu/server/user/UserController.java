@@ -6,8 +6,15 @@ import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
 import cn.edu.app.douyu.server.common.Models.User;
+import cn.edu.app.douyu.server.common.PageResult;
+import cn.edu.app.douyu.server.community.CommunityController;
+import cn.edu.app.douyu.server.common.entity.CommentRepository;
+import cn.edu.app.douyu.server.common.entity.FavoriteRepository;
 import cn.edu.app.douyu.server.common.entity.FollowEntity;
 import cn.edu.app.douyu.server.common.entity.FollowRepository;
+import cn.edu.app.douyu.server.common.entity.LikeRepository;
+import cn.edu.app.douyu.server.common.entity.PostEntity;
+import cn.edu.app.douyu.server.common.entity.PostRepository;
 import cn.edu.app.douyu.server.common.entity.UserEntity;
 import cn.edu.app.douyu.server.common.entity.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,9 +30,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 
 @Tag(name = "用户", description = "用户资料、关注/取关、实名认证")
@@ -35,13 +45,26 @@ public class UserController {
     private final AuthService authService;
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
+    private final LikeRepository likeRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final CommentRepository commentRepository;
+    private final PostRepository postRepository;
+    private final CommunityController communityController;
     private final IdGenerator idGenerator;
 
     public UserController(AuthService authService, UserRepository userRepository,
-                          FollowRepository followRepository, IdGenerator idGenerator) {
+                          FollowRepository followRepository, LikeRepository likeRepository,
+                          FavoriteRepository favoriteRepository, CommentRepository commentRepository,
+                          PostRepository postRepository, CommunityController communityController,
+                          IdGenerator idGenerator) {
         this.authService = authService;
         this.userRepository = userRepository;
         this.followRepository = followRepository;
+        this.likeRepository = likeRepository;
+        this.favoriteRepository = favoriteRepository;
+        this.commentRepository = commentRepository;
+        this.postRepository = postRepository;
+        this.communityController = communityController;
         this.idGenerator = idGenerator;
     }
 
@@ -53,6 +76,74 @@ public class UserController {
     @GetMapping("/me")
     Map<String, Object> me(Authentication authentication) {
         return authService.userView(authService.requireUser(CurrentUser.userId(authentication)));
+    }
+
+    @Operation(summary = "搜索可提及用户")
+    @GetMapping("/search")
+    PageResult<Map<String, Object>> search(@RequestParam(defaultValue = "") String keyword,
+                                           @RequestParam(defaultValue = "1") int page,
+                                           @RequestParam(defaultValue = "20") int size) {
+        var pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, page - 1), Math.max(1, size));
+        var users = keyword == null || keyword.isBlank()
+                ? userRepository.findAll(pageable)
+                : userRepository.findByPhoneContainingOrNicknameContainingIgnoreCase(keyword, keyword, pageable);
+        List<Map<String, Object>> items = users.getContent().stream()
+                .map(user -> authService.userView(toModel(user)))
+                .toList();
+        return PageResult.of(items, page, size, users.getTotalElements());
+    }
+
+    @Operation(summary = "我点赞过的作品")
+    @GetMapping("/me/liked-posts")
+    PageResult<Map<String, Object>> likedPosts(Authentication authentication,
+                                              @RequestParam(defaultValue = "1") int page,
+                                              @RequestParam(defaultValue = "20") int size) {
+        String userId = CurrentUser.userId(authentication);
+        List<String> postIds = likeRepository.findByUserIdAndTargetTypeOrderByCreatedAtDesc(userId, "POST").stream()
+                .map(link -> link.getTargetId())
+                .toList();
+        return postPage(postIds, userId, page, size);
+    }
+
+    @Operation(summary = "我评论过的作品")
+    @GetMapping("/me/commented-posts")
+    PageResult<Map<String, Object>> commentedPosts(Authentication authentication,
+                                                  @RequestParam(defaultValue = "1") int page,
+                                                  @RequestParam(defaultValue = "20") int size) {
+        String userId = CurrentUser.userId(authentication);
+        LinkedHashSet<String> postIds = new LinkedHashSet<>();
+        commentRepository.findByAuthorIdAndStatusNotOrderByCreatedAtDesc(userId, "DELETED")
+                .forEach(comment -> postIds.add(comment.getPostId()));
+        return postPage(postIds.stream().toList(), userId, page, size);
+    }
+
+    @Operation(summary = "我收藏过的作品")
+    @GetMapping("/me/favorite-posts")
+    PageResult<Map<String, Object>> favoritePosts(Authentication authentication,
+                                                 @RequestParam(defaultValue = "1") int page,
+                                                 @RequestParam(defaultValue = "20") int size) {
+        String userId = CurrentUser.userId(authentication);
+        List<String> postIds = favoriteRepository.findByUserIdAndTargetTypeOrderByCreatedAtDesc(userId, "POST").stream()
+                .map(link -> link.getTargetId())
+                .toList();
+        return postPage(postIds, userId, page, size);
+    }
+
+    @Operation(summary = "我关注作者的作品")
+    @GetMapping("/me/followed-posts")
+    PageResult<Map<String, Object>> followedPosts(Authentication authentication,
+                                                 @RequestParam(defaultValue = "1") int page,
+                                                 @RequestParam(defaultValue = "20") int size) {
+        String userId = CurrentUser.userId(authentication);
+        List<String> followed = followRepository.findByUserId(userId).stream()
+                .map(FollowEntity::getTargetUserId)
+                .toList();
+        List<Map<String, Object>> items = followed.isEmpty() ? List.of()
+                : postRepository.findByAuthorIdInOrderByCreatedAtDesc(followed).stream()
+                .filter(this::isListablePost)
+                .map(post -> communityController.postView(post, userId))
+                .toList();
+        return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
     @Operation(summary = "更新当前用户资料")
@@ -139,5 +230,26 @@ public class UserController {
     }
 
     public record RealNameRequest(String realName, String idCardNo) {
+    }
+
+    private PageResult<Map<String, Object>> postPage(List<String> postIds, String currentUserId, int page, int size) {
+        List<PostEntity> posts = postRepository.findAllById(postIds);
+        Map<String, PostEntity> byId = posts.stream().collect(java.util.stream.Collectors.toMap(PostEntity::getId, post -> post));
+        List<Map<String, Object>> items = postIds.stream()
+                .map(byId::get)
+                .filter(this::isListablePost)
+                .map(post -> communityController.postView(post, currentUserId))
+                .toList();
+        return PageResult.of(slice(items, page, size), page, size, items.size());
+    }
+
+    private boolean isListablePost(PostEntity post) {
+        return post != null && ("VISIBLE".equals(post.getStatus()) || "REVIEWING".equals(post.getStatus()));
+    }
+
+    private <T> List<T> slice(List<T> items, int page, int size) {
+        int from = Math.max(0, (page - 1) * size);
+        int to = Math.min(items.size(), from + size);
+        return from >= items.size() ? List.of() : items.subList(from, to);
     }
 }

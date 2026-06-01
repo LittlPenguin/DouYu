@@ -44,11 +44,26 @@ class CommunityRepositoryContractTest {
 
         val comment = repository.createComment(
             created.postId,
-            CreateCommentRequest(content = "", mediaFileIds = listOf("file_comment_001"))
+            CreateCommentRequest(
+                content = "",
+                mediaFileIds = listOf("file_comment_001"),
+                mentionUserIds = listOf("user_mention"),
+                topicIds = listOf("topic_beginner"),
+                stickerIds = listOf("sticker_like")
+            )
         )
         assertEquals(ContentStatus.REVIEWING, comment.status)
         assertEquals(listOf("file_comment_001"), comment.mediaFileIds)
         assertEquals("http://127.0.0.1/comment-image.png", comment.mediaAssets.first().publicUrl)
+        assertEquals("user_mention", comment.mentions.first().userId)
+        assertEquals("topic_beginner", comment.topics.first().topicId)
+        assertEquals("sticker_like", comment.stickers.first().stickerId)
+        assertEquals("topic_beginner", repository.topics("beginner").items.first().topicId)
+        assertEquals("sticker_like", repository.stickerPacks().items.first().stickers.first().stickerId)
+        assertEquals(created.postId, repository.likedPosts().items.first().postId)
+        assertEquals(created.postId, repository.commentedPosts().items.first().postId)
+        assertEquals(created.postId, repository.favoritePosts().items.first().postId)
+        assertEquals(created.postId, repository.followedPosts().items.first().postId)
     }
 
     @Test
@@ -66,6 +81,21 @@ class CommunityRepositoryContractTest {
     private class FakeUserApi : UserApi {
         override suspend fun me(): ApiResponse<UserProfile> =
             ApiResponse("OK", "success", MockData.user, "trace_me")
+
+        override suspend fun searchUsers(keyword: String, page: Int, size: Int): ApiResponse<PageResponse<UserProfile>> =
+            ApiResponse("OK", "success", PageResponse(listOf(MockData.user), page, size, 1, false), "trace_search_users")
+
+        override suspend fun likedPosts(page: Int, size: Int): ApiResponse<PageResponse<Post>> =
+            ApiResponse("OK", "success", PageResponse(listOf(MockData.posts.first().copy(postId = "post_contract")), page, size, 1, false), "trace_liked_posts")
+
+        override suspend fun commentedPosts(page: Int, size: Int): ApiResponse<PageResponse<Post>> =
+            likedPosts(page, size)
+
+        override suspend fun favoritePosts(page: Int, size: Int): ApiResponse<PageResponse<Post>> =
+            likedPosts(page, size)
+
+        override suspend fun followedPosts(page: Int, size: Int): ApiResponse<PageResponse<Post>> =
+            likedPosts(page, size)
 
         override suspend fun follow(userId: String): ApiResponse<FollowResult> =
             ApiResponse("OK", "success", FollowResult(followed = true, followedByMe = true), "trace_follow")
@@ -140,9 +170,32 @@ class CommunityRepositoryContractTest {
                             auditStatus = AuditStatus.NEED_MANUAL_REVIEW
                         )
                     },
+                    mentions = request.mentionUserIds.map { cn.edu.app.douyu.core.model.CommentMention(it, "mentioned") },
+                    topics = request.topicIds.map { cn.edu.app.douyu.core.model.CommentTopic(it, "topic") },
+                    stickers = request.stickerIds.map { cn.edu.app.douyu.core.model.Sticker(it, "pack_doyu_basic", "喜欢", emojiText = "喜欢") },
                     status = ContentStatus.REVIEWING
                 ),
                 "trace_comment"
+            )
+
+        override suspend fun topics(keyword: String, page: Int, size: Int): ApiResponse<PageResponse<cn.edu.app.douyu.core.model.Topic>> =
+            ApiResponse("OK", "success", PageResponse(listOf(cn.edu.app.douyu.core.model.Topic("topic_beginner", "新手教程")), page, size, 1, false), "trace_topics")
+
+        override suspend fun topicPosts(topicId: String, page: Int, size: Int): ApiResponse<PageResponse<Post>> =
+            ApiResponse("OK", "success", PageResponse(listOf(post.copy(topicIds = listOf(topicId))), page, size, 1, false), "trace_topic_posts")
+
+        override suspend fun stickerPacks(): ApiResponse<PageResponse<cn.edu.app.douyu.core.model.StickerPack>> =
+            ApiResponse(
+                "OK",
+                "success",
+                PageResponse(
+                    listOf(cn.edu.app.douyu.core.model.StickerPack("pack_doyu_basic", "豆屿基础", listOf(cn.edu.app.douyu.core.model.Sticker("sticker_like", "pack_doyu_basic", "喜欢", emojiText = "喜欢")))),
+                    1,
+                    20,
+                    1,
+                    false
+                ),
+                "trace_stickers"
             )
     }
 }

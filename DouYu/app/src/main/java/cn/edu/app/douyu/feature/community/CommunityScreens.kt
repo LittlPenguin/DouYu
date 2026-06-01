@@ -24,11 +24,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -64,6 +64,7 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -74,6 +75,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,10 +90,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -104,10 +111,13 @@ import cn.edu.app.douyu.core.model.CommentMediaAsset
 import cn.edu.app.douyu.core.model.ContentStatus
 import cn.edu.app.douyu.core.model.CreateCommentRequest
 import cn.edu.app.douyu.core.model.CreatePostRequest
+import cn.edu.app.douyu.core.model.Sticker
 import cn.edu.app.douyu.core.model.Post
+import cn.edu.app.douyu.core.model.Topic
 import cn.edu.app.douyu.core.model.UploadConfirmRequest
 import cn.edu.app.douyu.core.model.UploadPresignRequest
 import cn.edu.app.douyu.core.model.UploadUsage
+import cn.edu.app.douyu.core.model.UserProfile
 import cn.edu.app.douyu.core.network.upload
 import cn.edu.app.douyu.core.network.requireSuccess
 import cn.edu.app.douyu.core.navigation.AppRoute
@@ -135,6 +145,8 @@ import cn.edu.app.douyu.ui.theme.LightSecondaryContainer
 import cn.edu.app.douyu.ui.theme.LightSurfaceVariant
 import cn.edu.app.douyu.ui.theme.SpringFast
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -147,6 +159,38 @@ private data class PendingCommentImage(
     val progress: Float = 0f,
     val failed: Boolean = false
 )
+
+private data class SelectedMention(
+    val userId: String,
+    val nickname: String
+)
+
+private data class SelectedTopic(
+    val topicId: String,
+    val name: String
+)
+
+private enum class CommentPickerMode {
+    Mention,
+    Topic,
+    Sticker
+}
+
+private fun insertCommentToken(current: String, token: String): String {
+    val cleanToken = token.trim()
+    val base = current.trimEnd()
+    return if (base.isBlank()) "$cleanToken " else "$base $cleanToken "
+}
+
+private fun shouldCollapseCommentComposerOnFocusLoss(
+    expanded: Boolean,
+    focused: Boolean,
+    everFocused: Boolean,
+    posting: Boolean,
+    pickerOpen: Boolean,
+    toolInteractionInProgress: Boolean
+): Boolean =
+    expanded && everFocused && !focused && !posting && !pickerOpen && !toolInteractionInProgress
 
 @Preview
 @Composable
@@ -399,18 +443,78 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
     var commentNotice by remember { mutableStateOf<String?>(null) }
     var commentExpanded by remember { mutableStateOf(false) }
     var selectedCommentImages by remember { mutableStateOf<List<PendingCommentImage>>(emptyList()) }
+    var selectedMentions by remember { mutableStateOf<List<SelectedMention>>(emptyList()) }
+    var selectedTopics by remember { mutableStateOf<List<SelectedTopic>>(emptyList()) }
+    var selectedStickers by remember { mutableStateOf<List<Sticker>>(emptyList()) }
+    var pickerMode by remember { mutableStateOf<CommentPickerMode?>(null) }
+    var commentFieldFocused by remember { mutableStateOf(false) }
+    var commentFieldEverFocused by remember { mutableStateOf(false) }
+    var commentToolInteractionInProgress by remember { mutableStateOf(false) }
+    var commentToolInteractionResetJob by remember { mutableStateOf<Job?>(null) }
+    var commentImagePickerOpen by remember { mutableStateOf(false) }
     var liked by remember(postId) { mutableStateOf<Boolean?>(null) }
     var favorited by remember(postId) { mutableStateOf<Boolean?>(null) }
     var followedAuthor by remember(postId) { mutableStateOf<Boolean?>(null) }
+    var likeCount by remember(postId) { mutableIntStateOf(0) }
+    var favoriteCount by remember(postId) { mutableIntStateOf(0) }
+    var commentCount by remember(postId) { mutableIntStateOf(0) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    val focusManager = LocalFocusManager.current
+
+    fun markCommentToolInteraction() {
+        commentToolInteractionInProgress = true
+        commentToolInteractionResetJob?.cancel()
+        commentToolInteractionResetJob = scope.launch {
+            delay(120)
+            commentToolInteractionInProgress = false
+        }
+    }
+
+    fun collapseCommentComposer() {
+        commentExpanded = false
+        commentFieldFocused = false
+        commentFieldEverFocused = false
+        focusManager.clearFocus()
+    }
+
+    fun expandCommentComposer() {
+        markCommentToolInteraction()
+        commentExpanded = true
+        commentFieldFocused = false
+        commentFieldEverFocused = false
+    }
+
+    fun runCommentToolAction(block: () -> Unit) {
+        markCommentToolInteraction()
+        block()
+    }
+
+    fun collapseIfCommentFocusLeft() {
+        scope.launch {
+            delay(80)
+            if (shouldCollapseCommentComposerOnFocusLoss(
+                    expanded = commentExpanded,
+                    focused = commentFieldFocused,
+                    everFocused = commentFieldEverFocused,
+                    posting = actionInFlight == "comment",
+                    pickerOpen = pickerMode != null || commentImagePickerOpen,
+                    toolInteractionInProgress = commentToolInteractionInProgress
+                )
+            ) {
+                commentExpanded = false
+            }
+        }
+    }
+
     val imagePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(MaxCommentImages)
     ) { uris ->
+        commentImagePickerOpen = false
         if (uris.isNotEmpty()) {
             val existing = selectedCommentImages.map { it.uri }.toSet()
             selectedCommentImages = (selectedCommentImages + uris.filterNot { it in existing }.map { PendingCommentImage(it) })
                 .take(MaxCommentImages)
-            commentExpanded = true
+            expandCommentComposer()
             commentNotice = null
         }
     }
@@ -423,10 +527,69 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
     )
 
     val postState = safeCallToState(postId, postRetryCount) { repo.post(postId) }.value
+    LaunchedEffect(commentExpanded) {
+        if (!commentExpanded) {
+            commentFieldFocused = false
+            commentFieldEverFocused = false
+        }
+    }
+    LaunchedEffect(postState) {
+        val post = (postState as? UiState.Success)?.data ?: return@LaunchedEffect
+        liked = post.likedByMe
+        favorited = post.favoritedByMe
+        followedAuthor = post.followedAuthorByMe
+        likeCount = post.likeCount
+        favoriteCount = post.favoriteCount
+        commentCount = post.commentCount
+    }
+
+    when (pickerMode) {
+        CommentPickerMode.Mention -> CommentMentionPickerDialog(
+            onDismiss = { pickerMode = null },
+            onSelect = { user ->
+                if (selectedMentions.none { it.userId == user.userId }) {
+                    selectedMentions = selectedMentions + SelectedMention(user.userId, user.nickname)
+                    commentText = insertCommentToken(commentText, "@${user.nickname}")
+                }
+                expandCommentComposer()
+                pickerMode = null
+            }
+        )
+        CommentPickerMode.Topic -> CommentTopicPickerDialog(
+            onDismiss = { pickerMode = null },
+            onSelect = { topic ->
+                if (selectedTopics.none { it.topicId == topic.topicId }) {
+                    selectedTopics = selectedTopics + SelectedTopic(topic.topicId, topic.name)
+                    commentText = insertCommentToken(commentText, "#${topic.name}")
+                }
+                expandCommentComposer()
+                pickerMode = null
+            }
+        )
+        CommentPickerMode.Sticker -> CommentStickerPickerDialog(
+            onDismiss = { pickerMode = null },
+            onSelect = { sticker ->
+                if (selectedStickers.none { it.stickerId == sticker.stickerId }) {
+                    selectedStickers = selectedStickers + sticker
+                    val label = sticker.emojiText.ifBlank { sticker.name }
+                    commentText = insertCommentToken(commentText, label)
+                }
+                expandCommentComposer()
+                pickerMode = null
+            }
+        )
+        null -> Unit
+    }
 
     Scaffold(
         topBar = {
-            DoyuTopBar("作品详情", canGoBack = true, onBack = { navController?.popBackStack() })
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                DoyuTopBar("作品详情", canGoBack = true, onBack = { navController?.popBackStack() })
+            }
         },
         bottomBar = {
             if (postState is UiState.Success) {
@@ -439,22 +602,67 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                     posting = actionInFlight == "comment",
                     notice = commentNotice,
                     expanded = commentExpanded,
-                    onToggleExpanded = { commentExpanded = !commentExpanded },
-                    images = selectedCommentImages,
-                    onPickImages = {
-                        imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    onToggleExpanded = {
+                        if (commentExpanded) {
+                            collapseCommentComposer()
+                        } else {
+                            expandCommentComposer()
+                        }
                     },
+                    onFieldFocusChanged = { focused ->
+                        commentFieldFocused = focused
+                        if (focused) {
+                            commentFieldEverFocused = true
+                            commentExpanded = true
+                        } else {
+                            collapseIfCommentFocusLeft()
+                        }
+                    },
+                    onInternalInteraction = { markCommentToolInteraction() },
+                    images = selectedCommentImages,
+                    mentions = selectedMentions,
+                    topics = selectedTopics,
+                    stickers = selectedStickers,
+                    onPickImages = {
+                        runCommentToolAction {
+                            commentImagePickerOpen = true
+                            imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        }
+                    },
+                    onPickMention = { runCommentToolAction { pickerMode = CommentPickerMode.Mention } },
+                    onPickTopic = { runCommentToolAction { pickerMode = CommentPickerMode.Topic } },
+                    onPickSticker = { runCommentToolAction { pickerMode = CommentPickerMode.Sticker } },
                     onRemoveImage = { uri ->
                         selectedCommentImages = selectedCommentImages.filterNot { it.uri == uri }
                     },
-                    onClearImages = { selectedCommentImages = emptyList() },
+                    onRemoveMention = { userId ->
+                        selectedMentions = selectedMentions.filterNot { it.userId == userId }
+                    },
+                    onRemoveTopic = { topicId ->
+                        selectedTopics = selectedTopics.filterNot { it.topicId == topicId }
+                    },
+                    onRemoveSticker = { stickerId ->
+                        selectedStickers = selectedStickers.filterNot { it.stickerId == stickerId }
+                    },
+                    onClearDraft = {
+                        runCommentToolAction {
+                            commentText = ""
+                            selectedCommentImages = emptyList()
+                            selectedMentions = emptyList()
+                            selectedTopics = emptyList()
+                            selectedStickers = emptyList()
+                            commentNotice = null
+                            collapseCommentComposer()
+                        }
+                    },
                     onSubmit = {
+                        markCommentToolInteraction()
                         if (!DoyuAppContainer.isLoggedIn) {
                             showLoginDialog = true
                             return@CommentComposer
                         }
                         val text = commentText.trim()
-                        if (text.isBlank() && selectedCommentImages.isEmpty()) return@CommentComposer
+                        if (text.isBlank() && selectedCommentImages.isEmpty() && selectedStickers.isEmpty()) return@CommentComposer
                         actionInFlight = "comment"
                         actionError = null
                         commentNotice = null
@@ -479,19 +687,26 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                                 withContext(Dispatchers.IO) {
                                     repo.createComment(
                                         postId,
-                                        CreateCommentRequest(content = text, mediaFileIds = mediaFileIds)
+                                        CreateCommentRequest(
+                                            content = text,
+                                            mediaFileIds = mediaFileIds,
+                                            mentionUserIds = selectedMentions.map { it.userId },
+                                            topicIds = selectedTopics.map { it.topicId },
+                                            stickerIds = selectedStickers.map { it.stickerId }
+                                        )
                                     )
                                 }
-                            }.onSuccess { comment ->
+                            }.onSuccess {
                                 commentText = ""
                                 selectedCommentImages = emptyList()
-                                commentExpanded = false
-                                commentNotice = if (comment.status == ContentStatus.REVIEWING) {
-                                    "评论已提交，等待审核。"
-                                } else {
-                                    "评论已发布。"
-                                }
+                                selectedMentions = emptyList()
+                                selectedTopics = emptyList()
+                                selectedStickers = emptyList()
+                                collapseCommentComposer()
+                                commentNotice = "评论已提交，等待审核"
+                                commentCount += 1
                                 commentsRetryCount++
+                                postRetryCount++
                             }.onFailure {
                                 commentExpanded = true
                                 commentNotice = ErrorMessages.fromException(it as Exception)
@@ -506,7 +721,19 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.background)
+                .pointerInput(commentExpanded) {
+                    if (commentExpanded) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                if (event.changes.any { it.changedToDown() }) {
+                                    collapseCommentComposer()
+                                }
+                            }
+                        }
+                    }
+                },
             contentPadding = PaddingValues(
                 start = 16.dp,
                 top = padding.calculateTopPadding(),
@@ -518,21 +745,25 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
             when (val state = postState) {
                 is UiState.Success -> {
                     val post = state.data
-                    val isLiked = liked == true
-                    val isFavorited = favorited == true
+                    val isLiked = liked ?: post.likedByMe
+                    val isFavorited = favorited ?: post.favoritedByMe
+                    val isFollowedAuthor = followedAuthor ?: post.followedAuthorByMe
+                    val displayLikeCount = if (liked == null) post.likeCount else likeCount
+                    val displayFavoriteCount = if (favorited == null) post.favoriteCount else favoriteCount
+                    val displayCommentCount = if (commentCount == 0 && post.commentCount > 0) post.commentCount else commentCount
 
                     item { PostHero(post) }
                     item {
                         PostBody(
                             post = post,
-                            followedAuthor = followedAuthor == true,
+                            followedAuthor = isFollowedAuthor,
                             followInFlight = actionInFlight == "follow",
                             onToggleFollow = {
                                 if (!DoyuAppContainer.isLoggedIn) {
                                     showLoginDialog = true
                                     return@PostBody
                                 }
-                                val followed = followedAuthor == true
+                                val followed = isFollowedAuthor
                                 actionInFlight = "follow"
                                 actionError = null
                                 scope.launch {
@@ -542,6 +773,7 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                                         }
                                     }.onSuccess { result ->
                                         followedAuthor = result.followedByMe
+                                        postRetryCount++
                                     }.onFailure { actionError = ErrorMessages.fromException(it as Exception) }
                                     actionInFlight = null
                                 }
@@ -561,7 +793,7 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                             ) {
                                 InteractionButton(
                                     icon = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                    text = post.likeCount.toString(),
+                                    text = displayLikeCount.toString(),
                                     active = isLiked,
                                     enabled = actionInFlight == null,
                                     modifier = Modifier.weight(1f),
@@ -578,7 +810,9 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                                                     if (isLiked) repo.unlikePost(postId) else repo.likePost(postId)
                                                 }
                                             }.onSuccess { result ->
-                                                liked = result.liked ?: !isLiked
+                                                val nextLiked = result.liked ?: !isLiked
+                                                liked = nextLiked
+                                                likeCount = (displayLikeCount + if (nextLiked) 1 else -1).coerceAtLeast(0)
                                                 postRetryCount++
                                             }.onFailure { actionError = ErrorMessages.fromException(it as Exception) }
                                             actionInFlight = null
@@ -587,12 +821,12 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                                 )
                                 InteractionMetric(
                                     icon = Icons.Filled.ChatBubbleOutline,
-                                    text = post.commentCount.toString(),
+                                    text = displayCommentCount.toString(),
                                     modifier = Modifier.weight(1f)
                                 )
                                 InteractionButton(
                                     icon = if (isFavorited) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                                    text = post.favoriteCount.toString(),
+                                    text = displayFavoriteCount.toString(),
                                     active = isFavorited,
                                     enabled = actionInFlight == null,
                                     modifier = Modifier.weight(1f),
@@ -609,7 +843,9 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                                                     if (isFavorited) repo.unfavoritePost(postId) else repo.favoritePost(postId)
                                                 }
                                             }.onSuccess { result ->
-                                                favorited = result.favorited ?: !isFavorited
+                                                val nextFavorited = result.favorited ?: !isFavorited
+                                                favorited = nextFavorited
+                                                favoriteCount = (displayFavoriteCount + if (nextFavorited) 1 else -1).coerceAtLeast(0)
                                                 postRetryCount++
                                             }.onFailure { actionError = ErrorMessages.fromException(it as Exception) }
                                             actionInFlight = null
@@ -889,20 +1125,50 @@ private fun CommentComposer(
     notice: String?,
     expanded: Boolean,
     onToggleExpanded: () -> Unit,
+    onFieldFocusChanged: (Boolean) -> Unit,
+    onInternalInteraction: () -> Unit,
     images: List<PendingCommentImage>,
+    mentions: List<SelectedMention>,
+    topics: List<SelectedTopic>,
+    stickers: List<Sticker>,
     onPickImages: () -> Unit,
+    onPickMention: () -> Unit,
+    onPickTopic: () -> Unit,
+    onPickSticker: () -> Unit,
     onRemoveImage: (Uri) -> Unit,
-    onClearImages: () -> Unit,
+    onRemoveMention: (String) -> Unit,
+    onRemoveTopic: (String) -> Unit,
+    onRemoveSticker: (String) -> Unit,
+    onClearDraft: () -> Unit,
     onSubmit: () -> Unit
 ) {
-    val canSubmit = !posting && (value.isNotBlank() || images.isNotEmpty())
+    val canSubmit = !posting && (value.isNotBlank() || images.isNotEmpty() || stickers.isNotEmpty())
+    val hasSelections = mentions.isNotEmpty() || topics.isNotEmpty() || stickers.isNotEmpty()
+    val hasDraft = value.isNotBlank() || images.isNotEmpty() || hasSelections
     val toolTint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.76f)
     val shellShape = RoundedCornerShape(28.dp)
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(expanded, posting) {
+        if (expanded && !posting) {
+            focusRequester.requestFocus()
+        }
+    }
     Surface(color = MaterialTheme.colorScheme.background.copy(alpha = 0.96f)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .imePadding()
                 .navigationBarsPadding()
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            if (event.changes.any { it.changedToDown() }) {
+                                onInternalInteraction()
+                            }
+                        }
+                    }
+                }
                 .animateContentSize(
                     animationSpec = spring(
                         dampingRatio = 0.78f,
@@ -932,10 +1198,40 @@ private fun CommentComposer(
                     }
                 }
             }
+            AnimatedVisibility(visible = expanded && hasSelections) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp)
+                ) {
+                    items(mentions, key = { it.userId }) { mention ->
+                        CommentSelectionChip(
+                            text = "@${mention.nickname.ifBlank { mention.userId }}",
+                            enabled = !posting,
+                            onRemove = { onRemoveMention(mention.userId) }
+                        )
+                    }
+                    items(topics, key = { it.topicId }) { topic ->
+                        CommentSelectionChip(
+                            text = "#${topic.name.ifBlank { topic.topicId }}",
+                            enabled = !posting,
+                            onRemove = { onRemoveTopic(topic.topicId) }
+                        )
+                    }
+                    items(stickers, key = { it.stickerId }) { sticker ->
+                        CommentSelectionChip(
+                            text = sticker.emojiText.ifBlank { sticker.name },
+                            enabled = !posting,
+                            onRemove = { onRemoveSticker(sticker.stickerId) }
+                        )
+                    }
+                }
+            }
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(if (expanded) 58.dp else 56.dp),
+                    .then(if (expanded) Modifier else Modifier.height(56.dp)),
                 shape = shellShape,
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp,
@@ -945,22 +1241,52 @@ private fun CommentComposer(
                     MaterialTheme.colorScheme.outline.copy(alpha = 0.34f)
                 )
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(
-                            if (!expanded && !posting) Modifier.clickable(onClick = onToggleExpanded) else Modifier
-                        )
-                        .padding(horizontal = if (expanded) 8.dp else 10.dp, vertical = 7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    CommentAvatarPlaceholder(expanded = expanded)
-
-                    AnimatedVisibility(visible = expanded) {
+                if (expanded) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         Row(
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            CommentExpandButton(
+                                expanded = true,
+                                enabled = !posting,
+                                onClick = onToggleExpanded
+                            )
+                            Text(
+                                "写下你的评论",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (hasDraft && !posting) {
+                                CommentToolButton(
+                                    icon = Icons.Filled.Close,
+                                    contentDescription = "清空评论",
+                                    enabled = true,
+                                    tint = toolTint,
+                                    onClick = onClearDraft
+                                )
+                            }
+                        }
+
+                        ExpandedCommentTextField(
+                            value = value,
+                            onValueChange = onValueChange,
+                            posting = posting,
+                            focusRequester = focusRequester,
+                            onFocusChanged = onFieldFocusChanged
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             CommentToolButton(
                                 icon = Icons.Filled.Image,
@@ -972,135 +1298,58 @@ private fun CommentComposer(
                             CommentToolButton(
                                 icon = Icons.Filled.AlternateEmail,
                                 contentDescription = "提及好友",
-                                enabled = false,
+                                enabled = !posting,
                                 tint = toolTint,
-                                onClick = {}
+                                onClick = onPickMention
                             )
                             CommentToolButton(
                                 icon = Icons.Filled.Tag,
                                 contentDescription = "添加话题",
-                                enabled = false,
-                                tint = toolTint,
-                                onClick = {}
-                            )
-                        }
-                    }
-
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        shape = RoundedCornerShape(22.dp),
-                        color = LightSurfaceVariant.copy(alpha = if (expanded) 0.34f else 0.22f),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (expanded) LightSecondaryContainer.copy(alpha = 0.78f)
-                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.32f)
-                        ),
-                        onClick = {
-                            if (!expanded) onToggleExpanded()
-                        }
-                    ) {
-                        if (expanded) {
-                            BasicTextField(
-                                value = value,
-                                onValueChange = onValueChange,
-                                singleLine = true,
                                 enabled = !posting,
-                                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSurface
-                                ),
-                                cursorBrush = SolidColor(LightSecondary),
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .onFocusChanged { focusState ->
-                                        if (focusState.isFocused && !expanded) onToggleExpanded()
-                                    }
-                                    .padding(horizontal = 14.dp),
-                                decorationBox = { innerTextField ->
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        if (value.isBlank()) {
-                                            Text(
-                                                "写下你的评论",
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
-                                                style = MaterialTheme.typography.bodyMedium
-                                            )
-                                        }
-                                        innerTextField()
-                                    }
-                                }
+                                tint = toolTint,
+                                onClick = onPickTopic
                             )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable(enabled = !posting, onClick = onToggleExpanded)
-                                    .padding(horizontal = 14.dp),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                Text(
-                                    "写下你的评论",
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
+                            CommentToolButton(
+                                icon = Icons.Filled.Mood,
+                                contentDescription = "表情",
+                                enabled = !posting,
+                                tint = toolTint,
+                                onClick = onPickSticker
+                            )
+                            Spacer(Modifier.weight(1f))
+                            CommentSendButton(
+                                canSubmit = canSubmit,
+                                posting = posting,
+                                onSubmit = onSubmit
+                            )
                         }
                     }
-
-                    CommentToolButton(
-                        icon = Icons.Filled.Mood,
-                        contentDescription = "表情",
-                        enabled = false,
-                        tint = toolTint,
-                        onClick = {}
-                    )
-
-                    if (expanded && (value.isNotBlank() || images.isNotEmpty()) && !posting) {
-                        CommentToolButton(
-                            icon = Icons.Filled.Close,
-                            contentDescription = "清空评论",
-                            enabled = true,
-                            tint = toolTint,
-                            onClick = {
-                                onValueChange("")
-                                onClearImages()
-                            }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CommentExpandButton(
+                            expanded = false,
+                            enabled = !posting,
+                            onClick = onToggleExpanded
                         )
-                    }
-
-                    AnimatedVisibility(visible = expanded || canSubmit) {
-                        Surface(
-                            onClick = onSubmit,
-                            enabled = canSubmit,
-                            modifier = Modifier.size(44.dp),
-                            shape = CircleShape,
-                            color = if (canSubmit) LightSecondary else LightSecondaryContainer.copy(alpha = 0.54f),
-                            contentColor = if (canSubmit) LightOnPrimary else LightSecondary.copy(alpha = 0.52f),
-                            shadowElevation = if (canSubmit) 7.dp else 0.dp
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                if (posting) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(18.dp),
-                                        strokeWidth = 2.dp,
-                                        color = LightOnPrimary
-                                    )
-                                } else {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.Send,
-                                        contentDescription = "提交评论",
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
+                        CollapsedCommentField(
+                            value = value,
+                            posting = posting,
+                            onExpand = onToggleExpanded,
+                            modifier = Modifier.weight(1f)
+                        )
+                        CommentToolButton(
+                            icon = Icons.Filled.Mood,
+                            contentDescription = "表情",
+                            enabled = !posting,
+                            tint = toolTint,
+                            onClick = onPickSticker
+                        )
                     }
                 }
             }
@@ -1117,15 +1366,187 @@ private fun CommentComposer(
 }
 
 @Composable
-private fun CommentAvatarPlaceholder(expanded: Boolean) {
+private fun ExpandedCommentTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    posting: Boolean,
+    focusRequester: FocusRequester,
+    onFocusChanged: (Boolean) -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 112.dp, max = 184.dp),
+        shape = RoundedCornerShape(22.dp),
+        color = LightSurfaceVariant.copy(alpha = 0.34f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            LightSecondaryContainer.copy(alpha = 0.78f)
+        )
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = false,
+            enabled = !posting,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                color = MaterialTheme.colorScheme.onSurface,
+                lineHeight = 21.sp
+            ),
+            cursorBrush = SolidColor(LightSecondary),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 112.dp, max = 184.dp)
+                .focusRequester(focusRequester)
+                .onFocusChanged { onFocusChanged(it.isFocused) }
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.TopStart
+                ) {
+                    if (value.isBlank()) {
+                        Text(
+                            "写下你的评论",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun CollapsedCommentField(
+    value: String,
+    posting: Boolean,
+    onExpand: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.height(42.dp),
+        shape = RoundedCornerShape(22.dp),
+        color = LightSurfaceVariant.copy(alpha = 0.22f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.32f)
+        ),
+        onClick = onExpand,
+        enabled = !posting
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text(
+                value.ifBlank { "写下你的评论" },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (value.isBlank()) 0.62f else 0.9f),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
+private fun CommentSendButton(
+    canSubmit: Boolean,
+    posting: Boolean,
+    onSubmit: () -> Unit
+) {
+    val highlighted = canSubmit || posting
+    Surface(
+        onClick = onSubmit,
+        enabled = canSubmit,
+        modifier = Modifier.size(44.dp),
+        shape = CircleShape,
+        color = if (highlighted) LightSecondary else LightSecondaryContainer.copy(alpha = 0.54f),
+        contentColor = if (highlighted) LightOnPrimary else LightSecondary.copy(alpha = 0.52f),
+        shadowElevation = if (highlighted) 7.dp else 0.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            if (posting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = LightOnPrimary
+                )
+            } else {
+                Icon(
+                    Icons.AutoMirrored.Filled.Send,
+                    contentDescription = "提交评论",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommentSelectionChip(text: String, enabled: Boolean, onRemove: () -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = LightSecondaryContainer.copy(alpha = 0.62f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, LightSecondary.copy(alpha = 0.18f))
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 10.dp, top = 6.dp, end = 4.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = LightSecondary,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.widthIn(max = 148.dp)
+            )
+            IconButton(
+                onClick = onRemove,
+                enabled = enabled,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(13.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommentExpandButton(
+    expanded: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier.size(if (expanded) 40.dp else 36.dp),
+        onClick = onClick,
+        enabled = enabled,
         shape = CircleShape,
         color = LightSecondaryContainer.copy(alpha = 0.86f),
         border = androidx.compose.foundation.BorderStroke(1.dp, LightSecondary.copy(alpha = 0.22f))
     ) {
         Box(contentAlignment = Alignment.Center) {
             BeadCluster(if (expanded) 22.dp else 20.dp)
+            Icon(
+                Icons.Filled.ExpandMore,
+                contentDescription = if (expanded) "收起评论输入框" else "展开评论输入框",
+                tint = LightSecondary,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(14.dp)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.92f), CircleShape)
+                    .scale(scaleX = 1f, scaleY = if (expanded) -1f else 1f)
+            )
         }
     }
 }
@@ -1235,6 +1656,206 @@ private fun AddCommentImageChip(enabled: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
+private fun CommentMentionPickerDialog(
+    onDismiss: () -> Unit,
+    onSelect: (UserProfile) -> Unit
+) {
+    var query by remember { mutableStateOf("") }
+    var retry by remember { mutableIntStateOf(0) }
+    val usersState = safeCallToState(query.trim(), retry) { repo.searchUsers(query.trim()) }.value
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("@ 用户") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                DoyuSearchField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = "搜索昵称",
+                    height = 48.dp
+                )
+                when (val state = usersState) {
+                    is UiState.Success -> {
+                        if (state.data.items.isEmpty()) {
+                            EmptyContent(title = "没有匹配用户", message = "换一个关键词再试。", showRetry = false)
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.heightIn(max = 320.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(state.data.items, key = { it.userId }) { user ->
+                                    CommentPickerRow(
+                                        title = user.nickname.ifBlank { "豆屿用户" },
+                                        subtitle = if (user.bio.isBlank()) "LV${user.level}" else user.bio,
+                                        leading = "@",
+                                        onClick = { onSelect(user) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    else -> PageStateView(usersState, onRetry = { retry++ })
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("关闭") }
+        }
+    )
+}
+
+@Composable
+private fun CommentTopicPickerDialog(
+    onDismiss: () -> Unit,
+    onSelect: (Topic) -> Unit
+) {
+    var query by remember { mutableStateOf("") }
+    var retry by remember { mutableIntStateOf(0) }
+    val topicsState = safeCallToState(query.trim(), retry) { repo.topics(query.trim()) }.value
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("# 话题") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                DoyuSearchField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = "搜索话题",
+                    height = 48.dp
+                )
+                when (val state = topicsState) {
+                    is UiState.Success -> {
+                        if (state.data.items.isEmpty()) {
+                            EmptyContent(title = "没有匹配话题", message = "换一个关键词再试。", showRetry = false)
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.heightIn(max = 320.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(state.data.items, key = { it.topicId }) { topic ->
+                                    CommentPickerRow(
+                                        title = topic.name.ifBlank { topic.topicId },
+                                        subtitle = "${topic.postCount} 个作品",
+                                        leading = "#",
+                                        onClick = { onSelect(topic) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    else -> PageStateView(topicsState, onRetry = { retry++ })
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("关闭") }
+        }
+    )
+}
+
+@Composable
+private fun CommentStickerPickerDialog(
+    onDismiss: () -> Unit,
+    onSelect: (Sticker) -> Unit
+) {
+    var retry by remember { mutableIntStateOf(0) }
+    val packsState = safeCallToState(retry) { repo.stickerPacks() }.value
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("贴纸表情") },
+        text = {
+            when (val state = packsState) {
+                is UiState.Success -> {
+                    val packs = state.data.items
+                    if (packs.isEmpty() || packs.all { it.stickers.isEmpty() }) {
+                        EmptyContent(title = "暂无贴纸", message = "内置贴纸包还没有可用贴纸。", showRetry = false)
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.heightIn(max = 360.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            packs.forEach { pack ->
+                                item(key = pack.packId) {
+                                    Text(pack.name, style = MaterialTheme.typography.titleSmall)
+                                }
+                                items(pack.stickers, key = { it.stickerId }) { sticker ->
+                                    CommentPickerRow(
+                                        title = sticker.name,
+                                        subtitle = sticker.emojiText.ifBlank { "点击插入贴纸" },
+                                        leading = sticker.emojiText.ifBlank { "贴" },
+                                        onClick = { onSelect(sticker) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                else -> PageStateView(packsState, onRetry = { retry++ })
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("关闭") }
+        }
+    )
+}
+
+@Composable
+private fun CommentPickerRow(
+    title: String,
+    subtitle: String,
+    leading: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
+        color = LightSurfaceVariant.copy(alpha = 0.54f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(34.dp),
+                shape = CircleShape,
+                color = LightSecondaryContainer.copy(alpha = 0.8f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        leading.take(2),
+                        color = LightSecondary,
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1
+                    )
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (subtitle.isNotBlank()) {
+                    Text(
+                        subtitle,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun CommentListItem(comment: cn.edu.app.douyu.core.model.Comment) {
     Surface(
         shape = MaterialTheme.shapes.medium,
@@ -1258,20 +1879,55 @@ private fun CommentListItem(comment: cn.edu.app.douyu.core.model.Comment) {
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        statusLabel(comment.status),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelSmall
-                    )
                 }
                 Spacer(Modifier.height(6.dp))
-                Text(comment.content, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (comment.content.isNotBlank()) {
+                    Text(comment.content, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (comment.mentions.isNotEmpty() || comment.topics.isNotEmpty() || comment.stickers.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    CommentAttachmentStrip(comment)
+                }
                 if (comment.mediaAssets.isNotEmpty()) {
                     Spacer(Modifier.height(10.dp))
                     CommentMediaStrip(comment.mediaAssets)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CommentAttachmentStrip(comment: cn.edu.app.douyu.core.model.Comment) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        items(comment.mentions, key = { it.userId }) { mention ->
+            InlineCommentChip("@${mention.nickname.ifBlank { mention.userId }}")
+        }
+        items(comment.topics, key = { it.topicId }) { topic ->
+            InlineCommentChip("#${topic.name.ifBlank { topic.topicId }}")
+        }
+        items(comment.stickers, key = { it.stickerId }) { sticker ->
+            InlineCommentChip(sticker.emojiText.ifBlank { sticker.name })
+        }
+    }
+}
+
+@Composable
+private fun InlineCommentChip(text: String) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = LightSecondaryContainer.copy(alpha = 0.5f)
+    ) {
+        Text(
+            text,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = LightSecondary,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier
+                .widthIn(max = 150.dp)
+                .padding(horizontal = 9.dp, vertical = 5.dp)
+        )
     }
 }
 

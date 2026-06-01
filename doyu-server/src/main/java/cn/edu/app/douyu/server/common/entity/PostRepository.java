@@ -8,5 +8,7 @@ import java.util.List;
 public interface PostRepository extends JpaRepository<PostEntity, String> {
     List<PostEntity> findByStatusOrderByPinnedDescCreatedAtDesc(String status);
     List<PostEntity> findByAuthorIdInAndStatusOrderByCreatedAtDesc(List<String> authorIds, String status);
+    List<PostEntity> findByAuthorIdInOrderByCreatedAtDesc(List<String> authorIds);
+    List<PostEntity> findByStatusAndTopicIdsContainingOrderByCreatedAtDesc(String status, String topicId);
     Page<PostEntity> findByContentContainingIgnoreCase(String keyword, Pageable pageable);
 }

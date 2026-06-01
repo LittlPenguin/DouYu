@@ -148,6 +148,10 @@ fun DoyuApp() {
             }
             composable(AppRoute.MY_PATTERNS) { MyPatternsScreen(navController) }
             composable(AppRoute.FAVORITES) { FavoritesScreen(navController) }
+            composable(AppRoute.LIKED_POSTS) { LikedPostsScreen(navController) }
+            composable(AppRoute.COMMENTED_POSTS) { CommentedPostsScreen(navController) }
+            composable(AppRoute.FAVORITE_POSTS) { FavoritePostsScreen(navController) }
+            composable(AppRoute.FOLLOWED_POSTS) { FollowedPostsScreen(navController) }
             composable(AppRoute.MY_ORDERS) { MyOrdersScreen(navController) }
             composable(AppRoute.SETTINGS) { SettingsScreen(navController) }
         }

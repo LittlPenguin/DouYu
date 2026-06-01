@@ -28,6 +28,37 @@ interface UserApi {
     @GET("/api/v1/users/me")
     suspend fun me(): ApiResponse<UserProfile>
 
+    @GET("/api/v1/users/search")
+    suspend fun searchUsers(
+        @Query("keyword") keyword: String = "",
+        @Query("page") page: Int = 1,
+        @Query("size") size: Int = 20
+    ): ApiResponse<PageResponse<UserProfile>>
+
+    @GET("/api/v1/users/me/liked-posts")
+    suspend fun likedPosts(
+        @Query("page") page: Int = 1,
+        @Query("size") size: Int = 20
+    ): ApiResponse<PageResponse<Post>>
+
+    @GET("/api/v1/users/me/commented-posts")
+    suspend fun commentedPosts(
+        @Query("page") page: Int = 1,
+        @Query("size") size: Int = 20
+    ): ApiResponse<PageResponse<Post>>
+
+    @GET("/api/v1/users/me/favorite-posts")
+    suspend fun favoritePosts(
+        @Query("page") page: Int = 1,
+        @Query("size") size: Int = 20
+    ): ApiResponse<PageResponse<Post>>
+
+    @GET("/api/v1/users/me/followed-posts")
+    suspend fun followedPosts(
+        @Query("page") page: Int = 1,
+        @Query("size") size: Int = 20
+    ): ApiResponse<PageResponse<Post>>
+
     @POST("/api/v1/users/{userId}/follow")
     suspend fun follow(@Path("userId") userId: String): ApiResponse<FollowResult>
 
@@ -86,6 +117,23 @@ interface CommunityApi {
         @Path("postId") postId: String,
         @Body request: CreateCommentRequest
     ): ApiResponse<Comment>
+
+    @GET("/api/v1/topics")
+    suspend fun topics(
+        @Query("keyword") keyword: String = "",
+        @Query("page") page: Int = 1,
+        @Query("size") size: Int = 20
+    ): ApiResponse<PageResponse<Topic>>
+
+    @GET("/api/v1/topics/{topicId}/posts")
+    suspend fun topicPosts(
+        @Path("topicId") topicId: String,
+        @Query("page") page: Int = 1,
+        @Query("size") size: Int = 20
+    ): ApiResponse<PageResponse<Post>>
+
+    @GET("/api/v1/sticker-packs")
+    suspend fun stickerPacks(): ApiResponse<PageResponse<StickerPack>>
 }
 
 interface PatternApi {

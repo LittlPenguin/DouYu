@@ -16,6 +16,7 @@
 - 本地开发上传使用 Local OSS Provider。
 - AI 拼豆任务已支持异步执行和自研算法生成。
 - 关注/取关接口已存在；第六轮好友能力按关注/互相关注收敛，不新增复杂好友申请审批。
+- 作品详情互动 MVP 已接入用户搜索、话题、内置贴纸、评论 @/#/贴纸关系、`MENTION` 通知和个人互动作品接口。
 - 真实 AI Provider、地图 API、真实微信/支付宝支付、生产级内容审核仍未完成。
 
 ## 模块划分
@@ -82,6 +83,9 @@ Spring Security 配置位于 `common/SecurityConfig.java`。
 - `GET /api/v1/posts/feed`
 - `GET /api/v1/posts/following`
 - `GET /api/v1/posts/{postId}`
+- `GET /api/v1/topics`
+- `GET /api/v1/topics/{topicId}/posts`
+- `GET /api/v1/sticker-packs`
 - `GET /api/v1/products`
 - `GET /api/v1/products/{productId}`
 - `/uploads/**`

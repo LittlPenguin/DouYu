@@ -59,6 +59,7 @@
 | likeCount | 点赞数 |
 | favoriteCount | 收藏数 |
 | commentCount | 评论数 |
+| likedByMe / favoritedByMe / followedAuthorByMe | 帖子详情响应中的当前用户互动视角字段；未登录时为 `false`，不是持久化在帖子表的字段 |
 
 内容状态：
 
@@ -77,11 +78,27 @@
 | authorId | 作者 |
 | parentId | 父评论 |
 | content | 内容 |
-| mediaFileIds | 第六轮评论图片文件 ID 列表，最多 9 个，可为空；文字和图片不能同时为空 |
+| mediaFileIds | 第六轮评论图片文件 ID 列表，最多 9 个，可为空 |
 | mediaAssets | 接口响应中的评论图片渲染对象，包含 `fileId`、`publicUrl`、`mimeType`、`width`、`height`、`auditStatus` |
+| mentions | 响应中的 @ 用户摘要列表，来自 `comment_mentions` |
+| topics | 响应中的评论话题摘要列表，来自 `comment_topics` |
+| stickers | 响应中的评论贴纸列表，来自 `comment_stickers` |
 | status | 审核状态 |
 
-评论图片当前只支持 `POST_IMAGE` 类型的图片 FileAsset；视频评论、表情包、@ 用户和生产级图片审核不在第六轮关闭。
+评论内容校验：文字、图片、贴纸三者至少一种存在；`mentionUserIds` / `topicIds` 不能单独构成有效评论。评论图片当前只支持 `POST_IMAGE` 类型的图片 FileAsset；视频评论、用户自定义贴纸、付费表情包、图片私信和生产级图片审核不在第六轮关闭。
+
+### Topic / Sticker
+
+| 表 | 字段 | 说明 |
+|---|---|---|
+| `topics` | `id`、`name`、`description`、`post_count`、`created_at`、`updated_at` | MVP seed 话题；本轮支持列表、关键字搜索和话题作品查询，不做运营后台 |
+| `comment_mentions` | `comment_id`、`user_id`、`created_at` | 评论 @ 用户关系；同一评论同一用户唯一 |
+| `comment_topics` | `comment_id`、`topic_id`、`created_at` | 评论绑定话题关系；同一评论同一话题唯一 |
+| `sticker_packs` | `id`、`name`、`sort_order`、`created_at`、`updated_at` | 内置贴纸包 |
+| `stickers` | `id`、`pack_id`、`name`、`emoji_text`、`image_url`、`sort_order`、`created_at`、`updated_at` | 内置贴纸项；可用文本或静态资源 URL 表达 |
+| `comment_stickers` | `comment_id`、`sticker_id`、`created_at` | 评论贴纸关系；同一评论同一贴纸唯一 |
+
+话题、贴纸和 @ 用户只关闭评论互动 MVP：不建模话题热榜、用户自定义贴纸、付费表情包、贴纸上传、复杂审核或运营配置台。
 
 ### Follow / Like / Favorite
 
@@ -298,6 +315,8 @@
 | title | 标题 |
 | content | 内容 |
 | readAt | 已读时间 |
+
+消息类型包含评论 @ 触发的 `MENTION`；本轮只要求写入通知、列表展示和已读标记，不扩展推送或复杂通知状态机。
 
 ### Conversation
 

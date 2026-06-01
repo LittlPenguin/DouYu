@@ -611,6 +611,7 @@ private data class NotificationVisual(
 private fun notificationVisual(type: NotificationType): NotificationVisual = when (type) {
     NotificationType.ORDER -> NotificationVisual(Icons.Filled.ShoppingBag, LightSecondaryContainer, LightOnSecondaryContainer)
     NotificationType.COMMENT,
+    NotificationType.MENTION,
     NotificationType.LIKE,
     NotificationType.FAVORITE,
     NotificationType.FOLLOW -> NotificationVisual(Icons.Filled.Favorite, LightPrimaryContainer, LightOnPrimaryContainer)
