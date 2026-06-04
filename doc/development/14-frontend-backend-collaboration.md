@@ -287,7 +287,7 @@ cd D:\Studio\SpellBean\DouYu
 .\gradlew.bat :app:testDebugUnitTest
 ```
 
-第一轮基础人工链路：
+基础人工链路：
 
 - 短信登录。
 - 浏览社区 Feed 和帖子详情。
@@ -300,4 +300,4 @@ cd D:\Studio\SpellBean\DouYu
 - Photo Picker 或 CameraX 上传图片。
 - 创建 AI 任务、轮询进度、查看图纸结果。
 - 查看商品、加入购物车、创建订单、创建支付单、查询支付状态。
-- 查看消息、我的页面、收藏图纸、我的订单。
+- 查看消息、我的页面、收藏图纸和订单相关页面；最新我的页首屏不再把订单作为设计入口时，仍需通过订单流程或专门入口回归订单列表。

@@ -1,212 +1,211 @@
 # 04. 后端服务实现方案
 
-## 后端目标
+## 当前定位
 
-后端负责业务规则、数据一致性、支付安全、AI 编排、内容审核、风控和管理后台能力。当前采用 Spring Boot 模块化单体，不拆微服务。
+后端使用 Java 21 + Spring Boot 单体服务，负责认证、用户、上传、社区、AI 图纸、商城、订单、支付、消息、奖励、举报和管理后台 API。当前文档重构不修改后端代码，只把真实 Controller、Provider 边界和未完成生产能力写清楚。
 
-## 当前实现状态
+API 前缀固定为 `/api/v1`，统一响应由后端包装为：
 
-- Java 21 + Spring Boot。
-- API 前缀统一为 `/api/v1`。
-- Spring Security + JWT access token / refresh token。
-- 核心业务对象已迁移到 PostgreSQL + Spring Data JPA Repository。
-- Flyway 管理数据库迁移。
-- Redis 已作为基础设施接入，当前主要用于后续缓存、限流和异步能力扩展。
-- OpenAPI/Swagger 已覆盖主要 Controller。
-- 本地开发上传使用 Local OSS Provider。
-- AI 拼豆任务已支持异步执行和自研算法生成。
-- 关注/取关接口已存在；第六轮好友能力按关注/互相关注收敛，不新增复杂好友申请审批。
-- 作品详情互动 MVP 已接入用户搜索、话题、内置贴纸、评论 @/#/贴纸关系、`MENTION` 通知和个人互动作品接口。
-- 真实 AI Provider、地图 API、真实微信/支付宝支付、生产级内容审核仍未完成。
+```json
+{
+  "code": "OK",
+  "message": "success",
+  "data": {},
+  "traceId": "..."
+}
+```
+
+错误码见 `common/ErrorCode.java`，包括 `INVALID_ARGUMENT`、`UNAUTHORIZED`、`FORBIDDEN`、`NOT_FOUND`、`CONFLICT`、`RATE_LIMITED`、`AUDIT_REJECTED`、`PAYMENT_FAILED`、`INVENTORY_NOT_ENOUGH`、`NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED`、`AI_TASK_FAILED`、`INTERNAL_ERROR`。
 
 ## 模块划分
 
-| 模块 | 职责 |
-|---|---|
-| `auth` | 短信登录、注册、token、刷新、退出、账号注销 |
-| `user` | 用户资料、主页、实名状态、年龄状态 |
-| `community` | 帖子、评论、点赞、收藏、关注、Feed |
-| `upload` | 上传凭证、文件元数据、本地开发对象存储 |
-| `pattern` | AI 拼豆任务、图纸资产、算法、额度、PDF |
-| `commerce` | 商品、SKU、购物车、库存 |
-| `order` | 订单、取消、售后入口 |
-| `payment` | 支付单、支付参数、回调、安全校验骨架 |
-| `message` | 通知、私信、会话 |
-| `reward` | 签到、等级、经验、徽章 |
-| `moderation` | 内容审核、举报、处理记录 |
-| `admin` | 后台登录、用户、内容、商品、订单、举报、操作日志 |
-| `common` | 统一响应、错误码、鉴权、实体、Repository、TraceId |
+| 模块 | Controller / 目录 | 职责 |
+|---|---|---|
+| Auth | `auth/AuthController.java` | 短信验证码、短信登录、Token 刷新、退出登录、账号注销申请 |
+| User | `user/UserController.java` | 当前用户、用户搜索、资料更新、关注/取关、实名、个人互动作品 |
+| Upload | `upload/UploadController.java` | 预签名上传、上传确认、FileAsset 元数据 |
+| Community | `community/CommunityController.java` | Feed、关注 Feed、帖子 CRUD、点赞、收藏、评论、话题、贴纸 |
+| Pattern | `pattern/PatternController.java` | AI 图纸任务、任务查询、取消、收藏、详情、配额 |
+| Commerce | `commerce/CommerceController.java` | 商品、SKU、购物车 |
+| Order | `order/OrderController.java` | 订单创建、列表、详情、取消 |
+| Payment | `payment/PaymentController.java` | 联调支付单、支付状态、回调骨架、退款骨架 |
+| Message | `message/MessageController.java` | 通知、通知已读、会话、私信发送 |
+| Reward | `reward/RewardController.java` | 签到、签到状态、积分、徽章 |
+| Report | `moderation/ReportController.java` | 用户举报 |
+| Admin | `admin/AdminAuthController.java`、`admin/AdminController.java` | 管理员登录、用户/内容/商品/订单/支付/AI/举报/日志后台 API |
+| Common | `common/*` | 统一响应、错误码、鉴权、实体、Repository、TraceId |
 
-## 本地开发启动
+## 安全与鉴权
 
-后端工程路径：`D:\Studio\SpellBean\doyu-server`。
+当前安全配置：
 
-推荐启动：
+- `/actuator/**`、OpenAPI、Swagger 公开。
+- `/api/v1/auth/**` 公开。
+- `/api/v1/admin/auth/login` 公开。
+- `/api/v1/payments/callbacks/**` 公开给支付回调。
+- 社区 Feed、帖子详情、话题、贴纸、商品列表和商品详情允许公开读取。
+- `/api/v1/admin/**` 要求管理员角色。
+- 其他接口默认要求登录。
+
+鉴权事实：
+
+- 短信验证码开发环境固定 `123456`。
+- `SmsLoginRequest` 当前字段为 `phone`、`code`、`ageGroup`、`nickname`；Android 仍传 `AGE_18_PLUS`。
+- refresh token 必须可吊销；退出登录应吊销当前 refresh token。
+- 玩家卖家、提现、定制服务发布者等生产要求仍需 18+ 实名，但相关闭环未完成。
+
+## Controller 覆盖状态
+
+| 模块 | 后端存在 | Android 当前接入 | 备注 |
+|---|---|---|---|
+| Auth | 是 | 部分接入 | 账号注销申请后端存在，Android 未接入完整入口。 |
+| User | 是 | 部分接入 | 资料更新、公开用户、实名后端存在；Profile Edit 仍是设计目标。 |
+| Upload | 是 | 接入 | 使用 `local|stub|aliyun` Provider；生产能力未完成。 |
+| Community | 是 | 部分接入 | 帖子编辑/删除、评论删除后端存在，Android 当前重点是详情和评论 UI 收敛。 |
+| Pattern | 是 | 部分接入 | `GET /quota` 后端存在，Android Retrofit 当前未声明。 |
+| Product / Cart | 是 | 接入 | 玩家商品不能走标准购物车。 |
+| Order | 是 | 接入 | 地址管理未闭环时不得伪造默认地址。 |
+| Payment | 是 | 部分接入 | 回调/退款后端存在，Android 当前只接创建和查询支付单。 |
+| Message | 是 | 接入 | 私信用通知表承载消息，互关 3 条限制由后端校验。 |
+| Reward | 是 | 接入 | 签到、积分、徽章基础接口存在。 |
+| Report | 是 | 未接入 Retrofit | 可作为后续举报入口任务。 |
+| Admin | 是 | 未接 Android | 属于后台 API，不是 App 内用户路径。 |
+
+## 上传 Provider
+
+上传链路：
+
+```text
+POST /uploads/presign
+  -> Provider.presign(fileKey, mimeType, expires)
+  -> Android PUT uploadUrl
+POST /uploads/confirm
+  -> Provider.confirm(fileKey)
+  -> FileAsset(fileId, ownerId, usage, publicUrl, auditStatus)
+```
+
+当前限制：
+
+- 支持用途：`AVATAR`、`POST_IMAGE`、`POST_VIDEO`、`AI_INPUT`、`PATTERN_OUTPUT`、`PRODUCT_IMAGE`、`TRADE_IMAGE`。
+- 非图片仅 `POST_VIDEO` 可通过当前类型校验。
+- 文件大小限制为 20MB。
+- 确认后 `auditStatus` 初始为 `NEED_MANUAL_REVIEW`。
+- Aliyun OSS Provider 只代表后端骨架可通过私有环境配置启用；生产仍需 STS、CORS、CDN、防盗链、审核、缩略图和监控。
+
+## 社区与评论
+
+当前后端支持：
+
+- 推荐 Feed、关注 Feed。
+- 发布帖子进入 `REVIEWING`。
+- 作品详情返回 `likedByMe`、`favoritedByMe`、`followedAuthorByMe`。
+- 点赞/取消、收藏/取消。
+- 评论列表和发表评论。
+- 评论支持 `content`、`parentId`、`mediaFileIds`、`mentionUserIds`、`topicIds`、`stickerIds`。
+- 单条评论最多 9 张图片。
+- 评论图片必须是当前用户上传、用途为 `POST_IMAGE`、MIME 为 image。
+- @ 用户会生成 `MENTION` 通知。
+- 话题和贴纸必须存在。
+
+边界：
+
+- 文字、图片、贴纸三者至少存在一种；@/# 不能单独构成评论。
+- 评论提交成功后状态为 `REVIEWING`，前端不能假装立即公开。
+- 生产级内容审核和图片审核未完成。
+
+## 消息与互关私信
+
+当前后端使用 `ConversationEntity` + `NotificationEntity` 承载会话和消息：
+
+- `GET /messages/notifications` 返回通知列表。
+- `POST /messages/notifications/read` 当前后端标记当前用户全部通知已读；Android 请求体目前不影响后端逻辑。
+- `GET /messages/conversations` 返回会话列表。
+- `GET /messages/conversations/{conversationId}` 返回会话信息和消息列表。
+- `POST /messages/conversations/{conversationId}` 发送私信。
+
+互关限制：
+
+- `mutualFollow=true` 时可正常发送。
+- 未互关时，同一发送者对同一会话最多发送 3 条。
+- 超过后抛出 `NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED`，文案为“互相关注后可继续聊天”。
+- 会话视图返回 `remainingNonMutualMessages` 和 `canSend`。
+
+当前不做：好友申请审批、图片私信、撤回、黑名单、复杂已读回执和生产级反骚扰。
+
+## 商城、订单与支付
+
+商城：
+
+- `ProductType` 包括 `SELF_OPERATED`、`PLAYER_SECOND_HAND`、`PLAYER_CUSTOM_SERVICE`。
+- 标准购物车只面向自营商品；玩家商品不能混入购物车。
+- 库存、价格和订单金额以服务端为准。
+
+订单：
+
+- 创建订单需要 `itemIds`、`addressId`、`remark`。
+- 写接口需 `Idempotency-Key`。
+- 地址管理未闭环时，客户端不得伪造默认地址。
+
+支付：
+
+- 创建支付单需要 `orderId` 和 `channel`，渠道当前为 `WECHAT_APP` 或 `ALIPAY_APP`。
+- `payParams` 返回 `{ provider: "STUB", payload: "stub-pay-payload-..." }`。
+- 回调和退款是骨架，不代表真实支付生产能力。
+- 订单最终状态以服务端查询为准。
+
+## AI 图纸
+
+后端已提供：
+
+- 创建图纸任务。
+- 查询任务。
+- 任务列表。
+- 取消任务。
+- 图纸收藏。
+- 图纸详情。
+- 配额接口。
+- 自研拼豆算法、材料统计和结果资产。
+
+未完成：
+
+- 真实视觉 Provider。
+- 输入/输出生产级内容安全。
+- Provider 限流、熔断、监控和真实成本统计。
+
+## 管理后台
+
+当前后端提供管理后台 API，但没有完整运营后台前端。已有能力包括：
+
+- 管理员登录。
+- 用户、帖子、评论、商品、订单、支付、AI 任务、举报、操作日志列表。
+- 举报处理。
+- 帖子、评论、商品审核。
+- 用户状态变更。
+- AI 任务重试和取消。
+
+这些 API 不等于生产运营后台已完成，上线前仍需补操作审计、权限分级、风控工作台和合规材料。
+
+## 本地启动与测试
+
+启动：
 
 ```powershell
-cd D:\Studio\SpellBean\doyu-server
+cd doyu-server
 .\start-dev.bat
 ```
 
-等价手动命令：
+等价手动步骤：
 
 ```powershell
 docker compose up -d postgres redis
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-端口：
-
-- 后端：`8081`
-- PostgreSQL：宿主机 `5433`，容器内 `5432`
-- Redis：`6379`
-
-测试：
+后端测试：
 
 ```powershell
-cd D:\Studio\SpellBean\doyu-server
+cd doyu-server
 mvn test
 ```
 
-## 安全配置
-
-Spring Security 配置位于 `common/SecurityConfig.java`。
-
-公开接口：
-
-- `/actuator/**`
-- `/v3/api-docs/**`
-- `/swagger-ui/**`
-- `/api/v1/auth/**`
-- `/api/v1/admin/auth/login`
-- `/api/v1/payments/callbacks/**`
-- `GET /api/v1/posts/feed`
-- `GET /api/v1/posts/following`
-- `GET /api/v1/posts/{postId}`
-- `GET /api/v1/topics`
-- `GET /api/v1/topics/{topicId}/posts`
-- `GET /api/v1/sticker-packs`
-- `GET /api/v1/products`
-- `GET /api/v1/products/{productId}`
-- `/uploads/**`
-
-后台接口：
-
-- `/api/v1/admin/**` 要求 `ROLE_ADMIN`。
-
-其他接口默认要求登录。
-
-## 鉴权与账号
-
-- 普通用户和后台管理员使用不同角色。
-- 短信验证码开发环境固定为 `123456`。
-- 当前后端 `SmsLoginRequest` 仍要求 `ageGroup`，Android 现阶段继续传默认 `AGE_18_PLUS`。
-- 年龄段、未成年人状态和实名状态长期应由后端业务逻辑维护；移除登录 `ageGroup` 需要先修改后端接口和客户端模型。
-- 玩家卖家、提现、定制服务发布者必须 18+ 实名。
-- refresh token 必须可撤销；退出登录应撤销当前 refresh token。
-
-## 关注、好友和私信限制
-
-第六轮好友语义只做最小闭环：
-
-- “好友”在当前阶段等价于关注关系的产品化表达；双方互相关注时展示为“互相关注”。
-- 复用 `POST /api/v1/users/{userId}/follow` 和 `DELETE /api/v1/users/{userId}/follow`，关注/取关必须幂等，不能因为重复点击产生重复关系或错误粉丝数。
-- 用户主页、帖子作者、会话对方信息可返回非破坏性关系字段，例如 `followedByMe`、`followsMe`、`mutualFollow`，供 Android 展示“关注 / 已关注 / 互相关注”。
-- 私信会话详情必须返回真实消息列表、发送方信息和对方关系状态，不再只返回空 `messages` 占位。
-- 未互关时，同一发送者对同一会话最多发送 3 条私信；超过后返回明确业务错误和可读文案，Android 展示“互相关注后可继续聊天”或禁用发送。
-- 本轮不做好友申请、同意/拒绝、黑名单、图片私信、撤回、复杂已读回执和生产级反骚扰风控。
-
-## 持久化
-
-- 当前核心业务数据使用 JPA Repository 持久化。
-- Flyway 迁移文件位于 `src/main/resources/db/migration/`。
-- `ddl-auto` 使用 `validate`，避免运行时隐式改表。
-- 对外业务 ID 使用字符串。
-- 订单、支付、退款、库存、实名、审核相关改动必须说明迁移和回滚风险。
-
-## 上传与对象存储
-
-当前开发环境：
-
-- 默认使用 Local OSS Provider；`douyu.oss.provider` 默认值为 `local`。
-- 后端签发上传地址。
-- Android 直传文件。
-- 后端 confirm 后生成 `FileAsset`。
-- `/uploads/**` 用于本地开发访问文件。
-- 第四轮新增本地 seed assets：`src/main/resources/static/seed/` 下提交社区和商城演示图片，`ATTRIBUTION.md` 记录来源和许可说明；这些图片只用于本地 QA/演示，不代表生产对象存储或真实用户上传链路。
-- 第四轮商品和帖子 seed 数据通过 Flyway 字段 `products.image_url`、`posts.cover_image_url` 暴露图片 URL。商品列表/详情返回 `imageUrl`，购物车商品摘要返回 `product.imageUrl`，社区 Feed/详情返回 `coverImageUrl`。
-
-第五轮前置能力：
-
-- 后端已提供 Aliyun OSS Provider 骨架，可通过 `.env` 私有配置 `DOUYU_OSS_PROVIDER=aliyun` 启用。
-- Aliyun OSS Provider 复用现有 `/api/v1/uploads/presign`、客户端 PUT 直传和 `/api/v1/uploads/confirm` 流程，不新增公共 API。
-- Aliyun OSS 必填配置为 `DOUYU_ALIYUN_OSS_ENDPOINT`、`DOUYU_ALIYUN_OSS_REGION`、`DOUYU_ALIYUN_OSS_BUCKET`、`DOUYU_ALIYUN_OSS_ACCESS_KEY_ID`、`DOUYU_ALIYUN_OSS_ACCESS_KEY_SECRET`、`DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL`。
-- Local OSS 仍是 dev 默认；test profile 使用 Stub OSS，后端测试不依赖云服务。
-- 客户端不得持有 OSS Secret。
-- 上传文件默认按不可信输入处理，必须经过类型、大小、用途和审核校验。
-- 第四轮 seed assets 暂不迁移到 Aliyun OSS；生产 CDN、防盗链、STS 临时凭证、图片审核和缩略图处理仍是后续生产化任务。
-
-## AI 拼豆
-
-当前已实现：
-
-- AI 任务创建、查询、列表、取消。
-- 异步执行器 `PatternJobExecutor`。
-- 进度追踪。
-- BeadPatternEngine 图纸算法。
-- 预览图、色号图、材料清单、PDF 生成。
-- AI 调用缓存和每日额度记录。
-
-仍未完成：
-
-- 真实阿里云百炼/通义万相 API 调用。
-- 生产级输入/输出审核。
-- Provider 限流、熔断、监控和真实成本统计。
-
-## 支付
-
-当前已实现：
-
-- 创建支付单。
-- 返回开发态支付参数。
-- 支付回调入口。
-- 回调签名验证接口。
-- 金额校验、渠道一致性、时间窗口防重放和幂等处理骨架。
-
-仍未完成：
-
-- 微信支付 App 支付真实 SDK/API。
-- 支付宝 App 支付真实 SDK/API。
-- 渠道主动查询。
-- 退款真实调用和退款回调。
-- 对账和异常账务处理。
-
-客户端不得单点判定支付成功，订单最终状态以服务端为准。
-
-## 管理后台
-
-后端提供后台 API：
-
-- 管理员登录。
-- 用户列表和搜索。
-- 帖子列表和搜索。
-- 举报处理。
-- 商品、订单、AI 任务等运营处理入口。
-- 操作日志。
-
-当前还没有完整运营后台前端。上线前需要补齐运营可用的审核、举报、订单和风控工作台。
-
-## Provider 边界
-
-当前 Provider 状态：
-
-| 能力 | 当前状态 | 生产要求 |
-|---|---|---|
-| 短信 | Stub 验证码 `123456` | 接入真实短信供应商、限流、防刷 |
-| OSS | Local OSS Provider；Aliyun OSS Provider 骨架可按 `.env` 私有配置启用 | 补齐 STS/权限、CORS、CDN、防盗链、图片审核、缩略图和运维监控 |
-| AI | Stub + 自研算法，Aliyun provider 占位 | 接入真实视觉 Provider |
-| 微信支付 | Stub 参数和回调骨架 | 官方 SDK/API、验签、查询、退款、对账 |
-| 支付宝支付 | Stub 参数和回调骨架 | 官方 SDK/API、验签、查询、退款、对账 |
-| 内容审核 | 基础关键词过滤 | 云内容安全 + 人审后台 + 风控策略 |
-
-不得把 Stub 或占位 Provider 当作生产能力交付。
+本轮只改文档和 SVG，不运行后端测试；若后续阶段修改 `doyu-server/`，必须补跑。

@@ -1,30 +1,28 @@
 # 豆屿 Doyu 项目接手手册
 
 > 更新日期：2026-06-04
-> 用途：给新接手工程师、主 Agent 和子任务 Agent 提供最快速的工程入口。本文件只汇总当前事实和工作边界；具体契约仍以对应分册为准。
+> 用途：让新接手工程师或主 Agent 在不依赖本地私有规则文件的情况下，快速理解项目当前事实、边界、目录、验证方式和下一步开发顺序。
 
 ## 一句话定位
 
-豆屿 Doyu 是面向中国大陆 16+ 用户的 Android 拼豆社区、AI 拼豆图纸、材料商城和玩家直连交易应用。当前工程目标不是上线生产版，而是把开发态 MVP 收敛到主链路可演示、边界清楚、不可用能力不误导用户。
+豆屿 Doyu 是面向中国大陆 16+ 用户的 Android 拼豆社区、AI 拼豆图纸、材料商城与玩家直连交易应用。当前不是生产上线阶段，而是把开发态 MVP 收敛到主链路可演示、UI 规则可落地、不可用能力不误导用户。
 
-当前权威阶段是 **第六轮 UI/品牌与主链路展示收敛阶段**。核心工作是统一社区、商城、AI、消息、我的五个主 Tab 的首屏展示、状态页、互动边界和品牌识别，同时保留前几轮已关闭的登录态、社区契约、商城订单/支付边界和 OSS Provider 骨架。
+当前权威阶段是 **第六轮 UI/品牌与主链路展示收敛阶段**。本轮之后的工作重点是按 Open Design A 方向重构 Android UI：统一顶部栏、底部 Logo 导航、社区瀑布流、图片优先作品详情、悬浮评论栏、Search、上传帖子、Settings、Profile Edit、消息/私信/通知和未来能力 UI-only 边界。
 
-## 必读顺序
+## 接手先读
 
-任何开发、重构、修复或文档更新前，先按这个顺序读：
-
-1. `../../AGENTS.md`：仓库级规则、当前阶段、不做范围、验证要求。
-2. `current-status.md`：当前完成度、不可用边界、下一步优先级。
-3. `README.md`：文档索引、职责映射、同步规则。
-4. `../豆屿App商业技术执行计划.md`：产品目标和商业闭环。
-5. `05-api-contract.md`：接口契约、错误码、分页、幂等。
-6. `11-ui-style-guide.md`：当前唯一 UI 权威规范。
+1. `current-status.md`：当前代码事实、阶段状态和不能宣称完成的能力。
+2. `README.md`：公开文档索引和职责映射。
+3. `16-stage-development-roadmap.md`：下一阶段 Stage 0-7 开发流程。
+4. `05-api-contract.md`：真实 Controller 和 Retrofit 对齐后的接口契约。
+5. `13-ui-screen-blueprints.md`：页面结构、状态、禁用态和点击去向。
+6. `diagrams/README.md`：开发流程图、API 图、导航图和 UI 线框图。
 
 按职责继续读：
 
 | 职责 | 必读文档 |
 |---|---|
-| Android 页面 / UI 状态 | `03-android-client.md`、`13-ui-screen-blueprints.md`、`10-testing-acceptance.md` |
+| Android 页面 / UI 状态 | `03-android-client.md`、`11-ui-style-guide.md`、`13-ui-screen-blueprints.md` |
 | 后端接口 / 服务 | `04-backend-services.md`、`05-api-contract.md`、`06-data-model.md` |
 | 主链路理解 | `12-feature-and-flow-map.md`、`diagrams/README.md` |
 | AI 图纸 | `07-ai-pattern-generation.md`、`15-ai-pattern-provider-selection.md` |
@@ -32,129 +30,115 @@
 | 联调 / 真机 QA | `14-frontend-backend-collaboration.md`、`10-testing-acceptance.md` |
 | 安全 / 合规 | `09-security-compliance.md` |
 
-## 代码目录地图
+## 目录地图
 
 | 路径 | 职责 | 接手注意 |
 |---|---|---|
-| `DouYu/` | Android App，Kotlin + Jetpack Compose 单 Activity | 不要绕过 `DoyuAppContainer`、Repository、现有导航和 UI 组件口径。 |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/core/navigation/` | 5 个主 Tab 和详情页路由 | 主 Tab 固定为社区、商城、AI 拼图、消息、我的；详情/流程页通常隐藏底栏。 |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/core/network/` | Retrofit 接口、DTO、TokenStore、会话管理 | 登录请求仍传 `ageGroup=AGE_18_PLUS`；debug API base 在构建期从 `.env` 注入。 |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/core/data/` | Repository、真实/Mock 数据源、AppContainer | Mock 只用于测试/预览，真实页面优先走后端接口。 |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/core/ui/` | 通用 Compose 组件、状态页、格式化 | 第六轮页面必须复用加载、空、错、未登录和禁用状态口径。 |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/feature/` | 业务页面：auth/community/ai/commerce/message/profile | 页面仍未全部 ViewModel 化；不要为小改动强行大重构。 |
-| `doyu-server/` | Spring Boot 后端，Java 21 | API 前缀 `/api/v1`，统一响应 `{ code, message, data, traceId }`。 |
-| `doyu-server/src/main/java/cn/edu/app/douyu/server/common/` | 安全、错误、响应包装、实体、初始化、配置 | 对外业务 ID 使用字符串；写接口涉及幂等时使用 `Idempotency-Key`。 |
-| `doyu-server/src/main/java/cn/edu/app/douyu/server/community/` | Feed、帖子、评论、点赞、收藏、话题、贴纸 | 评论支持文字/图片/@/#/贴纸，图片最多 9 张且必须是本人 `POST_IMAGE`。 |
-| `doyu-server/src/main/java/cn/edu/app/douyu/server/message/` | 通知、会话、私信 | 未互关同会话同发送者最多 3 条，超过返回明确错误。 |
-| `doyu-server/src/main/java/cn/edu/app/douyu/server/upload/` | 上传预签名、确认、OSS Provider | `local|stub|aliyun` 可切换；Aliyun 密钥只在后端持有。 |
-| `doc/development/` | 当前有效开发文档 | 改代码必须同步对应分册；不要只在对话里说明新规则。 |
+| `DouYu/` | Android App，Kotlin + Jetpack Compose，单 Activity | 本轮计划不改业务代码；后续实现时遵守现有 `DoyuAppContainer`、Repository、Navigation Compose 结构。 |
+| `DouYu/app/src/main/java/cn/edu/app/douyu/core/navigation/` | 5 个主 Tab 和当前 Android 路由 | 当前代码没有 Search、Profile Edit、Settings 子页、通知详情路由；这些仍是设计目标。 |
+| `DouYu/app/src/main/java/cn/edu/app/douyu/core/network/` | Retrofit 接口、DTO、ApiClient、TokenStore | 登录请求仍传 `ageGroup=AGE_18_PLUS`；debug baseUrl 由 `.env` 在构建期注入。 |
+| `DouYu/app/src/main/java/cn/edu/app/douyu/core/data/` | Repository、真实/Mock 数据源、AppContainer | 真实页面优先走后端接口；Mock 只用于测试或预览。 |
+| `DouYu/app/src/main/java/cn/edu/app/douyu/core/ui/` | 通用 Compose 组件、状态页、按钮、卡片 | 后续 UI 重构优先收敛统一组件，不做每页自定义状态。 |
+| `DouYu/app/src/main/java/cn/edu/app/douyu/feature/` | auth、community、ai、commerce、message、profile 页面 | 多个页面仍在 Composable 内处理副作用；后续复杂写操作应逐步迁移到 ViewModel。 |
+| `doyu-server/` | Java 21 + Spring Boot 后端 | API 前缀 `/api/v1`；统一响应 `{ code, message, data, traceId }`。 |
+| `doyu-server/src/main/java/cn/edu/app/douyu/server/*` | Auth、User、Upload、Community、Pattern、Commerce、Order、Payment、Message、Reward、Admin 等模块 | Controller 是当前接口事实源；文档不得新增未实现公共 API。 |
+| `doc/development/` | 当前公开开发文档和 SVG 流程图 | 本轮只允许修改这里的文档和设计图，不改业务实现。 |
+| `doc/development/open-design/` | Open Design HTML 原型副本 | 表达 UI 目标，不代表 Android 当前路由已存在。 |
 
-## 当前主链路
+## 当前 Android 路由事实
 
-### Android App Shell
+底部主 Tab：
 
-- 单 Activity + Navigation Compose。
-- 底部 5 Tab：社区、商城、AI 拼图、消息、我的。
-- 主 Tab 页面显示底部导航；详情页、AI 参数/进度、订单确认、支付状态、会话详情等流程页隐藏底部导航。
-- 当前 UI 权威规范是 `11-ui-style-guide.md`，结构蓝图见 `13-ui-screen-blueprints.md`。
+- `community`：社区。
+- `commerce`：商城。
+- `ai`：AI 拼图。
+- `message`：消息。
+- `profile`：我的。
 
-### 后端服务
+当前已存在的主要二级路由：
 
-- Java 21 + Spring Boot + Spring Security + JWT + Spring Data JPA + Flyway。
-- PostgreSQL 宿主机端口 `5433`，容器内端口 `5432`；后端端口 `8081`。
-- Redis 已纳入技术边界，但当前不少 MVP 能力仍是同步接口或基础骨架。
-- 文件上传使用后端签发凭证、客户端直传、后端确认资产。
+- 登录：`splash`、`login`、`login_return?returnTo={returnTo}`。
+- 社区：`post/{postId}`、`post_create`、`image_select`、`camera_capture`。
+- AI：`ai_params/{uploadedFileId}`、`ai_progress/{jobId}`、`pattern/{patternId}`、`pattern_history`。
+- 商城：`product_list`、`product/{productId}`、`cart`、`order_confirm`、`payment_result/{orderId}`。
+- 消息：`conversation/{conversationId}`。
+- 我的：`my_patterns`、`favorites`、`liked_posts`、`commented_posts`、`favorite_posts`、`followed_posts`、`my_orders`、`settings`。
 
-### 接口契约
+设计目标但当前 Android 未完成的入口包括：`search-a.html` 对应 Search、`profile-edit-a.html` 对应编辑资料、Settings 子页、通知详情、未来地图/真实支付/大模型生图 UI-only 页面。
 
-- API 前缀固定为 `/api/v1`。
-- 统一响应由后端包装为 `{ code, message, data, traceId }`。
-- Android DTO、Repository、UI 和测试必须追 `05-api-contract.md`。
-- 如果代码和文档冲突，先以当前代码与 `current-status.md` 判断事实，再修正文档或提出后续修复任务。
+## 当前后端事实
 
-## 本地联调规则
+后端模块和 Controller 已覆盖：
 
-- 仓库根目录 `.env` 是本地联调唯一生效文件，不提交。
-- 当前默认只维护真机联调配置，不维护 `.env.emulator` / `.env.phone`。
-- 修改 `.env` 后必须重启后端并重新构建 Android debug 包，因为 Android `BuildConfig.API_BASE_URL` 是构建期注入。
-- 后端 Local OSS URL 在启动时读取环境变量。
+- Auth：短信验证码、短信登录、刷新、退出、账号注销申请。
+- User：当前用户、公开用户、用户搜索、资料更新、关注/取关、实名提交、个人互动作品列表。
+- Upload：预签名上传和上传确认，Provider 支持 `local|stub|aliyun` 切换。
+- Community：Feed、关注 Feed、帖子 CRUD、点赞、收藏、评论、话题、贴纸。
+- Pattern：AI 图纸任务、任务列表、取消、收藏、详情、配额。
+- Commerce：商品、购物车。
+- Order：订单创建、列表、详情、取消。
+- Payment：联调支付单、支付查询、回调骨架、退款骨架。
+- Message：通知、通知已读、会话、会话详情、私信发送。
+- Reward：签到、签到状态、积分、徽章。
+- Admin：用户、内容、商品、订单、支付、AI 任务、举报、操作日志等后台 API。
 
-常用本地地址：
+Android Retrofit 当前没有接入全部后端接口，例如账号注销、资料更新、实名、举报、退款、Pattern 配额、Admin API 等；`05-api-contract.md` 会分别标注“后端存在”和“Android 已接入”。
 
-| 项 | 地址 |
+## 本地联调
+
+常用地址：
+
+| 项 | 值 |
 |---|---|
 | API base | `http://localhost:8081/api/v1` |
 | Swagger UI | `http://localhost:8081/swagger-ui/index.html` |
+| 后端端口 | `8081` |
+| PostgreSQL 宿主端口 | `5433` |
+| Redis 端口 | `6379` |
 | Stub SMS code | `123456` |
 | Default admin | `admin / admin123` |
 
-## 真机 QA 前置
+联调规则：
 
-执行任何安装、截图、日志、真机 QA 或 App 内交互前，必须先运行：
+- 仓库根目录 `.env` 是本地联调唯一生效文件，不提交。
+- Android debug `BuildConfig.API_BASE_URL` 在构建期从 `.env` 注入，修改 `.env` 后需要重启后端并重新构建 debug 包。
+- 当前默认只维护真机联调配置，不维护模拟器/真机双模板。
+- 客户端不得保存 OSS Secret、支付密钥或 AI 密钥。
 
-```powershell
-D:\AndroidChace\platform-tools\adb.exe devices -l
-```
+## 不可宣称完成
 
-如果没有在线设备，必须明确说明“当前无在线真机，不能执行真机验收”，不能把设备 QA、截图或 smoke 写成通过。默认只在用户指定真机 IP `10.64.241.158` 下验收，除非用户另行要求。
-
-## 验证命令
-
-文档改动至少运行：
-
-```powershell
-git diff --check
-rg -n "17-ui-red[e]sign|12-front[e]nd|13-back[e]nd|16-ph[a]se|18-bug[f]ix|Leaders[P]rompt" doc AGENTS.md CLAUDE.md -g "!doc/development/10-testing-acceptance.md"
-rg -n '登录请求只传手机号和验证[码]|不再传 `age[G]roup`|不再传 age[G]roup' doc AGENTS.md
-git check-ignore -v .env .env.* .qa-output
-```
-
-Android 改动至少运行：
-
-```powershell
-cd DouYu
-.\gradlew.bat --version
-.\gradlew.bat :app:testDebugUnitTest
-.\gradlew.bat :app:assembleDebug
-```
-
-后端改动至少运行：
-
-```powershell
-cd doyu-server
-mvn test
-```
-
-只改文档和 SVG 时，不需要运行 Android/后端构建；如果意外触碰业务源码，必须补跑对应验证。
-
-## 当前不能宣称完成
-
-以下能力不能包装成已完成或生产可用：
+以下能力不能写成已完成或生产可用：
 
 - 真实 AI Provider 和真实视觉理解质量。
-- 真实微信支付、支付宝支付、退款、对账或支付 SDK。
-- 完整地址管理；订单确认仍只能清楚表达地址缺口。
+- 地图 API、定位服务和真实地理能力。
+- 真实微信/支付宝支付、退款、对账和支付 SDK。
+- 完整地址管理；订单确认仍必须清楚表达地址缺口。
 - 生产级内容审核、图片审核、版权识别、诈骗识别和交易风控。
-- 玩家二手/定制交易完整闭环、担保、评价、纠纷、提现、卖家资质审核。
+- 玩家二手/定制交易完整闭环、担保、评价、纠纷、提现和卖家资质审核。
 - 备案、隐私政策、用户协议、SDK 清单、版权投诉和应用市场上线材料。
-- 生产对象存储；Aliyun OSS smoke 只证明当前开发环境可联调，STS/最小权限、CDN、防盗链、审核、缩略图和 seed assets 云迁移仍未关闭。
-
-以下第六轮真机 QA 也不能写成已通过，除非补到新的证据：
-
-- 评论图片链路：Photo Picker、最多 9 图、预签名上传、确认、上传失败保留缩略图。
-- 评论列表富内容渲染：图片、@、#、贴纸和图片加载失败占位。
-- 纯贴纸评论。
-- 点赞高亮与计数回显。
-- 收藏/关注退出详情后重新进入的持久回显。
-- 我的页“评论作品 / 收藏作品 / 关注作品”和互动资产列表卡跳转详情。
-- 真机 seed/public 图片 URL 不能返回 `localhost`。
-- 后端 `mvn test` 必须有当前轮命令输出。
+- 生产对象存储；Aliyun OSS 只代表后端 Provider 骨架可联调。
+- Search 全局后端、Profile Edit Android 路由、Settings 子页 Android 路由和通知详情路由。
 
 ## 接手后先做什么
 
-1. 看 `git status --short`，识别已有用户改动，不要回退。
-2. 读 `current-status.md` 的“下一步优先级”，确认当前任务属于 P0/P1/P2 哪一类。
-3. 若任务涉及 API 字段，先对照 `05-api-contract.md`、后端 Controller、Android DTO。
-4. 若任务涉及 UI，先对照 `11-ui-style-guide.md`、`13-ui-screen-blueprints.md` 和 `diagrams/README.md`。
-5. 若任务涉及联调，先检查 `.env`、后端端口、ADB 在线设备和真机 IP。
-6. 完成修改后，按改动范围运行验证命令，并把文档同步到对应分册。
+1. 运行 `git status --short`，识别已有未提交改动，不能回退用户工作。
+2. 对照 `current-status.md` 和 `16-stage-development-roadmap.md` 确认任务属于哪个 Stage。
+3. 涉及接口时先对照 `05-api-contract.md`、后端 Controller、Android Retrofit。
+4. 涉及 UI 时先对照 `11-ui-style-guide.md`、`13-ui-screen-blueprints.md`、`diagrams/README.md` 和 Open Design HTML。
+5. 涉及联调时先检查 `.env`、后端端口、设备在线状态和 API baseUrl。
+6. 完成修改后按 `10-testing-acceptance.md` 跑对应验证，并把结果写清楚。
+
+## 文档类验证
+
+只改文档和 SVG 时至少运行：
+
+```powershell
+git diff --check
+git status --short
+git diff --name-only -- DouYu doyu-server
+Get-ChildItem doc\development\diagrams -Filter *.svg | ForEach-Object {
+  [xml](Get-Content -Raw -Encoding UTF8 $_.FullName) | Out-Null
+}
+```
+
+如果意外触碰 Android 或后端源码，必须补跑对应构建/测试，并在最终说明中报告原因。

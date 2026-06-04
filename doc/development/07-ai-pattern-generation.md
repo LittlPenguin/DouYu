@@ -28,7 +28,7 @@ AI 拼豆功能的目标不是生成普通图片，而是生成可操作、可�
 9. 用户创建任务，`/patterns/jobs` 请求必须使用 `inputFileId`，其值为 `/uploads/confirm` 返回的 `fileId`。
 10. 后端异步生成。
 11. 用户查看图纸。
-12. 用户保存、收藏、发帖或加入购物车。
+12. 用户查看结果并收藏；发帖、材料加购、PDF 导出等结果动作如果 Android 或后端未闭环，必须禁用或标开发态，不能假成功。
 
 > 当前工程中，开发环境对象存储使用 Local OSS Provider；拼豆图纸由后端自研 BeadPatternEngine 生成。AI 视觉 Provider 抽象、Router 和缓存已存在，但真实阿里云百炼/通义万相调用仍未完成，默认仍可使用 Stub Provider 辅助本地联调。
 

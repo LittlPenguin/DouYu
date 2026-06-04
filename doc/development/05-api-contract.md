@@ -1,163 +1,167 @@
 # 05. API 契约
 
-本文档是豆屿登录与社区第一轮样板链路的唯一接口事实源。登录和社区链路如果与后端 Controller/DTO、Android DTO、Repository、UI 或测试冲突，默认改代码追本文档；确实需要改契约时，必须先改本文档，再同步后端、Android、测试和联调手册。
+## 契约来源
 
-第一轮只治理登录 + 社区链路。AI、支付和上线生产化能力均放后期：本文档可保留现有开发态接口说明，但不得把真实 AI Provider、真实微信/支付宝支付、退款对账、备案、应用市场、生产审核风控等列入第一轮验收。
+本文件按当前真实代码重写：
 
-## 基础规范
+- 后端来源：`doyu-server/src/main/java/cn/edu/app/douyu/server/**Controller.java`。
+- Android 来源：`DouYu/app/src/main/java/cn/edu/app/douyu/core/network/ApiInterfaces.kt` 与 `Models.kt`。
 
-- API 前缀：`/api/v1`。
-- 数据格式：JSON。
-- 字符编码：UTF-8。
-- 鉴权：`Authorization: Bearer <access_token>`。
-- 幂等请求头：`Idempotency-Key`，用于订单、支付、退款、重要提交。
-- 追踪请求头：客户端可传 `X-Request-Id`，服务端返回 `traceId`。
+本文件是文档重构，不代表接口变更。本轮不新增、不删除、不修改任何后端 API，不修改 Android DTO 或 Retrofit 接口。
 
-## 统一响应
+## 全局规范
 
-```json
-{
-  "code": "OK",
-  "message": "success",
-  "data": {},
-  "traceId": "trace_20260511_000001"
-}
-```
-
-分页响应：
-
-```json
-{
-  "items": [],
-  "page": 1,
-  "size": 20,
-  "total": 100,
-  "hasMore": true
-}
-```
-
-## 通用错误码
-
-| code | 含义 |
+| 项 | 规则 |
 |---|---|
-| OK | 成功 |
-| INVALID_ARGUMENT | 参数错误 |
-| UNAUTHORIZED | 未登录或 token 失效 |
-| FORBIDDEN | 无权限 |
-| NOT_FOUND | 资源不存在 |
-| CONFLICT | 状态冲突或重复提交 |
-| RATE_LIMITED | 请求过于频繁 |
-| AUDIT_REJECTED | 内容不符合要求 |
-| PAYMENT_FAILED | 支付失败 |
-| INVENTORY_NOT_ENOUGH | 库存不足 |
-| AI_TASK_FAILED | AI 任务失败 |
-| INTERNAL_ERROR | 服务端错误 |
+| API 前缀 | `/api/v1` |
+| 响应包裹 | `{ code, message, data, traceId }` |
+| 分页入参 | `page` 从 1 开始，`size` 默认 20 |
+| 分页响应 | `items`、`page`、`size`、`total`、`hasMore` |
+| 鉴权 | 除公开读取、登录、回调、后台登录等白名单外，默认需要 `Authorization: Bearer <accessToken>` |
+| 幂等 | 创建订单、创建支付单、退款等写接口使用 `Idempotency-Key` Header |
+| 对外 ID | 使用字符串业务 ID，例如 `postId`、`fileId`、`orderId` |
 
-## 认证接口
+通用错误码：
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| POST | `/auth/sms-code` | 发送验证码 |
-| POST | `/auth/login/sms` | 手机号验证码登录 |
-| POST | `/auth/refresh` | 刷新 token |
-| POST | `/auth/logout` | 退出登录 |
-| POST | `/auth/account/cancel` | 申请注销账号 |
+| code | HTTP | 含义 |
+|---|---:|---|
+| `OK` | 200 | 成功 |
+| `INVALID_ARGUMENT` | 400 | 参数错误、文件类型不支持、评论内容不合法 |
+| `UNAUTHORIZED` | 401 | 未登录、Token 无效 |
+| `FORBIDDEN` | 403 | 无权访问、非本人资源、未实名等 |
+| `NOT_FOUND` | 404 | 资源不存在 |
+| `CONFLICT` | 409 | 状态冲突 |
+| `RATE_LIMITED` | 429 | 限流 |
+| `AUDIT_REJECTED` | 409 | 审核拒绝 |
+| `PAYMENT_FAILED` | 409 | 支付失败 |
+| `INVENTORY_NOT_ENOUGH` | 409 | 库存不足 |
+| `NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED` | 409 | 未互关私信超过 3 条 |
+| `AI_TASK_FAILED` | 409 | AI 任务失败 |
+| `INTERNAL_ERROR` | 500 | 服务端错误 |
 
-登录请求字段：
+## Auth
 
-- `phone`：手机号。
-- `code`：验证码，Stub 环境固定 `123456`。
-- `ageGroup`：当前后端仍要求该字段，只接受 `AGE_16_17` 或 `AGE_18_PLUS`；Android 现阶段默认传 `AGE_18_PLUS`。长期目标是由实名信息或后端规则判定年龄段，移除该字段前必须同步修改后端接口和客户端模型。
+### 接口表
 
-登录响应至少包含：
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| POST | `/api/v1/auth/sms-code` | 否 | 是 | 是 | 发送短信验证码，开发环境固定 `123456` |
+| POST | `/api/v1/auth/login/sms` | 否 | 是 | 是 | 短信登录 |
+| POST | `/api/v1/auth/refresh` | 否 | 是 | 是 | refreshToken 换新 token |
+| POST | `/api/v1/auth/logout` | 是 | 是 | 是 | 退出并吊销 refreshToken |
+| POST | `/api/v1/auth/account/cancel` | 是 | 是 | 否 | 账号注销申请 |
 
-- `accessToken`
-- `refreshToken`
-- `expiresIn`
-- `user`：用户对象，字段见“用户响应字段”。登录响应里的头像字段名必须是 `avatarUrl`，不得返回给 Android 作为 `avatarFileId`。
+### 请求字段
 
-退出登录请求字段：
+| 接口 | 请求字段 |
+|---|---|
+| `/sms-code` | `phone` |
+| `/login/sms` | `phone`、`code`、`ageGroup`、`nickname?` |
+| `/refresh` | `refreshToken` |
+| `/logout` | `refreshToken` |
 
-- `refreshToken`：客户端必须传当前 refreshToken，后端用于撤销会话。
+登录请求当前仍保留 `ageGroup=AGE_18_PLUS`，Android `SmsLoginRequest` 默认值也是 `AGE_18_PLUS`。不得把该字段写成已经移除。
 
-刷新 token：
+### 响应字段
 
-- 请求字段：`refreshToken`。
-- 响应字段：`accessToken`、`refreshToken`、`expiresIn`。
+| 接口 | data |
+|---|---|
+| `/sms-code` | `sent`、`expiresIn` |
+| `/login/sms` | `accessToken`、`refreshToken`、`expiresIn`、`user` |
+| `/refresh` | `accessToken`、`refreshToken`、`expiresIn` |
+| `/logout` | `loggedOut` |
+| `/account/cancel` | 后端返回注销申请状态 |
 
-鉴权规则：
+Android 依赖：登录页、TokenStore、启动 hydrate、401 清理和登录引导。
 
-- `sms-code`、`login/sms`、`refresh` 为公开接口。
-- `logout` 需要有效 access token；refresh token 用于撤销会话。
-- 当前 Android 已接入 `DataStoreTokenStore` 启动 hydrate，用于保存 access/refresh token；登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore。无 Context 的 Preview / 单元测试场景可回退内存实现。
+边界：当前短信为 Stub；未接真实短信 Provider、限流和风控闭环。
 
-## 用户接口
+## User
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/users/me` | 当前用户 |
-| PATCH | `/users/me` | 更新资料 |
-| GET | `/users/{userId}` | 用户主页 |
-| POST | `/users/{userId}/follow` | 关注 |
-| DELETE | `/users/{userId}/follow` | 取消关注 |
-| POST | `/users/real-name` | 提交实名信息 |
+### 接口表
 
-对外 `userId` 使用字符串。
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| GET | `/api/v1/users/me` | 是 | 是 | 是 | 当前用户资料 |
+| GET | `/api/v1/users/search` | 否 | 是 | 是 | 用户搜索，当前主要给 @ 用户选择使用 |
+| GET | `/api/v1/users/me/liked-posts` | 是 | 是 | 是 | 我点赞过的作品 |
+| GET | `/api/v1/users/me/commented-posts` | 是 | 是 | 是 | 我评论过的作品 |
+| GET | `/api/v1/users/me/favorite-posts` | 是 | 是 | 是 | 我收藏过的作品 |
+| GET | `/api/v1/users/me/followed-posts` | 是 | 是 | 是 | 我关注作者的作品 |
+| PATCH | `/api/v1/users/me` | 是 | 是 | 否 | 更新资料；Profile Edit 后续可接 |
+| GET | `/api/v1/users/{userId}` | 否 | 是 | 否 | 用户公开资料 |
+| POST | `/api/v1/users/{userId}/follow` | 是 | 是 | 是 | 关注用户 |
+| DELETE | `/api/v1/users/{userId}/follow` | 是 | 是 | 是 | 取消关注 |
+| POST | `/api/v1/users/real-name` | 是 | 是 | 否 | 实名提交骨架 |
 
-用户响应字段（联调口径）：
+### 字段
 
-- `userId`：用户 ID。
-- `nickname`：昵称。
-- `avatarUrl`：头像 URL。
-- `bio`：简介。
-- `level`：用户等级。
-- `isMinor`：是否未成年。
-- `followingCount`：关注数。
-- `followerCount`：粉丝数。
-- `followedByMe`：当前登录用户是否已关注该用户，可为空；未登录或无法判断时客户端按 `false` 展示。
-- `followsMe`：该用户是否关注当前登录用户，可为空；用于展示互关关系。
-- `mutualFollow`：双方是否互相关注，可为空；第六轮“好友”展示以该字段为准，不引入好友申请状态机。
+`UserProfile` 当前 Android 字段：
 
-关注响应字段（联调口径）：
+- `userId`
+- `nickname`
+- `avatarUrl?`
+- `bio`
+- `level`
+- `isMinor`
+- `followingCount`
+- `followerCount`
 
-- `targetUserId`：被关注用户 ID。
-- `followedByMe`：当前操作后是否已关注。
-- `followsMe`：对方是否关注当前用户。
-- `mutualFollow`：双方是否互相关注。
+`PATCH /me` 请求字段：
 
-> 当前口径：第六轮“好友”能力只做关注/互相关注表达，不做好友申请、同意/拒绝、黑名单、复杂反骚扰风控或图片私信。
+- `nickname?`
+- `avatarFileId?`
+- `bio?`
 
-## 上传接口
+`FollowResult` 响应字段：
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| POST | `/uploads/presign` | 获取预签名上传 URL |
-| POST | `/uploads/confirm` | 确认上传完成 |
+- `followed`
+- `followedByMe`
+- `followsMe`
+- `mutualFollow`
 
-`/uploads/presign` 联调返回字段：
+Android 页面依赖：
 
-- `fileKey`
-- `uploadUrl`
-- `headers`
-- `expiresIn`
+- 我的页资料展示。
+- 评论 @ 用户选择。
+- 关注/取关按钮。
+- 互关私信限制展示。
+- 当前代码已有四个独立个人互动作品页；最新设计目标只在我的页首屏展示 `我的图纸 / 点赞作品 / 收藏作品` 同组 Tab。
 
-`/uploads/confirm` 联调返回字段：
+边界：
 
-- `fileId`
-- `fileKey`
-- `ownerId`
+- `users/search` 不是全局搜索 API。
+- Profile Edit 是 UI 目标；Android 需后续接 `PATCH /me`。
+- 城市/地区资料仍是 UI-only，未接地图 API。
+
+## Upload
+
+### 接口表
+
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| POST | `/api/v1/uploads/presign` | 是 | 是 | 是 | 获取上传 URL |
+| POST | `/api/v1/uploads/confirm` | 是 | 是 | 是 | 确认上传并生成 `fileId` |
+
+### 请求字段
+
+`PresignRequest`：
+
 - `usage`
-- `storageKey`
 - `mimeType`
 - `sizeBytes`
-- `width`
-- `height`
-- `auditStatus`
-- `publicUrl`
+- `fileName`
 
-兼容说明：`fileKey` 保留给旧联调脚本使用；Android DTO 以 `storageKey` 和 `publicUrl` 作为完整 `FileAsset` 字段。Aliyun OSS Provider 启用时，`publicUrl` 为 `DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL + fileKey`，访问是否成功取决于 Bucket 公共读或后续签名下载策略。
+`ConfirmRequest`：
 
-上传用途枚举：
+- `fileKey`
+- `usage`
+- `mimeType`
+- `sizeBytes`
+- `width?`
+- `height?`
+
+支持用途：
 
 - `AVATAR`
 - `POST_IMAGE`
@@ -167,436 +171,406 @@
 - `PRODUCT_IMAGE`
 - `TRADE_IMAGE`
 
-## 社区接口
+响应字段：
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/posts/feed` | 推荐 Feed（免登录） |
-| GET | `/posts/following` | 关注 Feed（需要登录） |
-| POST | `/posts` | 发布帖子 |
-| GET | `/posts/{postId}` | 帖子详情（免登录） |
-| PATCH | `/posts/{postId}` | 编辑帖子 |
-| DELETE | `/posts/{postId}` | 删除帖子 |
-| POST | `/posts/{postId}/like` | 点赞 |
-| DELETE | `/posts/{postId}/like` | 取消点赞 |
-| POST | `/posts/{postId}/favorite` | 收藏 |
-| DELETE | `/posts/{postId}/favorite` | 取消收藏 |
-| GET | `/posts/{postId}/comments` | 评论列表 |
-| POST | `/posts/{postId}/comments` | 发表评论 |
-| DELETE | `/comments/{commentId}` | 删除评论 |
-| GET | `/topics` | 话题列表 / 搜索（免登录） |
-| GET | `/topics/{topicId}/posts` | 话题作品列表（免登录） |
-| GET | `/sticker-packs` | 内置贴纸表情包列表（免登录） |
-| POST | `/reports` | 举报 |
+- `uploadUrl`
+- `fileKey`
+- `headers`
+- `expiresIn`
+- `fileId`
+- `ownerId`
+- `storageKey`
+- `auditStatus`
+- `publicUrl`
 
-帖子状态：
+边界：
 
-- `REVIEWING`
-- `VISIBLE`
-- `SELF_VISIBLE`
-- `REJECTED`
-- `DELETED`
+- 当前大小上限 20MB。
+- 评论图片必须使用 `POST_IMAGE` 且 MIME 为 image。
+- Aliyun OSS Provider 是后端切换骨架，不代表生产对象存储已完成。
+- 客户端不得持有 OSS Secret。
 
-帖子响应字段（联调口径）：
+## Community
 
-- `postId`：帖子 ID。
-- `title`：标题。
-- `content`：正文。
-- `coverImageUrl`：帖子封面 URL，可为空；第四轮常驻 seed 帖子返回本地静态图 URL，完整媒体上传/审核策略仍按 `mediaFileIds` / FileAsset 后续收敛。
-- `author`：作者对象，包含 `userId`、`nickname`、`avatarUrl`、`bio`、`level`、`isMinor`、`followingCount`、`followerCount`。
-- `status`：帖子状态。
-- `likeCount`、`commentCount`、`favoriteCount`：互动计数。
-- `likedByMe`、`favoritedByMe`、`followedAuthorByMe`：当前登录用户视角下是否已点赞、已收藏、已关注作者；未登录请求统一返回 `false`。
-- `createdAt`、`updatedAt`：时间戳。
+### 接口表
 
-发帖请求字段：
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| GET | `/api/v1/posts/feed` | 否 | 是 | 是 | 推荐 Feed |
+| GET | `/api/v1/posts/following` | 是 | 是 | 是 | 关注 Feed |
+| POST | `/api/v1/posts` | 是 | 是 | 是 | 发布帖子，进入审核 |
+| GET | `/api/v1/posts/{postId}` | 可选 | 是 | 是 | 作品详情 |
+| PATCH | `/api/v1/posts/{postId}` | 是 | 是 | 否 | 编辑帖子 |
+| DELETE | `/api/v1/posts/{postId}` | 是 | 是 | 否 | 删除帖子 |
+| POST | `/api/v1/posts/{postId}/like` | 是 | 是 | 是 | 点赞 |
+| DELETE | `/api/v1/posts/{postId}/like` | 是 | 是 | 是 | 取消点赞 |
+| POST | `/api/v1/posts/{postId}/favorite` | 是 | 是 | 是 | 收藏 |
+| DELETE | `/api/v1/posts/{postId}/favorite` | 是 | 是 | 是 | 取消收藏 |
+| GET | `/api/v1/posts/{postId}/comments` | 否 | 是 | 是 | 评论列表 |
+| POST | `/api/v1/posts/{postId}/comments` | 是 | 是 | 是 | 发表评论 |
+| DELETE | `/api/v1/comments/{commentId}` | 是 | 是 | 否 | 删除评论 |
+| GET | `/api/v1/topics` | 否 | 是 | 是 | 话题列表 / 话题搜索 |
+| GET | `/api/v1/topics/{topicId}/posts` | 否 | 是 | 是 | 话题作品列表 |
+| GET | `/api/v1/sticker-packs` | 否 | 是 | 是 | 内置贴纸包 |
 
-- `title`：标题，可为空字符串但 Android 第一轮 UI 要求必填。
-- `content`：正文，必填。
-- `mediaFileIds`：帖子图片或视频文件 ID 列表，可为空。
-- `topicIds`：话题 ID 列表，可为空。
-- `linkedPatternId`：关联图纸 ID，可为空。
+### 帖子字段
 
-发帖响应：
+`Post` 关键字段：
 
-- 返回完整 `Post`。
-- 新发帖默认 `status=REVIEWING`。
-- Android 必须展示“审核中”，不得假装立即公开。
+- `postId`
+- `authorId`
+- `author`
+- `title`
+- `content`
+- `mediaFileIds`
+- `coverImageUrl`
+- `topicIds`
+- `topicNames`
+- `linkedPatternId?`
+- `status`
+- `likeCount`
+- `favoriteCount`
+- `commentCount`
+- `likedByMe`
+- `favoritedByMe`
+- `followedAuthorByMe`
 
-评论响应字段：
+`CreatePostRequest`：
+
+- `title`
+- `content`
+- `mediaFileIds`
+- `topicIds`
+- `linkedPatternId?`
+
+### 评论字段
+
+`CreateCommentRequest`：
+
+- `content`
+- `parentId?`
+- `mediaFileIds`
+- `mentionUserIds`
+- `topicIds`
+- `stickerIds`
+
+`Comment` 响应：
 
 - `commentId`
 - `postId`
-- `authorId`
-- `author`：作者对象，字段同用户响应。
-- `parentId`
+- `author`
+- `parentId?`
 - `content`
-- `mediaFileIds`：评论图片文件 ID 列表，最多 9 个，可为空。
-- `mediaAssets`：评论图片渲染对象列表，按 `mediaFileIds` 顺序返回；每项至少包含 `fileId`、`publicUrl`、`mimeType`、`width`、`height`、`auditStatus`。
-- `mentions`：评论中选中的 @ 用户摘要列表，至少包含 `userId`、`nickname`、`avatarUrl`。
-- `topics`：评论中选中的话题摘要列表，至少包含 `topicId`、`name`。
-- `stickers`：评论中选中的贴纸列表，至少包含 `stickerId`、`packId`、`name`、`emojiText`、`imageUrl`。
 - `status`
+- `mediaFileIds`
+- `mediaAssets`
+- `mentions`
+- `topics`
+- `stickers`
 
-发表评论请求字段：
+评论规则：
 
-- `content`：评论文字，可为空。
-- `parentId`：父评论 ID，可为空。
-- `mediaFileIds`：评论图片文件 ID 列表，可为空，最多 9 个；必须是当前用户已通过 `/uploads/confirm` 确认的 `POST_IMAGE` 图片文件。
-- `mentionUserIds`：被 @ 用户 ID 列表，可为空；必须是已存在用户。
-- `topicIds`：话题 ID 列表，可为空；必须是已存在话题。
-- `stickerIds`：贴纸 ID 列表，可为空；必须是已存在内置贴纸。
+- 文本、图片、贴纸至少存在一种。
+- @ 用户和 # 话题不能单独提交。
+- 单条评论最多 9 张图片。
+- 图片必须归当前用户所有，`usage=POST_IMAGE`，MIME 为 image。
+- 话题、贴纸和提及用户必须存在。
+- 评论提交后为 `REVIEWING`。
 
-评论有效性：
+Android 页面依赖：
 
-- 文字、图片、贴纸三者至少一种存在；`mentionUserIds` / `topicIds` 只作为评论元数据，不能单独构成有效评论。
-- 单条评论最多 9 张图片；任意图片必须属于当前用户、usage 为 `POST_IMAGE` 且 `mimeType` 为 `image/*`。
+- 社区瀑布流。
+- 作品详情图片优先布局。
+- 评论区、悬浮评论栏、@/# 面板、贴纸面板、图片上传状态。
 
-发表评论响应：
+边界：
 
-- 返回完整 `Comment`。
-- 新评论默认 `status=REVIEWING`。
-- Android 提交成功后只展示短提示“评论已提交，等待审核”；评论列表不展示“审核中”字样，不假装立即公开。
-- 评论中 @ 用户时，后端为每个被 @ 用户写入 `MENTION` 通知；本轮不做推送、不扩展已读以外的新通知状态机。
-- 当前不支持视频评论、用户自定义贴纸、付费表情包、话题运营后台、图片私信或生产级图片审核闭环。
+- 当前不做视频评论。
+- 当前不做用户自定义贴纸。
+- 生产级内容审核和图片审核未完成。
 
-用户 / 话题 / 贴纸辅助接口：
+## Pattern
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/users/search?keyword=&page=&size=` | 搜索可 @ 的用户；按昵称 / 手机号关键字查询，返回用户摘要分页 |
-| GET | `/topics?keyword=&page=&size=` | 搜索或列出 seed 话题，返回 `Topic(topicId,name,description,postCount)` 分页 |
-| GET | `/topics/{topicId}/posts?page=&size=` | 返回含该话题的可见作品分页 |
-| GET | `/sticker-packs` | 返回内置贴纸包分页，每个包包含 `Sticker(stickerId,packId,name,emojiText,imageUrl)` |
+### 接口表
 
-个人互动作品接口：
-
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/users/me/liked-posts` | 当前用户点赞过的作品，按点赞时间倒序 |
-| GET | `/users/me/commented-posts` | 当前用户评论过的作品去重列表，按最近评论时间倒序 |
-| GET | `/users/me/favorite-posts` | 当前用户收藏过的作品，按收藏时间倒序 |
-| GET | `/users/me/followed-posts` | 当前用户关注作者发布的作品列表，不是关注关系列表 |
-
-互动响应字段：
-
-`POST /posts/{postId}/like` 和 `DELETE /posts/{postId}/like` 返回：
-
-```json
-{
-  "liked": true
-}
-```
-
-`POST /posts/{postId}/favorite` 和 `DELETE /posts/{postId}/favorite` 返回：
-
-```json
-{
-  "favorited": true
-}
-```
-
-说明：
-
-- 点赞/收藏是幂等语义；重复点赞仍返回 `liked=true`，重复收藏仍返回 `favorited=true`，计数不得重复增加。
-- 取消点赞/收藏时，如果帖子不存在或已删除，返回 `NOT_FOUND`；不得返回假成功。
-- Android DTO 使用 `PostInteractionResult(liked?, favorited?)` 接该响应。需要刷新计数时，客户端可重新请求帖子详情。
-
-社区错误和鉴权：
-
-| 场景 | HTTP / code | Android UI |
-|---|---|---|
-| 未登录发帖、评论、点赞、收藏 | 401 / `UNAUTHORIZED` | 统一登录引导 |
-| 无权限编辑/删除他人内容 | 403 / `FORBIDDEN` | 无权限状态 |
-| 帖子、评论不存在或已删除 | 404 / `NOT_FOUND` | 错误状态，可显示 traceId |
-| 请求字段缺失或格式错误 | 400 / `INVALID_ARGUMENT` | 表单错误或错误状态 |
-
-## 登录 + 社区契约对齐矩阵
-
-| 契约项 | 文档字段 | 后端 Controller/DTO | Android DTO/Repository | UI 页面 | 测试状态 |
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
 |---|---|---|---|---|---|
-| 短信验证码 | `phone` | `AuthController#sendSms` | `SmsCodeRequest` | 登录页发送验证码 | 后端契约测试 + Android 单元测试 |
-| 短信登录 | `phone`、`code`、`ageGroup`、`nickname?` | `SmsLoginRequest` | `SmsLoginRequest` 默认 `AGE_18_PLUS` | 登录页 | 后端契约测试 + Android DTO 测试 |
-| 登录响应用户 | `user.avatarUrl` | `AuthService.userView()` | `UserProfile.avatarUrl` | 登录成功后进入 App | 后端契约测试 + Android DTO 测试 |
-| token 刷新 | `refreshToken` | `AuthController#refresh` | `AuthSessionManager.refresh()` | 自动刷新或未登录态 | Android `AuthSessionManagerTest` |
-| 退出登录 | `refreshToken` | `AuthController#logout` | `AuthSessionManager.logout()` | 后续设置页/我的页接入 | 后端契约测试 |
-| Feed | `Page<Post>` | `CommunityController#feed` | `CommunityRepository.feed()` | 社区首页双列流 | 后端契约测试 + Android单元测试 |
-| 帖子详情 | `Post(likedByMe,favoritedByMe,followedAuthorByMe)` | `CommunityController#post` | `CommunityRepository.post()` | 帖子详情互动按钮高亮 | 后端契约测试 |
-| 发帖 | `CreatePostRequest` -> `Post(REVIEWING)` | `CommunityController#createPost` | `CommunityRepository.createPost()` | 发布页审核中结果 | 后端契约测试 + Android Repository 测试 |
-| 评论列表 | `Page<Comment>` | `CommunityController#comments` | `CommunityRepository.comments()` | 详情页评论区 | 后端契约测试 |
-| 发表评论 | `CreateCommentRequest(content,mediaFileIds,mentionUserIds,topicIds,stickerIds)` -> `Comment(REVIEWING)` | `CommunityController#comment` | `CommunityRepository.createComment()` | 评论输入框短提示；评论列表隐藏审核中字样 | 后端契约测试 + Android Repository 测试 |
-| @ 用户搜索 | `Page<UserProfile>` | `UserController#search` | `CommunityRepository.searchUsers()` | 评论 @ 用户弹层 | 后端契约测试 + Android API/Repository 测试 |
-| 话题列表 / 话题作品 | `Page<Topic>` / `Page<Post>` | `CommunityController#topics/topicPosts` | `CommunityRepository.topics()/topicPosts()` | 评论 # 话题弹层；话题作品列表后续复用 | 后端契约测试 + Android API/Repository 测试 |
-| 贴纸包 | `Page<StickerPack>` | `CommunityController#stickerPacks` | `CommunityRepository.stickerPacks()` | 评论贴纸面板 | 后端契约测试 + Android API/Repository 测试 |
-| 个人互动作品 | `Page<Post>` | `UserController#likedPosts/commentedPosts/favoritePosts/followedPosts` | `CommunityRepository.likedPosts()/commentedPosts()/favoritePosts()/followedPosts()` | 我的页四个互动资产页 | 后端契约测试 + Android API/Repository 测试 |
-| 点赞/取消 | `{ liked }` | `like/unlike` | `PostInteractionResult.liked` | 详情页互动按钮 | 后端契约测试 + Android DTO/Repository 测试 |
-| 收藏/取消 | `{ favorited }` | `favorite/unfavorite` | `PostInteractionResult.favorited` | 详情页互动按钮 | 后端契约测试 + Android DTO/Repository 测试 |
-| 统一错误 | `{ code,message,traceId }` | `ApiResponse` / 全局异常处理 | `ApiException` -> `UiState` | 登录引导、错误、弱网 | Android 错误映射测试 |
+| POST | `/api/v1/patterns/jobs` | 是 | 是 | 是 | 创建 AI 拼豆任务 |
+| GET | `/api/v1/patterns/jobs/{jobId}` | 是 | 是 | 是 | 任务详情 |
+| GET | `/api/v1/patterns/jobs` | 是 | 是 | 是 | 任务列表 |
+| POST | `/api/v1/patterns/jobs/{jobId}/cancel` | 是 | 是 | 是 | 取消任务 |
+| POST | `/api/v1/patterns/{patternId}/favorite` | 是 | 是 | 是 | 收藏图纸 |
+| GET | `/api/v1/patterns/{patternId}` | 是 | 是 | 是 | 图纸详情 |
+| GET | `/api/v1/patterns/quota` | 是 | 是 | 否 | AI 配额 |
+| GET | `/api/v1/patterns/favorites` | 是 | 否 | 是 | Android Retrofit 当前声明收藏列表；需后续核对后端是否补齐 |
 
-## AI 拼豆接口
+### 请求字段
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| POST | `/patterns/jobs` | 创建 AI 拼豆任务 |
-| GET | `/patterns/jobs/{jobId}` | 查询任务详情 |
-| GET | `/patterns/jobs` | 生成记录 |
-| POST | `/patterns/jobs/{jobId}/cancel` | 取消任务 |
-| POST | `/patterns/{patternId}/favorite` | 收藏图纸 |
-| GET | `/patterns/favorites` | 收藏图纸列表（分页） |
-| GET | `/patterns/{patternId}` | 图纸详情 |
+`CreateJobRequest`：
 
-任务状态：
+- `inputFileId`
+- `beadSize`
+- `targetSize`
+- `difficulty`
+- `paletteId`
+- `style`
 
-- `PENDING`
-- `PROCESSING`
-- `SUCCEEDED`
-- `FAILED`
-- `REJECTED`
-- `CANCELED`
+后端当前校验：
 
-创建任务参数至少包含：
+- `beadSize` 支持 `MM_2_6`、`MM_5`。
+- `inputFileId` 必须存在且归当前用户所有。
 
-- 输入图片 `inputFileId`，来源于 `/uploads/confirm` 返回的 `fileId`。
-- 拼豆规格：`MM_2_6` 或 `MM_5`。
-- 输出尺寸。
-- 难度。
-- 色卡。
-- 风格。
+`PatternJob` 字段：
 
-> 当前联调口径：客户端先调用 `/uploads/presign` 获取 `fileKey` 并直传对象存储，再调用 `/uploads/confirm` 换取后端文件记录 `fileId`；创建 AI 拼豆任务时传 `inputFileId`，不得直接传预签名阶段的 `fileKey`。
+- `jobId`
+- `inputFileId`
+- `beadSize`
+- `targetSize`
+- `difficulty`
+- `paletteId`
+- `style`
+- `status`
+- `progress`
+- `failureReason?`
+- `patternId?`
 
-任务响应字段（联调口径）：
+边界：
 
-- `jobId`：任务 ID。
-- `status`：任务状态。
-- `progress`：进度（后端返回 0.0-1.0 浮点数，客户端转换为 0-100 整数展示）。
-- `userId`：创建者 ID。
-- `paletteName`：色卡名称。
-- `inputName`：输入文件名。
-- `patternId`：生成的图纸 ID（成功时有值）。
-- `patternAsset`：图纸资产，包含 `materials`（材料清单，可为 null）。
+- 真实视觉 Provider 未接入。
+- 大模型生图 API 未接入。
+- AI 质量不能包装成生产可用。
 
-图纸响应字段（联调口径）：
+## Product / Cart
 
-- `patternId`：图纸 ID。
-- `ownerId`：所有者 ID。
-- `title`：图纸标题。
-- `paletteName`：色卡名称。
-- `colorStats`：颜色统计。
+### Product 接口
 
-## 商城接口
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| GET | `/api/v1/products` | 否 | 是 | 是 | 商品列表 |
+| GET | `/api/v1/products/{productId}` | 否 | 是 | 是 | 商品详情 |
+| POST | `/api/v1/products` | 是 | 是 | 否 | 玩家商品发布骨架 |
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/products` | 商品列表 |
-| GET | `/products/{productId}` | 商品详情 |
-| POST | `/products` | 发布玩家二手或定制商品骨架，要求 18+ 实名 |
-| GET | `/cart` | 购物车 |
-| POST | `/cart/items` | 加入购物车 |
-| PATCH | `/cart/items/{itemId}` | 修改数量 |
-| DELETE | `/cart/items/{itemId}` | 移除商品 |
+`Product` 字段：
 
-商品类型：
+- `productId`
+- `type`
+- `sellerId?`
+- `title`
+- `description`
+- `categoryId`
+- `categoryName`
+- `status`
+- `auditStatus`
+- `skus`
+- `imageUrl?`
+- `swatchColor`
+
+`ProductType`：
 
 - `SELF_OPERATED`
 - `PLAYER_SECOND_HAND`
 - `PLAYER_CUSTOM_SERVICE`
 
-商品响应字段（联调口径）：
+### Cart 接口
 
-- `productId`：商品 ID。
-- `type`：商品类型。
-- `sellerId`：卖家 ID，自营可为空。
-- `title`：商品标题。
-- `description`：商品描述。
-- `imageUrl`：商品图片 URL，可为空；第四轮常驻 seed 商品返回本地静态图 URL。
-- `categoryId` / `categoryName`：分类。
-- `status` / `auditStatus`：商品状态和审核状态。
-- `skus`：SKU 列表。
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| GET | `/api/v1/cart` | 是 | 是 | 是 | 购物车 |
+| POST | `/api/v1/cart/items` | 是 | 是 | 是 | 加入购物车 |
+| PATCH | `/api/v1/cart/items/{itemId}` | 是 | 是 | 是 | 修改数量 |
+| DELETE | `/api/v1/cart/items/{itemId}` | 是 | 是 | 是 | 删除购物车项 |
 
-购物车响应字段（联调口径）：
+购物车写请求：
 
-- `itemId`：购物车项 ID。
-- `productId`：商品 ID。
-- `product`：商品摘要对象，不是完整商品详情。
-- `skuId`：SKU ID。
-- `quantity`：数量。
+- `skuId`
+- `quantity`
 
-购物车商品摘要字段（联调口径）：
+边界：
 
-- `title`：商品标题。
-- `imageUrl`：商品图片 URL，可为空。
+- 玩家二手和玩家定制商品不支持标准购物车。
+- 库存、价格和可购买状态以服务端为准。
 
-SKU 字段（联调口径）：
+## Order
 
-- `skuId`：SKU ID。
-- `priceCent`：价格（分）。
-- `stock`：库存（`@SerialName("stock")`，客户端字段名为 `availableStock`）。
+### 接口表
 
-购物车写接口响应字段（联调口径）：
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| POST | `/api/v1/orders` | 是 | 是 | 是 | 创建订单，需 `Idempotency-Key` |
+| GET | `/api/v1/orders` | 是 | 是 | 是 | 订单列表 |
+| GET | `/api/v1/orders/{orderId}` | 是 | 是 | 是 | 订单详情 |
+| POST | `/api/v1/orders/{orderId}/cancel` | 是 | 是 | 是 | 取消订单 |
 
-- `POST /cart/items` 返回变更结果 `{ itemId, quantity }`，不是完整 `Cart`。
-- `PATCH /cart/items/{itemId}` 返回变更结果 `{ itemId, quantity }`，不是完整 `Cart`。
-- `DELETE /cart/items/{itemId}` 返回变更结果 `{ deleted }`，不是完整 `Cart`。
-- Android 写入成功后必须重新请求 `GET /cart` 刷新完整购物车 UI，不得按写接口响应直接解析为完整购物车。
+`CreateOrderRequest`：
 
-## 订单与支付接口
+- `itemIds`
+- `addressId`
+- `remark?`
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| POST | `/orders` | 创建订单 |
-| GET | `/orders` | 订单列表 |
-| GET | `/orders/{orderId}` | 订单详情 |
-| POST | `/orders/{orderId}/cancel` | 取消订单 |
-| POST | `/payments` | 创建支付单 |
-| GET | `/payments/{paymentId}` | 查询支付状态 |
-| POST | `/payments/callbacks/wechat` | 微信支付回调 |
-| POST | `/payments/callbacks/alipay` | 支付宝支付回调 |
-| POST | `/refunds` | 申请退款 |
+`Order` 字段：
+
+- `orderId`
+- `buyerId`
+- `sellerType`
+- `sellerId?`
+- `orderType`
+- `status`
+- `totalAmountCent`
+- `payableAmountCent`
+- `items`
+- `addressSnapshot`
+
+边界：
+
+- 地址管理未闭环；UI 不得伪造默认地址。
+- 玩家商品不支持标准订单。
+- 创建订单要防重；Android 必须提供 `Idempotency-Key`。
+
+## Payment
+
+### 接口表
+
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| POST | `/api/v1/payments` | 是 | 是 | 是 | 创建支付单，需 `Idempotency-Key` |
+| GET | `/api/v1/payments/{paymentId}` | 是 | 是 | 是 | 查询支付状态 |
+| POST | `/api/v1/payments/callbacks/wechat` | 否 | 是 | 否 | 微信回调骨架 |
+| POST | `/api/v1/payments/callbacks/alipay` | 否 | 是 | 否 | 支付宝回调骨架 |
+| POST | `/api/v1/refunds` | 是 | 是 | 否 | 退款骨架 |
+
+`CreatePaymentRequest`：
+
+- `orderId`
+- `channel`
+
+`Payment` 字段：
+
+- `paymentId`
+- `orderId`
+- `channel`
+- `status`
+- `amountCent`
+- `payParams`
+- `channelTradeNo?`
+- `paidAt?`
 
 支付渠道：
 
 - `WECHAT_APP`
 - `ALIPAY_APP`
 
-订单响应字段（联调口径）：
+当前 `payParams` 明确是 Stub，例如 `provider=STUB`。不得写成真实微信/支付宝 App 支付已接入。
 
-- `orderId`：订单 ID。
-- `orderItemId`：订单项 ID。
-- `title`：商品标题。
-- `specName`：规格名称。
-- `sellerId`：卖家 ID。
-- `addressSnapshot`：收货地址快照对象；当前至少包含 `addressId`，客户端必须按对象解析并容忍未知字段。
-- `status`：订单状态。
-- `payableAmountCent`：应付金额（分）。
+## Message
 
-支付响应字段（联调口径）：
+### 接口表
 
-- `paymentId`：支付单 ID。
-- `orderId`：关联订单 ID。
-- `channel`：支付渠道。
-- `status`：支付状态。
-- `amountCent`：支付金额（分）。
-- `payParams`：客户端拉起支付 SDK 的参数。
-- `paidAt`：服务端记录的渠道确认时间。
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| GET | `/api/v1/messages/notifications` | 是 | 是 | 是 | 通知列表 |
+| POST | `/api/v1/messages/notifications/read` | 是 | 是 | 是 | 标记通知已读；后端当前标记全部已读 |
+| GET | `/api/v1/messages/conversations` | 是 | 是 | 是 | 会话列表 |
+| GET | `/api/v1/messages/conversations/{conversationId}` | 是 | 是 | 是 | 会话详情 |
+| POST | `/api/v1/messages/conversations/{conversationId}` | 是 | 是 | 是 | 发送私信 |
 
-客户端不得传最终订单金额，金额由服务端根据商品、SKU、库存、优惠和运费计算。
+`Conversation` 字段：
 
-创建订单请求字段：
+- `conversationId`
+- `peerUserId`
+- `peerName`
+- `peerAvatarUrl?`
+- `lastMessage`
+- `unreadCount`
+- `mutualFollow`
+- `remainingNonMutualMessages`
+- `canSend`
+- `riskHint?`
+- `updatedAt?`
 
-- `itemIds`：购物车项 ID 列表（`List<String>`），必填。
-- `addressId`：收货地址 ID，必填。
-- `remark`：订单备注，可选。
+`SendMessageRequest`：
 
-> 当前口径：微信和支付宝支付仍是开发态 Stub/占位能力，不是正式支付能力。正式上线前必须补齐官方渠道接入、验签、支付金额校验、订单号/支付单号/渠道交易号一致性校验、回调重放与重复通知处理、主动查询、退款和对账。
+- `content`
 
-## 消息接口
+互关规则：
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/messages/notifications` | 通知列表 |
-| POST | `/messages/notifications/read` | 标记已读 |
-| GET | `/messages/conversations` | 会话列表 |
-| GET | `/messages/conversations/{conversationId}` | 会话详情 |
-| POST | `/messages/conversations/{conversationId}` | 发送私信 |
+- 互相关注可正常聊天。
+- 未互关同一发送者对同一会话最多 3 条。
+- 超限返回 `NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED`。
+- Android 必须基于 `canSend` 和错误码禁用输入或展示明确提示。
 
-通知响应字段（联调口径）：
+边界：
 
-- `notificationId`：通知 ID。
-- `type`：通知类型。
-- `title`：标题。
-- `content`：内容。
-- `unread`：是否未读（`readAt == null` 时为 `true`）。
+- 当前不做好友申请审批。
+- 当前不做图片私信、撤回、复杂已读回执。
 
-通知类型当前包含互动通知和系统通知；评论 @ 用户会写入 `MENTION` 通知。本轮只要求列表展示和已读标记，不做推送、不做复杂通知中心。
+## Reward
 
-会话响应字段（联调口径）：
+### 接口表
 
-- `conversationId`：会话 ID。
-- `peerUserId`：对方用户 ID。
-- `peerName`：对方昵称。
-- `peerAvatarUrl`：对方头像 URL，可为空。
-- `mutualFollow`：是否互相关注；用于决定私信输入框提示和发送限制。
-- `remainingNonMutualMessages`：未互关时当前发送者还可发送的消息数量，互关时可为空。
-- `lastMessage`：最后一条消息摘要。
-- `unreadCount`：未读消息数。
-- `riskHint`：风控提示（可选）。
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| POST | `/api/v1/checkins` | 是 | 是 | 是 | 每日签到 |
+| GET | `/api/v1/checkins/status` | 是 | 是 | 是 | 签到状态 |
+| GET | `/api/v1/rewards/me` | 是 | 是 | 是 | 积分和等级 |
+| GET | `/api/v1/badges/me` | 是 | 是 | 是 | 徽章 |
 
-会话详情字段（联调口径）：
+边界：
 
-- `conversationId`：会话 ID。
-- `peer`：对方用户摘要，至少包含 `userId`、`nickname`、`avatarUrl`、`mutualFollow`。
-- `messages`：消息列表，不得固定返回空数组占位。
-- `canSend`：当前用户是否可发送。
-- `sendDisabledReason`：不可发送原因，可为空。
-- `remainingNonMutualMessages`：未互关时剩余可发送条数。
+- 成长系统是基础骨架，不等于完整游戏化体系。
+- 我的页最新设计不要求首屏展示全部成长入口。
 
-消息字段（联调口径）：
+## Report
 
-- `messageId`：消息 ID。
-- `senderId`：发送者 ID。
-- `content`：文本内容。
-- `createdAt`：创建时间。
-- `readAt`：已读时间，可为空。
+### 接口表
 
-发送私信请求字段：
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| POST | `/api/v1/reports` | 是 | 是 | 否 | 提交举报 |
 
-- `content`：文本内容，必填。
+`ReportRequest`：
 
-发送私信错误：
+- `targetType`：`POST`、`COMMENT`、`USER`
+- `targetId`
+- `reason`
+- `description?`
 
-- 未登录：`401 UNAUTHORIZED`。
-- 会话不存在：`404 NOT_FOUND`。
-- 未互关且超过 3 条限制：`409 CONFLICT`，错误码建议 `NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED`，文案为“互相关注后可继续聊天”。
+边界：Android 举报入口未接入完整流程；生产举报处理和后台工作台仍需补齐。
 
-> 当前口径：私信第六轮只支持文本消息和未互关 3 条限制；不做图片消息、撤回、复杂已读、黑名单和生产级反骚扰。
+## Admin
 
-## 成长接口
+### 接口表
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| POST | `/checkins` | 每日签到 |
-| GET | `/checkins/status` | 签到状态 |
-| GET | `/rewards/me` | 我的等级和积分 |
-| GET | `/badges/me` | 我的徽章 |
+| 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
+|---|---|---|---|---|---|
+| POST | `/api/v1/admin/auth/login` | 否 | 是 | 否 | 管理员登录 |
+| GET | `/api/v1/admin/users` | 管理员 | 是 | 否 | 用户列表 |
+| GET | `/api/v1/admin/posts` | 管理员 | 是 | 否 | 帖子列表 |
+| GET | `/api/v1/admin/comments` | 管理员 | 是 | 否 | 评论列表 |
+| GET | `/api/v1/admin/products` | 管理员 | 是 | 否 | 商品列表 |
+| GET | `/api/v1/admin/orders` | 管理员 | 是 | 否 | 订单列表 |
+| GET | `/api/v1/admin/payments` | 管理员 | 是 | 否 | 支付列表 |
+| GET | `/api/v1/admin/patterns/jobs` | 管理员 | 是 | 否 | AI 任务列表 |
+| GET | `/api/v1/admin/reports` | 管理员 | 是 | 否 | 举报列表 |
+| POST | `/api/v1/admin/reports/{reportId}/process` | 管理员 | 是 | 否 | 处理举报 |
+| POST | `/api/v1/admin/posts/{postId}/audit` | 管理员 | 是 | 否 | 审核帖子 |
+| POST | `/api/v1/admin/comments/{commentId}/audit` | 管理员 | 是 | 否 | 审核评论 |
+| POST | `/api/v1/admin/products/{productId}/audit` | 管理员 | 是 | 否 | 审核商品 |
+| POST | `/api/v1/admin/users/{userId}/status` | 管理员 | 是 | 否 | 变更用户状态 |
+| POST | `/api/v1/admin/patterns/jobs/{jobId}/retry` | 管理员 | 是 | 否 | 重试 AI 任务 |
+| POST | `/api/v1/admin/patterns/jobs/{jobId}/cancel` | 管理员 | 是 | 否 | 取消 AI 任务 |
+| GET | `/api/v1/admin/operation-logs` | 管理员 | 是 | 否 | 操作日志 |
 
-签到响应字段（联调口径）：
+边界：后台 API 存在不代表运营后台前端、权限分级、生产审核和合规流程已完成。
 
-- `checkedToday`：今日是否已签到（布尔值）。
-- `streakDays`：连续签到天数。
-- `rewardPoints`：本次签到获得积分。
+## 明确不存在的公共接口
 
-成长信息响应字段（联调口径）：
+当前不得在文档或 UI 中写成已接入：
 
-- `points`：当前积分。
-- `experience`：当前经验值。
-- `levelCode`：当前等级代码。
+- 地图 API。
+- 真实微信/支付宝支付 API。
+- 大模型生图 API。
+- 全局搜索 API。
+- 完整地址管理 API。
+- 玩家交易担保、评价、纠纷、提现闭环 API。
 
-徽章响应字段（联调口径）：
-
-- `badgeId`：徽章 ID。
-- `name`：徽章名称。
-- `description`：徽章描述。
-- `achieved`：是否已获得（布尔值）。
-
-## 管理后台接口
-
-后台接口使用 `/api/v1/admin` 前缀，必须使用后台账号鉴权。
-
-后台认证：
-
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| POST | `/admin/auth/login` | 后台账号登录，返回后台 access token |
-
-后台覆盖：
-
-- 用户管理。
-- 内容审核。
-- 举报处理。
-- 商品管理。
-- 订单管理。
-- 支付记录。
-- AI 任务。
-- 风控记录。
-- 运营配置。
+如果后续确实要新增这些能力，必须先更新本文件，再同步后端 Controller、Android Retrofit、DTO、Repository、测试和验收文档。

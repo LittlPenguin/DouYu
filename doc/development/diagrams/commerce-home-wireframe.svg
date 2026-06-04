@@ -1,24 +1,21 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 860">
-  <style>
-    text{font-family:"Noto Sans SC","PingFang SC",sans-serif}.bg{fill:#FFFBF7}.card{fill:#fff;stroke:#E0CDD0;stroke-width:1.2}.coral{fill:#FFE1D8;stroke:#FF8F75}.petal{fill:#FFE0E6;stroke:#F48FA4}.mint{fill:#D4F0E0;stroke:#7DB89A}.sky{fill:#D6E8FF;stroke:#7AADE0}.label{fill:#201A1C;font-size:13px;font-weight:800}.small{fill:#524347;font-size:10px}.price{fill:#D95F6A;font-size:12px;font-weight:800}
-  </style>
-  <rect width="420" height="860" class="bg"/>
-  <rect x="20" y="24" width="380" height="812" rx="28" fill="#fff" stroke="#E0CDD0"/>
-  <text x="210" y="62" text-anchor="middle" class="label">商城</text>
-  <rect x="42" y="82" width="280" height="44" rx="14" class="card"/><text x="62" y="109" class="small">搜索豆子、色号、工具</text>
-  <rect x="334" y="82" width="44" height="44" rx="14" class="petal"/><text x="356" y="109" text-anchor="middle" class="small">车</text>
-  <rect x="42" y="146" width="58" height="30" rx="15" class="coral"/><text x="71" y="166" text-anchor="middle" class="small">豆子</text>
-  <rect x="110" y="146" width="58" height="30" rx="15" class="card"/><text x="139" y="166" text-anchor="middle" class="small">色卡</text>
-  <rect x="178" y="146" width="58" height="30" rx="15" class="card"/><text x="207" y="166" text-anchor="middle" class="small">工具</text>
-  <rect x="246" y="146" width="78" height="30" rx="15" class="card"/><text x="285" y="166" text-anchor="middle" class="small">玩家商品</text>
-  <rect x="42" y="202" width="336" height="110" rx="20" class="mint"/><text x="210" y="252" text-anchor="middle" class="label">新手材料包 / Banner</text><text x="210" y="274" text-anchor="middle" class="small">只放真实可解释活动或推荐</text>
-  <rect x="42" y="342" width="154" height="230" rx="16" class="card"/>
-  <rect x="56" y="356" width="126" height="106" rx="12" class="sky"/><text x="119" y="413" text-anchor="middle" class="small">商品图</text>
-  <text x="56" y="488" class="small">自营 2.6mm 豆</text><text x="56" y="512" class="price">¥ 19.90</text><text x="56" y="538" class="small">可加购物车</text>
-  <rect x="224" y="342" width="154" height="230" rx="16" class="card"/>
-  <rect x="238" y="356" width="126" height="106" rx="12" class="coral"/><text x="301" y="413" text-anchor="middle" class="small">商品图</text>
-  <text x="238" y="488" class="small">玩家二手套装</text><text x="238" y="512" class="price">¥ 39.00</text><text x="238" y="538" class="small">禁用标准购物车</text>
-  <rect x="42" y="596" width="336" height="76" rx="18" class="petal"/><text x="210" y="626" text-anchor="middle" class="label">订单确认边界</text><text x="210" y="650" text-anchor="middle" class="small">地址管理未闭环时，禁止伪下单</text>
-  <rect x="42" y="748" width="336" height="58" rx="22" class="card"/>
-  <text x="76" y="782" class="small">社区</text><text x="142" y="782" class="small">商城</text><text x="204" y="782" class="small">AI</text><text x="266" y="782" class="small">消息</text><text x="328" y="782" class="small">我的</text>
+<svg viewBox="0 0 760 760" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text{font-family:'Noto Sans SC','Microsoft YaHei',Arial,sans-serif}.bg{fill:#FFFBF7}.phone{fill:#fff;stroke:#E0CDD0;stroke-width:2;rx:32}.bar{fill:#FFF0F3;stroke:#E0CDD0;rx:16}.petal{fill:#F48FA4}.mint{fill:#D4F0E0;stroke:#7DB89A;rx:14}.sky{fill:#D6E8FF;stroke:#7AADE0;rx:14}.coral{fill:#FFE8DD;stroke:#FF8F75;rx:14}.card{fill:#fff;stroke:#E0CDD0;rx:16}.label{fill:#2F2528;font-size:16px;font-weight:800}.small{fill:#5F5257;font-size:12px}.tiny{fill:#7A6B70;font-size:10px}
+    </style>
+  </defs>
+  <rect width="760" height="760" class="bg"/>
+  <text x="38" y="48" class="label">商城首页线框</text>
+  <text x="38" y="70" class="small">交易页面克制可信；玩家商品不进入标准购物车</text>
+  <rect x="220" y="100" width="320" height="620" class="phone"/>
+  <rect x="244" y="128" width="272" height="48" class="bar"/><circle cx="270" cy="152" r="13" class="petal"/><text x="380" y="158" text-anchor="middle" class="label">商城</text><circle cx="490" cy="152" r="13" fill="#9EC9F5"/>
+  <rect x="244" y="194" width="272" height="72" class="coral"/><text x="380" y="226" text-anchor="middle" class="small">自营精选 / 联调 Banner</text><text x="380" y="248" text-anchor="middle" class="tiny">不可空点击</text>
+  <rect x="244" y="286" width="62" height="28" rx="14" fill="#FFE0E6"/><text x="275" y="305" text-anchor="middle" class="tiny">推荐</text>
+  <rect x="316" y="286" width="62" height="28" rx="14" fill="#fff" stroke="#E0CDD0"/><text x="347" y="305" text-anchor="middle" class="tiny">豆包</text>
+  <rect x="388" y="286" width="62" height="28" rx="14" fill="#fff" stroke="#E0CDD0"/><text x="419" y="305" text-anchor="middle" class="tiny">工具</text>
+  <rect x="244" y="340" width="126" height="150" class="card"/><rect x="254" y="350" width="106" height="74" class="mint"/><text x="254" y="446" class="tiny">自营 5mm 彩豆</text><text x="254" y="468" class="tiny">¥29.9 · 库存</text>
+  <rect x="390" y="340" width="126" height="150" class="card"/><rect x="400" y="350" width="106" height="74" class="sky"/><text x="400" y="446" class="tiny">玩家二手套装</text><text x="400" y="468" class="tiny">禁用加购</text>
+  <rect x="244" y="512" width="126" height="150" class="card"/><rect x="254" y="522" width="106" height="74" class="coral"/><text x="254" y="618" class="tiny">自营模板板</text><text x="254" y="640" class="tiny">¥18.0 · 售罄态</text>
+  <rect x="390" y="512" width="126" height="150" class="card"/><rect x="400" y="522" width="106" height="74" fill="#FFE0E6" rx="14"/><text x="400" y="618" class="tiny">定制服务</text><text x="400" y="640" class="tiny">咨询边界</text>
+  <rect x="250" y="682" width="260" height="26" rx="13" fill="#FFFFFF" stroke="#E0CDD0"/><text x="380" y="701" text-anchor="middle" class="tiny">Logo 导航</text>
 </svg>

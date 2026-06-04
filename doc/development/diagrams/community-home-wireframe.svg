@@ -1,28 +1,22 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 860">
-  <style>
-    text{font-family:"Noto Sans SC","PingFang SC",sans-serif}.bg{fill:#FFFBF7}.line{stroke:#E0CDD0;stroke-width:1.2}.label{fill:#201A1C;font-size:13px;font-weight:700}.small{fill:#524347;font-size:10px}.card{fill:#fff;stroke:#E0CDD0;stroke-width:1.2}.petal{fill:#FFE0E6;stroke:#F48FA4}.mint{fill:#D4F0E0;stroke:#7DB89A}.sky{fill:#D6E8FF;stroke:#7AADE0}
-  </style>
-  <rect width="420" height="860" class="bg"/>
-  <rect x="20" y="24" width="380" height="812" rx="28" fill="#fff" stroke="#E0CDD0"/>
-  <text x="210" y="62" text-anchor="middle" class="label">豆屿 Doyu</text>
-  <rect x="42" y="82" width="336" height="44" rx="14" class="card"/><text x="64" y="109" class="small">搜索作品、图纸、话题</text>
-  <rect x="42" y="146" width="64" height="30" rx="15" class="petal"/><text x="74" y="166" text-anchor="middle" class="small">推荐</text>
-  <rect x="116" y="146" width="64" height="30" rx="15" class="card"/><text x="148" y="166" text-anchor="middle" class="small">关注</text>
-  <rect x="190" y="146" width="64" height="30" rx="15" class="card"/><text x="222" y="166" text-anchor="middle" class="small">教程</text>
-  <rect x="264" y="146" width="64" height="30" rx="15" class="card"/><text x="296" y="166" text-anchor="middle" class="small">图纸</text>
-  <rect x="42" y="200" width="154" height="210" rx="16" class="card"/>
-  <rect x="56" y="214" width="126" height="110" rx="12" class="sky"/><text x="119" y="273" text-anchor="middle" class="small">作品图</text>
-  <text x="56" y="348" class="small">标题 / 教程摘要</text><text x="56" y="370" class="small">作者 · 点赞 · 收藏</text>
-  <rect x="224" y="200" width="154" height="260" rx="16" class="card"/>
-  <rect x="238" y="214" width="126" height="150" rx="12" class="mint"/><text x="301" y="294" text-anchor="middle" class="small">作品图</text>
-  <text x="238" y="388" class="small">双列内容流</text><text x="238" y="410" class="small">真实图片优先</text>
-  <rect x="42" y="430" width="154" height="250" rx="16" class="card"/>
-  <rect x="56" y="444" width="126" height="140" rx="12" class="petal"/><text x="119" y="520" text-anchor="middle" class="small">作品图</text>
-  <text x="56" y="608" class="small">审核态边界</text><text x="56" y="630" class="small">无假成功</text>
-  <rect x="224" y="480" width="154" height="200" rx="16" class="card"/>
-  <rect x="238" y="494" width="126" height="96" rx="12" class="sky"/><text x="301" y="546" text-anchor="middle" class="small">图纸/成品</text>
-  <text x="238" y="614" class="small">话题 / @ / 贴纸</text><text x="238" y="636" class="small">MVP 评论</text>
-  <circle cx="344" cy="706" r="28" fill="#E8778E"/><text x="344" y="712" text-anchor="middle" fill="#fff" font-size="18" font-weight="800">+</text>
-  <rect x="42" y="748" width="336" height="58" rx="22" class="card"/>
-  <text x="76" y="782" class="small">社区</text><text x="142" y="782" class="small">商城</text><text x="204" y="782" class="small">AI</text><text x="266" y="782" class="small">消息</text><text x="328" y="782" class="small">我的</text>
+<svg viewBox="0 0 760 760" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      text{font-family:'Noto Sans SC','Microsoft YaHei',Arial,sans-serif}.bg{fill:#FFFBF7}.phone{fill:#fff;stroke:#E0CDD0;stroke-width:2;rx:32}.bar{fill:#FFF0F3;stroke:#E0CDD0;rx:16}.petal{fill:#F48FA4}.mint{fill:#D4F0E0;stroke:#7DB89A;rx:14}.sky{fill:#D6E8FF;stroke:#7AADE0;rx:14}.card{fill:#fff;stroke:#E0CDD0;rx:16}.img{fill:#FFE0E6;rx:14}.label{fill:#2F2528;font-size:16px;font-weight:800}.small{fill:#5F5257;font-size:12px}.tiny{fill:#7A6B70;font-size:10px}
+    </style>
+  </defs>
+  <rect width="760" height="760" class="bg"/>
+  <text x="38" y="48" class="label">社区首页线框</text>
+  <text x="38" y="70" class="small">双列瀑布流目标；顶部统一新增/标题/搜索，底部 Logo 导航</text>
+  <rect x="220" y="100" width="320" height="620" class="phone"/>
+  <rect x="244" y="128" width="272" height="48" class="bar"/>
+  <circle cx="270" cy="152" r="13" class="petal"/><text x="380" y="158" text-anchor="middle" class="label">社区</text><circle cx="490" cy="152" r="13" fill="#9EC9F5"/>
+  <rect x="244" y="194" width="72" height="30" rx="15" fill="#FFE0E6"/><text x="280" y="214" text-anchor="middle" class="tiny">推荐</text>
+  <rect x="326" y="194" width="72" height="30" rx="15" fill="#fff" stroke="#E0CDD0"/><text x="362" y="214" text-anchor="middle" class="tiny">关注</text>
+  <rect x="408" y="194" width="72" height="30" rx="15" fill="#fff" stroke="#E0CDD0"/><text x="444" y="214" text-anchor="middle" class="tiny">话题</text>
+
+  <rect x="244" y="246" width="126" height="184" class="card"/><rect x="254" y="256" width="106" height="112" class="img"/><text x="307" y="318" text-anchor="middle" class="tiny">图片 120-260dp</text><text x="254" y="390" class="tiny">彩虹小豆岛</text><text x="254" y="412" class="tiny">作者 · 赞 128</text>
+  <rect x="390" y="246" width="126" height="238" class="card"/><rect x="400" y="256" width="106" height="162" class="sky"/><text x="453" y="342" text-anchor="middle" class="tiny">高图裁切</text><text x="400" y="440" class="tiny">透明拼豆杯垫</text><text x="400" y="462" class="tiny">作者 · 评 26</text>
+  <rect x="244" y="448" width="126" height="222" class="card"/><rect x="254" y="458" width="106" height="146" class="mint"/><text x="307" y="534" text-anchor="middle" class="tiny">审核中</text><text x="254" y="626" class="tiny">复古像素花</text><text x="254" y="648" class="tiny">作者 · 收藏 45</text>
+  <rect x="390" y="502" width="126" height="168" class="card"/><rect x="400" y="512" width="106" height="96" class="img"/><text x="453" y="565" text-anchor="middle" class="tiny">fallback</text><text x="400" y="630" class="tiny">小岛吊坠</text><text x="400" y="652" class="tiny">作者 · 赞 72</text>
+  <rect x="250" y="682" width="260" height="26" rx="13" fill="#FFFFFF" stroke="#E0CDD0"/><text x="380" y="701" text-anchor="middle" class="tiny">Logo 导航</text>
 </svg>

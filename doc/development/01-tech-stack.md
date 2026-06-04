@@ -33,7 +33,7 @@ Android 最低版本建议：
 
 | 类别 | 选择 |
 |---|---|
-| 语言 | Java 21 或 Java 17 |
+| 语言 | Java 21 |
 | 框架 | Spring Boot |
 | 架构 | 模块化单体优先，按领域拆包 |
 | API | REST + JSON |

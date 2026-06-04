@@ -1,232 +1,198 @@
 # 03. Android 客户端实现方案
 
-## 客户端目标
+## 当前定位
 
-Android 客户端负责用户主要体验：社区浏览、发帖、拍照选图、AI 拼豆图生成、商城购买、玩家私信、订单和个人资产。
+Android 客户端负责豆屿的主要用户体验：社区浏览与发布、作品详情评论、AI 图纸生成、商城购买、消息私信、通知、我的资产和设置入口。当前阶段不改代码，本文件用于说明现有代码事实和下一阶段 UI 重构落地规则。
 
-当前阶段的 Android 工作重心是 **第六轮 UI/品牌与主链路展示收敛**：在第三轮商城 UI/API 主体验收关闭、第四轮登录态持久化和真实图文 seed 收敛、第五轮 Aliyun OSS Provider 骨架补齐之后，继续打磨社区、商城、AI、消息、我的五个主链路的可演示产品感。本轮新增作品详情可展开评论输入、图片评论、@ 用户、# 话题、内置贴纸和个人互动作品页 MVP，但仍不新增真实 AI Provider、真实支付、地址管理、生产审核、合规风控和完整玩家交易闭环。
+第六轮后续 Android 工作目标是：按 Open Design A 方向重构 UI Shell 与核心页面，同时保持已有登录态、Repository、接口契约、商城/支付边界和上传链路不回退。
 
-## 模块结构
+## 当前技术栈
 
-当前工程采用单模块分包，包名按业务域划分：
+- Kotlin。
+- Jetpack Compose。
+- 单 Activity。
+- Navigation Compose。
+- Retrofit + OkHttp。
+- Kotlinx Serialization。
+- Coil。
+- CameraX。
+- Android Photo Picker。
+- DataStore 登录态持久化。
 
-| 包 | 职责 |
+## 当前模块结构
+
+| 包 / 文件 | 职责 |
 |---|---|
-| `app` | 应用入口（`MainActivity`）、导航、依赖装配 |
-| `core/model` | 领域数据类和枚举（`Models.kt`，Kotlinx Serializable） |
-| `core/data` | Repository 接口 + Mock 实现 + 真实实现 + 依赖容器 |
-| `core/network` | Retrofit API 接口、ApiClient 工厂、Auth 拦截器、Token 管理 |
-| `core/navigation` | `DoyuApp.kt`（NavHost + 底部栏）、`Routes.kt`（路由常量） |
-| `core/ui` | 设计系统组件（`DoyuCard`、`DoyuPrimaryButton` 等）、`UiState` 状态模型 |
-| `feature/auth` | 登录页 |
-| `feature/ai` | AI 拼豆页面 |
-| `feature/commerce` | 商城页面 |
-| `feature/community` | 社区页面 |
-| `feature/message` | 消息页面 |
-| `feature/profile` | 我的页面 |
+| `app` | `MainActivity`、`DoyuApplication`、应用入口 |
+| `core/navigation/DoyuApp.kt` | NavHost、底部 Tab、页面切换动画 |
+| `core/navigation/Routes.kt` | 当前 Android 路由常量 |
+| `core/network/ApiInterfaces.kt` | Retrofit API 接口 |
+| `core/model/Models.kt` | DTO、枚举、序列化模型 |
+| `core/data` | Repository、真实实现、Mock、SafeCall、AppContainer |
+| `core/ui` | 通用组件、状态页、按钮、卡片和主题 |
+| `feature/auth` | 登录 |
+| `feature/community` | 社区、发帖、作品详情、评论 |
+| `feature/ai` | AI 图纸流程 |
+| `feature/commerce` | 商城、购物车、订单、支付状态 |
+| `feature/message` | 消息、通知、会话 |
+| `feature/profile` | 我的、资产、设置 |
 
-## 当前实现状态
+## 当前路由事实
 
-**依赖注入**：使用 `DoyuAppContainer`（object 单例）作为服务定位器，持有 `DoyuApiClient`、可切换 TokenStore、`AuthSessionManager` 和 5 个真实 Repository 实例。真实 App 启动时由 `DoyuApplication` hydrate `DataStoreTokenStore`，登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore；无 Context 的 Preview / 单元测试场景默认回退内存实现。Debug 包的 Retrofit `baseUrl` 从仓库根目录 `.env` 的 `DOUYU_ANDROID_API_BASE_URL` 在 Gradle 构建期生成到 `BuildConfig.API_BASE_URL`；当前默认只维护真机联调配置，使用电脑当前 Wi-Fi/LAN IPv4，例如 `http://10.64.241.153:8081/`；Retrofit `baseUrl` 必须以 `/` 结尾。
+底部主 Tab：
 
-**环境配置**：`.env` 是唯一生效文件，提交模板只有 `.env.example`。本阶段不再维护模拟器/真机双模板；如电脑局域网 IP 变化，直接修改本机 `.env` 后，必须重启后端并重新构建、安装 debug 包，Android 侧的 `BuildConfig.API_BASE_URL` 和 debug HTTP 白名单才会更新。
-
-**真机 HTTP 联调**：Android main 配置保持 HTTPS only；debug 包通过 Gradle 从 `.env` 的 `DOUYU_ANDROID_CLEARTEXT_HOSTS` 生成 `network_security_config.xml`，对当前开发机 IP 添加 `domain-config cleartextTrafficPermitted="true"`。如果真机浏览器能访问后端，但 App 显示网络异常，优先检查 `baseUrl`、debug 包、logcat 中的 cleartext 配置错误。
-
-**屏幕方向**：当前手机端 MVP 固定竖屏，`.MainActivity` 在 Manifest 中使用 `android:screenOrientation="portrait"`。真机系统自动旋转不作为 QA 前置要求；横屏、平板和大屏适配属于后期扩展，不纳入当前验收。
-
-**Repository 层**：已从 Mock Repository 切换到真实 Repository：
-
-- `RealCommunityRepository` → CommunityApi
-- `RealPatternRepository` → PatternApi
-- `RealCommerceRepository` → ProductApi + CartApi + OrderApi + PaymentApi
-- `RealMessageRepository` → MessageApi
-- `RealProfileRepository` → UserApi + RewardApi + PatternApi
-
-**当前主要缺口**：
-
-- 登录态已切到 `DataStoreTokenStore` 启动 hydrate；单元测试覆盖保存、恢复和清理，2026-05-30 真机复测已确认登录后强杀重启仍保持登录态、退出登录后强杀重启不会恢复旧登录。
-- 多数页面仍在 Composable 内直接管理副作用和 Repository 调用，MVVM 尚未完全落地。
-- 多个 Feature 文件体量偏大，页面、子组件、网络状态、副作用混在同一文件中。
-- 第一轮已把社区发帖、评论、点赞、收藏补到 `CommunityRepository`，并接入社区样板页。
-- 第二轮已把 App Shell、消息页和我的页统一成同一套状态与组件语言。
-- 第四轮已把 `Product.imageUrl`、`CartProductSummary.imageUrl` 和 `Post.coverImageUrl` 接到真实 UI：商品卡、商品详情、购物车项、社区 Feed 卡和帖子详情优先显示 Coil 加载的真实图片，图片字段为空或加载失败时回退现有 swatch/拼豆占位，不出现空白卡片。
-- 第六轮已把作品详情评论输入收敛为 **可展开评论区**：默认态是贴底轻量输入条，仅保留左侧展开按钮、单行占位输入和贴纸入口；点击左侧按钮或输入区域后展开为更高的分层输入区，顶部展示图片和已选 @/#/贴纸 Chip，中间是 3-6 行多行输入，底部把图片、@、#、贴纸工具栏与清空/发送操作分离，避免头像、工具按钮和文本框挤在同一行。最多 9 张图片，不挤压输入框；文本框失去焦点、清空、发送成功或点击详情内容区时收回折叠态，内部工具按钮点击不能被失焦逻辑抢先打断。
-- 评论支持纯文字、纯图片、纯贴纸和图文贴纸混合；文字、图片、贴纸三者至少一种存在，@ 用户和 # 话题不能单独提交。图片上传复用 `/uploads/presign -> PUT -> /uploads/confirm`，usage 固定为 `POST_IMAGE`；任意图片上传失败时整组评论阻断提交，保留已选缩略图并提示重试。
-- 评论列表会渲染后端返回的 `mediaAssets.publicUrl`、`mentions`、`topics` 和 `stickers`；图片加载失败时显示拼豆占位，不出现空白卡片。评论列表不展示“审核中”字样，提交成功只用短提示说明“评论已提交，等待审核”。本轮不做视频评论、用户自定义贴纸、图片私信或生产级图片审核闭环。
-- 帖子详情使用后端返回的 `likedByMe`、`favoritedByMe`、`followedAuthorByMe` 初始化点赞、收藏和关注按钮高亮；写操作成功后重新拉取详情刷新计数。
-- 我的页新增“点赞作品”“评论作品”“收藏作品”“关注作品”四个独立页面，均复用 `CommunityRepository` 的个人互动作品接口和帖子卡列表，可继续进入作品详情。
-
-## 页面导航
-
-底部主导航固定为 5 个 Tab：
-
-- 社区。
-- 商城。
-- AI 创作。
-- 消息。
-- 我的。
-
-关键页面：
-
-- 登录/注册。
-- 社区 Feed。
-- 帖子详情。
-- 发帖编辑。
-- 图片选择和相机拍摄。
-- AI 参数选择。
-- AI 任务进度。
-- 图纸结果。
-- 生成记录。
-- 商品列表。
-- 商品详情。
-- 购物车。
-- 订单确认。
-- 支付结果。
-- 私信会话。
-- 我的拼豆。
-- 点赞作品。
-- 评论作品。
-- 收藏作品。
-- 关注作品。
-- 收藏图纸。
-- 我的订单。
-- 设置。
-
-路由收敛规则：
-
-- 主 Tab 保留底部导航。
-- 详情页、拍照页、参数页、订单确认页、支付结果页等流程页隐藏底部导航。
-- 不完整的二级入口不得继续暴露为可点击空页面。
-- 新增页面前先确认是否属于当前 MVP 范围。
-
-### 页面切换动画
-
-NavHost 页面切换动画时长为 150ms（`tween(TRANSITION_DURATION)`），包括 `enterTransition`、`exitTransition`、`popEnterTransition`、`popExitTransition`。UI MVP 阶段可以保持现有动画，不强制引入 MotionLayout、Lottie 或额外导航动画依赖。
-
-## UI MVP 收敛边界
-
-后续源码重构必须遵守：
-
-- 能真实调用已有后端并返回明确状态的入口，保留并接完整 UI。
-- 后端有接口但 Android 未接的入口，优先接入已有 `/api/v1` 接口，不新增后端公共 API。
-- 后端/客户端都未闭环的入口，隐藏、禁用或展示明确开发态说明。
-- 禁止空 `onClick`、假成功 Toast、可点击但无结果的设置入口。
-- 支付只展示联调支付单和服务端确认状态，不包装成真实微信/支付宝支付。
-- AI 只展示开发态图纸生成，不承诺真实视觉理解质量。
-- 审核、合规、风控、玩家交易只保留必要状态提示，不扩展生产能力。
-
-## 第三轮商城 UI/API 基线
-
-第三轮商城收敛只使用已有 `/api/v1` 能力，不新增后端公共 API，不接真实微信/支付宝 SDK，不补完整玩家交易闭环。
-
-商城首页/商品列表：
-
-- 页面结构以 `13-ui-screen-blueprints.md` 和 `diagrams/commerce-home-wireframe.svg` 为当前蓝图：顶部搜索栏、分类 Chip、横向 Banner、双列商品卡；历史 Stitch `_2` 只保留为视觉探索映射。
-- 搜索如果尚未接后端查询，只能作为本地筛选/占位输入或明确开发态，不得承诺全站搜索。
-- 分类 Chip 必须有选中态、空结果态和错误态；切换分类不得造成空白页。
-- Banner 只展示真实运营位或开发态素材，不作为可点击空入口。
-- 双列商品卡必须展示商品图、标题、价格、库存/销量或状态；库存不足、已售罄、下架要有明确视觉差异。
-
-商品详情：
-
-- 商品类型必须进入 UI 决策：`SELF_OPERATED`、`PLAYER_SECOND_HAND`、`PLAYER_CUSTOM_SERVICE`。
-- 自营商品可以选择 SKU 并加入标准购物车，数量不得超过服务端返回库存。
-- 玩家二手和玩家定制只展示商品/服务信息，不走标准购物车，不与自营商品混单；加购按钮必须禁用、隐藏或替换为明确的后续咨询/私信边界。
-- 玩家商品不得伪装成平台自营履约，不展示“平台担保”“立即支付”等未完成承诺。
-
-购物车：
-
-- 购物车需要登录；未登录进入购物车必须使用统一登录引导。
-- 空车、加载失败、库存不足、数量修改、删除购物车项、结算入口都必须有明确状态。
-- 购物车只容纳自营商品；发现玩家商品类型时，应阻断加入并展示明确提示。
-- 库存边界以服务端返回为准，客户端不能仅靠本地数量判断最终可买。
-- `GET /cart` 返回的 `product` 是购物车商品摘要，只包含标题和图片等展示字段，不按完整 `Product` 解析。
-- `POST/PATCH/DELETE /cart/items` 返回的是变更结果；`RealCommerceRepository` 写入成功后必须重新调用 `GET /cart` 刷新完整购物车状态。
-
-订单确认：
-
-- `POST /orders` 当前需要 `itemIds` 和 `addressId`；地址管理未闭环时，订单确认页不得伪装“默认地址”。
-- 缺少真实地址时，创建订单按钮必须禁用或进入明确的开发态说明，不得创建订单，也不得继续创建支付单。
-- 金额、库存、运费和应付金额只展示服务端返回或可明确计算的联调数据，客户端不得自行决定最终金额。
-- 订单创建类提交需要 `Idempotency-Key`，避免重复点击创建重复订单。
-
-订单列表和支付状态：
-
-- 订单列表展示服务端订单状态，不用本地“支付成功”覆盖服务端状态。
-- 支付状态页必须显式创建联调支付单，并展示 `paymentId`、`orderId`、`channel`、`amountCent`、`status` 和服务端确认文案。
-- 当前 `payParams` 是 Stub/占位能力，不能展示为正式微信/支付宝 App 支付参数。
-- 支付最终状态以 `GET /payments/{paymentId}` 或订单详情服务端状态为准；客户端不能自动伪装渠道完成态。
-- 支付页文案统一使用“联调支付单”“等待服务端确认”“服务端状态”，不得把微信/支付宝渠道完成态写成当前事实。
-
-## 后续 UI 重构优先级
-
-P0：App Shell 和通用组件
-
-- 统一 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、FAB、卡片、按钮、Chip、加载、空状态、错误、未登录和弱网状态。
-- 主视觉以 `13-ui-screen-blueprints.md`、`diagrams/ui-information-architecture.svg` 和 `diagrams/community-home-wireframe.svg` 为当前基准：顶部品牌栏、频道 Tab、双列内容流、发布 FAB、圆角底部导航。
-- 所有图标使用 Compose Material Icons 或统一线性图标，不使用 emoji。
-- 视觉规范以 `11-ui-style-guide.md` 为准。
-
-P1：消息与我的 MVP
-
-- 消息页按 `13-ui-screen-blueprints.md` 和 `diagrams/message-profile-wireframes.svg` 收敛通知/私信 Tab、列表密度、未读状态；历史 Stitch `_4` 只作为已归档探索方向。
-- 私信发送若后端仍半占位，则不做强聊天体验；可保留只读会话或禁用发送。
-- 我的页按 `13-ui-screen-blueprints.md` 和 `diagrams/message-profile-wireframes.svg` 收敛个人资产中心，并继续中文化：帖子、获赞、收藏、我的工坊、订单、历史，以及“点赞作品”“评论作品”“收藏作品”“关注作品”四个已闭环互动资产入口；历史 Stitch `_3` 只作为已归档探索方向。
-- 入口分组为个人资料、创作资产、交易资产、设置/安全，真实可用入口可点击，未闭环入口隐藏、禁用或明确开发态说明。
-- 设置页保留结构但不表达为生产合规完成。
-
-P2：登录 + 社区样板回归检查
-
-- 第一轮登录 + 社区样板保持稳定，不因第二轮组件调整退化。
-- 保持 Feed、帖子详情、发布入口、评论展示。
-- 接入已有后端能力：发帖、点赞/取消、收藏/取消、评论发布。
-- 发帖提交后显示“审核中”；评论提交后只显示“评论已提交，等待审核”短提示，评论列表不展示审核中字样，也不假装立即公开。
-- @ 用户、# 话题和贴纸已接后端 MVP；其他搜索/标签若未接真实查询，则弱化为频道筛选或本地展示，不作为强功能。
-- 图片不能继续空白占位；若无法解析 URL，则显示明确的图片处理中或无预览状态。
-- 点赞/收藏接口返回 `{ liked }` / `{ favorited }`，Android 使用 `PostInteractionResult` 解码；帖子详情返回 `likedByMe`、`favoritedByMe`、`followedAuthorByMe`，详情页需要最新状态或计数时重新读取帖子详情。
-
-P3：AI MVP
-
-- 采用 `13-ui-screen-blueprints.md` 和 `diagrams/ai-home-wireframe.svg` 页面结构：Hero、正在生成、创作历史；历史 Stitch `ai` 只作为已归档探索方向。
-- 保留上传、参数、创建任务、轮询、失败、取消、结果页、收藏。
-- 隐藏或禁用当前假成功项：材料“加入购物车”、PDF 导出、分享到社区，除非后续接入真实链路。
-- 结果页必须清楚区分预览图、色号清单、材料清单、开发态提示。
-
-P4：商城 MVP
-
-- 采用 `13-ui-screen-blueprints.md` 和 `diagrams/commerce-home-wireframe.svg`：搜索栏、品类 Chip、Banner、双列商品卡；历史 Stitch `_2` 只作为已归档探索方向。
-- 保留商品列表/详情、购物车、订单确认、订单列表、支付单状态。
-- 自营商品可加购；玩家商品、定制、二手只展示，不走标准购物车。
-- 地址管理未完成时，不再伪装“默认地址”，改为开发态占位或禁用下单，不创建订单或支付单。
-- 支付页显式创建联调支付单，显示“等待联调回调 / 服务端确认”，不显示正式渠道完成态。
-
-## 可接入接口清单
-
-后续源码重构优先使用已有 API：
-
-| 能力 | 已有 API | Android 后续动作 |
+| Tab | route | 当前含义 |
 |---|---|---|
-| 发帖 | `POST /api/v1/posts` | Repository 暴露 `createPost`，发布页提交后展示审核中 |
-| 点赞/取消 | `POST/DELETE /api/v1/posts/{postId}/like` | 帖子卡和详情页接入乐观或确认后更新 |
-| 收藏/取消 | `POST/DELETE /api/v1/posts/{postId}/favorite` | 帖子卡和详情页接入 |
-| 评论发布 | `POST /api/v1/posts/{postId}/comments` | 详情页评论输入接入 `content`、`mediaFileIds`、`mentionUserIds`、`topicIds`、`stickerIds`，提交后短提示等待审核 |
-| 评论图片 | `/uploads/presign -> PUT -> /uploads/confirm` + `POST /api/v1/posts/{postId}/comments` | 使用 `POST_IMAGE` 上传并提交 `mediaFileIds`，单条评论最多 9 张 |
-| @ 用户搜索 | `GET /api/v1/users/search` | 评论 @ 弹层搜索现有用户并插入评论 token |
-| # 话题 | `GET /api/v1/topics`、`GET /api/v1/topics/{topicId}/posts` | 评论话题弹层和后续话题作品列表数据源 |
-| 贴纸包 | `GET /api/v1/sticker-packs` | 评论贴纸面板使用内置贴纸包 |
-| 个人互动作品 | `GET /api/v1/users/me/liked-posts`、`commented-posts`、`favorite-posts`、`followed-posts` | 我的页四个独立互动资产页，可跳转作品详情 |
-| 通知已读 | `POST /api/v1/messages/notifications/read` | 消息页切换或点击后标记已读 |
-| 私信发送 | `POST /api/v1/messages/conversations/{conversationId}` | 后端仍半占位，UI 不做强聊天体验 |
-| 签到 | `POST /api/v1/checkins` | 我的页如接入，必须显示真实成功/已签到状态 |
-| 图纸收藏 | `POST /api/v1/patterns/{patternId}/favorite` | 结果页保留收藏 |
-| 购物车 | `GET/POST/PATCH/DELETE /api/v1/cart/items` | 自营商品保留，玩家商品禁用标准加购 |
-| 订单 | `POST/GET /api/v1/orders` | 下单需处理地址缺口和幂等；无真实地址时禁止伪创建 |
-| 支付单 | `POST/GET /api/v1/payments` | 显式创建联调支付单，仅展示服务端确认状态 |
+| 社区 | `community` | Feed 与社区入口 |
+| 商城 | `commerce` | 商品列表与商城入口 |
+| AI 拼图 | `ai` | AI 创作入口 |
+| 消息 | `message` | 通知与会话入口 |
+| 我的 | `profile` | 用户资料和个人资产入口 |
 
-## 状态管理
+当前已注册二级路由：
 
-每个核心页面至少支持：
+| 路由 | 页面 |
+|---|---|
+| `splash` | 启动页 |
+| `login` / `login_return?returnTo={returnTo}` | 登录及登录后返回 |
+| `post/{postId}` | 作品详情 |
+| `post_create` | 发帖 |
+| `image_select` / `camera_capture` | 选图 / 拍摄 |
+| `ai_params/{uploadedFileId}` | AI 参数 |
+| `ai_progress/{jobId}` | AI 进度 |
+| `pattern/{patternId}` | 图纸结果 |
+| `pattern_history` | 图纸历史 |
+| `product_list` / `product/{productId}` | 商品列表 / 详情 |
+| `cart` | 购物车 |
+| `order_confirm` | 订单确认 |
+| `payment_result/{orderId}` | 支付状态 |
+| `conversation/{conversationId}` | 私信会话 |
+| `my_patterns` / `favorites` | 我的图纸 / 收藏图纸 |
+| `liked_posts` / `commented_posts` / `favorite_posts` / `followed_posts` | 当前代码已有的个人互动作品页 |
+| `my_orders` | 我的订单 |
+| `settings` | 设置 |
+
+设计目标但当前 Android 未注册的入口：
+
+- Search：对应 `search-a.html`。
+- 上传帖子新版 UI-only 原型：对应 `post-compose-a.html`，当前代码已有 `post_create` 但视觉和状态未按新稿完全重构。
+- Profile Edit：对应 `profile-edit-a.html`。
+- Settings 子页：账号与安全、隐私与权限、通知设置、关于与合规。
+- Notification Detail：对应 `notification-detail-a.html`。
+- 未来地图、真实支付、大模型生图页面：只作为 UI-only 参考。
+
+## Repository 与 API 依赖
+
+当前真实 Repository：
+
+| Repository | 依赖 API |
+|---|---|
+| `RealCommunityRepository` | `CommunityApi`、`UploadApi`、用户/话题/贴纸相关接口 |
+| `RealPatternRepository` | `PatternApi`、`UploadApi` |
+| `RealCommerceRepository` | `ProductApi`、`CartApi`、`OrderApi`、`PaymentApi` |
+| `RealMessageRepository` | `MessageApi` |
+| `RealProfileRepository` | `UserApi`、`RewardApi`、`PatternApi` |
+
+后续 UI 重构原则：
+
+- 优先复用现有 Repository，不为了 UI 改造新增后端 API。
+- 后端已有但 Android 未接的接口，先在文档中标为 P0/P1 接入任务，再实施。
+- 后端和客户端均未闭环的能力，只能隐藏、禁用或展示 UI-only / 开发态说明。
+- 不允许空 `onClick`、假成功 Toast、可点击但无结果的入口。
+
+## UI Shell 重构目标
+
+后续实现 Stage 1 必须统一：
+
+- 主页面顶部栏：左侧新增 icon，中间页面标题，右侧搜索 icon。
+- 新增快捷菜单：固定包含 Settings、AI 创作、上传帖子。
+- 底部 Logo 导航：社区、商城、AI、消息、我的使用统一品牌化图标，不用 emoji。
+- 主页面加载、空、错、未登录、禁用、弱网状态统一使用 `core/ui` 组件。
+- 详情页和流程页通常隐藏底部导航，保留返回和明确标题。
+
+## 核心页面 UI 目标
+
+### 社区首页
+
+- 双列瀑布流，类似内容发现应用。
+- 卡片图片高度建议控制在 `120dp-260dp`，超出裁切，不撑高整屏。
+- 卡片展示作者、标题、互动数据、审核中、图片 fallback。
+- Feed、关注 Feed、加载、空、错、未登录状态都必须明确。
+
+### 作品详情
+
+目标顺序为 `图片 -> 内容 -> 评论区域 -> 底部悬浮评论栏`。
+
+- 顶部图片区是首屏重点，需要 carousel 指示：`2/5`、左右切换或滑动提示、缩略图 strip。
+- 内容区在图片后，展示作者、标题、正文、话题、点赞、收藏、关注状态。
+- 评论区必须是实际区域，不只是输入工具条。
+- 评论列表需要支持文字、图片、@ 用户、# 话题、贴纸和图片加载失败占位。
+- 悬浮评论栏默认轻量胶囊，点击后展开；图片/附件预览在上，评论输入在下，工具栏在底部。
+- 评论图片最多 9 张；上传失败必须保留缩略图并提供重试。
+
+### 发帖
+
+- 当前代码有发帖路由；新版设计见 `post-compose-a.html`。
+- 需要覆盖图片选择、正文、话题、预览、上传中、上传失败、审核中提示。
+- 未接后端能力不能做空点击；提交成功后展示审核中。
+
+### Search
+
+- `search-a.html` 是 UI-only 目标，不代表已有全局搜索后端。
+- 后续若先做本地筛选，必须写明范围，不能宣称全站搜索。
+- 搜索范围 Tab：全部、作品、图纸、商品、用户、话题。
+
+### 消息
+
+- 消息页拆分私信和通知。
+- 通知区域不能展示会话输入状态。
+- 私信详情需要处理互关正常聊天、未互关剩余 3 条、超过 3 条输入禁用、发送失败、加载失败、空会话。
+
+### 我的
+
+最新设计目标：
+
+- 统计项为 `获赞 / 作品 / 关注 / 粉丝`。
+- `我的图纸 / 点赞作品 / 收藏作品` 放在同一 Tab 区域。
+- 编辑资料入口跳转 `profile-edit-a.html` 设计目标。
+- 最新设计稿不展示“我的订单 / 评论作品 / 关注作品”作为首屏入口；这不代表当前 Android 代码已删除已有路由。
+
+## 登录与会话规则
+
+- 短信登录请求仍传 `ageGroup=AGE_18_PLUS`。
+- DataStore 是当前登录态持久化事实。
+- 启动时 hydrate Token；退出、refresh 失败和 401 必须清理本地会话。
+- 未登录访问受保护入口必须展示统一登录引导，不能把 401 包装成普通网络失败。
+
+## 上传规则
+
+上传链路固定为：
+
+1. `POST /api/v1/uploads/presign`
+2. PUT 到返回的 `uploadUrl`
+3. `POST /api/v1/uploads/confirm`
+4. 业务请求使用 `fileId`
+
+客户端要求：
+
+- 按用途选择 `UploadUsage`，评论图片使用 `POST_IMAGE`。
+- 上传失败可重试，不允许假成功。
+- 不在客户端拼接生产 CDN 地址。
+- 不保存 OSS Secret。
+
+## 支付规则
+
+当前支付是 Stub / 联调骨架：
+
+- 创建订单和支付单必须依赖服务端返回。
+- 创建订单和支付单写接口使用 `Idempotency-Key`。
+- 支付页只能显示联调支付单、服务端状态、`paymentId`、`orderId`、`channel`、`amountCent`。
+- `payParams.provider=STUB` 不得展示成真实微信/支付宝 App 支付。
+- 支付最终状态以服务端查询为准。
+
+## 状态管理规则
+
+每个核心页面至少覆盖：
 
 - 加载中。
 - 成功。
@@ -236,161 +202,16 @@ P4：商城 MVP
 - 无权限。
 - 审核中。
 - 弱网重试。
+- 禁用态和开发态。
 
-Compose 页面目标是单向数据流：
+后续新写复杂页面应优先使用 ViewModel 管理副作用；已有大文件可以分阶段重构，不要求一次性改完。
 
-- UI 只渲染状态。
-- ViewModel 处理用户意图。
-- Repository 负责网络和缓存。
-- 网络错误统一转换为可展示错误。
+## 下一阶段 Android 开发顺序
 
-当前项目仍有页面直接在 Composable 内处理副作用；UI MVP 执行阶段允许渐进式重构，但新增复杂写操作不应继续散落在页面里。
-
-### 通用组件
-
-- `LoginRequiredDialog`（`core/ui/Components.kt`）：统一登录引导弹窗，提示该功能需要登录后使用，按钮为“返回”和“去登录”。
-- `PageStateView` / `EmptyContent`：统一加载、空、错误、未登录和弱网状态。
-- `DoyuCard` / `DoyuPrimaryButton` / `DoyuOutlinedButton` / `TagChip`：遵守 `11-ui-style-guide.md` 的颜色、圆角、间距和禁用态规则。
-
-### safeCall 异常处理
-
-当前部分 Screen 定义 `safeCall` 包装函数处理网络异常：
-
-```kotlin
-private inline fun <T> safeCall(block: () -> T): T? =
-    try { block() } catch (_: Exception) { null }
-```
-
-后续重构应逐步把错误转换为明确 UI 状态，避免所有异常都退化为空状态。
-
-当前 Android 已在 `core/data/SafeCall.kt` 提供 `exceptionToUiState`：
-
-- `UNAUTHORIZED` -> `UiState.RequireLogin`
-- `FORBIDDEN` -> `UiState.Forbidden`
-- `SocketTimeoutException`、`UnknownHostException`、`IOException` -> `UiState.WeakNetwork`
-- 其他 `ApiException` -> `UiState.Error`，保留可展示的 `traceId`
-
-社区样板页和后续页面应复用该映射，避免把后端统一响应吞成空白页。
-
-## 权限策略
-
-权限申请遵循最小化原则。
-
-| 能力 | 策略 |
-|---|---|
-| 相机 | 用户拍照时再申请 CAMERA |
-| 相册 | 优先使用 Android Photo Picker |
-| 通知 | 用户需要订单、评论、AI 完成提醒时申请 |
-| 存储 | 避免申请广泛存储权限 |
-| 定位 | 第一版不默认申请 |
-| 蓝牙/Wi-Fi | 第一版不作为主功能，不申请 |
-
-权限说明必须清楚解释用途，拒绝权限后提供替代路径。
-
-## 相机与相册
-
-拍照：
-
-- 使用 CameraX。
-- 支持前后摄像头切换。
-- 设备方向追踪，保证竖拍出竖图、横拍出横图。
-- 拍摄后进入预览或裁剪流程。
-- 自动修正图片方向。
-- 大图压缩后再上传。
-
-相册：
-
-- 使用 Photo Picker。
-- 只读取用户选择的图片。
-- 不要求访问全部媒体库。
-
-图片处理：
-
-- 限制最大边长。
-- 限制文件大小。
-- 修正 EXIF 方向。
-- 显示压缩和上传进度。
-
-## 上传
-
-上传链路：
-
-1. 客户端请求 `/api/v1/uploads/presign`。
-2. 后端返回上传 URL、fileKey、headers、过期时间。
-3. 客户端直传对象存储。
-4. 客户端调用 `/api/v1/uploads/confirm` 获取 `fileId`。
-5. 业务提交使用 `fileId`，不能把 `fileKey` 当成业务文件 ID。
-
-要求：
-
-- 上传支持失败重试。
-- 大图上传显示进度。
-- AI 输入图和公开帖子图分开标记用途。
-- AI 图片上传属于受保护动作；未登录时必须展示登录引导或跳转登录，不能把 401 包装成“网络失败”。
-- 不在客户端拼接生产 CDN 地址；公开展示 URL 策略以后端或明确的本地开发 URL 为准。
-
-## 登录
-
-登录页（`feature/auth/LoginScreen.kt`）：
-
-- 手机号 + 验证码登录。
-- 手机号格式校验：正则 `^1[3-9]\d{9}$`。
-- 验证码通过 Stub 环境展示或开发提示获取。
-- 当前后端 `SmsLoginRequest` 仍要求 `ageGroup`，Android 现阶段继续传默认 `AGE_18_PLUS`。
-- 不得把“登录不传 ageGroup”写成当前事实，除非后端接口已同步修改。
-
-## AI 任务
-
-AI 生成使用异步任务：
-
-1. 上传并确认图片，拿到 `fileId`。
-2. 创建任务。
-3. 展示排队或处理中状态。
-4. 轮询任务详情。
-5. 成功后展示图纸。
-6. 失败后展示原因和重试入口。
-
-客户端不得直接调用模型供应商。真实视觉 Provider 未完成前，UI 只表达开发态图纸生成，不承诺真实识图质量。
-
-## 支付
-
-当前支付是 Stub / 联调骨架。
-
-UI MVP 阶段支付流程：
-
-1. 客户端创建订单。
-2. 客户端请求支付单。
-3. 页面展示联调支付单 ID、渠道、金额和“等待联调回调 / 服务端确认支付状态”。
-4. 客户端查询后端支付单或订单状态。
-5. 后端状态为准。
-
-不得在当前阶段展示正式微信/支付宝渠道完成态，不得把 Stub payParams 当成正式 SDK 参数。
-
-## 缓存与离线
-
-缓存策略：
-
-- Feed 可缓存最近页面。
-- 我的资料和配置可缓存。
-- AI 任务列表可缓存。
-- 订单状态需要每次进入详情刷新。
-- 支付状态不得只依赖本地缓存。
-- 登录态使用 DataStore 持久化；退出登录、刷新失败和 401 过期清理必须同步清空本机令牌。
-
-## 埋点
-
-第一版建议记录：
-
-- 注册完成。
-- 发帖提交。
-- 图片上传成功/失败。
-- AI 任务创建。
-- AI 生成成功/失败。
-- 图纸收藏。
-- 加入购物车。
-- 下单。
-- 支付单创建。
-- 举报。
-- 签到。
-
-埋点不得上传用户原图、隐私文本、支付敏感信息。
+1. Stage 1：UI Shell、顶部栏、底部 Logo 导航、状态页组件。
+2. Stage 2：社区首页瀑布流和作品详情重构。
+3. Stage 3：发帖、Search、Settings、Profile Edit 的 UI-only / 已接接口边界整理。
+4. Stage 4：消息、私信、通知和互关 3 条限制。
+5. Stage 5：商城、订单、联调支付边界复查。
+6. Stage 6：AI 开发态和未来能力 UI-only 标识。
+7. Stage 7：真机 QA、接口回归和文档验收关闭。

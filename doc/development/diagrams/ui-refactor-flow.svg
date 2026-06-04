@@ -1,0 +1,27 @@
+<svg viewBox="0 0 1180 660" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0 L0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.6"/></pattern>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/></marker>
+    <style>
+      text{font-family:'JetBrains Mono','Noto Sans SC','Microsoft YaHei',sans-serif}
+      .title{fill:#f8fafc;font-size:22px;font-weight:700}.note{fill:#94a3b8;font-size:12px}
+      .box{rx:12;stroke-width:1.5}.input{fill:#083344;stroke:#22d3ee}.work{fill:#064e3b;stroke:#34d399}.check{fill:#78350f;stroke:#fbbf24}.risk{fill:#881337;stroke:#fb7185}
+      .label{fill:#f8fafc;font-size:13px;font-weight:700}.small{fill:#cbd5e1;font-size:10.5px}.line{stroke:#94a3b8;stroke-width:1.6;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1180" height="660" fill="#0f172a"/><rect width="1180" height="660" fill="url(#grid)"/>
+  <text x="34" y="42" class="title">UI Refactor Flow</text>
+  <text x="34" y="64" class="note">按设计图落地 Android UI 的工程流程：先标事实，再拆组件，再验证状态</text>
+  <rect x="60" y="130" width="210" height="80" class="box input"/><text x="165" y="162" text-anchor="middle" class="label">读取设计源</text><text x="165" y="186" text-anchor="middle" class="small">Open Design / SVG / 蓝图</text>
+  <rect x="330" y="130" width="210" height="80" class="box check"/><text x="435" y="162" text-anchor="middle" class="label">区分事实</text><text x="435" y="186" text-anchor="middle" class="small">当前路由 vs UI-only</text>
+  <rect x="600" y="130" width="210" height="80" class="box work"/><text x="705" y="162" text-anchor="middle" class="label">抽通用组件</text><text x="705" y="186" text-anchor="middle" class="small">TopBar / BottomNav / State</text>
+  <rect x="870" y="130" width="210" height="80" class="box work"/><text x="975" y="162" text-anchor="middle" class="label">页面重构</text><text x="975" y="186" text-anchor="middle" class="small">社区 / 消息 / 我的 / 商城 / AI</text>
+  <rect x="190" y="330" width="230" height="84" class="box check"/><text x="305" y="362" text-anchor="middle" class="label">状态补齐</text><text x="305" y="386" text-anchor="middle" class="small">加载 / 空 / 错 / 未登录 / 禁用</text>
+  <rect x="480" y="330" width="230" height="84" class="box check"/><text x="595" y="362" text-anchor="middle" class="label">接口边界核对</text><text x="595" y="386" text-anchor="middle" class="small">05 API 契约 / Retrofit</text>
+  <rect x="770" y="330" width="230" height="84" class="box risk"/><text x="885" y="362" text-anchor="middle" class="label">误导风险检查</text><text x="885" y="386" text-anchor="middle" class="small">无空点击 / 假成功 / 伪支付</text>
+  <rect x="350" y="510" width="230" height="84" class="box work"/><text x="465" y="542" text-anchor="middle" class="label">自动验证</text><text x="465" y="566" text-anchor="middle" class="small">单测 / 构建 / SVG / 文档</text>
+  <rect x="650" y="510" width="230" height="84" class="box work"/><text x="765" y="542" text-anchor="middle" class="label">真机 QA</text><text x="765" y="566" text-anchor="middle" class="small">adb devices 后再验收</text>
+  <path d="M270 170 L330 170" class="line"/><path d="M540 170 L600 170" class="line"/><path d="M810 170 L870 170" class="line"/>
+  <path d="M975 210 C975 280 350 270 305 330" class="line"/><path d="M420 372 L480 372" class="line"/><path d="M710 372 L770 372" class="line"/>
+  <path d="M885 414 C885 480 530 465 465 510" class="line"/><path d="M580 552 L650 552" class="line"/>
+</svg>

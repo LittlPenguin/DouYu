@@ -1,6 +1,6 @@
 # 11. UI 风格与设计系统
 
-本文件是豆屿 Doyu 当前唯一 UI 权威规范。`doc/stitch_document_app_generator/` 是历史设计探索归档路径；当前工作树中该目录处于删除状态时，不作为日常可用设计入口，也不直接覆盖本规范。当前可用页面蓝图和设计图入口见 `doc/development/13-ui-screen-blueprints.md`、`doc/development/diagrams/README.md` 和 Open Design 项目 `SpellBean`；仓库副本位于 `doc/development/open-design/index.html`。
+本文件是豆屿 Doyu 当前唯一 UI 权威规范。当前可用页面蓝图和设计图入口见 `13-ui-screen-blueprints.md`、`diagrams/README.md` 和 Open Design 项目 `SpellBean`；仓库副本位于 `open-design/index.html`。历史外部探索资产不作为日常可用入口，也不直接覆盖本规范。
 
 ## 当前 UI 目标
 
@@ -38,9 +38,9 @@
 - 禁止使用外部品牌、IP 角色、未授权插画、真人可识别素材或版权不清图片做 Logo。
 - 品牌色继续使用 `DoyuPetal`、`DoyuMint`、`DoyuSky` 的轻量组合，避免高饱和粉紫和重渐变。
 
-## Stitch 设计稿映射
+## 历史视觉探索映射
 
-`doc/stitch_document_app_generator/` 只代表历史 Stitch 视觉探索方向；若当前工作树缺少该目录，不要为了 UI 实现自动恢复旧资产。后续 Android UI 重构以本文件、`13-ui-screen-blueprints.md` 和 `diagrams/README.md` 为当前可用入口。历史 Stitch 对应关系如下：
+历史 Stitch 页面只代表早期视觉探索方向；若当前工作树缺少这些资产，不要为了 UI 实现自动恢复旧资产。后续 Android UI 重构以本文件、`13-ui-screen-blueprints.md` 和 `diagrams/README.md` 为当前可用入口。历史探索对应关系如下：
 
 | 设计资产 | 用途 | Android 落地参考 |
 |---|---|---|
@@ -49,15 +49,15 @@
 | `ai/screen.png` | AI 创作首页 | AI Hero、正在生成任务卡、创作历史双列 Grid |
 | `_4/screen.png` | 消息页 | 通知/私信 Tab、通知列表、未读强调条、时间与摘要截断 |
 | `_3/screen.png` | 我的页 | 个人资料区、统计卡、我的工坊入口、签到卡；落地时必须中文化并降低卡片嵌套 |
-| `DESIGN.md` | Stitch 设计系统探索稿 | 可参考 “Restrained Vitality” 的克制活力、手作温度、留白、圆角和动效原则 |
+| `DESIGN.md` | 历史设计系统探索稿 | 可参考 “Restrained Vitality” 的克制活力、手作温度、留白、圆角和动效原则 |
 
 冲突处理：
 
 - 颜色、圆角、间距、排版最终以本文件为准。
-- Stitch 中的 `#fdf9f5` 背景统一收敛为 `#FFFBF7`。
-- Stitch 中较深的 `#9e3d54` 可作为文字强调或暗色派生，不升级为全局主按钮色。
-- Stitch 中英文文案全部中文化。
-- Stitch 里的毛玻璃、弹性动效、阴影只做克制迁移，不把所有导航和卡片都做成重玻璃拟态。
+- 历史探索中的 `#fdf9f5` 背景统一收敛为 `#FFFBF7`。
+- 历史探索中较深的 `#9e3d54` 可作为文字强调或暗色派生，不升级为全局主按钮色。
+- 历史探索中的英文文案全部中文化。
+- 历史探索里的毛玻璃、弹性动效、阴影只做克制迁移，不把所有导航和卡片都做成重玻璃拟态。
 
 ## 颜色令牌
 

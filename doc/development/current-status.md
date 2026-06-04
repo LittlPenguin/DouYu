@@ -5,163 +5,150 @@
 
 ## 阶段结论
 
-豆屿 Doyu 当前进入 **第六轮 UI/品牌与主链路展示收敛阶段**。
+豆屿 Doyu 当前处于 **第六轮 UI/品牌与主链路展示收敛阶段**。
 
-第一轮已经把 **文档契约 + 登录/社区样板链路** 稳住：登录 + 社区接口以 `doc/development/05-api-contract.md` 为唯一契约源，社区 Feed、详情、发布、评论、点赞和收藏已作为可复制样板推进。第二轮已经把同一套 UI 方法推广到 App Shell、通用组件、消息页和我的页，形成 UI 统一基线。第三轮聚焦商城首页/商品列表、商品详情、购物车、订单确认、订单列表和支付单状态，商城主体验收已关闭为“可联调、边界清楚、不误导支付”的 MVP 链路。第四轮把 Android 登录态从重启即失效的临时令牌状态收敛到 DataStore 持久化，并为社区和商城常驻 seed 数据提供真实可渲染图文。第五轮前置补齐后端对象存储 Provider 切换骨架，让现有上传链路可通过 `.env` 从 Local OSS 切到 Aliyun OSS。第六轮继续收敛主链路展示、品牌视觉、关注/互关与私信边界，并新增作品详情可展开评论输入、图片评论、@ 用户、# 话题、内置贴纸、互动状态回显和个人互动作品页 MVP。
+已经完成的基础阶段：
 
-本阶段默认策略：
+- 第一轮：登录 + 社区契约样板链路稳定。
+- 第二轮：App Shell、消息、我的 UI 统一基线形成。
+- 第三轮：商城 UI/API 主体链路关闭为可联调、不误导支付的 MVP。
+- 第四轮：Android 登录态收敛到 DataStore，社区/商城常驻 seed 图文可渲染。
+- 第五轮：后端对象存储 Provider 切换骨架完成，可通过 `.env` 在 `local|stub|aliyun` 间切换。
+- 第六轮：Open Design A 方向页面稿和本地 HTML 原型已补齐，当前继续把设计目标、API 契约、阶段开发流程和 SVG 图谱沉淀到 `doc/development`。
 
-- 采用 **MVP 收敛**，不是全入口保留，也不是重做全部信息架构。
-- 第三轮商城 UI/API 主体路径记录为已关闭；后续仅保留多宽度视觉复查和生产化能力缺口。
-- 第六轮聚焦 UI/品牌与主链路展示收敛：社区、商城、AI、消息、我的首屏观感和可演示路径优先，作品详情互动能力按开发态审核边界接入。
-- 登录 + 社区接口继续以 `doc/development/05-api-contract.md` 为唯一契约源。
-- 历史视觉探索路径为 `doc/stitch_document_app_generator/`；当前工作树中该目录处于删除状态时，不作为日常可用设计入口。本阶段当前可用设计图以 `doc/development/diagrams/` 为准，权威 UI 规范仍是 `doc/development/11-ui-style-guide.md`。
-- Open Design 当前使用项目 `SpellBean`（项目 id：`1a79a45f-6c02-4c3f-9433-4b27b325acf5`，入口 `index.html`），已选 **A：内容发现 + 创作工具平衡**。仓库副本 `doc/development/open-design/` 已补社区瀑布流首页、作品详情评论浮动栏、上传帖子、Search 搜索页、商城首页、AI 首页、消息首页、私信对话详情、通知详情、我的页、编辑资料页、Settings 多个内页和未来地图/真实支付/大模型生图 UI-only 占位页面；这些是设计资产，不代表 Android 当前代码已完成落地。
-- 最终 UI 权威规范仍沉淀到 `doc/development/11-ui-style-guide.md`。
-- 暂不做真实 AI Provider、真实微信/支付宝支付、生产合规上线、增强审核风控、完整地址管理、玩家交易完整闭环；单台真机真实 Bucket 上传 smoke 已作为开发联调证据补齐，但 STS/最小权限、CDN、防盗链、图片审核、缩略图和 seed assets 云迁移不在第五轮前置内关闭。
+当前公开文档入口是 `doc/development/README.md`。本地私有 Agent 规则文件、个人技能目录和临时清单不随仓库发布，不作为公开开发文档入口。
+
+## 当前设计目标
+
+Open Design 项目：
+
+- 项目名：`SpellBean`
+- 项目 ID：`1a79a45f-6c02-4c3f-9433-4b27b325acf5`
+- 本地副本：`doc/development/open-design/index.html`
+
+已选方向：**A：内容发现 + 创作工具平衡**。
+
+关键目标：
+
+- 五个主 Tab 顶部统一为“新增 icon - 页面标题 - 搜索 icon”。
+- 新增菜单固定包含 Settings、AI 创作、上传帖子。
+- 底部导航使用品牌化 Logo / icon。
+- 社区首页目标为双列瀑布流。
+- 作品详情目标顺序为 `图片 -> 内容 -> 评论区域 -> 底部悬浮评论栏`。
+- 评论栏展开态为图片/附件预览在上，评论输入在下，工具栏在底部。
+- 评论多图状态包含堆叠缩略图、上传中、失败重试、carousel 预览和 9 图上限。
+- 消息页拆私信和通知；私信详情展示互关和未互关 3 条限制。
+- 我的页统计目标为 `获赞 / 作品 / 关注 / 粉丝`，资产目标为 `我的图纸 / 点赞作品 / 收藏作品` 同组 Tab。
+- 编辑资料、Search、Settings 子页、通知详情和未来地图/真实支付/大模型生图均为 UI-only 或待接入目标。
+
+这些设计资产不代表 Android 当前代码已经完成落地。
 
 ## 功能完成度矩阵
 
-| 模块 | 当前已有 | 半成品 / 问题 | MVP 收敛策略 |
+| 模块 | 当前已有 | 半成品 / 缺口 | 当前策略 |
 |---|---|---|---|
-| App Shell | 5 个主 Tab：社区、商城、AI 创作、消息、我的；NavHost 和底部导航已存在；第二轮已统一 App Shell、通用组件、消息页和我的页基线 | 仍需在后续模块扩散时回归顶部栏、底部栏、Search、状态页和响应式表现 | 第四轮改登录态和图文数据时必须复用第二轮 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、卡片、按钮、Chip、搜索、加载/空/错/未登录状态，不另起视觉口径 |
-| 登录 | 短信登录、验证码 Stub、token 刷新接口、退出登录接口存在；Android DTO 默认传 `AGE_18_PLUS`；Android 启动时 hydrate `DataStoreTokenStore`，登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore | 仍需后续真机重启路径复测登录保持体验；无 Context 的 Preview / 单元测试场景回退内存实现 | 继续保持 `ageGroup=AGE_18_PLUS` 契约不变；后续重点复测重启后登录保持、过期清理和退出登录返回 |
-| 社区 | Feed、帖子详情、评论列表、发帖、评论、点赞/取消、收藏/取消后端接口存在；Android 样板页已接 Repository 写操作；作品详情已接入可展开多行评论、图片、@ 用户、# 话题、内置贴纸、评论图片/贴纸/@/# 渲染和互动状态回显 | 视频评论、图片私信、生产级图片审核、话题运营后台、用户自定义贴纸和付费表情包未完成；完整 MVVM 拆分和全页面一致性仍待做 | 第六轮关闭纯字/纯图/纯贴纸/图文贴纸混合评论 MVP；评论图片使用 `POST_IMAGE` 上传和 `mediaAssets` 渲染，@/#/贴纸使用 seed/已有用户数据，失败时阻断提交并保留已选内容 |
-| AI 图纸 | 上传、创建任务、轮询、取消、生成记录、图纸详情、收藏、材料清单、PDF 文件记录等开发态能力存在 | 真实视觉 Provider 未完成；部分结果操作如材料加购、PDF 导出、分享到社区在 Android 上仍可能是假成功或开发中 | 第二轮不改 AI 主链路；后续只允许保留开发态图纸生成，不承诺真实视觉理解质量 |
-| 商城 | 商品列表/详情、购物车、订单、支付单和支付查询骨架存在；已有 `/products`、`/cart`、`/orders`、`/payments` 联调接口；第三轮主体验收已关闭 | 地址管理未完成；真实微信/支付宝 SDK 未接；玩家二手/定制不支持标准购物车；商品图仍需从色块/空图收敛为 `imageUrl`；seed 商品图片来源记录需可追溯 | 第四轮只补商品 `imageUrl`、购物车商品摘要图片和 seed assets，不改变第三轮支付/地址/玩家商品边界；地址缺口继续明确展示并禁止伪下单；支付状态页仍只展示联调支付单和服务端确认状态 |
-| 消息 | 通知列表、会话列表、会话详情和发送接口骨架存在；设计稿已补消息首页、私信对话详情和通知详情 | 后端私信是半占位；Android 会话输入框/发送/举报存在空点击或假闭环风险；列表状态、未读层级和通知/私信分离需统一 | 消息 UI 目标是通知/私信清楚分离：私信进入对话详情，通知进入通知详情；通知不展示会话输入状态，发送未闭环时禁用或明确边界 |
-| 我的 | 用户资料、图纸、收藏、订单、签到状态、徽章接口部分存在；历史代码/验收曾新增点赞作品、评论作品、收藏作品、关注作品四个互动资产页 | 签到动作、成长系统、设置合规入口等 UI/链路不完整；最新设计稿要求统计项为“获赞 / 作品 / 关注 / 粉丝”，删除“我的订单 / 评论作品 / 关注作品”展示，只保留“我的图纸 / 点赞作品 / 收藏作品”同组 Tab，并新增编辑资料 UI-only 原型 | 我的页最新 UI 目标是轻量个人资产中心；统计口径、编辑资料页和三资产 Tab 是设计目标，不代表当前 Android 代码或后端接口已删除历史入口或新增编辑资料路由 |
-| 设置 / 合规 | 后端有账号注销等接口，文档已有合规要求；设计稿已补 Settings 首页、账号安全、隐私权限、通知设置、关于合规 | 隐私政策、用户协议、SDK 清单、版权投诉、备案材料不是本阶段目标 | 设置页只保留必要结构和低优先级入口，合规入口标注待补/生产前必须补齐，不包装成生产合规已完成 |
+| App Shell | 5 个主 Tab、NavHost、底部导航、基础通用组件 | 新版顶部栏、品牌 Logo 底部导航、全局 Search 路由未落地 | Stage 1 先统一 Shell 与状态组件 |
+| 登录 | 短信登录、验证码 Stub、refresh、logout、DataStore token hydrate | 真实短信、限流、风控未完成 | 继续保留 `ageGroup=AGE_18_PLUS` 契约 |
+| 社区 | Feed、关注 Feed、发帖、详情、评论、点赞、收藏、话题、贴纸、评论富内容字段 | 新版瀑布流、图片优先详情、评论区和评论栏状态未完全按设计实现；真机富评论仍需复验 | Stage 2 重构社区和作品详情 |
+| 上传 | presign、PUT、confirm、FileAsset、Local/Stub/Aliyun Provider | 生产 STS、CDN、防盗链、审核、缩略图未完成 | 继续复用现有上传链路，不新增 API |
+| AI | 任务创建、查询、列表、取消、结果、收藏、自研拼豆算法 | 真实视觉 Provider、大模型生图、生产内容安全未完成 | 保持开发态，不承诺真实识图质量 |
+| 商城 | 商品、购物车、订单、联调支付单、支付查询 | 地址管理、真实支付、玩家交易闭环未完成 | 只表达联调支付和地址缺口 |
+| 消息 | 通知、会话、会话详情、私信发送、互关 3 条限制 | 通知详情路由、消息页新版分区和会话状态 UI 待落地 | Stage 4 收敛私信/通知 |
+| 我的 | 用户资料、图纸、收藏、签到、徽章、历史个人互动作品路由 | 最新我的页统计、三资产 Tab、Profile Edit 仍是设计目标 | 区分代码事实和目标 UI |
+| Settings / 合规 | 设置入口、账号注销申请后端接口、合规文档要求 | Settings 子页、隐私政策、用户协议、备案、SDK 清单未完成 | 只标待补/开发态 |
+| Admin | 后端后台 API | 完整运营后台前端、权限分级和生产工作台未完成 | 不作为 App 当前主链路 |
 
-## 已完成基础
+## 当前代码事实
 
-- Android 客户端已有 5 个主 Tab：社区、商城、AI 创作、消息、我的。
-- Android 页面已接入真实 Repository 和后端 `/api/v1`，保留 Mock 数据用于测试和预览。
-- 后端为 Spring Boot 模块化单体，核心业务对象已迁移到 PostgreSQL + JPA Repository。
-- 本地开发上传链路已具备：后端签发上传地址，Android 直传，后端确认文件资产。
-- AI 拼豆任务支持异步执行、进度追踪、图纸预览、色号图、材料清单和 PDF 文件生成。
-- BeadPatternEngine 已实现 CIEDE2000 色差、多色卡、难度和风格参数。
-- 管理后台 API、举报处理、基础内容审核、AI 调用额度、支付回调安全骨架已存在。
-- `doc/development/00-project-handoff.md`、`12-feature-and-flow-map.md`、`13-ui-screen-blueprints.md`、`doc/development/diagrams/` 和 `doc/development/open-design/` 已补齐项目接手、主链路地图、页面蓝图、架构/流程/线框设计图和 Open Design 页面级视觉稿入口；历史 Stitch 探索资产当前不作为日常可用入口。
-- 2026-06-04 继续补 UI 设计图与规则：主页面顶部栏统一为“新增 icon - 页面标题 - 搜索 icon”，底部导航补品牌 Logo，社区首页设计目标改为双列瀑布流，作品详情目标改为“图片 -> 内容 -> 评论区域”，评论栏设计目标改为 Google 风格悬浮栏并收敛为图片/附件在上、评论内容在下，轮播补明确 gallery / carousel，@ 用户和 # 话题选择状态补齐，Search、上传帖子和编辑资料 UI-only 页面加入入口，消息补私信/通知详情，我的页统计目标改为“获赞 / 作品 / 关注 / 粉丝”并保留三资产 Tab，Settings 与未来地图/真实支付/大模型生图 UI-only 页面已加入设计资产；本轮未修改 Android / 后端业务代码。
-- `05-api-contract.md` 已明确登录 + 社区第一轮契约：`avatarUrl`、`ageGroup`、发帖/评论 `REVIEWING`、`PostInteractionResult`、统一错误和 `traceId` 映射。
-- 第二轮已把 App Shell、通用组件、消息页和我的页落成 UI 统一基线，不把 AI、支付和上线生产化纳入第二轮实现。
-- 第三轮商城 UI/API 主体验收已关闭：商城首页/商品列表沿用搜索、分类、Banner 和双列商品卡结构，历史 Stitch `_2` 仅作为归档映射；自营商品保留标准加购；玩家二手/定制不走标准购物车；订单确认不伪装默认地址；支付状态只展示联调支付单和服务端确认。
-- 商城订单 / 支付边界已补契约测试：Android 锁定订单请求和支付响应 DTO，后端锁定订单幂等、支付单 `CREATED` 状态、金额一致和玩家商品不能进入标准购物车/标准订单。
-- 第三轮已登录真机 App 内路径已补证：购物车有商品态、订单确认地址缺口、我的订单入口和联调支付状态页均已在真机路径中验证；Android DTO/API 已对齐后端 `SELF_OPERATED`、对象型 `addressSnapshot` 和订单/支付写接口 `Idempotency-Key`。
-- Android 已将 `DoyuAppContainer` 切到 DataStore 启动 hydrate；单元测试已覆盖保存、hydrate 和 clear，2026-05-30 真机复测已确认登录后强杀重启仍保持登录态、退出登录后强杀重启不会恢复旧登录。
-- 作品详情评论代码/契约已收敛为可展开输入体验：默认态为贴底轻量输入条，展开态支持多行输入、图片、@ 用户、# 话题、内置贴纸和 Mint 发送按钮；缩略图与已选 @/#/贴纸 Chip 独立展示，不挤压输入框。评论契约支持最多 9 张图片、纯文字/纯图片/纯贴纸/图文贴纸混合、上传失败阻断、评论列表图片/贴纸/@/# 渲染；后端契约返回 `mediaFileIds`、`mediaAssets`、`mentions`、`topics` 与 `stickers`。但评论图片链路、富内容列表渲染和纯贴纸评论仍需按 `10-testing-acceptance.md` 真机复验，不能写成已验收通过。
-- 帖子详情已返回 `likedByMe`、`favoritedByMe`、`followedAuthorByMe`；Android 详情页用这些字段初始化点赞、收藏、关注高亮，写操作后重新刷新详情计数。点赞状态回显上一轮真机未通过，收藏/关注仍缺重新进入详情后的持久回显复验。
-- 我的页已新增“点赞作品”“评论作品”“收藏作品”“关注作品”四个独立互动资产页；“关注作品”定义为当前用户关注作者发布的作品列表，不是关注关系列表。当前只可靠验通过“点赞作品”入口，其余三个入口和列表卡跳转详情仍需稳定真机验收。
-- 最新 UI 设计稿已把我的页目标收敛为“获赞 / 作品 / 关注 / 粉丝”统计、“我的图纸 / 点赞作品 / 收藏作品”同组 Tab，并删除“我的订单 / 评论作品 / 关注作品”的设计展示；编辑资料页只作为 UI-only 原型。这只记录设计目标，不覆盖上一条 Android 代码事实和历史验收记录。
-- `AGENTS.md` 仍是仓库级有效约束入口；已同步第六轮阶段标题、历史 Stitch 资产口径、当前设计图入口、ADB 真机调试前置规则、Agent Team 自动派发规则和 doc 职责映射。
+Android：
 
-## 当前不能认为完成
+- 技术栈：Kotlin、Jetpack Compose、Navigation Compose、Retrofit、OkHttp、Kotlinx Serialization、Coil、CameraX、Photo Picker、DataStore。
+- 当前底部 Tab：`community`、`commerce`、`ai`、`message`、`profile`。
+- 当前已有二级路由包括登录、作品详情、发帖、选图/拍照、AI 参数/进度/结果/历史、商品、购物车、订单确认、支付状态、会话、我的图纸、收藏、个人互动作品页、我的订单和设置。
+- 当前没有全局 Search、Profile Edit、Settings 子页、通知详情、未来能力页面的 Android 路由。
+- 登录态已从临时内存状态收敛到 DataStore 持久化。
 
-- App Shell、消息页和我的页已完成第二轮代码基线，TopBar、Search、消息未登录态和退出登录返回已列为视觉 QA 对象；后续默认以指定真机竖屏复查，不再把模拟器多宽度作为当前默认流程。
-- 第三轮商城真机优先 QA 已有 `10-testing-acceptance.md` 记录作为主体验收关闭依据；后续视觉复查以真机为主，不再维护模拟器 `.env` 模板。
-- 已定位 ADB 路径 `D:\AndroidChace\platform-tools\adb.exe`；无在线真机时，截图或设备 QA 不能写成通过，必须先告知用户。
-- 第六轮作品详情互动仍有未验通项，不能写成通过：评论图片 Photo Picker、最多 9 图、`/uploads/presign -> PUT -> /uploads/confirm`、上传失败保留缩略图、评论列表图片/@/#/贴纸渲染、纯贴纸评论、点赞高亮/计数、收藏/关注重新进入详情回显、我的页“评论作品 / 收藏作品 / 关注作品”和列表卡跳转详情。
-- 第六轮设计稿本轮新增项仍不能写成 Android 已实现：主页面统一新增菜单、底部 Logo 导航、社区瀑布流、作品详情图片优先结构、评论区、评论多图堆叠/轮播、@/# 选择状态、Search 搜索页、上传帖子、消息通知详情、私信详情、我的页“获赞 / 作品 / 关注 / 粉丝”统计、编辑资料页、我的页三资产 Tab、Settings 内页、未来地图/真实支付/大模型生图 UI-only。
-- 真机图片环境仍需回归：Feed/API 如返回 `http://localhost:8081/...` 会在真机上解析到手机自身并显示拼豆占位；后端 seed/public URL 必须使用 `.env` 中真机可访问的 LAN 地址并重新确认。
-- 后端 `mvn test` 需要作为下一轮回归命令重新执行；没有当前命令输出时，不能把后端契约测试写成本轮已通过。
-- 2026-05-30 真机优先 QA 已覆盖在线真机安装启动、商城首页、搜索有结果和空态、分类切换、玩家商品禁用标准购物车、自营商品详情、未登录加购拦截、已登录购物车、订单确认地址缺口、我的订单入口和联调支付状态页。
-- 本地 QA 种子商品已覆盖 `SELF_OPERATED`、`PLAYER_SECOND_HAND`、`PLAYER_CUSTOM_SERVICE`；真机商城 smoke 已验证玩家二手 / 定制商品只展示信息并禁用标准购物车。
-- Android debug API Base URL 已支持 `.env` 构建期注入；本地默认只维护真机 `.env`，修改 IP 或 Provider 后仍需重启后端并重新构建 debug 包。登录态已接入 DataStore 启动 hydrate，验证码登录后的真机重启路径已在 2026-05-30 复测通过。
-- Android Studio / Gradle JVM 如果误选到 VS Code Red Hat Java 扩展内置精简 JRE，会触发 `jlink.exe does not exist`；本地构建必须按协作规范选择完整 JDK/JBR 21。
-- 社区、消息和我的样板链路已开始消除空点击和假成功；第三轮已将商城订单确认和联调支付状态收口到禁用缺地址下单、显式创建联调支付单和服务端状态展示。
-- 文件预览 URL 策略不完整，图纸预览、头像等 fileId 不一定能直接展示为图片；第四轮已收敛 Feed 和商城 MVP 所需的 `coverImageUrl` / `imageUrl`，但这不等于完整媒体服务生产化。
-- 真实 AI Provider 未接入完成。`AliyunBailianProvider` 仍是占位实现，尚未调用真实阿里云百炼/通义万相 API。
-- 微信支付和支付宝支付仍是 Stub。当前实现不能用于真实交易收款、退款或对账。
-- 订单确认仍受地址管理缺口限制；在地址接口未闭环前，客户端不能创建伪地址、不能伪装已具备真实收货履约能力；服务端 `POST /orders` 的测试 `addressId` 只用于联调，不代表 Android 已接入地址管理。
-- 内容审核和交易风控仍是基础能力，未达到中国大陆应用市场上线要求。
-- 玩家二手/定制交易仍缺完整闭环，包括真实实名校验、发布限制、评价、纠纷处理和风控策略。
-- 管理后台还只有后端 API，没有完整运营工作台前端。
-- 合规备案、隐私政策、用户协议、SDK 清单、版权投诉和应用市场材料尚未完成。
+后端：
 
-## 当前技术口径
-
-- Android：Kotlin、Jetpack Compose、单 Activity、Navigation Compose、Retrofit、OkHttp、Kotlinx Serialization、Coil、CameraX、Photo Picker。
-- Android 当前依赖装配：`DoyuAppContainer` 服务定位器；MVVM 是目标架构，不代表所有页面已完全 ViewModel 化。
-- Android 登录态：第四轮已切换到 DataStore 持久化 access/refresh token；自动测试覆盖保存、hydrate 和 clear，真机登录重启 smoke 仍按 `10-testing-acceptance.md` 记录为手工复测项。
-- Android 本地联调默认使用真机和电脑当前 Wi-Fi/LAN IPv4。debug 包的 Retrofit `baseUrl` 由仓库根目录 `.env` 在 Gradle 构建期写入 `BuildConfig.API_BASE_URL`，修改 `.env` 后必须重新构建。
-- 后端：Java 21、Spring Boot、Spring Security、JWT、Spring Data JPA、Flyway、PostgreSQL、Redis。
-- 后端端口：`8081`。
-- PostgreSQL 宿主机端口：`5433`，容器内端口仍为 `5432`。
+- 技术栈：Java 21、Spring Boot、Spring Security、JWT、JPA、Flyway、PostgreSQL、Redis。
 - API 前缀：`/api/v1`。
-- 本地 OSS：开发环境默认使用 Local OSS Provider；第五轮前置已补 Aliyun OSS Provider 骨架，可通过本机私有 `.env` 启用，且单台真机 AI_INPUT 上传到真实 Bucket 的开发 smoke 已补齐；CORS 最终收敛、STS/最小权限、CDN、防盗链、图片审核、病毒扫描、缩略图和 seed assets 云迁移仍未关闭。第四轮 seed assets 只用于本地 QA/演示，必须记录图片来源、用途和关联商品/帖子。
-- AI：自研拼豆算法已落地，视觉理解 Provider 仍需真实接入。
-- 支付：支付单和回调骨架已存在，真实微信/支付宝 SDK/API 未接入。
+- 后端端口：`8081`。
+- PostgreSQL 宿主端口：`5433`。
+- 统一响应：`{ code, message, data, traceId }`。
+- 真实 Controller 覆盖 Auth、User、Upload、Community、Pattern、Commerce、Order、Payment、Message、Reward、Report、Admin。
+- 支付、AI、OSS、短信等 Provider 仍有开发态或 Stub 边界。
 
-## 本轮明确不做
+## 不能认为完成
 
-- 不接入真实 AI Provider，不做供应商 API Key、模型选择、真实视觉理解质量验收。
-- 不增强生产级内容审核、图片审核、版权识别、诈骗识别或交易风控。
-- 不接入真实微信支付、支付宝支付、退款、对账或支付 SDK。
-- 不补齐备案、隐私政策、用户协议、SDK 清单、版权投诉等生产合规材料。
-- 不补完整玩家二手/定制交易闭环、担保、评价、纠纷、提现或卖家资质审核。
-- 不把玩家二手/定制商品接入标准购物车混单。
-- 不把地址管理写成本轮已完成；订单确认继续以地址缺口和禁用伪下单为边界。
-- 不新增后端公共上传 API；评论图片继续复用已有上传抽象和 `POST_IMAGE` usage。
-- 不做视频评论、用户自定义贴纸、付费表情包、贴纸上传、话题运营后台、热榜或复杂推荐；本轮只关闭 seed 话题、内置贴纸和现有用户搜索的评论互动 MVP。
-- 不接真实地图 API、真实支付 API 或大模型生图 API；当前只允许保留 UI-only 设计占位，不新增后端接口契约。
+以下能力不得在文档、UI 或验收中写成已完成：
+
+- 真实 AI Provider。
+- 地图 API。
+- 真实微信/支付宝支付、退款、对账或支付 SDK。
+- 完整地址管理。
+- 生产级内容审核、图片审核、版权识别、诈骗识别和交易风控。
+- 玩家二手/定制交易完整闭环、担保、评价、纠纷、提现和卖家资质审核。
+- 备案、隐私政策、用户协议、SDK 清单、版权投诉和应用市场上线材料。
+- 生产对象存储；Aliyun OSS Provider 只是后端切换骨架和开发联调能力。
+- Search 全局后端。
+- Profile Edit Android 路由。
+- Settings 子页 Android 路由。
+- 通知详情 Android 路由。
+- 大模型生图 API。
+
+## 当前验收风险
+
+没有新的真机证据前，不能写成通过：
+
+- 评论图片 Photo Picker。
+- 最多 9 图。
+- `/uploads/presign -> PUT -> /uploads/confirm` 评论图片链路。
+- 上传失败保留缩略图和重试。
+- 评论列表图片、@、#、贴纸渲染。
+- 纯贴纸评论。
+- 点赞、收藏、关注退出详情后回显。
+- 最新我的页统计和三资产 Tab Android 实现。
+- Search、Profile Edit、Settings 子页、通知详情 Android 实现。
+- 真机 seed/public 图片 URL 不返回 `localhost`。
+- 当前轮后端 `mvn test`。
 
 ## 下一步优先级
 
-P0：第六轮 UI/品牌与主链路展示收敛
+P0：Stage 0 文档/API/图谱对齐。
 
-- Android：继续打磨社区、商城、AI、消息、我的五个主 Tab 首屏观感，消除空点击、假成功 Toast 和半成品文案。
-- UI 设计目标：主页面顶部统一“新增 icon - 页面标题 - 搜索 icon”；新增菜单进入 Setting、AI 创作、上传帖子；底部五 Tab 使用品牌化 Logo；社区 Feed 目标为有高度上限的双列瀑布流。
-- 社区：作品详情评论输入保持可展开视觉口径，继续支持最多 9 张图、纯字/纯图/纯贴纸/图文贴纸混合、@ 用户、# 话题和内置贴纸；图片上传失败必须阻断整条评论提交并保留已选内容。
-- 消息：私信列表进入会话详情，通知列表进入通知详情；通知页不展示会话输入状态，未互关 3 条限制只在私信/对话中表达。
-- 我的：后续 Compose 若按最新设计稿收敛，应把统计项调整为“获赞 / 作品 / 关注 / 粉丝”，把“我的图纸 / 点赞作品 / 收藏作品”放入同一 Tab，并补编辑资料入口；“我的订单 / 评论作品 / 关注作品”不作为最新我的页首屏设计目标展示。
-- Settings / 未来能力：Settings 内页按设计稿补账号安全、隐私权限、通知设置、关于合规；地图、真实支付、大模型生图只保留 UI-only 占位，不接后端。
-- 后端：评论请求校验文字、图片、贴纸三者至少一种存在，最多 9 张图，文件必须属于当前用户且为 `POST_IMAGE` 图片；非法 @ 用户、话题或贴纸返回参数错误；评论列表和发布响应都返回 `mediaAssets`、`mentions`、`topics`、`stickers`。
-- Android：帖子详情必须用 `likedByMe`、`favoritedByMe`、`followedAuthorByMe` 回显互动状态；我的页四个互动资产页作为后续回归对象保留。
-- 文档 / QA：`10-testing-acceptance.md` 记录第六轮作品详情互动验收；真机只使用 `10.64.241.158:<当前端口>`。
+- 完成 `05-api-contract.md` 的真实接口覆盖。
+- 完成 `16-stage-development-roadmap.md`。
+- 重写 `diagrams/` 流程图和 UI 线框图。
+- 验证未触碰 Android / 后端源码。
 
-P1：第五轮 Aliyun OSS Provider 骨架回归
+P1：Stage 1 UI Shell 与设计系统落地。
 
-- 后端：`DOUYU_OSS_PROVIDER=local|stub|aliyun` 可选择对象存储 Provider；Aliyun Provider 只由后端持有 AccessKey，继续复用 `/uploads/presign -> PUT uploadUrl -> /uploads/confirm`。
-- 后端：Aliyun Provider 生成 PUT 预签名 URL，返回 Android 直传所需 `headers`，confirm 后返回完整 `FileAsset` 字段，并通过 `publicUrl=publicBaseUrl + fileKey` 暴露公开图片 URL。
-- 文档：`.env.example` 只保留 Aliyun 占位变量，不提交真实 AccessKey；联调文档写清广州 Bucket 示例、Bucket CORS、公共读边界和 Provider 切换后重启后端。
-- 已补：单台真机 AI_INPUT 图片上传已完成 Aliyun OSS 预签名 PUT、`/uploads/confirm`、数据库 `file_assets` 和公开 URL `HEAD 200` smoke；Android 已补未登录上传登录引导和 `fileId -> ai_params/{uploadedFileId}` 路由单元测试。
-- 未完成：STS/最小权限、CDN、防盗链、图片审核、缩略图和 seed assets 云迁移。
+- 统一五个主 Tab 顶部栏。
+- 落地品牌化底部 Logo 导航。
+- 收敛状态页、禁用态、开发态。
+- 快捷新增菜单接 Settings、AI 创作、上传帖子。
 
-P2：第四轮登录态持久化 + 常驻真实图文数据回归
+P2：Stage 2 社区首页与作品详情重构。
 
-- Android：把 `DoyuAppContainer` 的 tokenStore 接入 DataStore，启动时 hydrate；登录保存 access/refresh token，401 refresh 成功后更新 DataStore，退出登录和鉴权过期时清理 DataStore。
-- Android：补登录态单元测试和真机 smoke，覆盖登录后重启 App 仍识别登录态、退出后重启不恢复登录态、refresh token 更新后持久化。
-- 后端：为本地 QA seed 数据提供常驻真实图片素材，商品列表/详情和购物车摘要返回 `imageUrl`，社区 Feed 返回 `coverImageUrl`；图片 URL 使用 `DOUYU_STORAGE_BASE_URL` / Local OSS 开发路径，不接真实 OSS。
-- 后端：seed assets 必须幂等写入，来源、用途、关联商品/帖子、许可或生成说明必须有记录；不得引入未授权素材或真实用户数据。
-- Android：商品卡、商品详情、购物车项和社区 Feed 优先渲染 `imageUrl` / `coverImageUrl`，图片为空或加载失败时才回退到现有 swatch/占位视觉。
-- QA：验收清单必须同时包含 Android 单测/构建、后端测试/API smoke、真机重启登录态与图文渲染 smoke；无在线设备时不得把真机 QA 写成通过。
+- 社区双列瀑布流。
+- 作品详情图片优先。
+- 评论区、悬浮评论栏、@/#/图片/贴纸和 9 图状态。
 
-P3：第三轮商城收口回归
+P3：Stage 3 发帖、Search、Settings、Profile Edit。
 
-- 保留第三轮商城搜索/分类、自营加购、玩家商品禁用标准购物车、订单确认地址缺口、订单列表和联调支付状态回归。
-- 后续视觉 QA：以在线真机竖屏为主复查商城列表、详情、购物车、订单确认和支付状态页不挤压、不重叠；如未来需要多宽度覆盖，单独开任务准备设备或模拟器，不再作为当前默认流程。
+- 发帖按新版原型补状态。
+- Search 标 UI-only 或局部筛选范围。
+- Profile Edit 接已有后端资料更新接口前先补 Android Retrofit / Repository 计划。
+- Settings 子页只标待补/开发态。
 
-P4：保留并复查第二轮 UI 统一基线
+P4：Stage 4 消息/私信/通知。
 
-- 复查 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、FAB、卡片、按钮、Chip、Search、加载/空/错误/未登录状态在主要页面的表现。
-- 手工验收消息页：通知/私信 Tab、列表密度、未读状态、空/错/未登录状态；私信发送未闭环时禁用或明确边界。
-- 手工验收退出登录返回：退出后返回路径明确，受保护页面回到未登录态或登录引导。
-- 手工验收我的页：个人资产中心结构、中文化、卡片层级、未闭环入口隐藏/禁用/明确开发态。
+- 私信/通知分区。
+- 会话详情互关正常聊天、未互关剩余 3 条、超限禁用。
+- 通知详情仍按 UI-only 或后续路由处理。
 
-P5：保留并复查第一轮登录 + 社区基线
+P5：Stage 5-7。
 
-- 保持 `05-api-contract.md`、后端 Controller/DTO、Android DTO/Repository、UI 和测试一致。
-- 登录继续传 `ageGroup=AGE_18_PLUS`，登录响应用户字段使用 `avatarUrl`。
-- 社区 Feed、详情、发布、评论、点赞、收藏均有明确状态和错误映射。
-- 避免第二轮组件调整破坏社区样板链路。
-
-P4：开发态主链路联调
-
-- AI 上传、创建任务、轮询、失败、取消、成功结果页可跑，但仍只表达开发态图纸生成。
-- 商城商品、购物车、订单、支付单状态边界清楚，不表达正式渠道完成态。
-- 消息、我的、收藏、订单、设置没有空点击和误导性成功文案。
-
-P5：生产化补强
-
-- 真实 AI Provider、真实支付、审核风控、合规材料、玩家交易闭环和运营后台前端放到 UI MVP 之后单独规划。
+- 商城/订单/联调支付边界复查。
+- AI 开发态和未来能力 UI-only 边界。
+- 真机 QA、接口回归和文档验收关闭。
