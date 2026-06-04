@@ -1,0 +1,26 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 860">
+  <style>
+    text{font-family:"Noto Sans SC","PingFang SC",sans-serif}.bg{fill:#FFFBF7}.card{fill:#fff;stroke:#E0CDD0;stroke-width:1.2}.sky{fill:#D6E8FF;stroke:#7AADE0}.mint{fill:#D4F0E0;stroke:#7DB89A}.petal{fill:#FFE0E6;stroke:#F48FA4}.coral{fill:#FFE1D8;stroke:#FF8F75}.label{fill:#201A1C;font-size:13px;font-weight:800}.small{fill:#524347;font-size:10px}
+  </style>
+  <rect width="420" height="860" class="bg"/>
+  <rect x="20" y="24" width="380" height="812" rx="28" fill="#fff" stroke="#E0CDD0"/>
+  <text x="210" y="62" text-anchor="middle" class="label">AI 拼图</text>
+  <rect x="42" y="92" width="336" height="150" rx="24" class="sky"/>
+  <text x="210" y="142" text-anchor="middle" class="label">开发态图纸生成</text>
+  <text x="210" y="166" text-anchor="middle" class="small">上传图片，生成拼豆图纸、色号和材料清单</text>
+  <rect x="82" y="190" width="120" height="34" rx="17" fill="#7AADE0"/><text x="142" y="212" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">选择图片</text>
+  <rect x="218" y="190" width="120" height="34" rx="17" class="card"/><text x="278" y="212" text-anchor="middle" class="small">拍照</text>
+  <rect x="42" y="270" width="336" height="96" rx="18" class="mint"/>
+  <text x="66" y="300" class="label">正在生成</text><text x="66" y="326" class="small">jobId / 进度 / 可取消</text>
+  <rect x="66" y="340" width="260" height="8" rx="4" fill="#fff"/><rect x="66" y="340" width="150" height="8" rx="4" fill="#7DB89A"/>
+  <text x="42" y="404" class="label">创作历史</text>
+  <rect x="42" y="426" width="154" height="170" rx="16" class="card"/>
+  <rect x="56" y="440" width="126" height="86" rx="12" class="petal"/><text x="119" y="486" text-anchor="middle" class="small">预览图</text>
+  <text x="56" y="550" class="small">SUCCEEDED</text><text x="56" y="572" class="small">材料清单</text>
+  <rect x="224" y="426" width="154" height="170" rx="16" class="card"/>
+  <rect x="238" y="440" width="126" height="86" rx="12" class="coral"/><text x="301" y="486" text-anchor="middle" class="small">失败态</text>
+  <text x="238" y="550" class="small">FAILED / 可读原因</text><text x="238" y="572" class="small">重试或返回</text>
+  <rect x="42" y="626" width="336" height="74" rx="18" class="petal"/><text x="210" y="656" text-anchor="middle" class="label">结果页边界</text><text x="210" y="680" text-anchor="middle" class="small">加购 / PDF / 分享未闭环时禁用或说明开发态</text>
+  <rect x="42" y="748" width="336" height="58" rx="22" class="card"/>
+  <text x="76" y="782" class="small">社区</text><text x="142" y="782" class="small">商城</text><text x="204" y="782" class="small">AI</text><text x="266" y="782" class="small">消息</text><text x="328" y="782" class="small">我的</text>
+</svg>

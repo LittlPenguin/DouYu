@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI 创作首页 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆屿 Doyu / A 方向页面级设计稿</div>
+        <h1 class="title">AI 创作：首页与开发态边界</h1>
+        <p class="lead">AI 页是明确的创作工具入口，覆盖上传、参数、任务进度、历史和失败状态。真实大模型生图 API 只在未来能力页做 UI-only 设计，不写成当前已接入。</p>
+        <div class="chips"><span class="chip">开发态生成</span><span class="chip">任务状态</span><span class="chip">历史图纸</span><span class="chip">未来生图 UI-only</span></div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>框架统一</b><span>顶部同样使用新增 icon - AI 创作 - 搜索 icon，底部使用品牌 Logo 导航。</span></div>
+        <div class="fact"><b>AI 边界</b><span>不承诺真实视觉理解质量；客户端不得直连模型供应商。</span></div>
+        <div class="fact"><b>结果操作</b><span>PDF、加购、分享到社区未闭环时必须禁用或标注开发态。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar">
+              <a class="icon-btn" href="post-compose-a.html"><span class="icon add"></span></a>
+              <div class="top-title">AI 创作</div>
+              <a class="icon-btn" href="search-a.html"><span class="icon search"></span></a>
+              <div class="quick-menu">
+                <a class="quick-item" href="settings-home-a.html"><span class="icon settings"></span><span>Setting</span></a>
+                <a class="quick-item on" href="ai-home-a.html"><span class="icon ai"></span><span>AI 创作</span></a>
+                <a class="quick-item" href="post-compose-a.html"><span class="icon upload"></span><span>上传帖子</span></a>
+              </div>
+            </div>
+            <div class="scroll">
+              <div class="hero-strip" style="background:linear-gradient(135deg,#fff,var(--mint2))"><span class="pill ok">开发态工具</span><h3>上传图片生成拼豆图纸</h3><p>生成质量以后端 Provider 能力为准，当前不承诺真实视觉理解。</p><div class="tool-row"><span class="button">相册上传</span><span class="button ghost">拍照</span></div></div>
+              <div class="hero-strip"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">正在生成</h3><span class="pill warn">PROCESSING</span></div><p>草莓小熊图纸 · 约 62%</p><div style="height:9px;background:#f0e5dd;border-radius:999px;overflow:hidden"><span style="display:block;width:62%;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--sky))"></span></div><div class="tool-row"><span class="button ghost">取消</span><span class="button ghost">查看任务</span></div></div>
+              <div class="list">
+                <div class="row"><span class="round-icon"><span class="icon ai"></span></span><div class="row-main"><div class="row-title">薄荷小岛挂件</div><div class="row-sub">SUCCEEDED · 48 色 · 28x28</div></div><span class="pill ok">保存</span></div>
+                <div class="row"><span class="round-icon"><span class="icon image"></span></span><div class="row-main"><div class="row-title">头像图纸</div><div class="row-sub">FAILED · 图片过暗</div></div><span class="pill warn">重试</span></div>
+              </div>
+            </div>
+            <div class="bottom-nav">
+              <a class="nav-item" href="community-home-a.html"><span class="nav-logo community"></span><span>社区</span></a>
+              <a class="nav-item" href="commerce-home-a.html"><span class="nav-logo shop"></span><span>商城</span></a>
+              <a class="nav-item on" href="ai-home-a.html"><span class="nav-logo ai"></span><span>AI</span></a>
+              <a class="nav-item" href="messages-a.html"><span class="nav-logo message"></span><span>消息</span></a>
+              <a class="nav-item" href="profile-a.html"><span class="nav-logo profile"></span><span>我的</span></a>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="spec-grid">
+            <div class="spec"><h3>首页结构</h3><ul><li>AI Hero 说明开发态图纸生成工具。</li><li>上传入口：相册、拍照。</li><li>任务卡展示 PENDING/PROCESSING/SUCCEEDED/FAILED。</li><li>历史列表展示预览、状态和材料摘要。</li></ul></div>
+            <div class="spec"><h3>参数规则</h3><ul><li>beadSize、targetSize、difficulty、paletteId、style 使用稳定控件。</li><li>参数不完整时禁用创建。</li><li>失败原因可读，提供重试或返回。</li></ul></div>
+            <div class="state"><h3>结果页禁用态</h3><p>材料加购、PDF 导出、分享到社区如未闭环，必须禁用或标注开发态，不用正式成功 Toast。</p><div class="state-bar"><span class="state-dot warn">PDF 待闭环</span><span class="state-dot bad">禁假成功</span></div></div>
+            <div class="state"><h3>大模型生图</h3><p>真实大模型生图 API 当前只做 UI-only 占位，详见 `future-capability-ui-a.html`。</p><div class="state-bar"><span class="state-dot warn">UI-only</span><span class="state-dot bad">未接 Provider</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

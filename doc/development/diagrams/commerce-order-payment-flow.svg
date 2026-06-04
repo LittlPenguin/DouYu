@@ -1,0 +1,24 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 780">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/></marker>
+    <style>
+      text{font-family:"JetBrains Mono","Noto Sans SC","PingFang SC",sans-serif}.bg{fill:#0f172a}.title{fill:#f8fafc;font-size:20px;font-weight:700}.note{fill:#94a3b8;font-size:10px}
+      .p{fill:rgba(8,51,68,.55);stroke:#22d3ee;stroke-width:1.5}.s{fill:rgba(6,78,59,.5);stroke:#34d399;stroke-width:1.5}.d{fill:rgba(120,53,15,.35);stroke:#fbbf24;stroke-width:1.5}.r{fill:rgba(136,19,55,.42);stroke:#fb7185;stroke-width:1.5}.v{fill:rgba(76,29,149,.45);stroke:#a78bfa;stroke-width:1.5}
+      .label{fill:#f8fafc;font-size:12px;font-weight:700}.small{fill:#cbd5e1;font-size:9px}.line{fill:none;stroke:#94a3b8;stroke-width:1.4;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1040" height="780" class="bg"/>
+  <text x="34" y="38" class="title">商城订单与联调支付流程</text>
+  <text x="34" y="58" class="note">自营商品可走标准购物车；玩家二手/定制只展示直连边界；真实微信/支付宝未接入</text>
+  <rect x="390" y="90" width="220" height="58" rx="8" class="p"/><text x="500" y="114" text-anchor="middle" class="label">商品列表 / 详情</text><text x="500" y="131" text-anchor="middle" class="small">GET /products</text>
+  <polygon points="500,205 585,260 500,315 415,260" class="d"/><text x="500" y="257" text-anchor="middle" class="label">SELF_OPERATED?</text>
+  <rect x="120" y="370" width="220" height="58" rx="8" class="r"/><text x="230" y="394" text-anchor="middle" class="label">玩家商品边界</text><text x="230" y="411" text-anchor="middle" class="small">禁用标准购物车</text>
+  <rect x="390" y="370" width="220" height="58" rx="8" class="s"/><text x="500" y="394" text-anchor="middle" class="label">加入购物车</text><text x="500" y="411" text-anchor="middle" class="small">POST /cart/items</text>
+  <rect x="390" y="500" width="220" height="58" rx="8" class="s"/><text x="500" y="524" text-anchor="middle" class="label">购物车 / 结算</text><text x="500" y="541" text-anchor="middle" class="small">GET /cart</text>
+  <polygon points="500,610 585,665 500,720 415,665" class="d"/><text x="500" y="662" text-anchor="middle" class="label">地址已闭环?</text>
+  <rect x="700" y="626" width="220" height="58" rx="8" class="r"/><text x="810" y="650" text-anchor="middle" class="label">禁用伪下单</text><text x="810" y="667" text-anchor="middle" class="small">展示地址缺口</text>
+  <rect x="120" y="626" width="220" height="58" rx="8" class="v"/><text x="230" y="650" text-anchor="middle" class="label">创建订单 / 支付单</text><text x="230" y="667" text-anchor="middle" class="small">联调状态，不是真实支付</text>
+  <path class="line" d="M500 148 L500 205"/><path class="line" d="M415 260 L230 370"/><path class="line" d="M500 315 L500 370"/><path class="line" d="M500 428 L500 500"/><path class="line" d="M500 558 L500 610"/>
+  <path class="line" d="M585 665 L700 655"/><path class="line" d="M415 665 L340 655"/>
+  <text x="385" y="294" class="small" fill="#fb7185">否</text><text x="515" y="340" class="small" fill="#34d399">是</text><text x="607" y="653" class="small" fill="#fb7185">否</text><text x="360" y="653" class="small" fill="#34d399">仅联调用</text>
+</svg>

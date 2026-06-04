@@ -1,0 +1,52 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 760">
+  <defs>
+    <style>
+      text{font-family:"Noto Sans SC","PingFang SC",sans-serif}.bg{fill:#FFFBF7}.title{fill:#201A1C;font-size:22px;font-weight:800}.note{fill:#524347;font-size:11px}
+      .tab{fill:#fff;stroke:#E0CDD0;stroke-width:1.4}.petal{fill:#FFE0E6;stroke:#F48FA4}.mint{fill:#D4F0E0;stroke:#7DB89A}.sky{fill:#D6E8FF;stroke:#7AADE0}.coral{fill:#FFE1D8;stroke:#FF8F75}
+      .label{fill:#201A1C;font-size:14px;font-weight:700}.small{fill:#524347;font-size:10px}.item{fill:#fff;stroke:#E0CDD0;stroke-width:1}
+    </style>
+  </defs>
+  <rect width="1180" height="760" class="bg"/>
+  <text x="34" y="42" class="title">豆屿 Doyu UI 信息架构</text>
+  <text x="34" y="64" class="note">五个主 Tab：内容发现、材料购买、图纸生成、消息沟通、个人资产；不可用能力必须隐藏、禁用或说明开发态</text>
+
+  <rect x="55" y="110" width="200" height="560" rx="18" class="tab"/>
+  <rect x="55" y="110" width="200" height="62" rx="18" class="petal"/><text x="155" y="137" text-anchor="middle" class="label">社区</text><text x="155" y="155" text-anchor="middle" class="small">内容发现 + 互动</text>
+  <rect x="80" y="205" width="150" height="38" rx="10" class="item"/><text x="155" y="229" text-anchor="middle" class="small">推荐 / 关注 Feed</text>
+  <rect x="80" y="265" width="150" height="38" rx="10" class="item"/><text x="155" y="289" text-anchor="middle" class="small">帖子详情</text>
+  <rect x="80" y="325" width="150" height="38" rx="10" class="item"/><text x="155" y="349" text-anchor="middle" class="small">评论 / 图片 / 贴纸</text>
+  <rect x="80" y="385" width="150" height="38" rx="10" class="item"/><text x="155" y="409" text-anchor="middle" class="small">点赞 / 收藏 / 关注</text>
+  <rect x="80" y="445" width="150" height="38" rx="10" class="item"/><text x="155" y="469" text-anchor="middle" class="small">发帖审核中</text>
+
+  <rect x="275" y="110" width="200" height="560" rx="18" class="tab"/>
+  <rect x="275" y="110" width="200" height="62" rx="18" class="coral"/><text x="375" y="137" text-anchor="middle" class="label">商城</text><text x="375" y="155" text-anchor="middle" class="small">自营材料 + 玩家展示</text>
+  <rect x="300" y="205" width="150" height="38" rx="10" class="item"/><text x="375" y="229" text-anchor="middle" class="small">搜索 / 分类</text>
+  <rect x="300" y="265" width="150" height="38" rx="10" class="item"/><text x="375" y="289" text-anchor="middle" class="small">商品列表 / 详情</text>
+  <rect x="300" y="325" width="150" height="38" rx="10" class="item"/><text x="375" y="349" text-anchor="middle" class="small">自营购物车</text>
+  <rect x="300" y="385" width="150" height="38" rx="10" class="item"/><text x="375" y="409" text-anchor="middle" class="small">订单确认地址缺口</text>
+  <rect x="300" y="445" width="150" height="38" rx="10" class="item"/><text x="375" y="469" text-anchor="middle" class="small">联调支付状态</text>
+
+  <rect x="495" y="110" width="200" height="560" rx="18" class="tab"/>
+  <rect x="495" y="110" width="200" height="62" rx="18" class="sky"/><text x="595" y="137" text-anchor="middle" class="label">AI 拼图</text><text x="595" y="155" text-anchor="middle" class="small">开发态图纸生成</text>
+  <rect x="520" y="205" width="150" height="38" rx="10" class="item"/><text x="595" y="229" text-anchor="middle" class="small">上传 / 拍照</text>
+  <rect x="520" y="265" width="150" height="38" rx="10" class="item"/><text x="595" y="289" text-anchor="middle" class="small">参数选择</text>
+  <rect x="520" y="325" width="150" height="38" rx="10" class="item"/><text x="595" y="349" text-anchor="middle" class="small">任务进度</text>
+  <rect x="520" y="385" width="150" height="38" rx="10" class="item"/><text x="595" y="409" text-anchor="middle" class="small">图纸结果</text>
+  <rect x="520" y="445" width="150" height="38" rx="10" class="item"/><text x="595" y="469" text-anchor="middle" class="small">历史记录</text>
+
+  <rect x="715" y="110" width="200" height="560" rx="18" class="tab"/>
+  <rect x="715" y="110" width="200" height="62" rx="18" class="mint"/><text x="815" y="137" text-anchor="middle" class="label">消息</text><text x="815" y="155" text-anchor="middle" class="small">通知 + 文本私信</text>
+  <rect x="740" y="205" width="150" height="38" rx="10" class="item"/><text x="815" y="229" text-anchor="middle" class="small">通知列表</text>
+  <rect x="740" y="265" width="150" height="38" rx="10" class="item"/><text x="815" y="289" text-anchor="middle" class="small">会话列表</text>
+  <rect x="740" y="325" width="150" height="38" rx="10" class="item"/><text x="815" y="349" text-anchor="middle" class="small">会话详情</text>
+  <rect x="740" y="385" width="150" height="38" rx="10" class="item"/><text x="815" y="409" text-anchor="middle" class="small">互关发送边界</text>
+  <rect x="740" y="445" width="150" height="38" rx="10" class="item"/><text x="815" y="469" text-anchor="middle" class="small">未互关 3 条限制</text>
+
+  <rect x="935" y="110" width="200" height="560" rx="18" class="tab"/>
+  <rect x="935" y="110" width="200" height="62" rx="18" class="petal"/><text x="1035" y="137" text-anchor="middle" class="label">我的</text><text x="1035" y="155" text-anchor="middle" class="small">个人资产中心</text>
+  <rect x="960" y="205" width="150" height="38" rx="10" class="item"/><text x="1035" y="229" text-anchor="middle" class="small">个人资料 / 统计</text>
+  <rect x="960" y="265" width="150" height="38" rx="10" class="item"/><text x="1035" y="289" text-anchor="middle" class="small">我的图纸 / 收藏</text>
+  <rect x="960" y="325" width="150" height="38" rx="10" class="item"/><text x="1035" y="349" text-anchor="middle" class="small">我的订单</text>
+  <rect x="960" y="385" width="150" height="38" rx="10" class="item"/><text x="1035" y="409" text-anchor="middle" class="small">四个互动资产页</text>
+  <rect x="960" y="445" width="150" height="38" rx="10" class="item"/><text x="1035" y="469" text-anchor="middle" class="small">设置开发态边界</text>
+</svg>

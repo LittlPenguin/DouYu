@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>未来能力 UI-only A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆屿 Doyu / 未来能力 UI-only 设计稿</div>
+        <h1 class="title">地图、真实支付、大模型生图 UI-only 占位</h1>
+        <p class="lead">本页只为最后一轮真实接入前提供 UI 参考。当前不新增后端接口，不接真实地图 API、真实支付 API 或大模型生图 API，也不把这些能力写成可用。</p>
+        <div class="chips"><span class="chip">UI-only</span><span class="chip">不接后端</span><span class="chip">不可真实支付</span><span class="chip">不可真实生图</span></div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>强标识</b><span>所有画面必须显著标注 UI-only / 当前不可用。</span></div>
+        <div class="fact"><b>接口边界</b><span>不写字段、不写 API 路径、不改 `05-api-contract.md`。</span></div>
+        <div class="fact"><b>验收范围</b><span>只验收 UI 状态覆盖，不验收服务可用性。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>三类未来能力</h2>
+        <p>每类都展示正常态、失败/无权限/不确定态和不可用边界。</p>
+      </div>
+      <div class="mini-phones">
+        <div class="mini-screen">
+          <div class="mini-head">地图 API UI-only</div>
+          <div class="mini-body">
+            <div class="warning-band">当前不接地图 API</div>
+            <div class="hero-strip" style="margin:12px 0"><span class="pill warn">位置授权</span><h3>选择交易区域</h3><p>未来用于玩家直连交易的城市/区域选择。</p></div>
+            <div class="list" style="padding:0"><div class="row"><span class="round-icon"><span class="icon map"></span></span><div class="row-main"><div class="row-title">定位失败</div><div class="row-sub">可手动选择城市/区域</div></div><span class="pill warn">重试</span></div></div>
+          </div>
+        </div>
+        <div class="mini-screen">
+          <div class="mini-head">真实支付 API UI-only</div>
+          <div class="mini-body">
+            <div class="warning-band">当前不可用于真实收款</div>
+            <div class="hero-strip" style="margin:12px 0"><span class="pill warn">支付方式</span><h3>微信 / 支付宝</h3><p>未来接入前的视觉状态，不代表 SDK 已接入。</p></div>
+            <div class="list" style="padding:0"><div class="row"><span class="round-icon"><span class="icon pay"></span></span><div class="row-main"><div class="row-title">支付结果不确定</div><div class="row-sub">返回 App 后查询服务端状态</div></div><span class="pill warn">查询中</span></div></div>
+          </div>
+        </div>
+        <div class="mini-screen">
+          <div class="mini-head">大模型生图 UI-only</div>
+          <div class="mini-body">
+            <div class="warning-band">当前未接真实 Provider</div>
+            <div class="hero-strip" style="margin:12px 0"><span class="pill warn">生成任务</span><h3>提示词 + 参考图</h3><p>未来用于生成拼豆风格参考图。</p></div>
+            <div class="list" style="padding:0"><div class="row"><span class="round-icon"><span class="icon ai"></span></span><div class="row-main"><div class="row-title">内容安全拦截</div><div class="row-sub">提示词或参考图不符合规则</div></div><span class="pill stop">拒绝</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="state-grid">
+        <div class="spec"><h3>地图状态</h3><ul><li>请求位置权限。</li><li>用户拒绝权限。</li><li>定位失败。</li><li>手动选择城市/区域。</li><li>服务不可用时隐藏或禁用入口。</li></ul></div>
+        <div class="spec"><h3>支付状态</h3><ul><li>选择支付方式。</li><li>跳转处理中。</li><li>支付失败。</li><li>结果不确定，查询服务端。</li><li>当前不可展示正式支付成功态。</li></ul></div>
+        <div class="spec"><h3>大模型生图状态</h3><ul><li>提示词和参考图。</li><li>排队中、生成中。</li><li>失败重试。</li><li>内容安全拦截。</li><li>生成结果选择和保存。</li></ul></div>
+        <div class="state"><h3>统一警示</h3><p>这些设计只用于未来接入讨论，当前不修改 API、不修改业务代码、不承诺上线能力。</p><div class="state-bar"><span class="state-dot warn">UI-only</span><span class="state-dot bad">不接后端</span><span class="state-dot bad">不可生产</span></div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

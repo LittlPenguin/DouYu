@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>私信对话详情 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆屿 Doyu / 消息补全设计稿</div>
+        <h1 class="title">私信对话详情：互关与 3 条限制</h1>
+        <p class="lead">补齐此前缺失的私信对话详情。互关时正常输入；未互关时展示剩余条数；超过限制后禁用输入，并引导互相关注后继续聊天。</p>
+        <div class="chips"><span class="chip">互关可发送</span><span class="chip">未互关剩余条数</span><span class="chip">超过 3 条禁用</span><span class="chip">无图片私信</span></div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>本轮语义</b><span>关注/互相关注，不设计好友申请审批、待通过、好友验证。</span></div>
+        <div class="fact"><b>错误处理</b><span>发送失败保留输入内容；超过限制时输入框不弹键盘、不发送假成功。</span></div>
+        <div class="fact"><b>当前边界</b><span>图片私信、撤回、复杂已读和生产级风控不在本轮设计闭环。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>对话状态</h2>
+        <p>左侧展示正常互关对话，右侧列出未互关和禁发态。</p>
+      </div>
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar"><a class="icon-btn" href="messages-a.html"><span class="icon back"></span></a><div class="top-title">阿澄</div><a class="icon-btn" href="search-a.html"><span class="icon search"></span></a></div>
+            <div class="scroll no-nav">
+              <div class="hero-strip"><span class="pill ok">互相关注</span><h3>可以继续聊天</h3><p>输入框启用，发送失败时保留草稿并展示重试。</p></div>
+              <div class="list">
+                <div class="row" style="align-items:flex-start"><span class="avatar"></span><div class="row-main"><div class="row-sub" style="white-space:normal">这个草莓杯垫的色号可以分享吗？</div></div></div>
+                <div class="row" style="align-items:flex-start;background:var(--petal2)"><div class="row-main"><div class="row-sub" style="white-space:normal;color:var(--ink)">可以，我整理成图纸发你。</div></div></div>
+                <div class="row" style="align-items:flex-start"><span class="avatar"></span><div class="row-main"><div class="row-sub" style="white-space:normal">太好了，想试试 Mint 边框。</div></div></div>
+              </div>
+            </div>
+            <div class="floating-bar"><div class="input-line">输入私信内容</div><div class="tool-row"><span class="pill ok">互关可发送</span><button class="send-btn" style="margin-left:auto">发送</button></div></div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="mini-phones">
+            <div class="mini-screen"><div class="mini-head">未互关剩余 2 条</div><div class="mini-body"><div class="warning-band">你还可以发送 2 条消息</div><div class="list" style="padding:10px 0"><div class="row"><span class="avatar"></span><div class="row-main"><div class="row-title">知知</div><div class="row-sub">想问这个图纸尺寸</div></div></div></div><div class="input-line">输入后剩余 1 条</div></div></div>
+            <div class="mini-screen"><div class="mini-head">超过 3 条</div><div class="mini-body"><div class="warning-band">互相关注后可继续聊天</div><div class="list" style="padding:10px 0"><div class="row"><span class="avatar"></span><div class="row-main"><div class="row-title">陌生会话</div><div class="row-sub">已达到未互关上限</div></div></div></div><div class="input-line">输入已禁用</div><button class="button ghost" style="margin-top:10px;width:100%">去关注</button></div></div>
+            <div class="mini-screen"><div class="mini-head">发送失败</div><div class="mini-body"><div class="warning-band">网络异常，消息未发送</div><div class="input-line" style="margin-top:12px">草稿保留在输入框</div><div class="tool-row"><button class="button ghost">重试</button><button class="button ghost">取消</button></div></div></div>
+          </div>
+          <div class="spec-grid" style="margin-top:14px">
+            <div class="state"><h3>禁用态</h3><p>超过 3 条后输入框不响应键盘，发送按钮消失或禁用；不能弹出“发送成功”。</p><div class="state-bar"><span class="state-dot bad">禁假成功</span><span class="state-dot warn">互关提示</span></div></div>
+            <div class="state"><h3>空会话</h3><p>空对话展示对方资料摘要和当前发送限制，不使用大段说明或营销式引导。</p><div class="state-bar"><span class="state-dot good">可读</span><span class="state-dot warn">克制</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

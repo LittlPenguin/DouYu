@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>上传帖子 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆屿 Doyu / 上传帖子 UI-only 设计稿</div>
+        <h1 class="title">上传帖子：图片、正文、话题与审核中</h1>
+        <p class="lead">本页承接主页面新增菜单中的“上传帖子”入口，表达发帖流程应有的输入、图片上传、失败重试和审核中状态。本页不新增 Android 路由或后端接口契约。</p>
+        <div class="chips">
+          <span class="chip">上传帖子入口</span>
+          <span class="chip">最多 9 图</span>
+          <span class="chip">失败可重试</span>
+          <span class="chip">发布后审核中</span>
+        </div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>入口来源</b><span>五个主页面左上新增菜单的“上传帖子”均进入本设计稿或对应实现，不允许空点击。</span></div>
+        <div class="fact"><b>上传边界</b><span>图片上传失败不得假成功；失败缩略图保留并给出重试。</span></div>
+        <div class="fact"><b>发布边界</b><span>发布后提示审核中，不写成作品已立即公开。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>发帖主态与状态补全</h2>
+        <p>左侧是主流程，右侧补齐上传中、失败、达到 9 图、未登录和审核中状态。</p>
+      </div>
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar">
+              <a class="icon-btn" href="community-home-a.html"><span class="icon back"></span></a>
+              <div class="top-title">上传帖子</div>
+              <a class="button petal" href="community-home-a.html" style="min-height:34px;padding:0 10px">发布</a>
+            </div>
+            <div class="scroll no-nav">
+              <div class="compose-area">
+                <div class="compose-field title-field">草莓小熊杯垫完成啦</div>
+                <div class="compose-field body-field">记录一下 Petal 和 Coral 的配色。图片上传完成后才能发布，发布后进入审核中。</div>
+                <div class="upload-grid">
+                  <div class="upload-tile filled"></div>
+                  <div class="upload-tile filled" style="background:linear-gradient(135deg,var(--mint),#fff,var(--sky))"></div>
+                  <div class="upload-tile add-tile"></div>
+                </div>
+                <div class="chips-row" style="padding:0"><span class="pill">#草莓色卡</span><span class="pill">#新手杯垫</span><span class="pill warn">2/9</span></div>
+                <div class="hero-strip" style="margin:0"><span class="pill ok">预览</span><h3>审核前预览</h3><p>图片、正文、话题和关联图纸按帖子详情结构预览。</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="mini-phones">
+            <div class="mini-screen"><div class="mini-head">无上传图</div><div class="mini-body"><div class="upload-grid"><div class="upload-tile add-tile"></div><div class="upload-tile add-tile"></div><div class="upload-tile add-tile"></div></div><div class="input-line" style="margin-top:12px">图片可选，但标题/正文不能为空</div></div></div>
+            <div class="mini-screen"><div class="mini-head">上传中</div><div class="mini-body"><div class="upload-grid"><div class="upload-tile filled"></div><div class="upload-tile filled"></div><div class="upload-tile add-tile"></div></div><div class="warning-band" style="margin-top:12px">上传中，发布按钮禁用</div></div></div>
+            <div class="mini-screen"><div class="mini-head">上传失败</div><div class="mini-body"><div class="upload-grid"><div class="upload-tile filled"></div><div class="upload-tile error"></div><div class="upload-tile add-tile"></div></div><div class="tool-row"><span class="button ghost">重试</span><span class="button ghost">删除</span></div></div></div>
+            <div class="mini-screen"><div class="mini-head">达到 9 图</div><div class="mini-body"><div class="warning-band">已达到 9 张上限</div><div class="chips-row" style="padding-left:0"><span class="pill warn">9/9</span><span class="pill stop">新增禁用</span></div></div></div>
+            <div class="mini-screen"><div class="mini-head">未登录</div><div class="mini-body"><div class="warning-band">登录后可上传帖子</div><a class="button ghost" href="community-home-a.html" style="width:100%;margin-top:12px">返回社区</a></div></div>
+            <div class="mini-screen"><div class="mini-head">发布后审核中</div><div class="mini-body"><div class="warning-band">帖子已提交审核，审核通过后展示</div><div class="tool-row"><a class="button ghost" href="community-home-a.html">返回社区</a><a class="button ghost" href="profile-a.html">查看我的</a></div></div></div>
+          </div>
+          <div class="spec-grid" style="margin-top:14px">
+            <div class="spec"><h3>字段结构</h3><ul><li>标题、正文、图片、话题、预览。</li><li>最多 9 图，超出禁用新增。</li><li>上传失败保留缩略图并提供重试/删除。</li><li>发送前校验内容，不做空发布。</li></ul></div>
+            <div class="state"><h3>当前边界</h3><p>本页是 Open Design 原型；不新增 Android 路由、不新增后端 API，不把发布/审核写成当前已完成实现。</p><div class="state-bar"><span class="state-dot warn">UI-only</span><span class="state-dot bad">禁假成功</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

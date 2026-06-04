@@ -1,0 +1,23 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 760">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/></marker>
+    <style>
+      text{font-family:"JetBrains Mono","Noto Sans SC","PingFang SC",sans-serif}.bg{fill:#0f172a}.title{fill:#f8fafc;font-size:20px;font-weight:700}.note{fill:#94a3b8;font-size:10px}
+      .p{fill:rgba(8,51,68,.55);stroke:#22d3ee;stroke-width:1.5}.s{fill:rgba(6,78,59,.5);stroke:#34d399;stroke-width:1.5}.d{fill:rgba(120,53,15,.35);stroke:#fbbf24;stroke-width:1.5}.r{fill:rgba(136,19,55,.42);stroke:#fb7185;stroke-width:1.5}.v{fill:rgba(76,29,149,.45);stroke:#a78bfa;stroke-width:1.5}
+      .label{fill:#f8fafc;font-size:12px;font-weight:700}.small{fill:#cbd5e1;font-size:9px}.line{fill:none;stroke:#94a3b8;stroke-width:1.4;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="960" height="760" class="bg"/>
+  <text x="34" y="38" class="title">关注 / 互关私信限制流程</text>
+  <text x="34" y="58" class="note">第六轮只做关注/互相关注语义，不做好友申请审批、图片私信、黑名单或复杂已读</text>
+  <rect x="360" y="90" width="220" height="58" rx="8" class="p"/><text x="470" y="114" text-anchor="middle" class="label">进入会话详情</text><text x="470" y="131" text-anchor="middle" class="small">GET /messages/conversations/{id}</text>
+  <rect x="360" y="200" width="220" height="58" rx="8" class="v"/><text x="470" y="224" text-anchor="middle" class="label">返回会话状态</text><text x="470" y="241" text-anchor="middle" class="small">mutualFollow / remaining / canSend</text>
+  <polygon points="470,310 555,365 470,420 385,365" class="d"/><text x="470" y="362" text-anchor="middle" class="label">互相关注?</text>
+  <rect x="140" y="500" width="220" height="58" rx="8" class="s"/><text x="250" y="524" text-anchor="middle" class="label">直接发送文本</text><text x="250" y="541" text-anchor="middle" class="small">canSend=true</text>
+  <polygon points="650,475 735,530 650,585 565,530" class="d"/><text x="650" y="527" text-anchor="middle" class="label">已发未互关 &lt; 3?</text>
+  <rect x="520" y="650" width="220" height="58" rx="8" class="s"/><text x="630" y="674" text-anchor="middle" class="label">允许发送并递减</text><text x="630" y="691" text-anchor="middle" class="small">remainingNonMutualMessages</text>
+  <rect x="760" y="500" width="190" height="58" rx="8" class="r"/><text x="855" y="524" text-anchor="middle" class="label">禁用输入</text><text x="855" y="541" text-anchor="middle" class="small">互相关注后可继续聊天</text>
+  <rect x="60" y="650" width="260" height="58" rx="8" class="r"/><text x="190" y="674" text-anchor="middle" class="label">禁止展示好友申请状态</text><text x="190" y="691" text-anchor="middle" class="small">无待通过 / 同意 / 拒绝</text>
+  <path class="line" d="M470 148 L470 200"/><path class="line" d="M470 258 L470 310"/><path class="line" d="M385 365 L250 500"/><path class="line" d="M555 365 L650 475"/><path class="line" d="M650 585 L630 650"/><path class="line" d="M735 530 L760 530"/><path class="line" d="M250 558 L190 650"/>
+  <text x="337" y="408" class="small" fill="#34d399">是</text><text x="575" y="408" class="small" fill="#fbbf24">否</text><text x="660" y="614" class="small" fill="#34d399">是</text><text x="742" y="518" class="small" fill="#fb7185">否</text>
+</svg>

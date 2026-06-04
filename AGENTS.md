@@ -11,7 +11,7 @@
 阶段目标：
 
 - 在第一轮登录 + 社区契约样板、第二轮 App Shell / 消息 / 我的 UI 统一基线、第三轮商城 UI/API 主体链路验收关闭、第四轮登录态持久化和常驻真实图文数据收敛、第五轮 Aliyun OSS Provider 前置骨架之后，收敛前端观感、品牌识别、主链路展示和基础互动。
-- 按 `doc/stitch_document_app_generator/` 的 Stitch 设计探索稿和 `doc/development/11-ui-style-guide.md` 统一 Android UI 口径。
+- 以 `doc/development/11-ui-style-guide.md` 统一 Android UI 口径；历史 Stitch 设计探索路径为 `doc/stitch_document_app_generator/`，当前工作树中该目录处于删除状态时，不作为日常可用设计入口，当前设计图入口以 `doc/development/diagrams/` 为准。
 - 以 `doc/development/11-ui-style-guide.md` 作为唯一 UI 权威规范。
 - 以 `doc/development/05-api-contract.md` 作为接口契约源；登录 + 社区第一轮样板链路继续严格追该文档。
 - 保持 Android 登录态 DataStore 持久化、社区/商城真实图文 seed、第三轮商城订单/支付边界不回退。
@@ -120,6 +120,7 @@ D:\AndroidChace\platform-tools\adb.exe devices -l
 
 - 用户可能在仓库根目录放置 `do.md` 作为本地临时任务清单；该文件不是项目文件，必须按 `.gitignore` 忽略，不提交。
 - 当用户说“`do.md` 下有几个任务，去做”或类似指令时，先读取 `do.md`，按清单逐项修复或新增；完成某项后，从 `do.md` 清空对应任务，保留未完成任务。
+- 完成的内容必须从 `do.md` 删除对应片段；只保留未完成、阻塞或用户明确要求保留的任务。
 - `do.md` 中的任务仍必须遵守本文件和 `doc/development` 文档约束；如果任务与当前阶段、API 契约或安全边界冲突，先同步说明冲突并按文档优先级处理。
 
 ## Android Studio / Gradle JDK
@@ -148,6 +149,7 @@ cd DouYu
 - 下发 thread 进程或 Agent Team 任务时，必须把子任务的思考等级设置为当前工具支持的最高级；如果工具不支持设置思考等级，必须在主对话中说明限制。
 - 多 thread 或 Agent Team 必须由主 thread / 主 Agent 作为 Coordinator 总控：拆分非重叠职责、分发必要上下文、审查 Worker 输出、集成结果、解决冲突、统一验证、提交和推送。
 - 子 thread 和 Agent Team Worker 的任务必须文件 / 职责边界清楚，且交付时报告假设、改动范围、验证结果、阻塞项和剩余风险。
+- 当项目 thread 数量过多、阶段任务结束或验收关闭后，主 Agent 必须定期清理不再需要的 thread，归档已完成、过期、失败且无后续价值、或结果已被主线吸收的线程，保持项目线程干净；仍在运行服务、等待用户验收、含未集成结果或有排障价值的线程不得误清理。清理时优先依据线程标题、状态和文字摘要判断，避免为了清理而读取图片、大日志或高上下文内容。
 - 不得让多个 Agent 同时修改同一文件或同一职责边界；如果必须触碰同一文件，改为主 Agent 串行处理。
 - 多 thread / Agent Team 不是跳过验证的理由；最终仍由主 Agent 统一跑构建、测试、真机 QA 和文档同步，不能把子任务结果直接写成已验收。
 - 若当前运行模式、工具权限或更高优先级规则限制创建 thread 或派发 Agent，应说明限制并改用主 Agent 串行执行。
@@ -176,7 +178,7 @@ cd DouYu
 - 当前依赖装配：`DoyuAppContainer` 服务定位器；MVVM 是目标架构，不代表所有页面已完全 ViewModel 化。
 - 当前问题：debug API Base URL 已支持 `.env` 构建期注入，当前只维护真机联调配置；修改 `.env` 后仍需重新构建 debug 包。TokenStore 已收敛到 DataStore 登录态持久化，商品/帖子真实图片字段已补齐；多个页面仍有半成品 UI 和未接 Repository 的功能。
 - UI 权威规范：`doc/development/11-ui-style-guide.md`。
-- Stitch 设计稿只作为视觉参考：`doc/stitch_document_app_generator/`。
+- 历史 Stitch 设计稿只作为视觉探索参考：`doc/stitch_document_app_generator/`；当前可用设计图入口是 `doc/development/diagrams/`。
 
 ### Backend
 
@@ -238,7 +240,7 @@ cd DouYu
 | 权限、隐私、审核、未成年人 | `doc/development/09-security-compliance.md` |
 | 前后端联调规则 | `doc/development/14-frontend-backend-collaboration.md` |
 
-`doc/stitch_document_app_generator/` 是设计探索归档，必须保留，但不作为日常必读或权威规范。
+`doc/stitch_document_app_generator/` 是历史设计探索归档路径；若当前工作树中该目录处于删除状态，不要为了文档补全自动恢复旧资产。当前可用设计图入口是 `doc/development/diagrams/`，但权威 UI 规范仍是 `doc/development/11-ui-style-guide.md`。
 
 ## 验证要求
 

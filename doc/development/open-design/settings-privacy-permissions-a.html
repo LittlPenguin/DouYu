@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>隐私与权限 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆屿 Doyu / Settings 内页</div>
+        <h1 class="title">隐私与权限</h1>
+        <p class="lead">权限页用于说明相机、相册、通知和未来位置能力的授权状态。真实地图 API 尚未接入，因此位置权限只作为未来 UI 入口展示，不作为当前可用能力。</p>
+        <div class="chips"><span class="chip">相机</span><span class="chip">相册</span><span class="chip">通知</span><span class="chip">位置 UI-only</span></div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>权限原则</b><span>权限被拒绝时说明影响并提供系统设置路径，不制造假授权。</span></div>
+        <div class="fact"><b>位置边界</b><span>地图和定位服务未接入；只展示未来能力 UI-only 标识。</span></div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar"><a class="icon-btn" href="settings-home-a.html"><span class="icon back"></span></a><div class="top-title">隐私与权限</div><a class="icon-btn" href="search-a.html"><span class="icon search"></span></a></div>
+            <div class="scroll no-nav">
+              <div class="hero-strip"><span class="pill warn">最小授权</span><h3>只在使用时请求权限</h3><p>上传作品、AI 拍照、通知提醒和未来定位各自独立说明。</p></div>
+              <div class="list">
+                <div class="row"><span class="round-icon"><span class="icon image"></span></span><div class="row-main"><div class="row-title">相册访问</div><div class="row-sub">用于上传帖子图片和 AI 参考图</div></div><span class="pill ok">已允许</span></div>
+                <div class="row"><span class="round-icon"><span class="icon image"></span></span><div class="row-main"><div class="row-title">相机</div><div class="row-sub">用于拍摄拼豆作品或参考图</div></div><span class="pill warn">询问</span></div>
+                <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">通知</div><div class="row-sub">私信、评论、审核和任务结果</div></div><span class="toggle"></span></div>
+                <div class="row"><span class="round-icon"><span class="icon map"></span></span><div class="row-main"><div class="row-title">位置</div><div class="row-sub">未来地图 API UI-only，当前不可用</div></div><span class="pill warn">UI-only</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="spec-grid">
+            <div class="spec"><h3>权限状态</h3><ul><li>已允许：展示用途和关闭路径。</li><li>询问：在真实动作触发时请求。</li><li>拒绝：说明影响并提供去系统设置。</li><li>未来位置：标注 UI-only，不触发定位。</li></ul></div>
+            <div class="spec"><h3>隐私开关</h3><ul><li>允许被推荐。</li><li>允许陌生人私信前三条。</li><li>允许作品被收藏。</li><li>未接后端时标注开发态。</li></ul></div>
+            <div class="state"><h3>拒绝态</h3><p>权限拒绝后按钮文案用“去系统设置”，不循环弹权限框，不写假成功。</p><div class="state-bar"><span class="state-dot warn">去系统设置</span><span class="state-dot bad">禁假授权</span></div></div>
+            <div class="state"><h3>位置能力</h3><p>真实地图 API 尚未接入；位置仅在未来能力页和本设置页中作为 UI-only 预研。</p><div class="state-bar"><span class="state-dot warn">UI-only</span><span class="state-dot bad">未接地图</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

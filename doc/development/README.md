@@ -1,8 +1,8 @@
 # 豆屿 Doyu 开发文档索引
 
-本目录保存豆屿 Doyu 当前有效的工程规范、接口契约、数据模型、联调手册、测试验收和当前状态。
+本目录保存豆屿 Doyu 当前有效的工程规范、接口契约、数据模型、联调手册、测试验收、UI 蓝图、设计图和当前状态。
 
-当前阶段是 **第五轮前置 Aliyun OSS Provider 最小闭环阶段**：第四轮已把 Android 登录态收口到 DataStore，并为社区 Feed、商品列表/详情和购物车补了常驻真实图文 seed 数据；本轮只补后端对象存储 Provider 切换骨架，让上传链路可通过 `.env` 从 Local OSS 切到 Aliyun OSS。第五轮前置不迁移 seed 图片，不接真实 AI Provider，不接真实微信/支付宝支付，不补完整地址管理、玩家交易闭环或上线生产化。
+当前阶段是 **第六轮 UI/品牌与主链路展示收敛阶段**：第一轮已稳定登录 + 社区契约样板，第二轮已形成 App Shell / 消息 / 我的 UI 统一基线，第三轮商城 UI/API 主体链路已关闭为可联调但不误导支付的 MVP，第四轮已把 Android 登录态收口到 DataStore 并补常驻真实图文 seed，第五轮已前置 Aliyun OSS Provider 切换骨架。本轮聚焦社区、商城、AI、消息、我的五个主 Tab 首屏观感、品牌识别、主链路展示、关注/互关私信限制和作品详情评论互动边界；不接真实 AI Provider，不接真实微信/支付宝支付，不补完整地址管理、玩家交易闭环或上线生产化。
 
 产品目标、商业闭环和阶段方向以 `../豆屿App商业技术执行计划.md` 为总纲；当前工程事实以代码、`../../AGENTS.md` 和 `current-status.md` 为准。`../../CLAUDE.md` 只作为 Claude Code 的转发入口，要求先读 `../../AGENTS.md`。
 
@@ -12,10 +12,12 @@
 2. `../../CLAUDE.md`：Claude Code 转发入口，要求遵守 `../../AGENTS.md`。
 3. `../豆屿App商业技术执行计划.md`：产品目标、商业闭环和阶段方向。
 4. `current-status.md`：当前实现状态、未完成项和下一步优先级。
-5. `01-tech-stack.md`：固定技术栈和禁用选择。
-6. `02-architecture.md`：总体架构、主链路和目标态。
-7. `05-api-contract.md`：接口约定、错误码、分页和幂等。
-8. `06-data-model.md`：核心数据对象、枚举、状态和关系。
+5. `00-project-handoff.md`：项目接手手册、目录地图、本地联调和验证入口。
+6. `01-tech-stack.md`：固定技术栈和禁用选择。
+7. `02-architecture.md`：总体架构、主链路和目标态。
+8. `12-feature-and-flow-map.md`：主链路与功能地图。
+9. `05-api-contract.md`：接口约定、错误码、分页和幂等。
+10. `06-data-model.md`：核心数据对象、枚举、状态和关系。
 
 按职责继续阅读：
 
@@ -27,7 +29,7 @@
 | 商城支付 | `08-commerce-payment.md` |
 | 安全合规 | `09-security-compliance.md` |
 | 测试验收 | `10-testing-acceptance.md` |
-| UI 设计 | `11-ui-style-guide.md` |
+| UI 设计 | `11-ui-style-guide.md`、`13-ui-screen-blueprints.md`、`diagrams/README.md` |
 | 前后端联调 | `14-frontend-backend-collaboration.md` |
 
 ## 文档边界
@@ -55,6 +57,7 @@
 
 | 文档 | 用途 |
 |---|---|
+| `00-project-handoff.md` | 项目接手手册、当前阶段、目录地图、本地联调、验证命令和不可宣称完成项 |
 | `current-status.md` | 当前完成内容、UI MVP 收敛状态、生产化缺口和下一步优先级 |
 | `01-tech-stack.md` | 技术栈、框架、基础设施和禁用选择 |
 | `02-architecture.md` | 系统分层、主链路、部署边界和目标态 |
@@ -67,27 +70,60 @@
 | `09-security-compliance.md` | 隐私、权限、未成年人、审核、备案、版权 |
 | `10-testing-acceptance.md` | UI MVP 验收、测试范围、上线检查 |
 | `11-ui-style-guide.md` | 当前唯一 UI 风格、设计令牌、Stitch 映射和 Compose 设计规范 |
+| `12-feature-and-flow-map.md` | 五个主 Tab、登录态、社区、AI、商城、消息、上传、合规等主链路地图 |
+| `13-ui-screen-blueprints.md` | 社区、帖子详情、商城、AI、消息、我的、订单/支付页面蓝图 |
 | `14-frontend-backend-collaboration.md` | 本地联调、字段冻结、环境配置和排障规则 |
 | `15-ai-pattern-provider-selection.md` | AI Provider 选型结论、接入要求、降级和禁用方向 |
+| `diagrams/README.md` | 架构图、流程图、信息架构图和 UI 线框图索引 |
 
 ## 设计探索资产
 
-`doc/stitch_document_app_generator/` 是设计探索归档，包含生成过程中的 HTML、截图和 `DESIGN.md`。该目录全部保留，但不属于日常必读路径，也不是权威 UI 规范。
-
-UI 重构可以参考这些资产：
-
-| 资产 | 用途 |
-|---|---|
-| `_1/screen.png` | 社区首页和 App 主骨架 |
-| `_2/screen.png` | 商城首页 |
-| `ai/screen.png` | AI 创作首页 |
-| `_4/screen.png` | 消息页 |
-| `_3/screen.png` | 我的页 |
-| `DESIGN.md` | 设计系统探索稿 |
+`doc/stitch_document_app_generator/` 是历史设计探索归档路径；当前工作树中该目录处于删除状态时，不再把它作为日常可用设计入口，也不要为了文档补全自动恢复旧资产。现阶段可用的设计图入口是 `diagrams/README.md`，其中包含架构图、流程图、信息架构图和 UI 线框图。
 
 当前权威 UI 文档只有：
 
 - `doc/development/11-ui-style-guide.md`
+
+当前可用页面蓝图和设计图入口：
+
+- `doc/development/13-ui-screen-blueprints.md`
+- `doc/development/diagrams/README.md`
+- `doc/development/open-design/index.html`
+
+当前 Open Design 协作入口：
+
+- 项目名：`SpellBean`
+- 项目 id：`1a79a45f-6c02-4c3f-9433-4b27b325acf5`
+- 入口文件：`index.html`
+- 决策稿：`design-decision.md`
+
+该 Open Design 项目已记录 **A：内容发现 + 创作工具平衡** 为当前方向，并包含社区首页、作品详情评论工具条、上传帖子、Search 搜索页、商城首页、AI 首页、消息页、私信对话详情、通知详情、我的页、编辑资料页、Settings 多个内页和未来地图/真实支付/大模型生图 UI-only 占位页面。它不替代 `11-ui-style-guide.md`、`13-ui-screen-blueprints.md` 或接口契约。若 Open Design MCP 没有 active project，可通过项目名 `SpellBean` 读取；仓库副本位于 `doc/development/open-design/`。
+
+当前 `doc/development/open-design/` 页面清单：
+
+| 文件 | 用途 |
+|---|---|
+| `index.html` | Open Design 总览入口 |
+| `doyu-open-design.css` | 共享视觉样式、图标和组件规则 |
+| `doyu-design-directions.html` | 方向总览 |
+| `design-decision.md` | 设计决策记录 |
+| `community-home-a.html` | 社区瀑布流首页 |
+| `post-detail-comment-toolbar-a.html` | 作品详情评论浮动栏、评论区、轮播和 @/# 选择 |
+| `post-compose-a.html` | 上传帖子 UI-only 原型 |
+| `search-a.html` | Search 搜索页 UI-only 原型 |
+| `commerce-home-a.html` | 商城首页 |
+| `ai-home-a.html` | AI 创作首页 |
+| `messages-a.html` | 消息首页 |
+| `message-conversation-a.html` | 私信对话详情 |
+| `notification-detail-a.html` | 通知详情 |
+| `profile-a.html` | 我的页 |
+| `profile-edit-a.html` | 编辑资料 UI-only 原型 |
+| `settings-home-a.html` | Settings 首页 |
+| `settings-account-security-a.html` | 账号与安全 |
+| `settings-privacy-permissions-a.html` | 隐私与权限 |
+| `settings-notifications-a.html` | 通知设置 |
+| `settings-about-compliance-a.html` | 关于与合规 |
+| `future-capability-ui-a.html` | 未来地图/支付/生图 UI-only 占位 |
 
 ## 文档同步规则
 

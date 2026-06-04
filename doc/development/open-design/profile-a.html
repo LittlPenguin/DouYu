@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>我的页 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆屿 Doyu / A 方向页面级设计稿</div>
+        <h1 class="title">我的页：轻量资产中心</h1>
+        <p class="lead">我的页优化统计区，最新顺序为“获赞 / 作品 / 关注 / 粉丝”；删除“我的订单 / 评论作品 / 关注作品”设计入口，将“我的图纸 / 点赞作品 / 收藏作品”合并到同一 Tab 中，Tab 内容展示帖子或图纸卡。</p>
+        <div class="chips">
+          <span class="chip">获赞 / 作品 / 关注 / 粉丝</span>
+          <span class="chip">三资产 Tab</span>
+          <span class="chip">删除订单入口展示</span>
+          <span class="chip">Settings 从新增菜单进入</span>
+        </div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>解释</b><span>`do.md` 中第二个 messages 小节按内容解释为我的页调整。</span></div>
+        <div class="fact"><b>仅设计调整</b><span>不声明现有 Android 代码已删除订单、评论作品或关注作品页面。</span></div>
+        <div class="fact"><b>合规边界</b><span>设置和合规入口不包装成生产合规已完成。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>首屏蓝图</h2>
+        <p>更轻的个人资料头部、统计组件和同一 Tab 里的三类资产内容。</p>
+      </div>
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar">
+              <a class="icon-btn" href="post-compose-a.html"><span class="icon add"></span></a>
+              <div class="top-title">我的</div>
+              <a class="icon-btn" href="search-a.html"><span class="icon search"></span></a>
+              <div class="quick-menu">
+                <a class="quick-item" href="settings-home-a.html"><span class="icon settings"></span><span>Setting</span></a>
+                <a class="quick-item" href="ai-home-a.html"><span class="icon ai"></span><span>AI 创作</span></a>
+                <a class="quick-item" href="post-compose-a.html"><span class="icon upload"></span><span>上传帖子</span></a>
+              </div>
+            </div>
+            <div class="scroll">
+              <div class="hero-strip">
+                <div style="display:flex;align-items:center;gap:12px"><span class="avatar" style="width:56px;height:56px"></span><div><h3 style="margin:0">小屿</h3><p>拼豆爱好者 · 已登录</p></div><a class="pill ok" href="profile-edit-a.html" style="margin-left:auto">编辑资料</a></div>
+              </div>
+              <div class="stat-grid">
+                <div class="stat"><b>126</b><span>获赞</span></div>
+                <div class="stat"><b>18</b><span>作品</span></div>
+                <div class="stat"><b>23</b><span>关注</span></div>
+                <div class="stat"><b>42</b><span>粉丝</span></div>
+              </div>
+              <div class="asset-tabs"><span class="on">我的图纸</span><span>点赞作品</span><span>收藏作品</span></div>
+              <div class="masonry" style="padding-top:10px">
+                <a class="post-card" href="ai-home-a.html"><div class="thumb mint h-md"></div><div class="card-body"><span class="pill ok">图纸</span><div class="mini-title">薄荷小岛挂件</div><div class="meta"><span>48 色</span><span>28x28</span></div></div></a>
+                <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb sky h-sm"></div><div class="card-body"><span class="pill">帖子</span><div class="mini-title">点赞的海盐配色</div><div class="meta"><span>阿澄</span><span>88</span></div></div></a>
+                <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb coral h-tall"></div><div class="card-body"><span class="pill">收藏</span><div class="mini-title">草莓小熊教程</div><div class="meta"><span>小屿</span><span>126</span></div></div></a>
+              </div>
+            </div>
+            <div class="bottom-nav">
+              <a class="nav-item" href="community-home-a.html"><span class="nav-logo community"></span><span>社区</span></a>
+              <a class="nav-item" href="commerce-home-a.html"><span class="nav-logo shop"></span><span>商城</span></a>
+              <a class="nav-item" href="ai-home-a.html"><span class="nav-logo ai"></span><span>AI</span></a>
+              <a class="nav-item" href="messages-a.html"><span class="nav-logo message"></span><span>消息</span></a>
+              <a class="nav-item on" href="profile-a.html"><span class="nav-logo profile"></span><span>我的</span></a>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="spec-grid">
+            <div class="spec"><h3>保留结构</h3><ul><li>头像、昵称、简介、编辑资料。</li><li>获赞、作品、关注、粉丝四项统计。</li><li>我的图纸、点赞作品、收藏作品放入同一个 Tab 区。</li><li>Tab 内容使用统一帖子/图纸卡片。</li></ul></div>
+            <div class="spec"><h3>删除展示</h3><ul><li>本设计稿不展示“我的订单”。</li><li>本设计稿不展示“评论作品”。</li><li>本设计稿不展示“关注作品”。</li><li>这只是 UI 目标，不声明代码/API 删除。</li></ul></div>
+            <div class="state"><h3>统计视觉</h3><p>统计区使用轻容器和清楚数字层级，不做重卡片套卡片，不用夸张装饰抢内容。</p><div class="state-bar"><span class="state-dot good">轻量</span><span class="state-dot good">可读</span></div></div>
+            <div class="state"><h3>编辑资料</h3><p>“编辑资料”进入 profile-edit-a.html；该页只做 UI 原型，不声明 Android 当前已新增路由或保存接口。</p><div class="state-bar"><span class="state-dot warn">UI-only</span><span class="state-dot bad">禁空入口</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

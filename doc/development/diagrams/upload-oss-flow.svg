@@ -1,0 +1,25 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 760">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/></marker>
+    <style>
+      text{font-family:"JetBrains Mono","Noto Sans SC","PingFang SC",sans-serif}.bg{fill:#0f172a}.title{fill:#f8fafc;font-size:20px;font-weight:700}.note{fill:#94a3b8;font-size:10px}
+      .c{fill:rgba(8,51,68,.55);stroke:#22d3ee;stroke-width:1.5}.b{fill:rgba(6,78,59,.5);stroke:#34d399;stroke-width:1.5}.o{fill:rgba(120,53,15,.35);stroke:#fbbf24;stroke-width:1.5}.r{fill:rgba(136,19,55,.42);stroke:#fb7185;stroke-width:1.5}.d{fill:rgba(76,29,149,.45);stroke:#a78bfa;stroke-width:1.5}
+      .label{fill:#f8fafc;font-size:12px;font-weight:700}.small{fill:#cbd5e1;font-size:9px}.line{fill:none;stroke:#94a3b8;stroke-width:1.4;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="980" height="760" class="bg"/>
+  <text x="34" y="38" class="title">上传与 OSS Provider 流程</text>
+  <text x="34" y="58" class="note">客户端不得保存 OSS Secret；Aliyun AccessKey 只由后端持有；生产化 OSS 未关闭</text>
+  <rect x="62" y="125" width="180" height="58" rx="8" class="c"/><text x="152" y="149" text-anchor="middle" class="label">Android 选择文件</text><text x="152" y="166" text-anchor="middle" class="small">usage / mime / size</text>
+  <rect x="62" y="250" width="180" height="58" rx="8" class="b"/><text x="152" y="274" text-anchor="middle" class="label">POST /uploads/presign</text><text x="152" y="291" text-anchor="middle" class="small">后端生成 fileKey</text>
+  <rect x="332" y="250" width="180" height="58" rx="8" class="b"/><text x="422" y="274" text-anchor="middle" class="label">OssProvider.presign</text><text x="422" y="291" text-anchor="middle" class="small">local | stub | aliyun</text>
+  <rect x="612" y="130" width="150" height="54" rx="8" class="o"/><text x="687" y="153" text-anchor="middle" class="label">Local OSS</text><text x="687" y="170" text-anchor="middle" class="small">开发默认</text>
+  <rect x="612" y="248" width="150" height="54" rx="8" class="o"/><text x="687" y="271" text-anchor="middle" class="label">Stub OSS</text><text x="687" y="288" text-anchor="middle" class="small">测试占位</text>
+  <rect x="612" y="366" width="150" height="54" rx="8" class="o"/><text x="687" y="389" text-anchor="middle" class="label">Aliyun OSS</text><text x="687" y="406" text-anchor="middle" class="small">后端持有密钥</text>
+  <rect x="62" y="405" width="180" height="58" rx="8" class="c"/><text x="152" y="429" text-anchor="middle" class="label">PUT uploadUrl</text><text x="152" y="446" text-anchor="middle" class="small">直传 + headers</text>
+  <rect x="62" y="550" width="180" height="58" rx="8" class="b"/><text x="152" y="574" text-anchor="middle" class="label">POST /uploads/confirm</text><text x="152" y="591" text-anchor="middle" class="small">确认写入资产</text>
+  <rect x="332" y="550" width="180" height="58" rx="8" class="d"/><text x="422" y="574" text-anchor="middle" class="label">file_assets</text><text x="422" y="591" text-anchor="middle" class="small">publicUrl / auditStatus</text>
+  <rect x="612" y="550" width="240" height="58" rx="8" class="r"/><text x="732" y="574" text-anchor="middle" class="label">未关闭生产能力</text><text x="732" y="591" text-anchor="middle" class="small">STS / CDN / 防盗链 / 审核 / 缩略图</text>
+  <path class="line" d="M152 183 L152 250"/><path class="line" d="M242 279 L332 279"/><path class="line" d="M512 279 L612 157"/><path class="line" d="M512 279 L612 275"/><path class="line" d="M512 279 L612 393"/>
+  <path class="line" d="M152 308 L152 405"/><path class="line" d="M152 463 L152 550"/><path class="line" d="M242 579 L332 579"/><path class="line" d="M512 579 L612 579"/>
+</svg>

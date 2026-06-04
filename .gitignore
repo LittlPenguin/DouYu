@@ -3,6 +3,8 @@
 Thumbs.db
 .idea/
 .vscode/
+.fleet/
+.history/
 *.iml
 
 # Local configuration and secrets
@@ -20,9 +22,12 @@ local.properties
 CLAUDE.md
 AGENTS.md
 .aionrs/
+.cache/
+.tmp/
 
 # Java, Kotlin, Gradle, and Android outputs
 .gradle/
+.kotlin/
 build/
 out/
 **/build/
@@ -34,6 +39,7 @@ captures/
 
 # Spring Boot and backend outputs
 target/
+.mvn/
 
 # Node and web outputs
 node_modules/
@@ -43,11 +49,18 @@ coverage/
 # Python caches and virtual environments
 __pycache__/
 *.py[cod]
+.pytest_cache/
 .venv/
 venv/
 
 # Logs and temporary files
 *.log
+*.log.*
+logs/
+*.tmp
+*.bak
+*.swp
+*.swo
 tmp/
 temp/
 .qa-output/

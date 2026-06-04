@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>搜索页 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆屿 Doyu / 搜索 UI-only 设计稿</div>
+        <h1 class="title">Search：全局搜索入口与开发态边界</h1>
+        <p class="lead">搜索页从主页面和详情页右上搜索 icon 进入，覆盖作品、图纸、商品、用户和话题的 UI 结构。本页是搜索体验蓝图，不声明当前 Android 或后端已经完成全局搜索 API。</p>
+        <div class="chips">
+          <span class="chip">UI-only</span>
+          <span class="chip">全部 / 作品 / 图纸 / 商品 / 用户 / 话题</span>
+          <span class="chip">默认推荐</span>
+          <span class="chip">空态 / 错态 / 未登录受限</span>
+        </div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>入口</b><span>所有顶部搜索 icon 均跳转到本页；若后续 Android 尚未接入，必须使用开发态说明，不允许空点击。</span></div>
+        <div class="fact"><b>边界</b><span>不新增后端接口，不写字段契约，不承诺全站搜索、个性化推荐或热榜已经可用。</span></div>
+        <div class="fact"><b>返回</b><span>返回保持来源页面状态；取消按钮回到上一页，清空按钮只清除当前输入。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>首屏与结果态</h2>
+        <p>左侧是搜索结果主态；右侧列出默认、输入中、空态、失败和未登录受限等必要状态。</p>
+      </div>
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar">
+              <a class="icon-btn" href="community-home-a.html"><span class="icon back"></span></a>
+              <div class="top-title">搜索</div>
+              <a class="icon-btn" href="settings-home-a.html"><span class="icon settings"></span></a>
+            </div>
+            <div class="scroll no-nav">
+              <div style="padding:12px 14px 0">
+                <div class="search-input"><span class="icon search"></span><span>草莓小熊 杯垫</span><span class="action">清空</span></div>
+              </div>
+              <div class="tabs"><span class="tab on">全部</span><span class="tab">作品</span><span class="tab">图纸</span><span class="tab">商品</span><span class="tab">用户</span><span class="tab">话题</span></div>
+              <div class="hero-strip">
+                <span class="pill warn">搜索 UI-only</span>
+                <h3>结果以当前能力为准</h3>
+                <p>后端全局搜索未接入前，只能作为页面目标或本地筛选示意。</p>
+              </div>
+              <div class="result-list">
+                <a class="result-card" href="post-detail-comment-toolbar-a.html"><span class="result-thumb"></span><div><span class="pill">作品</span><div class="mini-title" style="margin-top:7px">草莓小熊杯垫</div><div class="row-sub" style="white-space:normal">作者小屿 · 126 赞 · 含 #草莓色卡</div></div></a>
+                <a class="result-card" href="ai-home-a.html"><span class="result-thumb" style="background:linear-gradient(135deg,var(--mint),#fff,var(--sky))"></span><div><span class="pill ok">图纸</span><div class="mini-title" style="margin-top:7px">薄荷小岛挂件图纸</div><div class="row-sub" style="white-space:normal">48 色 · 28x28 · 已保存</div></div></a>
+                <a class="result-card" href="commerce-home-a.html"><span class="result-thumb" style="background:linear-gradient(135deg,var(--sky),#fff,var(--petal))"></span><div><span class="pill ok">商品</span><div class="mini-title" style="margin-top:7px">透明方板套装</div><div class="row-sub" style="white-space:normal">自营 · ¥26 · 可进入商城链路</div></div></a>
+                <a class="result-card" href="profile-a.html"><span class="avatar" style="width:54px;height:54px;margin:10px"></span><div><span class="pill">用户</span><div class="mini-title" style="margin-top:7px">小屿的拼豆工坊</div><div class="row-sub" style="white-space:normal">18 作品 · 23 关注</div></div></a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="mini-phones">
+            <div class="mini-screen"><div class="mini-head">默认推荐</div><div class="mini-body"><div class="search-input"><span class="icon search"></span><span>搜索作品、图纸、商品</span><span class="action">取消</span></div><div class="chips-row" style="padding-left:0"><span class="pill">草莓色卡</span><span class="pill">新手套装</span></div><div class="warning-band">只展示推荐词，不写成真实热榜。</div></div></div>
+            <div class="mini-screen"><div class="mini-head">输入中</div><div class="mini-body"><div class="search-input"><span class="icon search"></span><span>薄荷</span><span class="action">清空</span></div><div class="list" style="padding:10px 0"><div class="row"><span class="round-icon"><span class="icon hash"></span></span><div class="row-main"><div class="row-title">#薄荷色卡</div><div class="row-sub">话题建议</div></div></div></div></div></div>
+            <div class="mini-screen"><div class="mini-head">空结果</div><div class="mini-body"><div class="warning-band">没有找到相关内容</div><p style="color:var(--sub);font-size:12px;line-height:1.6">提供清空搜索、换关键词或返回推荐。</p><a class="button ghost" href="community-home-a.html" style="width:100%">返回推荐</a></div></div>
+            <div class="mini-screen"><div class="mini-head">加载失败</div><div class="mini-body"><div class="warning-band">搜索加载失败，请重试</div><div class="tool-row"><span class="button ghost">重试</span><a class="button ghost" href="community-home-a.html">返回</a></div></div></div>
+            <div class="mini-screen"><div class="mini-head">未登录受限</div><div class="mini-body"><div class="warning-band">登录后可查看用户和私信相关结果</div><div class="result-card" style="grid-template-columns:44px 1fr;padding:8px"><span class="round-icon"><span class="icon lock"></span></span><div><div class="mini-title">用户结果已折叠</div><div class="row-sub">公开作品仍可浏览</div></div></div></div></div>
+            <div class="mini-screen"><div class="mini-head">范围筛选</div><div class="mini-body"><div class="tabs" style="padding:0"><span class="tab on">商品</span><span class="tab">用户</span></div><div class="warning-band" style="margin-top:12px">范围 Tab 只改变展示类型，不新增接口契约。</div></div></div>
+          </div>
+          <div class="spec-grid" style="margin-top:14px">
+            <div class="spec"><h3>搜索范围</h3><ul><li>全部聚合多个卡片类型。</li><li>作品和图纸进入内容/AI 相关详情。</li><li>商品进入商城链路。</li><li>用户和话题只做 UI 目标，未接入时标开发态。</li></ul></div>
+            <div class="state"><h3>禁止误导</h3><p>不得写成真实全站搜索、个性化热榜或后端搜索 API 已完成；无法执行的范围必须禁用或说明开发态。</p><div class="state-bar"><span class="state-dot warn">UI-only</span><span class="state-dot bad">禁空点击</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

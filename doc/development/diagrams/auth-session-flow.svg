@@ -1,0 +1,27 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 820">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/></marker>
+    <style>
+      text{font-family:"JetBrains Mono","Noto Sans SC","PingFang SC",sans-serif}.bg{fill:#0f172a}.title{fill:#f8fafc;font-size:20px;font-weight:700}.note{fill:#94a3b8;font-size:10px}
+      .p{fill:rgba(8,51,68,.55);stroke:#22d3ee;stroke-width:1.5}.s{fill:rgba(6,78,59,.5);stroke:#34d399;stroke-width:1.5}.d{fill:rgba(120,53,15,.35);stroke:#fbbf24;stroke-width:1.5}.e{fill:rgba(136,19,55,.42);stroke:#fb7185;stroke-width:1.5}
+      .label{fill:#f8fafc;font-size:12px;font-weight:700}.small{fill:#cbd5e1;font-size:9px}.line{fill:none;stroke:#94a3b8;stroke-width:1.4;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="880" height="820" class="bg"/>
+  <text x="34" y="38" class="title">登录态与会话流程</text>
+  <text x="34" y="58" class="note">登录请求仍传 ageGroup=AGE_18_PLUS；DataStore 持久化 access/refresh token</text>
+  <rect x="330" y="95" width="220" height="54" rx="24" class="p"/><text x="440" y="118" text-anchor="middle" class="label">App 启动</text><text x="440" y="135" text-anchor="middle" class="small">DoyuAppContainer hydrate</text>
+  <polygon points="440,205 510,255 440,305 370,255" class="d"/><text x="440" y="252" text-anchor="middle" class="label">DataStore 有 token?</text>
+  <rect x="120" y="335" width="220" height="58" rx="8" class="e"/><text x="230" y="359" text-anchor="middle" class="label">未登录态</text><text x="230" y="376" text-anchor="middle" class="small">展示登录引导</text>
+  <rect x="540" y="335" width="220" height="58" rx="8" class="s"/><text x="650" y="359" text-anchor="middle" class="label">恢复登录态</text><text x="650" y="376" text-anchor="middle" class="small">Repository 带 Authorization</text>
+  <rect x="120" y="450" width="220" height="58" rx="8" class="p"/><text x="230" y="474" text-anchor="middle" class="label">短信登录</text><text x="230" y="491" text-anchor="middle" class="small">code=123456 / ageGroup</text>
+  <rect x="120" y="565" width="220" height="58" rx="8" class="s"/><text x="230" y="589" text-anchor="middle" class="label">保存 TokenPair</text><text x="230" y="606" text-anchor="middle" class="small">access + refresh</text>
+  <polygon points="650,450 720,500 650,550 580,500" class="d"/><text x="650" y="497" text-anchor="middle" class="label">API 401?</text>
+  <rect x="540" y="600" width="220" height="58" rx="8" class="p"/><text x="650" y="624" text-anchor="middle" class="label">调用 refresh</text><text x="650" y="641" text-anchor="middle" class="small">成功则更新 DataStore</text>
+  <rect x="540" y="705" width="220" height="58" rx="8" class="e"/><text x="650" y="729" text-anchor="middle" class="label">refresh 失败 / logout</text><text x="650" y="746" text-anchor="middle" class="small">clear 后回未登录态</text>
+  <path class="line" d="M440 149 L440 205"/><path class="line" d="M370 255 L230 335"/><path class="line" d="M510 255 L650 335"/>
+  <path class="line" d="M230 393 L230 450"/><path class="line" d="M230 508 L230 565"/><path class="line" d="M340 594 L540 364"/>
+  <path class="line" d="M650 393 L650 450"/><path class="line" d="M650 550 L650 600"/><path class="line" d="M650 658 L650 705"/>
+  <path class="line" d="M540 734 L340 364"/><path class="line" d="M720 500 L790 500 L790 364 L760 364"/>
+  <text x="320" y="282" class="small" fill="#fb7185">否</text><text x="525" y="282" class="small" fill="#34d399">是</text><text x="665" y="575" class="small" fill="#fbbf24">是</text><text x="765" y="486" class="small" fill="#34d399">否</text>
+</svg>

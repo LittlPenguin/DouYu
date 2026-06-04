@@ -1,0 +1,29 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 620">
+  <style>
+    text{font-family:"Noto Sans SC","PingFang SC",sans-serif}.bg{fill:#FFFBF7}.card{fill:#fff;stroke:#E0CDD0;stroke-width:1.2}.petal{fill:#FFE0E6;stroke:#F48FA4}.mint{fill:#D4F0E0;stroke:#7DB89A}.sky{fill:#D6E8FF;stroke:#7AADE0}.label{fill:#201A1C;font-size:14px;font-weight:800}.small{fill:#524347;font-size:10px}.muted{fill:#FFF0F3;stroke:#E0CDD0}
+  </style>
+  <rect width="920" height="620" class="bg"/>
+  <text x="34" y="42" class="label">帖子详情评论工具条蓝图</text>
+  <text x="34" y="62" class="small">折叠态轻量贴底；展开态分层显示缩略图、Chip、多行输入和工具栏，避免挤压</text>
+  <rect x="50" y="100" width="360" height="460" rx="28" class="card"/>
+  <text x="230" y="132" text-anchor="middle" class="label">折叠态</text>
+  <rect x="80" y="168" width="300" height="90" rx="16" class="sky"/><text x="230" y="216" text-anchor="middle" class="small">帖子图片 / 正文</text>
+  <rect x="80" y="286" width="300" height="150" rx="16" class="card"/><text x="230" y="360" text-anchor="middle" class="small">评论列表</text>
+  <rect x="80" y="470" width="300" height="58" rx="28" class="card"/>
+  <circle cx="112" cy="499" r="18" class="petal"/><text x="112" y="503" text-anchor="middle" class="small">+</text>
+  <rect x="140" y="484" width="172" height="30" rx="15" class="muted"/><text x="226" y="503" text-anchor="middle" class="small">写下你的评论</text>
+  <circle cx="344" cy="499" r="18" class="mint"/><text x="344" y="503" text-anchor="middle" class="small">贴纸</text>
+
+  <rect x="510" y="100" width="360" height="460" rx="28" class="card"/>
+  <text x="690" y="132" text-anchor="middle" class="label">展开态</text>
+  <rect x="540" y="166" width="300" height="46" rx="14" class="muted"/><text x="690" y="194" text-anchor="middle" class="small">图片缩略图横排，最多 9 张</text>
+  <rect x="540" y="226" width="300" height="42" rx="14" class="muted"/><text x="690" y="252" text-anchor="middle" class="small">@ 用户 / # 话题 / 贴纸 Chip</text>
+  <rect x="540" y="284" width="300" height="112" rx="16" class="card"/><text x="690" y="342" text-anchor="middle" class="small">多行输入 3-6 行</text>
+  <rect x="540" y="412" width="300" height="58" rx="18" class="card"/>
+  <rect x="556" y="426" width="42" height="30" rx="12" class="sky"/><text x="577" y="445" text-anchor="middle" class="small">图</text>
+  <rect x="608" y="426" width="42" height="30" rx="12" class="sky"/><text x="629" y="445" text-anchor="middle" class="small">@</text>
+  <rect x="660" y="426" width="42" height="30" rx="12" class="sky"/><text x="681" y="445" text-anchor="middle" class="small">#</text>
+  <rect x="712" y="426" width="42" height="30" rx="12" class="mint"/><text x="733" y="445" text-anchor="middle" class="small">贴</text>
+  <rect x="770" y="426" width="56" height="30" rx="15" fill="#7DB89A"/><text x="798" y="445" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">发送</text>
+  <rect x="540" y="492" width="300" height="38" rx="14" class="petal"/><text x="690" y="516" text-anchor="middle" class="small">上传失败阻断提交，保留已选内容</text>
+</svg>

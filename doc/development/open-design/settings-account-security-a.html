@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>账号与安全 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆屿 Doyu / Settings 内页</div>
+        <h1 class="title">账号与安全</h1>
+        <p class="lead">账号页只保留当前开发态能解释的安全信息：手机号、登录状态、设备提示、退出登录和注销账号。敏感操作必须二次确认。</p>
+        <div class="chips"><span class="chip">手机号</span><span class="chip">登录设备</span><span class="chip">退出登录</span><span class="chip">账号注销</span></div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>边界</b><span>不设计复杂风控、实名、密码体系或多设备管理完成态。</span></div>
+        <div class="fact"><b>注销</b><span>后端已有注销相关能力时才能接入；生产前需补合规说明。</span></div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar"><a class="icon-btn" href="settings-home-a.html"><span class="icon back"></span></a><div class="top-title">账号与安全</div><a class="icon-btn" href="search-a.html"><span class="icon search"></span></a></div>
+            <div class="scroll no-nav">
+              <div class="hero-strip"><span class="pill ok">已登录</span><h3>账号状态正常</h3><p>手机号 138****1234 · 开发环境短信验证码为 Stub。</p></div>
+              <div class="list">
+                <div class="row"><span class="round-icon"><span class="icon lock"></span></span><div class="row-main"><div class="row-title">手机号登录</div><div class="row-sub">当前仍传 ageGroup=AGE_18_PLUS</div></div><span class="pill ok">已绑定</span></div>
+                <div class="row"><span class="round-icon"><span class="icon settings"></span></span><div class="row-main"><div class="row-title">登录设备</div><div class="row-sub">仅展示当前设备，不做设备管理完成态</div></div><span class="pill warn">开发态</span></div>
+                <div class="row"><span class="round-icon"><span class="icon lock"></span></span><div class="row-main"><div class="row-title">账号注销</div><div class="row-sub">注销前展示数据影响与二次确认</div></div><span class="pill stop">谨慎</span></div>
+              </div>
+              <div class="hero-strip"><span class="pill stop">确认弹层示意</span><h3>确认退出登录？</h3><p>退出后会清理本机登录态，受保护页面回到登录引导。</p><div class="tool-row"><span class="button ghost">取消</span><span class="button petal">退出</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="spec-grid">
+            <div class="spec"><h3>账号状态</h3><ul><li>已登录：手机号脱敏、登录方式、当前设备。</li><li>未登录：只展示登录按钮和基础说明。</li><li>过期：引导重新登录，不能吞成空白。</li></ul></div>
+            <div class="spec"><h3>危险操作</h3><ul><li>退出登录：二次确认，清理本地 token。</li><li>注销账号：说明影响，要求确认。</li><li>失败时保留当前状态并提示重试。</li></ul></div>
+            <div class="state"><h3>不做</h3><p>不展示实名完成、多设备踢下线、支付安全、交易风控或生产级账号保护已完成。</p><div class="state-bar"><span class="state-dot warn">后续任务</span><span class="state-dot bad">禁伪完成</span></div></div>
+            <div class="state"><h3>登录契约</h3><p>文档继续保留登录请求仍传 `ageGroup=AGE_18_PLUS` 的事实。</p><div class="state-bar"><span class="state-dot good">契约不变</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

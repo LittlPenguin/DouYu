@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>消息页 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆屿 Doyu / A 方向页面级设计稿</div>
+        <h1 class="title">消息页：私信与通知分离</h1>
+        <p class="lead">消息页重新区分私信和通知。通知列表只展示通知摘要并进入通知详情；私信列表进入对话详情，新消息、输入状态、互关限制都只出现在私信中。</p>
+        <div class="chips">
+          <span class="chip">私信 / 通知 Tab</span>
+          <span class="chip">通知无输入状态</span>
+          <span class="chip">私信进入对话</span>
+          <span class="chip">未互关 3 条限制</span>
+        </div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>点击去向</b><span>私信行进入 `message-conversation-a.html`；通知行进入 `notification-detail-a.html`。</span></div>
+        <div class="fact"><b>删除内容</b><span>通知页不再展示“会话输入状态”；相关状态归入私信对话详情。</span></div>
+        <div class="fact"><b>边界</b><span>好友第一版仍是关注/互相关注，不设计好友申请审批。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>首屏蓝图</h2>
+        <p>消息首页顶部使用全局框架，主体是清楚的私信/通知切换和可点击列表。</p>
+      </div>
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar">
+              <a class="icon-btn" href="post-compose-a.html"><span class="icon add"></span></a>
+              <div class="top-title">消息</div>
+              <a class="icon-btn" href="search-a.html"><span class="icon search"></span></a>
+              <div class="quick-menu">
+                <a class="quick-item" href="settings-home-a.html"><span class="icon settings"></span><span>Setting</span></a>
+                <a class="quick-item" href="ai-home-a.html"><span class="icon ai"></span><span>AI 创作</span></a>
+                <a class="quick-item" href="post-compose-a.html"><span class="icon upload"></span><span>上传帖子</span></a>
+              </div>
+            </div>
+            <div class="scroll">
+              <div class="tabs"><span class="tab on">私信</span><span class="tab">通知</span></div>
+              <div class="hero-strip">
+                <span class="pill warn">新消息进入私信</span>
+                <h3>未读对话</h3>
+                <p>对话输入中、未互关剩余条数、禁发态只在私信里展示。</p>
+              </div>
+              <div class="list">
+                <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">阿澄</div><div class="row-sub">互相关注 · 晚上一起拼图纸吗</div></div><span class="pill ok">互关</span></a>
+                <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">知知</div><div class="row-sub">未互关剩余 1 条 · 对方刚发来新消息</div></div><span class="pill warn">1/3</span></a>
+                <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">陌生会话</div><div class="row-sub">超过 3 条，互相关注后可继续聊天</div></div><span class="pill stop">禁发</span></a>
+              </div>
+              <div class="tabs" style="padding-top:4px"><span class="tab">通知预览</span></div>
+              <div class="list" style="padding-top:0">
+                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">评论进入审核</div><div class="row-sub">你的评论已提交，审核通过后展示</div></div><span class="row-meta">刚刚</span></a>
+                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon ai"></span></span><div class="row-main"><div class="row-title">图纸生成完成</div><div class="row-sub">薄荷小岛挂件已保存到我的图纸</div></div><span class="row-meta">12:30</span></a>
+              </div>
+            </div>
+            <div class="bottom-nav">
+              <a class="nav-item" href="community-home-a.html"><span class="nav-logo community"></span><span>社区</span></a>
+              <a class="nav-item" href="commerce-home-a.html"><span class="nav-logo shop"></span><span>商城</span></a>
+              <a class="nav-item" href="ai-home-a.html"><span class="nav-logo ai"></span><span>AI</span></a>
+              <a class="nav-item on" href="messages-a.html"><span class="nav-logo message"></span><span>消息</span></a>
+              <a class="nav-item" href="profile-a.html"><span class="nav-logo profile"></span><span>我的</span></a>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="spec-grid">
+            <div class="spec"><h3>列表分区</h3><ul><li>私信 Tab：对话、未读、新消息、互关状态、剩余条数。</li><li>通知 Tab：评论、点赞收藏、审核、系统通知。</li><li>通知列表不得展示会话输入状态。</li><li>两类列表都必须有空态、失败态和未登录态。</li></ul></div>
+            <div class="spec"><h3>点击规则</h3><ul><li>私信行进入会话详情。</li><li>通知行进入通知详情。</li><li>点击未闭环入口必须禁用或标注开发态。</li><li>搜索可以搜索联系人/通知摘要，未实现时标注开发态。</li></ul></div>
+            <div class="state"><h3>私信边界</h3><p>未互关同一发送者对同一会话最多 3 条；超过后后端返回明确错误，Android 禁用输入或清楚提示。</p><div class="state-bar"><span class="state-dot warn">3 条限制</span><span class="state-dot bad">禁假发送</span></div></div>
+            <div class="state"><h3>通知边界</h3><p>通知只负责事件详情和跳转，不承载输入框、输入中、剩余条数或禁发态。</p><div class="state-bar"><span class="state-dot good">信息清楚</span><span class="state-dot bad">不混聊天</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

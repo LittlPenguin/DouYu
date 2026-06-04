@@ -122,7 +122,7 @@ NavHost 页面切换动画时长为 150ms（`tween(TRANSITION_DURATION)`），�
 
 商城首页/商品列表：
 
-- 页面结构对齐 Stitch `_2/screen.png`：顶部搜索栏、分类 Chip、横向 Banner、双列商品卡。
+- 页面结构以 `13-ui-screen-blueprints.md` 和 `diagrams/commerce-home-wireframe.svg` 为当前蓝图：顶部搜索栏、分类 Chip、横向 Banner、双列商品卡；历史 Stitch `_2` 只保留为视觉探索映射。
 - 搜索如果尚未接后端查询，只能作为本地筛选/占位输入或明确开发态，不得承诺全站搜索。
 - 分类 Chip 必须有选中态、空结果态和错误态；切换分类不得造成空白页。
 - Banner 只展示真实运营位或开发态素材，不作为可点击空入口。
@@ -164,15 +164,15 @@ NavHost 页面切换动画时长为 150ms（`tween(TRANSITION_DURATION)`），�
 P0：App Shell 和通用组件
 
 - 统一 `DoyuPage`、`DoyuTopBar`、底部 5 Tab、FAB、卡片、按钮、Chip、加载、空状态、错误、未登录和弱网状态。
-- 主视觉以 Stitch `_1/screen.png` 为基准：顶部品牌栏、频道 Tab、双列内容流、发布 FAB、圆角底部导航。
+- 主视觉以 `13-ui-screen-blueprints.md`、`diagrams/ui-information-architecture.svg` 和 `diagrams/community-home-wireframe.svg` 为当前基准：顶部品牌栏、频道 Tab、双列内容流、发布 FAB、圆角底部导航。
 - 所有图标使用 Compose Material Icons 或统一线性图标，不使用 emoji。
 - 视觉规范以 `11-ui-style-guide.md` 为准。
 
 P1：消息与我的 MVP
 
-- 消息页按 Stitch `_4/screen.png` 收敛通知/私信 Tab、列表密度、未读状态。
+- 消息页按 `13-ui-screen-blueprints.md` 和 `diagrams/message-profile-wireframes.svg` 收敛通知/私信 Tab、列表密度、未读状态；历史 Stitch `_4` 只作为已归档探索方向。
 - 私信发送若后端仍半占位，则不做强聊天体验；可保留只读会话或禁用发送。
-- 我的页按 Stitch `_3/screen.png` 收敛个人资产中心，但必须中文化：帖子、获赞、收藏、我的工坊、订单、历史，以及“点赞作品”“评论作品”“收藏作品”“关注作品”四个已闭环互动资产入口。
+- 我的页按 `13-ui-screen-blueprints.md` 和 `diagrams/message-profile-wireframes.svg` 收敛个人资产中心，并继续中文化：帖子、获赞、收藏、我的工坊、订单、历史，以及“点赞作品”“评论作品”“收藏作品”“关注作品”四个已闭环互动资产入口；历史 Stitch `_3` 只作为已归档探索方向。
 - 入口分组为个人资料、创作资产、交易资产、设置/安全，真实可用入口可点击，未闭环入口隐藏、禁用或明确开发态说明。
 - 设置页保留结构但不表达为生产合规完成。
 
@@ -188,14 +188,14 @@ P2：登录 + 社区样板回归检查
 
 P3：AI MVP
 
-- 采用 Stitch `ai/screen.png` 页面结构：Hero、正在生成、创作历史。
+- 采用 `13-ui-screen-blueprints.md` 和 `diagrams/ai-home-wireframe.svg` 页面结构：Hero、正在生成、创作历史；历史 Stitch `ai` 只作为已归档探索方向。
 - 保留上传、参数、创建任务、轮询、失败、取消、结果页、收藏。
 - 隐藏或禁用当前假成功项：材料“加入购物车”、PDF 导出、分享到社区，除非后续接入真实链路。
 - 结果页必须清楚区分预览图、色号清单、材料清单、开发态提示。
 
 P4：商城 MVP
 
-- 采用 Stitch `_2/screen.png`：搜索栏、品类 Chip、Banner、双列商品卡。
+- 采用 `13-ui-screen-blueprints.md` 和 `diagrams/commerce-home-wireframe.svg`：搜索栏、品类 Chip、Banner、双列商品卡；历史 Stitch `_2` 只作为已归档探索方向。
 - 保留商品列表/详情、购物车、订单确认、订单列表、支付单状态。
 - 自营商品可加购；玩家商品、定制、二手只展示，不走标准购物车。
 - 地址管理未完成时，不再伪装“默认地址”，改为开发态占位或禁用下单，不创建订单或支付单。

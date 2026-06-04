@@ -1,0 +1,52 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 760">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#94a3b8"/></marker>
+    <style>
+      text{font-family:"JetBrains Mono","Noto Sans SC","PingFang SC",sans-serif}
+      .bg{fill:#0f172a}.title{fill:#f8fafc;font-size:20px;font-weight:700}.note{fill:#94a3b8;font-size:10px}
+      .tab{fill:rgba(8,51,68,.55);stroke:#22d3ee;stroke-width:1.5}.flow{fill:rgba(6,78,59,.50);stroke:#34d399;stroke-width:1.5}
+      .guard{fill:rgba(136,19,55,.42);stroke:#fb7185;stroke-width:1.5}.asset{fill:rgba(76,29,149,.45);stroke:#a78bfa;stroke-width:1.5}
+      .label{fill:#f8fafc;font-size:12px;font-weight:700}.small{fill:#cbd5e1;font-size:9px}.line{fill:none;stroke:#94a3b8;stroke-width:1.4;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1180" height="760" class="bg"/>
+  <text x="34" y="38" class="title">Android 导航地图</text>
+  <text x="34" y="58" class="note">底部主 Tab 固定 5 个；详情页、AI 流程页、订单确认、支付状态和会话详情隐藏底栏</text>
+
+  <rect x="54" y="105" width="160" height="62" rx="8" class="tab"/><text x="134" y="130" text-anchor="middle" class="label">社区</text><text x="134" y="148" text-anchor="middle" class="small">BottomTab.COMMUNITY</text>
+  <rect x="270" y="105" width="160" height="62" rx="8" class="tab"/><text x="350" y="130" text-anchor="middle" class="label">商城</text><text x="350" y="148" text-anchor="middle" class="small">BottomTab.COMMERCE</text>
+  <rect x="486" y="105" width="160" height="62" rx="8" class="tab"/><text x="566" y="130" text-anchor="middle" class="label">AI 拼图</text><text x="566" y="148" text-anchor="middle" class="small">BottomTab.AI</text>
+  <rect x="702" y="105" width="160" height="62" rx="8" class="tab"/><text x="782" y="130" text-anchor="middle" class="label">消息</text><text x="782" y="148" text-anchor="middle" class="small">BottomTab.MESSAGE</text>
+  <rect x="918" y="105" width="160" height="62" rx="8" class="tab"/><text x="998" y="130" text-anchor="middle" class="label">我的</text><text x="998" y="148" text-anchor="middle" class="small">BottomTab.PROFILE</text>
+
+  <rect x="54" y="230" width="160" height="56" rx="8" class="flow"/><text x="134" y="254" text-anchor="middle" class="label">发帖</text><text x="134" y="271" text-anchor="middle" class="small">post_create</text>
+  <rect x="54" y="326" width="160" height="56" rx="8" class="flow"/><text x="134" y="350" text-anchor="middle" class="label">帖子详情</text><text x="134" y="367" text-anchor="middle" class="small">post/{postId}</text>
+  <rect x="54" y="422" width="160" height="56" rx="8" class="guard"/><text x="134" y="446" text-anchor="middle" class="label">登录引导</text><text x="134" y="463" text-anchor="middle" class="small">login_return</text>
+
+  <rect x="270" y="230" width="160" height="56" rx="8" class="flow"/><text x="350" y="254" text-anchor="middle" class="label">商品列表</text><text x="350" y="271" text-anchor="middle" class="small">product_list</text>
+  <rect x="270" y="326" width="160" height="56" rx="8" class="flow"/><text x="350" y="350" text-anchor="middle" class="label">商品详情</text><text x="350" y="367" text-anchor="middle" class="small">product/{productId}</text>
+  <rect x="270" y="422" width="160" height="56" rx="8" class="flow"/><text x="350" y="446" text-anchor="middle" class="label">购物车</text><text x="350" y="463" text-anchor="middle" class="small">cart</text>
+  <rect x="270" y="518" width="160" height="56" rx="8" class="guard"/><text x="350" y="542" text-anchor="middle" class="label">订单确认</text><text x="350" y="559" text-anchor="middle" class="small">地址缺口</text>
+  <rect x="270" y="614" width="160" height="56" rx="8" class="guard"/><text x="350" y="638" text-anchor="middle" class="label">支付状态</text><text x="350" y="655" text-anchor="middle" class="small">联调支付单</text>
+
+  <rect x="486" y="230" width="160" height="56" rx="8" class="flow"/><text x="566" y="254" text-anchor="middle" class="label">选图/拍照</text><text x="566" y="271" text-anchor="middle" class="small">image_select / camera</text>
+  <rect x="486" y="326" width="160" height="56" rx="8" class="flow"/><text x="566" y="350" text-anchor="middle" class="label">参数页</text><text x="566" y="367" text-anchor="middle" class="small">ai_params/{fileId}</text>
+  <rect x="486" y="422" width="160" height="56" rx="8" class="flow"/><text x="566" y="446" text-anchor="middle" class="label">生成进度</text><text x="566" y="463" text-anchor="middle" class="small">ai_progress/{jobId}</text>
+  <rect x="486" y="518" width="160" height="56" rx="8" class="asset"/><text x="566" y="542" text-anchor="middle" class="label">图纸结果</text><text x="566" y="559" text-anchor="middle" class="small">pattern/{patternId}</text>
+  <rect x="486" y="614" width="160" height="56" rx="8" class="asset"/><text x="566" y="638" text-anchor="middle" class="label">历史记录</text><text x="566" y="655" text-anchor="middle" class="small">pattern_history</text>
+
+  <rect x="702" y="230" width="160" height="56" rx="8" class="flow"/><text x="782" y="254" text-anchor="middle" class="label">会话详情</text><text x="782" y="271" text-anchor="middle" class="small">conversation/{id}</text>
+  <rect x="702" y="326" width="160" height="56" rx="8" class="guard"/><text x="782" y="350" text-anchor="middle" class="label">发送限制</text><text x="782" y="367" text-anchor="middle" class="small">未互关最多 3 条</text>
+
+  <rect x="918" y="230" width="160" height="56" rx="8" class="asset"/><text x="998" y="254" text-anchor="middle" class="label">我的图纸</text><text x="998" y="271" text-anchor="middle" class="small">my_patterns</text>
+  <rect x="918" y="306" width="160" height="56" rx="8" class="asset"/><text x="998" y="330" text-anchor="middle" class="label">收藏</text><text x="998" y="347" text-anchor="middle" class="small">favorites</text>
+  <rect x="918" y="382" width="160" height="56" rx="8" class="asset"/><text x="998" y="406" text-anchor="middle" class="label">互动作品</text><text x="998" y="423" text-anchor="middle" class="small">liked/commented/favorite/followed</text>
+  <rect x="918" y="458" width="160" height="56" rx="8" class="asset"/><text x="998" y="482" text-anchor="middle" class="label">我的订单</text><text x="998" y="499" text-anchor="middle" class="small">my_orders</text>
+  <rect x="918" y="534" width="160" height="56" rx="8" class="guard"/><text x="998" y="558" text-anchor="middle" class="label">设置</text><text x="998" y="575" text-anchor="middle" class="small">合规未生产化</text>
+
+  <path class="line" d="M134 167 L134 230"/><path class="line" d="M134 286 L134 326"/><path class="line" d="M134 382 L134 422"/>
+  <path class="line" d="M350 167 L350 230"/><path class="line" d="M350 286 L350 326"/><path class="line" d="M350 382 L350 422"/><path class="line" d="M350 478 L350 518"/><path class="line" d="M350 574 L350 614"/>
+  <path class="line" d="M566 167 L566 230"/><path class="line" d="M566 286 L566 326"/><path class="line" d="M566 382 L566 422"/><path class="line" d="M566 478 L566 518"/><path class="line" d="M566 574 L566 614"/>
+  <path class="line" d="M782 167 L782 230"/><path class="line" d="M782 286 L782 326"/>
+  <path class="line" d="M998 167 L998 230"/><path class="line" d="M998 286 L998 306"/><path class="line" d="M998 362 L998 382"/><path class="line" d="M998 438 L998 458"/><path class="line" d="M998 514 L998 534"/>
+</svg>
