@@ -1,6 +1,12 @@
 package cn.edu.app.douyu.feature.profile
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -24,23 +30,31 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -62,6 +76,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
@@ -69,13 +84,20 @@ import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.DashboardData
 import cn.edu.app.douyu.core.model.Post
+import cn.edu.app.douyu.core.model.UploadConfirmRequest
+import cn.edu.app.douyu.core.model.UploadPresignRequest
+import cn.edu.app.douyu.core.model.UploadUsage
+import cn.edu.app.douyu.core.model.UpdateProfileRequest
 import cn.edu.app.douyu.core.navigation.AppRoute
 import cn.edu.app.douyu.core.navigation.BottomTab
 import cn.edu.app.douyu.core.network.PageResponse
+import cn.edu.app.douyu.core.network.requireSuccess
+import cn.edu.app.douyu.core.network.upload
 import cn.edu.app.douyu.core.ui.BeadPattern
 import cn.edu.app.douyu.core.ui.DisabledFeatureNotice
 import cn.edu.app.douyu.core.ui.DoyuAnimatedCounter
 import cn.edu.app.douyu.core.ui.DoyuCard
+import cn.edu.app.douyu.core.ui.DoyuMainTopBar
 import cn.edu.app.douyu.core.ui.DoyuOutlinedButton
 import cn.edu.app.douyu.core.ui.DoyuPage
 import cn.edu.app.douyu.core.ui.DoyuPrimaryButton
@@ -97,10 +119,28 @@ import cn.edu.app.douyu.ui.theme.LightSurface
 import cn.edu.app.douyu.ui.theme.LightSurfaceVariant
 import cn.edu.app.douyu.ui.theme.LightTertiary
 import cn.edu.app.douyu.ui.theme.LightTertiaryContainer
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val repo = DoyuAppContainer.profileRepository
 private val communityRepo = DoyuAppContainer.communityRepository
+
+fun profileAssetTabLabels(): List<String> = listOf("我的图纸", "点赞作品", "收藏作品")
+
+fun profileAssetPreviewBadges(): List<String> = listOf("图纸", "帖子", "收藏")
+
+fun profileEditPrimaryFields(): List<String> =
+    listOf("头像", "昵称", "个人简介", "年龄段", "城市 / 地区", "兴趣标签")
+
+fun profileEditAvatarStateLabels(): List<String> =
+    listOf("更换头像", "头像上传中", "头像上传失败", "保留旧头像")
+
+fun settingsHomeSectionLabels(): List<String> =
+    listOf("账号与安全", "隐私与权限", "通知设置", "帮助、关于与合规")
+
+fun profilePrimaryAssetBoundaryMessage(): String =
+    "更多个人资产入口不再作为我的页首屏展示；已有历史路由保留，不代表订单、玩家交易或互动资产闭环已删除。"
 
 @Preview
 @Composable
@@ -136,11 +176,13 @@ private fun ProfileScreenContent(navController: NavHostController?) {
 
     Scaffold(
         topBar = {
-            DoyuTopBar("我的") {
-                IconButton(onClick = { navController?.navigate(AppRoute.SETTINGS) }) {
-                    Icon(Icons.Filled.Settings, contentDescription = "设置", tint = LightPrimary)
-                }
-            }
+            DoyuMainTopBar(
+                title = "我的",
+                onSearch = { navController?.navigate(AppRoute.SEARCH) },
+                onOpenSettings = { navController?.navigate(AppRoute.SETTINGS) },
+                onOpenAi = { navController?.navigate(BottomTab.AI.route) },
+                onCreatePost = { navController?.navigate(AppRoute.POST_CREATE) }
+            )
         }
     ) { padding ->
         DoyuPage(padding) {
@@ -166,144 +208,18 @@ private fun ProfileDashboardContent(
     dashboard: DashboardData,
     navController: NavHostController?
 ) {
-    ProfileHeroCard(dashboard)
-    ProfileStatsRow(
-        firstLabel = "图纸",
-        firstValue = dashboard.patternCount,
-        secondLabel = "订单",
-        secondValue = dashboard.orderCount,
-        thirdLabel = "豆子",
-        thirdValue = dashboard.reward.points
+    ProfileHeroCard(
+        dashboard = dashboard,
+        onEditProfile = { navController?.navigate(AppRoute.PROFILE_EDIT) }
     )
-    ProfileActionGroup(
-        title = "互动资产",
-        actions = listOf(
-            ProfileActionSpec(
-                title = "点赞作品",
-                subtitle = "查看我点过赞的社区作品",
-                icon = Icons.Filled.Favorite,
-                iconBgColor = LightSecondaryContainer,
-                iconColor = LightSecondary,
-                status = "进入",
-                onClick = { navController?.navigate(AppRoute.LIKED_POSTS) }
-            ),
-            ProfileActionSpec(
-                title = "评论作品",
-                subtitle = "查看我参与评论过的作品",
-                icon = Icons.Filled.ChatBubble,
-                iconBgColor = LightPrimaryContainer,
-                iconColor = LightPrimary,
-                status = "进入",
-                onClick = { navController?.navigate(AppRoute.COMMENTED_POSTS) }
-            ),
-            ProfileActionSpec(
-                title = "收藏作品",
-                subtitle = "查看我收藏的社区作品",
-                icon = Icons.Filled.Bookmark,
-                iconBgColor = LightTertiaryContainer,
-                iconColor = LightTertiary,
-                status = "进入",
-                onClick = { navController?.navigate(AppRoute.FAVORITE_POSTS) }
-            ),
-            ProfileActionSpec(
-                title = "关注作品",
-                subtitle = "当前关注作者发布的可见作品",
-                icon = Icons.Filled.Person,
-                iconBgColor = LightSurfaceVariant,
-                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                status = "进入",
-                onClick = { navController?.navigate(AppRoute.FOLLOWED_POSTS) }
-            )
-        )
+    ProfileStatsRow(dashboard)
+    ProfilePrimaryAssetTabs(
+        dashboard = dashboard,
+        navController = navController
     )
-    WorkshopCard(navController)
-    RewardSummaryCard(dashboard)
-    ProfileActionGroup(
-        title = "创作资产",
-        actions = listOf(
-            ProfileActionSpec(
-                title = "我的拼豆图纸",
-                subtitle = "查看已保存的图纸资产",
-                icon = Icons.Filled.GridView,
-                iconBgColor = LightPrimaryContainer,
-                iconColor = LightPrimary,
-                status = "${dashboard.patternCount} 张",
-                onClick = { navController?.navigate(AppRoute.MY_PATTERNS) }
-            ),
-            ProfileActionSpec(
-                title = "生成记录",
-                subtitle = "查看 AI 图纸任务历史，真实视觉 Provider 后期接入",
-                icon = Icons.Filled.AutoAwesome,
-                iconBgColor = LightTertiaryContainer,
-                iconColor = LightTertiary,
-                status = "历史",
-                onClick = { navController?.navigate(AppRoute.PATTERN_HISTORY) }
-            ),
-            ProfileActionSpec(
-                title = "徽章与等级",
-                subtitle = "只读展示奖励摘要，不开放签到领取",
-                icon = Icons.Filled.WorkspacePremium,
-                iconBgColor = LightSurfaceVariant,
-                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                status = dashboard.reward.levelCode.ifBlank { "待同步" },
-                enabled = false
-            )
-        )
-    )
-    ProfileActionGroup(
-        title = "交易资产",
-        actions = listOf(
-            ProfileActionSpec(
-                title = "收藏图纸",
-                subtitle = "管理收藏的拼豆图纸",
-                icon = Icons.Filled.Favorite,
-                iconBgColor = LightSecondaryContainer,
-                iconColor = LightSecondary,
-                status = "可查看",
-                onClick = { navController?.navigate(AppRoute.FAVORITES) }
-            ),
-            ProfileActionSpec(
-                title = "订单记录",
-                subtitle = "只展示服务端订单和联调支付状态",
-                icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                iconBgColor = LightTertiaryContainer,
-                iconColor = LightTertiary,
-                status = "${dashboard.orderCount} 单",
-                onClick = { navController?.navigate(AppRoute.MY_ORDERS) }
-            ),
-            ProfileActionSpec(
-                title = "卖家与定制服务",
-                subtitle = "玩家交易、实名、提现和纠纷处理本轮不开放",
-                icon = Icons.Filled.Storefront,
-                iconBgColor = LightSurfaceVariant,
-                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                status = "待开放",
-                enabled = false
-            )
-        )
-    )
-    ProfileActionGroup(
-        title = "设置 / 安全",
-        actions = listOf(
-            ProfileActionSpec(
-                title = "设置与权限",
-                subtitle = "查看权限策略和本阶段合规边界",
-                icon = Icons.Filled.Settings,
-                iconBgColor = LightPrimaryContainer,
-                iconColor = LightPrimary,
-                status = "进入",
-                onClick = { navController?.navigate(AppRoute.SETTINGS) }
-            ),
-            ProfileActionSpec(
-                title = "登录保持",
-                subtitle = "TokenStore 已接入 DataStore，应用启动时会尝试恢复登录态",
-                icon = Icons.Filled.Lock,
-                iconBgColor = LightSurfaceVariant,
-                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                status = "已接入",
-                enabled = false
-            )
-        )
+    DisabledFeatureNotice(
+        title = "更多资产入口已收敛",
+        message = profilePrimaryAssetBoundaryMessage()
     )
 }
 
@@ -358,7 +274,7 @@ private fun GuestProfileContent(
             }
         }
     }
-    ProfileStatsRow("图纸", 0, "订单", 0, "豆子", 0)
+    ProfileStatsRow()
     DisabledFeatureNotice(
         title = "登录态可在重启后恢复",
         message = "登录成功后令牌会保存到本机 DataStore；退出登录或服务端判定过期时会清理本机令牌。"
@@ -389,7 +305,10 @@ private fun GuestProfileContent(
 }
 
 @Composable
-private fun ProfileHeroCard(dashboard: DashboardData) {
+private fun ProfileHeroCard(
+    dashboard: DashboardData,
+    onEditProfile: () -> Unit
+) {
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surface,
@@ -456,6 +375,12 @@ private fun ProfileHeroCard(dashboard: DashboardData) {
                             MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
+                    DoyuOutlinedButton(
+                        text = "编辑资料",
+                        onClick = onEditProfile,
+                        modifier = Modifier.fillMaxWidth(),
+                        icon = Icons.Filled.Edit
+                    )
                 }
             }
         }
@@ -500,21 +425,20 @@ private fun SoftTag(
 }
 
 @Composable
-private fun ProfileStatsRow(
-    firstLabel: String,
-    firstValue: Int,
-    secondLabel: String,
-    secondValue: Int,
-    thirdLabel: String,
-    thirdValue: Int
-) {
+private fun ProfileStatsRow(dashboard: DashboardData? = null) {
+    val likedCount = dashboard?.reward?.points ?: 0
+    val worksCount = dashboard?.patternCount ?: 0
+    val followingCount = dashboard?.user?.followingCount ?: 0
+    val followerCount = dashboard?.user?.followerCount ?: 0
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        StatCard(firstLabel, firstValue, Modifier.weight(1f))
-        StatCard(secondLabel, secondValue, Modifier.weight(1f))
-        StatCard(thirdLabel, thirdValue, Modifier.weight(1f))
+        StatCard("获赞", likedCount, Modifier.weight(1f))
+        StatCard("作品", worksCount, Modifier.weight(1f))
+        StatCard("关注", followingCount, Modifier.weight(1f))
+        StatCard("粉丝", followerCount, Modifier.weight(1f))
     }
 }
 
@@ -541,6 +465,258 @@ private fun StatCard(label: String, value: Int, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun ProfilePrimaryAssetTabs(
+    dashboard: DashboardData,
+    navController: NavHostController?
+) {
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val labels = profileAssetTabLabels()
+    val previews = profileAssetPreviewSpecs(dashboard)
+
+    DoyuCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        SectionHeader(
+            title = "作品资产",
+            subtitle = "我的图纸、点赞作品、收藏作品放在同一个 Tab 区域"
+        )
+        Spacer(Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            labels.forEachIndexed { index, label ->
+                val selected = selectedTab == index
+                Surface(
+                    onClick = { selectedTab = index },
+                    modifier = Modifier.weight(1f),
+                    shape = CircleShape,
+                    color = if (selected) LightPrimaryContainer else LightSurfaceVariant,
+                    contentColor = if (selected) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        ProfileAssetPreviewFlow(
+            previews = previews[selectedTab],
+            navController = navController
+        )
+    }
+}
+
+private data class ProfileAssetPreviewSpec(
+    val badge: String,
+    val title: String,
+    val meta: String,
+    val route: String,
+    val color: Color,
+    val icon: ImageVector,
+    val height: Dp
+)
+
+private fun profileAssetPreviewSpecs(dashboard: DashboardData): List<List<ProfileAssetPreviewSpec>> {
+    val badges = profileAssetPreviewBadges()
+    return listOf(
+        listOf(
+            ProfileAssetPreviewSpec(
+                badge = badges[0],
+                title = "薄荷小岛挂件",
+                meta = "${dashboard.patternCount.coerceAtLeast(1)} 张图纸 · 48 色",
+                route = AppRoute.MY_PATTERNS,
+                color = LightPrimaryContainer,
+                icon = Icons.Filled.GridView,
+                height = 154.dp
+            ),
+            ProfileAssetPreviewSpec(
+                badge = badges[0],
+                title = "海盐钥匙扣",
+                meta = "28x28 · 初学",
+                route = AppRoute.MY_PATTERNS,
+                color = LightTertiaryContainer,
+                icon = Icons.Filled.Palette,
+                height = 112.dp
+            ),
+            ProfileAssetPreviewSpec(
+                badge = badges[0],
+                title = "草莓小熊图纸",
+                meta = "52 色 · 进阶",
+                route = AppRoute.MY_PATTERNS,
+                color = LightSecondaryContainer,
+                icon = Icons.Filled.AutoAwesome,
+                height = 122.dp
+            )
+        ),
+        listOf(
+            ProfileAssetPreviewSpec(
+                badge = badges[1],
+                title = "点赞的海盐配色",
+                meta = "社区作品 · 88",
+                route = AppRoute.LIKED_POSTS,
+                color = LightTertiaryContainer,
+                icon = Icons.Filled.Favorite,
+                height = 132.dp
+            ),
+            ProfileAssetPreviewSpec(
+                badge = badges[1],
+                title = "像素小岛教程",
+                meta = "阿澄 · 新手友好",
+                route = AppRoute.LIKED_POSTS,
+                color = LightPrimaryContainer,
+                icon = Icons.Filled.Favorite,
+                height = 112.dp
+            ),
+            ProfileAssetPreviewSpec(
+                badge = badges[1],
+                title = "暖白底板搭配",
+                meta = "工具心得 · 42",
+                route = AppRoute.LIKED_POSTS,
+                color = LightSecondaryContainer,
+                icon = Icons.Filled.Favorite,
+                height = 144.dp
+            )
+        ),
+        listOf(
+            ProfileAssetPreviewSpec(
+                badge = badges[2],
+                title = "草莓小熊教程",
+                meta = "收藏作品 · 126",
+                route = AppRoute.FAVORITE_POSTS,
+                color = LightSecondaryContainer,
+                icon = Icons.Filled.Bookmark,
+                height = 148.dp
+            ),
+            ProfileAssetPreviewSpec(
+                badge = badges[2],
+                title = "薄荷花边图纸",
+                meta = "图纸收藏 · 36 色",
+                route = AppRoute.FAVORITE_POSTS,
+                color = LightPrimaryContainer,
+                icon = Icons.Filled.Bookmark,
+                height = 116.dp
+            ),
+            ProfileAssetPreviewSpec(
+                badge = badges[2],
+                title = "玩家配色灵感",
+                meta = "帖子收藏 · 19",
+                route = AppRoute.FAVORITE_POSTS,
+                color = LightTertiaryContainer,
+                icon = Icons.Filled.Bookmark,
+                height = 126.dp
+            )
+        )
+    )
+}
+
+@Composable
+private fun ProfileAssetPreviewFlow(
+    previews: List<ProfileAssetPreviewSpec>,
+    navController: NavHostController?
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        ProfileAssetPreviewCard(
+            spec = previews[0],
+            modifier = Modifier
+                .weight(1f)
+                .height(previews[0].height),
+            navController = navController
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            previews.drop(1).forEach { preview ->
+                ProfileAssetPreviewCard(
+                    spec = preview,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(preview.height),
+                    navController = navController
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileAssetPreviewCard(
+    spec: ProfileAssetPreviewSpec,
+    modifier: Modifier,
+    navController: NavHostController?
+) {
+    Surface(
+        onClick = { navController?.navigate(spec.route) },
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        color = spec.color.copy(alpha = 0.78f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.76f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    spec.icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ) {
+                    Text(
+                        spec.badge,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+                Text(
+                    spec.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    spec.meta,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -1231,48 +1407,19 @@ private fun SettingsScreenContent(navController: NavHostController?) {
         DoyuPage(padding) {
             DoyuCard(modifier = Modifier.fillMaxWidth()) {
                 SectionHeader(
-                    title = "账号与安全",
-                    subtitle = "只保留当前阶段真实可用的账号操作"
+                    title = "账号与应用设置",
+                    subtitle = "只展示可解释入口，未完成能力明确标注"
                 )
                 Spacer(Modifier.height(10.dp))
-                DisabledFeatureNotice(
-                    title = "登录保持已接入",
-                    message = "登录、刷新、退出登录和 401 过期清理共用同一个 TokenStore；Preview 和无 Context 测试场景仍回退内存实现。"
-                )
-                Spacer(Modifier.height(12.dp))
-                SettingsStatusRow(
-                    title = "短信登录",
-                    description = "开发环境验证码固定为 123456",
-                    status = "可用",
-                    icon = Icons.Filled.Lock
-                )
-                SettingsStatusRow(
-                    title = "账号注销",
-                    description = "生产闭环、人工审核和冷静期流程待补齐",
-                    status = "待补齐",
-                    icon = Icons.Filled.Security
-                )
-            }
-            DoyuCard(modifier = Modifier.fillMaxWidth()) {
-                SectionHeader(
-                    title = "隐私与合规入口",
-                    subtitle = "只展示清单，不表达为生产材料已完成"
-                )
-                Spacer(Modifier.height(8.dp))
-                listOf(
-                    "隐私政策" to "文本、版本记录和弹窗确认待补齐",
-                    "用户协议" to "正式协议和版本变更流程待补齐",
-                    "权限说明" to "按实际 SDK 和权限清单后续补齐",
-                    "第三方 SDK 清单" to "真实 SDK 接入后再维护清单",
-                    "客服与反馈" to "生产客服渠道待补齐"
-                ).forEachIndexed { index, item ->
+                settingsHomeEntries().forEachIndexed { index, entry ->
                     SettingsStatusRow(
-                        title = item.first,
-                        description = item.second,
-                        status = "待补齐",
-                        icon = Icons.Filled.Info
+                        title = entry.title,
+                        description = entry.description,
+                        status = entry.status,
+                        icon = entry.icon,
+                        onClick = { navController?.navigate(AppRoute.settingsSection(entry.section)) }
                     )
-                    if (index < 4) {
+                    if (index < settingsHomeEntries().lastIndex) {
                         HorizontalDivider()
                     }
                 }
@@ -1287,6 +1434,20 @@ private fun SettingsScreenContent(navController: NavHostController?) {
                     "相机仅在拍照时申请；相册优先使用 Photo Picker；不默认申请定位、蓝牙、Wi-Fi 或广泛存储权限。",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
+                )
+            }
+            DoyuCard(modifier = Modifier.fillMaxWidth()) {
+                SectionHeader(
+                    title = "危险操作",
+                    subtitle = "退出登录和账号注销必须二次确认，注销前说明数据影响"
+                )
+                Spacer(Modifier.height(10.dp))
+                SettingsStatusRow(
+                    title = "账号注销",
+                    description = "生产冷静期、人工审核和数据影响说明待补齐。",
+                    status = "待补",
+                    icon = Icons.Filled.Security,
+                    onClick = { navController?.navigate(AppRoute.settingsSection("account-security")) }
                 )
             }
             if (DoyuAppContainer.isLoggedIn) {
@@ -1308,17 +1469,38 @@ private fun SettingsScreenContent(navController: NavHostController?) {
     }
 }
 
+private data class SettingsHomeEntry(
+    val title: String,
+    val description: String,
+    val status: String,
+    val icon: ImageVector,
+    val section: String
+)
+
+private fun settingsHomeEntries(): List<SettingsHomeEntry> {
+    val labels = settingsHomeSectionLabels()
+    return listOf(
+        SettingsHomeEntry(labels[0], "手机号、登录设备、退出登录、注销账号", "可用", Icons.Filled.Lock, "account-security"),
+        SettingsHomeEntry(labels[1], "相机、相册、通知、位置权限", "待补", Icons.Filled.Settings, "privacy-permissions"),
+        SettingsHomeEntry(labels[2], "私信、互动、系统通知", "UI-only", Icons.Filled.Notifications, "notifications"),
+        SettingsHomeEntry(labels[3], "协议、隐私政策、SDK 清单、备案待补", "待补", Icons.Filled.Info, "about-compliance")
+    )
+}
+
 @Composable
 private fun SettingsStatusRow(
     title: String,
     description: String,
     status: String,
-    icon: ImageVector
+    icon: ImageVector,
+    onClick: (() -> Unit)? = null
 ) {
+    val rowModifier = Modifier
+        .fillMaxWidth()
+        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+        .padding(vertical = 12.dp)
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp),
+        modifier = rowModifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -1352,5 +1534,449 @@ private fun SettingsStatusRow(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        if (onClick != null) {
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }
+
+@Composable
+fun SettingsSectionScreen(navController: NavHostController, section: String) {
+    val config = settingsSectionConfig(section)
+    Scaffold(
+        topBar = {
+            DoyuTopBar(config.title, canGoBack = true, onBack = { navController.popBackStack() })
+        }
+    ) { padding ->
+        DoyuPage(padding) {
+            DoyuCard(modifier = Modifier.fillMaxWidth()) {
+                SectionHeader(
+                    title = config.title,
+                    subtitle = config.subtitle
+                )
+                Spacer(Modifier.height(12.dp))
+                config.items.forEachIndexed { index, item ->
+                    SettingsStatusRow(
+                        title = item.title,
+                        description = item.description,
+                        status = item.status,
+                        icon = item.icon
+                    )
+                    if (index < config.items.lastIndex) HorizontalDivider()
+                }
+            }
+            DisabledFeatureNotice(
+                title = "开发态边界",
+                message = config.boundary
+            )
+        }
+    }
+}
+
+private data class SettingsSectionConfig(
+    val title: String,
+    val subtitle: String,
+    val boundary: String,
+    val items: List<SettingsSectionItem>
+)
+
+private data class SettingsSectionItem(
+    val title: String,
+    val description: String,
+    val status: String,
+    val icon: ImageVector
+)
+
+private fun settingsSectionConfig(section: String): SettingsSectionConfig = when (section) {
+    "account-security" -> SettingsSectionConfig(
+        title = "账号与安全",
+        subtitle = "登录、退出、注销申请和账号保护状态",
+        boundary = "本页不新增实名、风控或账号审批接口；账号注销仍需生产流程、冷静期和人工审核方案。",
+        items = listOf(
+            SettingsSectionItem("短信登录", "开发环境验证码固定为 123456；登录请求仍传 ageGroup=AGE_18_PLUS。", "可用", Icons.Filled.Lock),
+            SettingsSectionItem("登录态持久化", "TokenStore 使用 DataStore，401 或刷新失败会清理本地会话。", "可用", Icons.Filled.Security),
+            SettingsSectionItem("账号注销", "后端已有申请骨架，生产闭环与人工审核仍待补齐。", "待补", Icons.Filled.AccountCircle)
+        )
+    )
+    "privacy-permissions" -> SettingsSectionConfig(
+        title = "隐私与权限",
+        subtitle = "相机、相册、通知、位置权限的开发态说明",
+        boundary = "权限说明必须以后续真实权限清单为准；本页不请求地图定位，不新增生产合规材料。",
+        items = listOf(
+            SettingsSectionItem("相机权限", "仅拍照时申请，用于 AI 输入或未来头像上传。", "按需", Icons.Filled.PhotoCamera),
+            SettingsSectionItem("相册权限", "优先使用 Photo Picker，不默认申请广泛存储权限。", "按需", Icons.Filled.PhotoLibrary),
+            SettingsSectionItem("通知权限", "通知偏好后端接口未完成，当前仅展示 UI 状态。", "UI-only", Icons.Filled.Notifications),
+            SettingsSectionItem("位置权限", "城市/地区只能手动填写，不接地图或定位 API。", "不接入", Icons.Filled.Map)
+        )
+    )
+    "privacy-compliance", "about-compliance" -> SettingsSectionConfig(
+        title = "帮助、关于与合规",
+        subtitle = "生产前必须补齐的公开材料清单",
+        boundary = "隐私政策、用户协议、备案、SDK 清单、版权投诉和客服渠道目前只能标为待补，不能写成已经完成。",
+        items = listOf(
+            SettingsSectionItem("隐私政策", "正式文本、版本记录和首次弹窗确认待补齐。", "待补", Icons.Filled.Info),
+            SettingsSectionItem("用户协议", "正式协议、版本变更和撤回机制待补齐。", "待补", Icons.Filled.Description),
+            SettingsSectionItem("SDK 清单", "真实 SDK 接入后再按生产版本维护。", "待补", Icons.Filled.Security),
+            SettingsSectionItem("版权投诉", "投诉入口、工单流和人工处置 SLA 待补齐。", "待补", Icons.Filled.WorkspacePremium),
+            SettingsSectionItem("客服与反馈", "生产客服渠道、工单和反馈 SLA 待补齐。", "待补", Icons.Filled.Info)
+        )
+    )
+    "notifications" -> SettingsSectionConfig(
+        title = "通知设置",
+        subtitle = "当前只做本地 UI 状态展示",
+        boundary = "当前没有通知偏好后端接口，不保存服务端开关；后续需要先补 API 契约。",
+        items = listOf(
+            SettingsSectionItem("互动通知", "点赞、收藏、评论、关注提醒。", "UI-only", Icons.Filled.Favorite),
+            SettingsSectionItem("订单通知", "订单和联调支付状态提醒。", "UI-only", Icons.Filled.ShoppingBag),
+            SettingsSectionItem("系统通知", "审核、风控、合规和系统公告。", "UI-only", Icons.Filled.Info)
+        )
+    )
+    else -> SettingsSectionConfig(
+        title = "设置分区",
+        subtitle = "当前分区还没有独立实现",
+        boundary = "这是开发态占位页，不代表已有生产能力或新增接口。",
+        items = listOf(
+            SettingsSectionItem("当前状态", "该设置分区只作为后续 UI 承载入口。", "开发态", Icons.Filled.Settings)
+        )
+    )
+}
+
+@Preview
+@Composable
+private fun ProfileEditScreenPreview() {
+    ProfileEditScreenContent(navController = null)
+}
+
+@Composable
+fun ProfileEditScreen(navController: NavHostController) {
+    ProfileEditScreenContent(navController)
+}
+
+@Composable
+private fun ProfileEditAvatarCard(
+    currentAvatarUrl: String?,
+    selectedAvatarUri: Uri?,
+    uploading: Boolean,
+    failed: Boolean,
+    onPickAvatar: () -> Unit,
+    onCameraAvatar: () -> Unit,
+    onClearAvatar: () -> Unit
+) {
+    val labels = profileEditAvatarStateLabels()
+    DoyuCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(LightPrimaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                val avatarModel = selectedAvatarUri ?: currentAvatarUrl
+                if (avatarModel == null || avatarModel.toString().isBlank()) {
+                    Icon(
+                        Icons.Filled.Person,
+                        contentDescription = null,
+                        tint = LightPrimary,
+                        modifier = Modifier.size(34.dp)
+                    )
+                } else {
+                    SubcomposeAsyncImage(
+                        model = avatarModel,
+                        contentDescription = "头像预览",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                        loading = {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                            }
+                        },
+                        error = {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Filled.Person, contentDescription = null, tint = LightPrimary)
+                            }
+                        }
+                    )
+                }
+                if (uploading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.68f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(26.dp), strokeWidth = 2.dp)
+                    }
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("头像", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    when {
+                        uploading -> labels[1]
+                        failed -> "${labels[2]}，${labels[3]}。"
+                        selectedAvatarUri != null -> "已选择新头像，保存时上传。"
+                        else -> "${labels[0]}；失败时${labels[3]}。"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            DoyuOutlinedButton(
+                text = "相册",
+                onClick = onPickAvatar,
+                enabled = !uploading,
+                modifier = Modifier.weight(1f),
+                icon = Icons.Filled.PhotoLibrary
+            )
+            DoyuOutlinedButton(
+                text = "拍照",
+                onClick = onCameraAvatar,
+                enabled = !uploading,
+                modifier = Modifier.weight(1f),
+                icon = Icons.Filled.PhotoCamera
+            )
+        }
+        if (selectedAvatarUri != null || failed) {
+            Spacer(Modifier.height(8.dp))
+            DoyuOutlinedButton(
+                text = "删除新图",
+                onClick = onClearAvatar,
+                enabled = !uploading,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileEditScreenContent(navController: NavHostController?) {
+    var retryCount by remember { mutableIntStateOf(0) }
+    val dashboardState = safeCallToState(retryCount) { repo.dashboard() }.value
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var nickname by remember { mutableStateOf("") }
+    var bio by remember { mutableStateOf("") }
+    var avatarFileId by remember { mutableStateOf("") }
+    var selectedAvatarUri by remember { mutableStateOf<Uri?>(null) }
+    var avatarUploadFailed by remember { mutableStateOf(false) }
+    var city by remember { mutableStateOf("手动选择城市 / 地区") }
+    var interests by remember { mutableStateOf("拼豆, 教程, 材料") }
+    var initialized by remember { mutableStateOf(false) }
+    var saving by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    if (dashboardState is UiState.Success && !initialized) {
+        nickname = dashboardState.data.user.nickname
+        bio = dashboardState.data.user.bio
+        initialized = true
+    }
+    val avatarPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            selectedAvatarUri = uri
+            avatarFileId = ""
+            avatarUploadFailed = false
+            message = null
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            DoyuTopBar("编辑资料", canGoBack = true, onBack = { navController?.popBackStack() })
+        }
+    ) { padding ->
+        DoyuPage(padding) {
+            when (dashboardState) {
+                is UiState.Success -> {
+                    ProfileEditAvatarCard(
+                        currentAvatarUrl = dashboardState.data.user.avatarUrl,
+                        selectedAvatarUri = selectedAvatarUri,
+                        uploading = saving && selectedAvatarUri != null,
+                        failed = avatarUploadFailed,
+                        onPickAvatar = {
+                            avatarPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        },
+                        onCameraAvatar = {
+                            message = "头像拍照入口为开发态；当前先使用相册选择，不新增 CameraX 头像链路。"
+                        },
+                        onClearAvatar = {
+                            selectedAvatarUri = null
+                            avatarFileId = ""
+                            avatarUploadFailed = false
+                            message = "已删除新头像，旧头像会保留。"
+                        }
+                    )
+
+                    DoyuCard(modifier = Modifier.fillMaxWidth()) {
+                        OutlinedTextField(
+                            value = nickname,
+                            onValueChange = {
+                                nickname = it
+                                message = null
+                            },
+                            label = { Text("昵称") },
+                            singleLine = true,
+                            isError = nickname.isBlank(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = bio,
+                            onValueChange = {
+                                bio = it
+                                message = null
+                            },
+                            label = { Text("个人简介") },
+                            minLines = 3,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    DoyuCard(modifier = Modifier.fillMaxWidth()) {
+                        SectionHeader(
+                            title = "资料扩展",
+                            subtitle = "以下字段只做 UI 目标展示，当前不接地图 API 或新增后端字段"
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        SettingsStatusRow(
+                            title = "年龄段",
+                            description = "16+ 用户展示，不做实名或年龄认证扩展。",
+                            status = "16+",
+                            icon = Icons.Filled.AccountCircle
+                        )
+                        HorizontalDivider()
+                        OutlinedTextField(
+                            value = city,
+                            onValueChange = { city = it },
+                            label = { Text("城市 / 地区（UI-only）") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = interests,
+                            onValueChange = { interests = it },
+                            label = { Text("兴趣标签（UI-only）") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        DisabledFeatureNotice(
+                            title = "不接定位能力",
+                            message = "城市/地区只允许手动填写或后续字段设计；本轮不接地图、定位或隐私合规新接口。"
+                        )
+                    }
+
+                    message?.let {
+                        Text(
+                            it,
+                            color = if (it.contains("成功")) LightPrimary else MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    DoyuPrimaryButton(
+                        text = if (saving) "保存中" else "保存",
+                        onClick = {
+                            val cleanName = nickname.trim()
+                            if (cleanName.isBlank()) {
+                                message = "昵称不能为空。"
+                                return@DoyuPrimaryButton
+                            }
+                            saving = true
+                            message = null
+                            avatarUploadFailed = false
+                            scope.launch {
+                                runCatching {
+                                    val confirmedAvatarFileId = selectedAvatarUri?.let { uri ->
+                                        uploadProfileAvatar(uri, context)
+                                    } ?: avatarFileId.trim().ifBlank { null }
+                                    repo.updateProfile(
+                                        UpdateProfileRequest(
+                                            nickname = cleanName,
+                                            avatarFileId = confirmedAvatarFileId,
+                                            bio = bio.trim().ifBlank { null }
+                                        )
+                                    )
+                                }.onSuccess {
+                                    message = "保存成功"
+                                    selectedAvatarUri = null
+                                    avatarFileId = ""
+                                    retryCount++
+                                    navController?.popBackStack()
+                                }.onFailure {
+                                    if (selectedAvatarUri != null) avatarUploadFailed = true
+                                    message = it.message ?: "保存失败，请稍后重试。"
+                                }
+                                saving = false
+                            }
+                        },
+                        enabled = !saving && nickname.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                        icon = Icons.Filled.Edit
+                    )
+                    DoyuOutlinedButton(
+                        text = "取消",
+                        onClick = { navController?.popBackStack() },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                else -> PageStateView(dashboardState, onRetry = { retryCount++ })
+            }
+        }
+    }
+}
+
+private suspend fun uploadProfileAvatar(uri: Uri, context: android.content.Context): String =
+    withContext(Dispatchers.IO) {
+        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: throw IllegalStateException("无法读取头像图片")
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+        val mimeType = context.contentResolver.getType(uri) ?: "image/jpeg"
+        val fileName = "avatar_${System.currentTimeMillis()}_${uri.lastPathSegment ?: "image"}.jpg"
+        val presign = requireSuccess(
+            DoyuAppContainer.apiClient.uploadApi.presign(
+                UploadPresignRequest(
+                    usage = UploadUsage.AVATAR,
+                    fileName = fileName,
+                    mimeType = mimeType,
+                    sizeBytes = bytes.size.toLong()
+                )
+            )
+        )
+        DoyuAppContainer.uploadTransport.upload(presign, bytes)
+        val file = requireSuccess(
+            DoyuAppContainer.apiClient.uploadApi.confirm(
+                UploadConfirmRequest(
+                    fileKey = presign.fileKey,
+                    usage = UploadUsage.AVATAR,
+                    mimeType = mimeType,
+                    sizeBytes = bytes.size.toLong(),
+                    width = options.outWidth.takeIf { it > 0 },
+                    height = options.outHeight.takeIf { it > 0 }
+                )
+            )
+        )
+        file.fileId
+    }

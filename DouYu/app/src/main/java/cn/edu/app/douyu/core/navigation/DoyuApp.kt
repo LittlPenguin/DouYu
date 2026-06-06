@@ -40,11 +40,11 @@ private const val TRANSITION_DURATION = 150
 private data class TabUi(val tab: BottomTab, val icon: ImageVector, val selectedIcon: ImageVector)
 
 private val tabItems = listOf(
-    TabUi(BottomTab.COMMUNITY, Icons.Filled.Groups, Icons.Filled.Groups),
-    TabUi(BottomTab.COMMERCE, Icons.Filled.Storefront, Icons.Filled.Storefront),
+    TabUi(BottomTab.COMMUNITY, Icons.Filled.GridView, Icons.Filled.GridView),
+    TabUi(BottomTab.COMMERCE, Icons.Filled.ShoppingBag, Icons.Filled.ShoppingBag),
     TabUi(BottomTab.AI, Icons.Filled.AutoAwesome, Icons.Filled.AutoAwesome),
-    TabUi(BottomTab.MESSAGE, Icons.Filled.ChatBubble, Icons.Filled.ChatBubble),
-    TabUi(BottomTab.PROFILE, Icons.Filled.Person, Icons.Filled.Person)
+    TabUi(BottomTab.MESSAGE, Icons.Filled.MarkUnreadChatAlt, Icons.Filled.MarkUnreadChatAlt),
+    TabUi(BottomTab.PROFILE, Icons.Filled.AccountCircle, Icons.Filled.AccountCircle)
 )
 
 @Composable
@@ -86,6 +86,7 @@ fun DoyuApp() {
             composable(BottomTab.COMMERCE.route) { CommerceHomeScreen(navController) }
             composable(BottomTab.MESSAGE.route) { MessageListScreen(navController) }
             composable(BottomTab.PROFILE.route) { ProfileScreen(navController) }
+            composable(AppRoute.SEARCH) { SearchScreen(navController) }
             composable(AppRoute.LOGIN) { LoginScreen(navController) }
             composable(
                 AppRoute.LOGIN_ROUTE,
@@ -104,7 +105,15 @@ fun DoyuApp() {
             ) {
                 PostDetailScreen(navController, it.arguments?.getString("postId").orEmpty())
             }
-            composable(AppRoute.IMAGE_SELECT) { ImageSelectScreen(navController) }
+            composable(
+                AppRoute.IMAGE_SELECT_ROUTE,
+                arguments = listOf(navArgument("openCamera") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                })
+            ) {
+                ImageSelectScreen(navController, openCameraOnEnter = it.arguments?.getBoolean("openCamera") == true)
+            }
             composable(AppRoute.CAMERA_CAPTURE) { CameraCaptureScreen(navController) }
             composable(
                 AppRoute.AI_PARAMS,
@@ -154,6 +163,48 @@ fun DoyuApp() {
             composable(AppRoute.FOLLOWED_POSTS) { FollowedPostsScreen(navController) }
             composable(AppRoute.MY_ORDERS) { MyOrdersScreen(navController) }
             composable(AppRoute.SETTINGS) { SettingsScreen(navController) }
+            composable(
+                AppRoute.SETTINGS_SECTION,
+                arguments = listOf(navArgument("section") { type = NavType.StringType })
+            ) {
+                SettingsSectionScreen(navController, it.arguments?.getString("section").orEmpty())
+            }
+            composable(AppRoute.PROFILE_EDIT) { ProfileEditScreen(navController) }
+            composable(
+                AppRoute.NOTIFICATION_DETAIL,
+                arguments = listOf(
+                    navArgument("notificationId") { type = NavType.StringType },
+                    navArgument("title") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("content") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("type") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("createdAt") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) {
+                NotificationDetailScreen(
+                    navController = navController,
+                    notificationId = it.arguments?.getString("notificationId").orEmpty(),
+                    title = it.arguments?.getString("title").orEmpty(),
+                    content = it.arguments?.getString("content").orEmpty(),
+                    type = it.arguments?.getString("type").orEmpty(),
+                    createdAt = it.arguments?.getString("createdAt").orEmpty()
+                )
+            }
         }
     }
 }

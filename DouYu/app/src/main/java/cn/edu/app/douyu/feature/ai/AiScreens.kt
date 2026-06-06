@@ -1,6 +1,7 @@
 package cn.edu.app.douyu.feature.ai
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +45,56 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private val repo = DoyuAppContainer.patternRepository
+private const val AI_UPLOAD_LOG_TAG = "DoyuAiUpload"
+
+fun aiHomeTopBarTitle(): String = "AI 创作"
+
+fun aiHomeUploadActionLabels(): List<String> = listOf("相册上传", "拍照")
+
+fun aiImagePreviewActionLabels(fromCamera: Boolean): List<String> =
+    if (fromCamera) {
+        listOf("左转", "右转", "取消", "重拍", "上传并继续", "重试上传")
+    } else {
+        listOf("左转", "右转", "取消", "重新选择", "上传并继续", "重试上传")
+    }
+
+fun aiHomeDevelopmentBoundaryCopy(): List<String> =
+    listOf(
+        "开发态 AI 能力",
+        "当前后端仍是开发态图纸生成链路，真实视觉 Provider 和大模型生图 API 未接入；结果只用于联调和 UI 验收。"
+    )
+
+fun aiHomeHeroBoundaryCopy(): String =
+    "生成质量以后端 Provider 能力为准，当前不承诺真实视觉理解。"
+
+fun aiResultDisabledFeatureCopy(): List<String> =
+    listOf(
+        "材料购买待接入",
+        "图纸材料清单已展示，自动加购、PDF 导出和带图纸发帖将在真实链路接入后开放。"
+    )
+
+fun aiHistoryEmptyStateCopy(): List<String> =
+    listOf(
+        "还没有生成过图纸",
+        "选择一张图片，开始生成你的第一张拼豆图纸吧！"
+    )
+
+fun aiUploadFailureMessage(error: Throwable?): String {
+    val message = error?.message?.takeIf { it.isNotBlank() }
+        ?: return "上传失败：请检查网络后重试"
+    val rawMessage = "${error::class.java.name}: $message"
+        .replace(Regex("https?://\\S+"), "https://<redacted>")
+    return "上传失败：$rawMessage"
+}
+
+fun aiJobStatusLabel(status: PatternJobStatus): String = when (status) {
+    PatternJobStatus.PENDING -> "排队中"
+    PatternJobStatus.PROCESSING -> "处理中"
+    PatternJobStatus.SUCCEEDED -> "已完成"
+    PatternJobStatus.FAILED -> "失败"
+    PatternJobStatus.REJECTED -> "失败"
+    PatternJobStatus.CANCELED -> "已取消"
+}
 
 @Composable
 fun AiHomeScreen(navController: NavHostController) {
@@ -59,11 +111,13 @@ private fun AiHomeScreenPreview() {
 private fun AiHomeScreenContent(navController: NavHostController?) {
     Scaffold(
         topBar = {
-            DoyuTopBar("AI 拼图") {
-                IconButton(onClick = { navController?.navigate(AppRoute.PATTERN_HISTORY) }) {
-                    Icon(Icons.Filled.History, contentDescription = "历史", tint = LightPrimary)
-                }
-            }
+            DoyuMainTopBar(
+                title = aiHomeTopBarTitle(),
+                onSearch = { navController?.navigate(AppRoute.SEARCH) },
+                onOpenSettings = { navController?.navigate(AppRoute.SETTINGS) },
+                onOpenAi = { navController?.navigate(BottomTab.AI.route) },
+                onCreatePost = { navController?.navigate(AppRoute.POST_CREATE) }
+            )
         }
     ) { padding ->
         Column(
@@ -75,12 +129,13 @@ private fun AiHomeScreenContent(navController: NavHostController?) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Spacer(Modifier.height(4.dp))
-            DoyuHeroCard(
-                title = "照片变拼豆图纸",
-                subtitle = "上传你的照片，AI一键生成专属拼豆图纸，让回忆变得可触摸，轻松开启手工之旅。",
-                ctaText = "开始创作",
-                onCtaClick = { navController?.navigate(AppRoute.IMAGE_SELECT) },
-                badge = "智能图纸引擎"
+            AiHomeHero(
+                onPickImage = { navController?.navigate(AppRoute.imageSelect()) },
+                onOpenCamera = { navController?.navigate(AppRoute.imageSelect(openCamera = true)) }
+            )
+            DisabledFeatureNotice(
+                title = aiHomeDevelopmentBoundaryCopy()[0],
+                message = aiHomeDevelopmentBoundaryCopy()[1]
             )
 
             // Current Task Card
@@ -117,29 +172,86 @@ private fun AiHomeScreenContent(navController: NavHostController?) {
             val historyState = safeCallToState(historyRetryCount) { repo.history() }.value
             when (val state = historyState) {
                 is UiState.Success -> {
-                    state.data.items.take(4).forEach { job ->
-                        HistoryJobCard(
-                            title = job.inputName ?: job.inputFileId,
-                            status = statusLabel(job.status),
-                            onClick = {
-                                if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
-                                    navController?.navigate(AppRoute.patternResult(job.patternId))
-                                } else {
-                                    navController?.navigate(AppRoute.aiProgress(job.jobId))
+                    val items = state.data.items.take(4)
+                    if (items.isEmpty()) {
+                        AiHistoryEmptyState()
+                    } else {
+                        items.forEach { job ->
+                            HistoryJobCard(
+                                title = job.inputName ?: job.inputFileId,
+                                status = aiJobStatusLabel(job.status),
+                                onClick = {
+                                    if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
+                                        navController?.navigate(AppRoute.patternResult(job.patternId))
+                                    } else {
+                                        navController?.navigate(AppRoute.aiProgress(job.jobId))
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
                 is UiState.Empty -> {
-                    EmptyContent(
-                        "还没有生成过图纸",
-                        "选择一张图片，开始生成你的第一张拼豆图纸吧！",
-                        showRetry = false
-                    )
+                    AiHistoryEmptyState()
                 }
                 else -> PageStateView(historyState, onRetry = { historyRetryCount++ })
             }
+        }
+    }
+}
+
+@Composable
+private fun AiHomeHero(
+    onPickImage: () -> Unit,
+    onOpenCamera: () -> Unit
+) {
+    val actions = aiHomeUploadActionLabels()
+    DoyuCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(18.dp)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = LightPrimaryContainer,
+            contentColor = LightPrimary
+        ) {
+            Text(
+                "开发态工具",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "上传图片生成拼豆图纸",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            aiHomeHeroBoundaryCopy(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            DoyuPrimaryButton(
+                text = actions[0],
+                onClick = onPickImage,
+                modifier = Modifier.weight(1f),
+                icon = Icons.Filled.PhotoLibrary
+            )
+            DoyuOutlinedButton(
+                text = actions[1],
+                onClick = onOpenCamera,
+                modifier = Modifier.weight(1f),
+                icon = Icons.Filled.PhotoCamera
+            )
         }
     }
 }
@@ -242,6 +354,12 @@ private fun HistoryJobCard(title: String, status: String, onClick: () -> Unit) {
     }
 }
 
+@Composable
+private fun AiHistoryEmptyState() {
+    val copy = aiHistoryEmptyStateCopy()
+    EmptyContent(copy[0], copy[1], showRetry = false)
+}
+
 // ── ImageSelectScreen ──
 
 @Preview
@@ -249,38 +367,55 @@ private fun HistoryJobCard(title: String, status: String, onClick: () -> Unit) {
 private fun ImageSelectScreenPreview() { ImageSelectScreenContent(navController = null) }
 
 @Composable
-fun ImageSelectScreen(navController: NavHostController) { ImageSelectScreenContent(navController) }
+fun ImageSelectScreen(navController: NavHostController, openCameraOnEnter: Boolean = false) {
+    ImageSelectScreenContent(navController, openCameraOnEnter)
+}
 
 private enum class UploadState { IDLE, UPLOADING, SUCCESS, FAILED, REQUIRE_LOGIN }
 
 @Composable
-private fun ImageSelectScreenContent(navController: NavHostController?) {
+private fun ImageSelectScreenContent(navController: NavHostController?, openCameraOnEnter: Boolean = false) {
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     var uploadState by remember { mutableStateOf(UploadState.IDLE) }
     var uploadProgress by remember { mutableFloatStateOf(0f) }
     var uploadedFileId by remember { mutableStateOf<String?>(null) }
+    var uploadErrorMessage by remember { mutableStateOf<String?>(null) }
     var previewRotation by remember { mutableFloatStateOf(0f) }
+    var selectedFromCamera by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
+    var cameraOpenedFromRoute by rememberSaveable(openCameraOnEnter) { mutableStateOf(false) }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             selectedUri = uri
+            selectedFromCamera = false
             uploadState = UploadState.IDLE
             uploadedFileId = null
+            uploadErrorMessage = null
             previewRotation = 0f
         }
     }
 
     val savedStateHandle = navController?.currentBackStackEntry?.savedStateHandle
+    LaunchedEffect(openCameraOnEnter, navController) {
+        if (openCameraOnEnter && !cameraOpenedFromRoute) {
+            cameraOpenedFromRoute = true
+            navController?.navigate(AppRoute.CAMERA_CAPTURE)
+        }
+    }
+
     LaunchedEffect(savedStateHandle) {
         val capturedUriStr = savedStateHandle?.get<String>("captured_uri")
         if (capturedUriStr != null) {
             selectedUri = Uri.parse(capturedUriStr)
+            selectedFromCamera = savedStateHandle.get<Boolean>("captured_from_camera") == true
             uploadState = UploadState.IDLE
             uploadedFileId = null
+            uploadErrorMessage = null
             previewRotation = 0f
             savedStateHandle.remove<String>("captured_uri")
+            savedStateHandle.remove<Boolean>("captured_from_camera")
         }
     }
 
@@ -340,18 +475,39 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                         style = MaterialTheme.typography.bodySmall
                     )
                     Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                         DoyuOutlinedButton(
-                            "重新选择",
+                            "取消",
                             onClick = {
                                 selectedUri = null
+                                selectedFromCamera = false
                                 uploadState = UploadState.IDLE
                                 uploadedFileId = null
+                                uploadErrorMessage = null
                                 previewRotation = 0f
+                            },
+                            icon = Icons.Filled.Close,
+                            modifier = Modifier.weight(1f)
+                        )
+                        DoyuOutlinedButton(
+                            if (selectedFromCamera) "重拍" else "重新选择",
+                            onClick = {
+                                if (selectedFromCamera) {
+                                    navController?.navigate(AppRoute.CAMERA_CAPTURE)
+                                } else {
+                                    selectedUri = null
+                                    uploadState = UploadState.IDLE
+                                    uploadedFileId = null
+                                    uploadErrorMessage = null
+                                    previewRotation = 0f
+                                }
                             },
                             icon = Icons.Filled.Refresh,
                             modifier = Modifier.weight(1f)
                         )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                         if (uploadState == UploadState.IDLE || uploadState == UploadState.FAILED || uploadState == UploadState.REQUIRE_LOGIN) {
                             DoyuPrimaryButton(
                                 if (uploadState == UploadState.FAILED) "重试上传" else "上传并继续",
@@ -363,6 +519,7 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                                     }
                                     uploadState = UploadState.UPLOADING
                                     uploadProgress = 0f
+                                    uploadErrorMessage = null
                                     scope.launch {
                                         try {
                                             val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
@@ -407,6 +564,8 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                                             uploadedFileId = file.fileId
                                             uploadState = UploadState.SUCCESS
                                         } catch (e: Exception) {
+                                            Log.e(AI_UPLOAD_LOG_TAG, "AI input upload failed", e)
+                                            uploadErrorMessage = aiUploadFailureMessage(e)
                                             uploadState = UploadState.FAILED
                                         }
                                     }
@@ -432,7 +591,10 @@ private fun ImageSelectScreenContent(navController: NavHostController?) {
                     DoyuCard {
                         Text("上传失败", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.height(4.dp))
-                        Text("请检查网络后重试", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            uploadErrorMessage ?: aiUploadFailureMessage(null),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
 
@@ -928,8 +1090,8 @@ private fun PatternResultScreenContent(navController: NavHostController?, patter
                     }
                     Spacer(Modifier.height(10.dp))
                     DisabledFeatureNotice(
-                        title = "材料购买待接入",
-                        message = "图纸材料清单已展示，自动加购、PDF 导出和带图纸发帖将在真实链路接入后开放。"
+                        title = aiResultDisabledFeatureCopy()[0],
+                        message = aiResultDisabledFeatureCopy()[1]
                     )
                     Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1007,35 +1169,28 @@ private fun PatternHistoryScreenContent(navController: NavHostController?) {
     Scaffold(topBar = { DoyuTopBar("生成记录", canGoBack = true, onBack = { navController?.popBackStack() }) }) { padding ->
         DoyuPage(padding) {
             when (val state = historyState) {
-                is UiState.Success -> state.data.items.forEach { job ->
-                    HistoryJobCard(
-                        title = job.inputName ?: job.inputFileId,
-                        status = statusLabel(job.status),
-                        onClick = {
-                            if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
-                                navController?.navigate(AppRoute.patternResult(job.patternId))
-                            } else {
-                                navController?.navigate(AppRoute.aiProgress(job.jobId))
-                            }
+                is UiState.Success -> {
+                    if (state.data.items.isEmpty()) {
+                        AiHistoryEmptyState()
+                    } else {
+                        state.data.items.forEach { job ->
+                            HistoryJobCard(
+                                title = job.inputName ?: job.inputFileId,
+                                status = aiJobStatusLabel(job.status),
+                                onClick = {
+                                    if (job.status == PatternJobStatus.SUCCEEDED && job.patternId != null) {
+                                        navController?.navigate(AppRoute.patternResult(job.patternId))
+                                    } else {
+                                        navController?.navigate(AppRoute.aiProgress(job.jobId))
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
                 }
-                is UiState.Empty -> EmptyContent(
-                    "还没有生成过图纸",
-                    "选择一张图片，开始生成你的第一张拼豆图纸吧！",
-                    showRetry = false
-                )
+                is UiState.Empty -> AiHistoryEmptyState()
                 else -> PageStateView(historyState)
             }
         }
     }
-}
-
-private fun statusLabel(status: PatternJobStatus): String = when (status) {
-    PatternJobStatus.PENDING -> "排队中"
-    PatternJobStatus.PROCESSING -> "处理中"
-    PatternJobStatus.SUCCEEDED -> "已完成"
-    PatternJobStatus.FAILED -> "失败"
-    PatternJobStatus.REJECTED -> "失败"
-    PatternJobStatus.CANCELED -> "已取消"
 }

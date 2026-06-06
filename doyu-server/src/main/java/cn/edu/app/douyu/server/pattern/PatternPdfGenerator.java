@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * 拼豆图纸 PDF 生成器。
@@ -92,10 +93,10 @@ public class PatternPdfGenerator {
 
         // 材料行
         for (Map<String, Object> mat : materials) {
-            String colorCode = (String) mat.getOrDefault("colorCode", "");
-            String displayName = (String) mat.getOrDefault("displayName", "");
+            String colorCode = Objects.toString(mat.getOrDefault("colorCode", ""), "");
+            String displayName = Objects.toString(mat.getOrDefault("displayName", ""), "");
             Object beadCount = mat.getOrDefault("beadCount", 0);
-            String hex = (String) mat.getOrDefault("hex", "#cccccc");
+            String hex = normalizeHexColor(mat.get("hex"));
 
             svg.append("<text x=\"60\" y=\"").append(y).append("\" font-size=\"10\">").append(escapeXml(colorCode)).append("</text>\n");
             svg.append("<text x=\"150\" y=\"").append(y).append("\" font-size=\"10\">").append(escapeXml(displayName)).append("</text>\n");
@@ -134,6 +135,16 @@ public class PatternPdfGenerator {
         }
 
         return text.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private String normalizeHexColor(Object value) {
+        if (value instanceof Number number) {
+            return String.format("#%06x", number.intValue() & 0xFFFFFF);
+        }
+        if (value instanceof String hex && hex.matches("#?[0-9a-fA-F]{6}")) {
+            return hex.startsWith("#") ? hex : "#" + hex;
+        }
+        return "#cccccc";
     }
 
     private String escapeXml(String s) {

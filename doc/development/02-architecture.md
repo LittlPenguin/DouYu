@@ -48,7 +48,7 @@ Design & Docs
 
 | 组件 | 当前职责 | 当前边界 |
 |---|---|---|
-| Android App | 展示五个主 Tab、登录、社区、AI、商城、消息、我的等用户流程 | 新版 Search、Profile Edit、Settings 子页、通知详情仍是设计目标，不是当前路由事实。 |
+| Android App | 展示五个主 Tab、登录、社区、AI、商城、消息、我的等用户流程 | Search、Profile Edit、Settings 分区页和通知列表内详情已注册 Android 路由；全局搜索后端、生产合规配置、独立通知详情接口和未来能力仍未接入。 |
 | Spring Boot API | 提供 `/api/v1` REST 接口、鉴权、业务规则、Provider 编排和后台 API | 不新增地图、真实支付、大模型生图、全局搜索公共 API。 |
 | PostgreSQL | 存储用户、帖子、评论、商品、订单、支付、消息、AI 任务等核心数据 | 表结构变更必须走 Flyway；当前文档重构不改迁移。 |
 | Redis | 作为缓存、限流、异步能力扩展基础设施 | 当前 MVP 不依赖 Redis 才能完成全部链路。 |

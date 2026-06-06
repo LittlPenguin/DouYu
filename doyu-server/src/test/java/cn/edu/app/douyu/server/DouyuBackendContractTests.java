@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cn.edu.app.douyu.server.common.entity.ConversationEntity;
 import cn.edu.app.douyu.server.common.entity.ConversationRepository;
+import cn.edu.app.douyu.server.common.entity.PostEntity;
+import cn.edu.app.douyu.server.common.entity.PostRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,6 +46,9 @@ class DouyuBackendContractTests {
 
     @Autowired
     ConversationRepository conversationRepository;
+
+    @Autowired
+    PostRepository postRepository;
 
     @Test
     void openApiDocsExposeApiV1EndpointsAndUploadPatternContractFields() throws Exception {
@@ -489,28 +494,69 @@ class DouyuBackendContractTests {
         mockMvc.perform(post("/api/v1/posts/{postId}/like", postId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.liked", equalTo(true)));
+                .andExpect(jsonPath("$.data.liked", equalTo(true)))
+                .andExpect(jsonPath("$.data.likedByMe", equalTo(true)))
+                .andExpect(jsonPath("$.data.likeCount", equalTo(1)))
+                .andExpect(jsonPath("$.data.favoriteCount", equalTo(0)))
+                .andExpect(jsonPath("$.data.favoritedByMe", equalTo(false)));
 
         mockMvc.perform(post("/api/v1/posts/{postId}/like", postId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.liked", equalTo(true)));
+                .andExpect(jsonPath("$.data.liked", equalTo(true)))
+                .andExpect(jsonPath("$.data.likedByMe", equalTo(true)))
+                .andExpect(jsonPath("$.data.likeCount", equalTo(1)));
 
         mockMvc.perform(post("/api/v1/posts/{postId}/favorite", postId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.favorited", equalTo(true)));
+                .andExpect(jsonPath("$.data.favorited", equalTo(true)))
+                .andExpect(jsonPath("$.data.favoritedByMe", equalTo(true)))
+                .andExpect(jsonPath("$.data.favoriteCount", equalTo(1)))
+                .andExpect(jsonPath("$.data.likeCount", equalTo(1)))
+                .andExpect(jsonPath("$.data.likedByMe", equalTo(true)));
 
         mockMvc.perform(post("/api/v1/posts/{postId}/favorite", postId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.favorited", equalTo(true)));
+                .andExpect(jsonPath("$.data.favorited", equalTo(true)))
+                .andExpect(jsonPath("$.data.favoritedByMe", equalTo(true)))
+                .andExpect(jsonPath("$.data.favoriteCount", equalTo(1)));
 
         mockMvc.perform(get("/api/v1/posts/{postId}", postId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.likeCount", equalTo(1)))
                 .andExpect(jsonPath("$.data.favoriteCount", equalTo(1)));
+    }
+
+    @Test
+    void communityInteractionUsesStoredAggregateCountsInsteadOfResettingSeedCounts() throws Exception {
+        String token = login("13800000019", "AGE_18_PLUS");
+        JsonNode created = postJsonWithToken("/api/v1/posts", token, """
+                {"title":"seed aggregate post","content":"community aggregate content"}
+                """);
+        String postId = created.at("/data/postId").asText();
+        PostEntity post = postRepository.findById(postId).orElseThrow();
+        post.setLikeCount(40);
+        post.setFavoriteCount(12);
+        postRepository.save(post);
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/like", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.liked", equalTo(true)))
+                .andExpect(jsonPath("$.data.likedByMe", equalTo(true)))
+                .andExpect(jsonPath("$.data.likeCount", equalTo(41)))
+                .andExpect(jsonPath("$.data.favoriteCount", equalTo(12)));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/favorite", postId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.favorited", equalTo(true)))
+                .andExpect(jsonPath("$.data.favoritedByMe", equalTo(true)))
+                .andExpect(jsonPath("$.data.likeCount", equalTo(41)))
+                .andExpect(jsonPath("$.data.favoriteCount", equalTo(13)));
     }
 
     @Test
@@ -908,6 +954,9 @@ class DouyuBackendContractTests {
                 {"title":"interaction assets post","content":"community interaction asset source","mediaFileIds":[],"topicIds":["topic_beginner"]}
                 """);
         String postId = created.at("/data/postId").asText();
+        PostEntity visiblePost = postRepository.findById(postId).orElseThrow();
+        visiblePost.setStatus("VISIBLE");
+        postRepository.save(visiblePost);
 
         mockMvc.perform(get("/api/v1/users/search")
                         .header("Authorization", "Bearer " + viewerToken)
@@ -974,6 +1023,44 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.data.likedByMe", equalTo(true)))
                 .andExpect(jsonPath("$.data.favoritedByMe", equalTo(true)))
                 .andExpect(jsonPath("$.data.followedAuthorByMe", equalTo(true)));
+
+        String feedContent = mockMvc.perform(get("/api/v1/posts/feed")
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode feedItems = objectMapper.readTree(feedContent).at("/data/items");
+        JsonNode echoedPost = null;
+        for (JsonNode item : feedItems) {
+            if (postId.equals(item.path("postId").asText())) {
+                echoedPost = item;
+                break;
+            }
+        }
+        org.assertj.core.api.Assertions.assertThat(echoedPost).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(echoedPost.path("likedByMe").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(echoedPost.path("favoritedByMe").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(echoedPost.path("followedAuthorByMe").asBoolean()).isTrue();
+
+        String topicPostContent = mockMvc.perform(get("/api/v1/topics/{topicId}/posts", "topic_beginner")
+                        .header("Authorization", "Bearer " + viewerToken))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode topicItems = objectMapper.readTree(topicPostContent).at("/data/items");
+        JsonNode echoedTopicPost = null;
+        for (JsonNode item : topicItems) {
+            if (postId.equals(item.path("postId").asText())) {
+                echoedTopicPost = item;
+                break;
+            }
+        }
+        org.assertj.core.api.Assertions.assertThat(echoedTopicPost).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(echoedTopicPost.path("likedByMe").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(echoedTopicPost.path("favoritedByMe").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(echoedTopicPost.path("followedAuthorByMe").asBoolean()).isTrue();
 
         mockMvc.perform(get("/api/v1/posts/{postId}", postId))
                 .andExpect(status().isOk())

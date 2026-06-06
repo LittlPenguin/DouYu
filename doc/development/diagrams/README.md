@@ -23,7 +23,7 @@
 | 图 | 用途 | 对应文档 |
 |---|---|---|
 | `system-architecture.svg` | Android、Spring Boot、PostgreSQL、Redis、OSS、AI Stub、Payment Stub、Admin API 关系 | `02-architecture.md`、`04-backend-services.md` |
-| `android-navigation-map.svg` | 当前 Android 路由与 UI-only 目标路由：主 Tab、Search、上传、作品详情、Profile Edit、Settings 子页、通知详情 | `03-android-client.md`、`13-ui-screen-blueprints.md` |
+| `android-navigation-map.svg` | 当前 Android 路由与仍需标注的 UI-only 边界：主 Tab、Search、上传、作品详情、Profile Edit、Settings 子页、通知详情 | `03-android-client.md`、`13-ui-screen-blueprints.md` |
 | `api-module-map.svg` | Auth、User、Upload、Community、Pattern、Product、Cart、Order、Payment、Message、Reward、Report、Admin 模块关系 | `05-api-contract.md` |
 | `auth-session-flow.svg` | 短信登录、`ageGroup=AGE_18_PLUS`、DataStore hydrate、401 refresh、logout/clear 流程 | `03-android-client.md`、`05-api-contract.md` |
 | `upload-oss-flow.svg` | `/uploads/presign -> PUT uploadUrl -> /uploads/confirm`，以及 `local|stub|aliyun` Provider 边界 | `04-backend-services.md`、`14-frontend-backend-collaboration.md` |
@@ -40,7 +40,7 @@
 | `post-detail-comment-toolbar-wireframe.svg` | 作品详情：`图片 -> 内容 -> 评论区 -> 悬浮评论栏`，carousel、@/#、上传失败和 9 图上限 | `11-ui-style-guide.md`、`13-ui-screen-blueprints.md` |
 | `commerce-home-wireframe.svg` | 商城首页：分类、Banner、商品卡、自营/玩家商品边界 | `13-ui-screen-blueprints.md`、`08-commerce-payment.md` |
 | `ai-home-wireframe.svg` | AI 首页：创作入口、任务卡、历史、真实 Provider 未接入边界 | `13-ui-screen-blueprints.md`、`07-ai-pattern-generation.md` |
-| `message-profile-wireframes.svg` | 消息页和我的页：私信/通知、互关限制、新统计、三资产 Tab、Profile Edit UI-only | `13-ui-screen-blueprints.md` |
+| `message-profile-wireframes.svg` | 消息页和我的页：私信/通知、互关限制、新统计、三资产 Tab、Profile Edit 现有字段边界 | `13-ui-screen-blueprints.md` |
 
 ## Open Design 页面稿
 
@@ -49,15 +49,15 @@
 | `../open-design/index.html` | Open Design 页面稿总入口，本地副本 |
 | `../open-design/community-home-a.html` | 社区瀑布流首页 A 方向视觉稿 |
 | `../open-design/post-detail-comment-toolbar-a.html` | 作品详情图片优先结构、评论区、评论浮动栏、多图堆叠、轮播预览和 @/# 选择视觉稿 |
-| `../open-design/post-compose-a.html` | 上传帖子 UI-only 视觉稿 |
+| `../open-design/post-compose-a.html` | 上传帖子视觉参考；Android 已有 `post_create`，生产审核和更完整多媒体能力仍未闭环 |
 | `../open-design/search-a.html` | Search 搜索页 UI-only 视觉稿 |
 | `../open-design/commerce-home-a.html` | 商城首页 A 方向视觉稿 |
 | `../open-design/ai-home-a.html` | AI 创作首页 A 方向视觉稿 |
 | `../open-design/messages-a.html` | 消息首页 A 方向视觉稿 |
 | `../open-design/message-conversation-a.html` | 私信对话详情 |
-| `../open-design/notification-detail-a.html` | 通知详情 UI-only 视觉稿 |
+| `../open-design/notification-detail-a.html` | 通知详情视觉参考；Android 使用列表内通知数据展示，无独立详情 API |
 | `../open-design/profile-a.html` | 我的页新统计与三资产 Tab 视觉稿 |
-| `../open-design/profile-edit-a.html` | 编辑资料 UI-only 视觉稿 |
+| `../open-design/profile-edit-a.html` | 编辑资料视觉参考；Android 已接现有资料保存字段，城市/地区仍 UI-only |
 | `../open-design/settings-home-a.html` | Settings 首页 |
 | `../open-design/settings-account-security-a.html` | 账号与安全 |
 | `../open-design/settings-privacy-permissions-a.html` | 隐私与权限 |

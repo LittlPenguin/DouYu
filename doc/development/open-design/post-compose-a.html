@@ -10,9 +10,9 @@
   <main class="board">
     <section class="hero">
       <div class="hero-card">
-        <div class="eyebrow">豆屿 Doyu / 上传帖子 UI-only 设计稿</div>
+        <div class="eyebrow">豆屿 Doyu / 上传帖子设计稿</div>
         <h1 class="title">上传帖子：图片、正文、话题与审核中</h1>
-        <p class="lead">本页承接主页面新增菜单中的“上传帖子”入口，表达发帖流程应有的输入、图片上传、失败重试和审核中状态。本页不新增 Android 路由或后端接口契约。</p>
+        <p class="lead">本页承接主页面新增菜单中的“上传帖子”入口，表达发帖流程应有的输入、图片上传、失败重试和审核中状态。Android 当前已有 post_create 路由；本设计不新增后端接口契约，也不把生产级审核闭环写成已完成。</p>
         <div class="chips">
           <span class="chip">上传帖子入口</span>
           <span class="chip">最多 9 图</span>
@@ -67,7 +67,7 @@
           </div>
           <div class="spec-grid" style="margin-top:14px">
             <div class="spec"><h3>字段结构</h3><ul><li>标题、正文、图片、话题、预览。</li><li>最多 9 图，超出禁用新增。</li><li>上传失败保留缩略图并提供重试/删除。</li><li>发送前校验内容，不做空发布。</li></ul></div>
-            <div class="state"><h3>当前边界</h3><p>本页是 Open Design 原型；不新增 Android 路由、不新增后端 API，不把发布/审核写成当前已完成实现。</p><div class="state-bar"><span class="state-dot warn">UI-only</span><span class="state-dot bad">禁假成功</span></div></div>
+            <div class="state"><h3>当前边界</h3><p>本页是 Open Design 原型；Android 已有 post_create 路由，但不新增后端 API，不把发布审核、生产审核流或多媒体能力写成完整闭环。</p><div class="state-bar"><span class="state-dot warn">接口边界</span><span class="state-dot bad">禁假成功</span></div></div>
           </div>
         </div>
       </div>

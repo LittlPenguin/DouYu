@@ -18,9 +18,50 @@ class RouteTest {
     }
 
     @Test
+    fun bottomTabLabelsFollowOpenDesignCopy() {
+        assertEquals(
+            listOf("社区", "商城", "AI", "消息", "我的"),
+            BottomTab.entries.map { it.label }
+        )
+    }
+
+    @Test
+    fun bottomTabIconSemanticsFollowOpenDesignDestinations() {
+        assertEquals(
+            listOf("community", "shop", "ai", "message", "profile"),
+            BottomTab.entries.map { it.iconSemantic }
+        )
+    }
+
+    @Test
     fun allAppRoutesAreUnique() {
         val routes = AppRoute.allRoutes
         assertEquals(routes.size, routes.toSet().size)
+    }
+
+    @Test
+    fun stageThreeRoutesExposeSearchSettingsAndProfileEditTargets() {
+        assertEquals("search", AppRoute.SEARCH)
+        assertEquals("profile_edit", AppRoute.PROFILE_EDIT)
+        assertTrue(AppRoute.allRoutes.contains(AppRoute.SEARCH))
+        assertTrue(AppRoute.allRoutes.contains(AppRoute.PROFILE_EDIT))
+    }
+
+    @Test
+    fun aiCameraEntryKeepsImageSelectAsPreviewOwner() {
+        assertEquals("image_select", AppRoute.imageSelect())
+        assertEquals("image_select?openCamera=true", AppRoute.imageSelect(openCamera = true))
+        assertTrue(AppRoute.allRoutes.contains(AppRoute.IMAGE_SELECT_ROUTE))
+    }
+
+    @Test
+    fun stageClosureRoutesExposeNotificationAndSettingsSubpages() {
+        assertEquals("notification_detail/{notificationId}?title={title}&content={content}&type={type}&createdAt={createdAt}", AppRoute.NOTIFICATION_DETAIL)
+        assertEquals("settings_section/{section}", AppRoute.SETTINGS_SECTION)
+        assertEquals("notification_detail/notice_1?title=%E8%AE%A2%E5%8D%95&content=%E5%B7%B2%E6%9B%B4%E6%96%B0&type=ORDER&createdAt=2026-06-04T16%3A30%3A00", AppRoute.notificationDetail("notice_1", "订单", "已更新", "ORDER", "2026-06-04T16:30:00"))
+        assertEquals("settings_section/privacy", AppRoute.settingsSection("privacy"))
+        assertTrue(AppRoute.allRoutes.contains(AppRoute.NOTIFICATION_DETAIL))
+        assertTrue(AppRoute.allRoutes.contains(AppRoute.SETTINGS_SECTION))
     }
 
     @Test

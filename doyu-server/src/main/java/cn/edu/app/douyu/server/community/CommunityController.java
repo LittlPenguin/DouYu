@@ -80,9 +80,10 @@ public class CommunityController {
     @Operation(summary = "推荐 Feed", description = "获取推荐帖子列表（公开接口）")
     @ApiResponse(responseCode = "200", description = "成功")
     @GetMapping("/posts/feed")
-    PageResult<Map<String, Object>> feed(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
+    PageResult<Map<String, Object>> feed(Authentication authentication, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
+        String userId = optionalUserId(authentication);
         List<PostEntity> visible = postRepository.findByStatusOrderByPinnedDescCreatedAtDesc("VISIBLE");
-        List<Map<String, Object>> items = visible.stream().map(post -> postView(post, null)).toList();
+        List<Map<String, Object>> items = visible.stream().map(post -> postView(post, userId)).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
@@ -183,11 +184,13 @@ public class CommunityController {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
         Instant now = Instant.now();
-        likeRepository.findByUserIdAndTargetTypeAndTargetId(userId, "POST", postId).orElseGet(() ->
-                likeRepository.save(new LikeEntity(idGenerator.next("like"), userId, "POST", postId, now, now)));
-        post.setLikeCount((int) likeRepository.countByTargetTypeAndTargetId("POST", postId));
+        boolean alreadyLiked = likeRepository.findByUserIdAndTargetTypeAndTargetId(userId, "POST", postId).isPresent();
+        if (!alreadyLiked) {
+            likeRepository.save(new LikeEntity(idGenerator.next("like"), userId, "POST", postId, now, now));
+            post.setLikeCount(Math.max(0, post.getLikeCount()) + 1);
+        }
         postRepository.save(post);
-        return Map.of("liked", true);
+        return postInteractionView(post, userId, true, null);
     }
 
     @Operation(summary = "取消点赞")
@@ -199,10 +202,13 @@ public class CommunityController {
     Map<String, Object> unlike(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
+        boolean alreadyLiked = likeRepository.findByUserIdAndTargetTypeAndTargetId(userId, "POST", postId).isPresent();
         likeRepository.deleteByUserIdAndTargetTypeAndTargetId(userId, "POST", postId);
-        post.setLikeCount((int) likeRepository.countByTargetTypeAndTargetId("POST", postId));
+        if (alreadyLiked) {
+            post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+        }
         postRepository.save(post);
-        return Map.of("liked", false);
+        return postInteractionView(post, userId, false, null);
     }
 
     @Operation(summary = "收藏帖子")
@@ -216,11 +222,13 @@ public class CommunityController {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
         Instant now = Instant.now();
-        favoriteRepository.findByUserIdAndTargetTypeAndTargetId(userId, "POST", postId).orElseGet(() ->
-                favoriteRepository.save(new FavoriteEntity(idGenerator.next("fav"), userId, "POST", postId, now, now)));
-        post.setFavoriteCount((int) favoriteRepository.countByTargetTypeAndTargetId("POST", postId));
+        boolean alreadyFavorited = favoriteRepository.findByUserIdAndTargetTypeAndTargetId(userId, "POST", postId).isPresent();
+        if (!alreadyFavorited) {
+            favoriteRepository.save(new FavoriteEntity(idGenerator.next("fav"), userId, "POST", postId, now, now));
+            post.setFavoriteCount(Math.max(0, post.getFavoriteCount()) + 1);
+        }
         postRepository.save(post);
-        return Map.of("favorited", true);
+        return postInteractionView(post, userId, null, true);
     }
 
     @Operation(summary = "取消收藏")
@@ -232,10 +240,13 @@ public class CommunityController {
     Map<String, Object> unfavorite(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
+        boolean alreadyFavorited = favoriteRepository.findByUserIdAndTargetTypeAndTargetId(userId, "POST", postId).isPresent();
         favoriteRepository.deleteByUserIdAndTargetTypeAndTargetId(userId, "POST", postId);
-        post.setFavoriteCount((int) favoriteRepository.countByTargetTypeAndTargetId("POST", postId));
+        if (alreadyFavorited) {
+            post.setFavoriteCount(Math.max(0, post.getFavoriteCount() - 1));
+        }
         postRepository.save(post);
-        return Map.of("favorited", false);
+        return postInteractionView(post, userId, null, false);
     }
 
     @Operation(summary = "评论列表")
@@ -343,13 +354,15 @@ public class CommunityController {
 
     @Operation(summary = "话题作品列表")
     @GetMapping("/topics/{topicId}/posts")
-    PageResult<Map<String, Object>> topicPosts(@PathVariable String topicId,
+    PageResult<Map<String, Object>> topicPosts(Authentication authentication,
+                                               @PathVariable String topicId,
                                                @RequestParam(defaultValue = "1") int page,
                                                @RequestParam(defaultValue = "20") int size) {
+        String userId = optionalUserId(authentication);
         requireTopic(topicId);
         List<Map<String, Object>> items = postRepository
                 .findByStatusAndTopicIdsContainingOrderByCreatedAtDesc("VISIBLE", topicId).stream()
-                .map(post -> postView(post, null))
+                .map(post -> postView(post, userId))
                 .toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
@@ -401,6 +414,25 @@ public class CommunityController {
         view.put("followedAuthorByMe", currentUserId != null && followRepository.findByUserIdAndTargetUserId(currentUserId, post.getAuthorId()).isPresent());
         view.put("createdAt", post.getCreatedAt().toString());
         view.put("updatedAt", post.getUpdatedAt().toString());
+        return view;
+    }
+
+    private Map<String, Object> postInteractionView(PostEntity post, String currentUserId, Boolean liked, Boolean favorited) {
+        boolean likedByMe = currentUserId != null
+                && likeRepository.findByUserIdAndTargetTypeAndTargetId(currentUserId, "POST", post.getId()).isPresent();
+        boolean favoritedByMe = currentUserId != null
+                && favoriteRepository.findByUserIdAndTargetTypeAndTargetId(currentUserId, "POST", post.getId()).isPresent();
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        if (liked != null) {
+            view.put("liked", liked);
+        }
+        if (favorited != null) {
+            view.put("favorited", favorited);
+        }
+        view.put("likedByMe", likedByMe);
+        view.put("favoritedByMe", favoritedByMe);
+        view.put("likeCount", post.getLikeCount());
+        view.put("favoriteCount", post.getFavoriteCount());
         return view;
     }
 

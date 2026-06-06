@@ -22,7 +22,7 @@ object ProgressSerializer : KSerializer<Int> {
 }
 
 @Serializable
-enum class ContentStatus { REVIEWING, VISIBLE, SELF_VISIBLE, REJECTED, DELETED }
+enum class ContentStatus { REVIEWING, VISIBLE, SELF_VISIBLE, PRIVATE, REJECTED, DELETED }
 
 @Serializable
 enum class AuditStatus { NEED_MANUAL_REVIEW, PASS, REJECTED }
@@ -105,6 +105,13 @@ data class SmsLoginRequest(
     val code: String,
     val ageGroup: String = "AGE_18_PLUS",
     val nickname: String? = null
+)
+
+@Serializable
+data class UpdateProfileRequest(
+    val nickname: String,
+    val avatarFileId: String? = null,
+    val bio: String? = null
 )
 
 @Serializable
@@ -257,7 +264,11 @@ data class CreateCommentRequest(
 @Serializable
 data class PostInteractionResult(
     val liked: Boolean? = null,
-    val favorited: Boolean? = null
+    val favorited: Boolean? = null,
+    val likeCount: Int? = null,
+    val favoriteCount: Int? = null,
+    val likedByMe: Boolean? = null,
+    val favoritedByMe: Boolean? = null
 )
 
 @Serializable

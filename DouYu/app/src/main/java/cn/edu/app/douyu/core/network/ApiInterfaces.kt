@@ -35,6 +35,9 @@ interface UserApi {
         @Query("size") size: Int = 20
     ): ApiResponse<PageResponse<UserProfile>>
 
+    @PATCH("/api/v1/users/me")
+    suspend fun updateMe(@Body request: UpdateProfileRequest): ApiResponse<UserProfile>
+
     @GET("/api/v1/users/me/liked-posts")
     suspend fun likedPosts(
         @Query("page") page: Int = 1,

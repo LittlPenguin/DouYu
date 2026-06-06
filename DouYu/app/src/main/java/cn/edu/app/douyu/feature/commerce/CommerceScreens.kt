@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -34,6 +35,7 @@ import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.*
 import cn.edu.app.douyu.core.navigation.AppRoute
+import cn.edu.app.douyu.core.navigation.BottomTab
 import cn.edu.app.douyu.core.ui.*
 import cn.edu.app.douyu.ui.theme.*
 
@@ -46,12 +48,28 @@ private data class CommerceCategory(
 )
 
 private val commerceCategories = listOf(
-    CommerceCategory("全部商品"),
-    CommerceCategory("材料包", aliases = setOf("cat_beginner", "cat_beads", "beads", "material", "材料", "新手套装", "豆子")),
-    CommerceCategory("独家图纸", aliases = setOf("cat_palette", "pattern", "图纸", "色卡")),
-    CommerceCategory("成品手作", aliases = setOf("handmade", "成品", "手作"), types = setOf(ProductType.PLAYER_SECOND_HAND)),
-    CommerceCategory("配件工具", aliases = setOf("cat_tools", "tool", "工具", "配件"))
+    CommerceCategory("精选"),
+    CommerceCategory("豆子", aliases = setOf("cat_beads", "beads", "material", "材料", "豆子", "拼豆")),
+    CommerceCategory("板子", aliases = setOf("cat_beginner", "cat_board", "board", "pegboard", "板子", "方板", "透明板", "模板", "新手套装")),
+    CommerceCategory("工具", aliases = setOf("cat_tools", "tool", "工具", "配件", "镊子")),
+    CommerceCategory("玩家", aliases = setOf("handmade", "成品", "手作", "custom", "定制", "玩家"), types = setOf(ProductType.PLAYER_SECOND_HAND, ProductType.PLAYER_CUSTOM_SERVICE))
 )
+
+fun commerceHomeCategoryLabels(): List<String> = commerceCategories.map { it.label }
+
+fun commerceHomeHeroCopy(): List<String> =
+    listOf("自营精选", "新手材料补给", "只展示真实可解释活动，点击路径必须存在。")
+
+fun commerceHomePrimarySectionOrder(): List<String> = listOf("分类", "Banner", "商品卡片")
+
+fun productCanUseStandardCart(type: ProductType): Boolean =
+    type == ProductType.SELF_OPERATED
+
+fun orderConfirmCtaLabel(hasAddress: Boolean, amountCent: Int): String =
+    if (hasAddress) "去支付 · ${formatPriceCent(amountCent)}" else "缺少收货地址 · ${formatPriceCent(amountCent)}"
+
+fun paymentProviderBoundaryMessage(provider: String): String? =
+    if (provider == "STUB") "payParams.provider=STUB，不代表真实微信或支付宝收款。" else null
 
 private fun Product.matchesCategory(category: CommerceCategory): Boolean {
     if (category.aliases.isEmpty() && category.types.isEmpty()) return true
@@ -156,7 +174,6 @@ fun CommerceHomeScreen(navController: NavHostController) { CommerceHomeScreenCon
 @Composable
 private fun CommerceHomeScreenContent(navController: NavHostController?) {
     var selectedCategory by remember { mutableIntStateOf(0) }
-    var searchQuery by remember { mutableStateOf("") }
     var productsRetryCount by remember { mutableIntStateOf(0) }
     val productsState = safeCallToState(productsRetryCount) { repo.products() }.value
     var refreshDrag by remember { mutableFloatStateOf(0f) }
@@ -164,11 +181,13 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
 
     Scaffold(
         topBar = {
-            DoyuTopBar("商城") {
-                IconButton(onClick = { navController?.navigate(AppRoute.CART) }) {
-                    Icon(Icons.Filled.ShoppingCart, contentDescription = "购物车", tint = LightPrimary)
-                }
-            }
+            DoyuMainTopBar(
+                title = "商城",
+                onSearch = { navController?.navigate(AppRoute.SEARCH) },
+                onOpenSettings = { navController?.navigate(AppRoute.SETTINGS) },
+                onOpenAi = { navController?.navigate(BottomTab.AI.route) },
+                onCreatePost = { navController?.navigate(AppRoute.POST_CREATE) }
+            )
         }
     ) { padding ->
         Column(
@@ -192,49 +211,22 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
             if (productsRefreshing) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = LightPrimary)
             }
-            DoyuSearchField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = "搜索手作、图纸或材料包...",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 4.dp)
+            CommerceCategoryChips(
+                selectedCategory = selectedCategory,
+                onSelected = { selectedCategory = it }
             )
-
-            LazyRow(
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                itemsIndexed(commerceCategories) { index, category ->
-                    val selected = index == selectedCategory
-                    Surface(
-                        onClick = { selectedCategory = index },
-                        shape = MaterialTheme.shapes.small,
-                        color = if (selected) LightPrimaryContainer else LightSurfaceVariant
-                    ) {
-                        Text(
-                            category.label,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-                            color = if (selected) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                }
-            }
 
             val horizontalPadding = adaptiveHorizontalPadding()
             when (val state = productsState) {
                 is UiState.Success -> {
                     val allProducts = state.data.items
                     val category = commerceCategories[selectedCategory]
-                    val filteredProducts = allProducts.filter { product ->
-                        product.matchesCategory(category) && product.matchesSearch(searchQuery)
-                    }
+                    val filteredProducts = allProducts.filter { product -> product.matchesCategory(category) }
 
                     if (filteredProducts.isEmpty()) {
                         EmptyContent(
                             "没有找到商品",
-                            "换个关键词试试？",
+                            "换个分类试试，或从顶部搜索进入局部搜索页。",
                             showRetry = false
                         )
                     } else {
@@ -243,30 +235,15 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                                 .weight(1f)
                                 .verticalScroll(rememberScrollState())
                         ) {
-                            CommerceSectionHeader(
-                                title = "今日精选",
+                            CommerceHomeHero(
+                                onOpenCart = { navController?.navigate(AppRoute.CART) },
                                 modifier = Modifier.padding(horizontal = horizontalPadding)
                             )
 
-                            LazyRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(horizontal = horizontalPadding),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(filteredProducts.take(4), key = { it.productId }) { product ->
-                                    FeaturedProductCard(
-                                        product = product,
-                                        modifier = Modifier.width(292.dp),
-                                        onClick = { navController?.navigate(AppRoute.productDetail(product.productId)) }
-                                    )
-                                }
-                            }
-
-                            Spacer(Modifier.height(14.dp))
-
                             CommerceSectionHeader(
-                                title = "猜你喜欢",
-                                action = "更多",
+                                title = "商品卡片",
+                                subtitle = "自营商品走标准购物车；玩家二手/定制只展示边界。",
+                                action = "全部",
                                 onAction = { navController?.navigate(AppRoute.PRODUCT_LIST) },
                                 modifier = Modifier.padding(horizontal = horizontalPadding)
                             )
@@ -306,6 +283,96 @@ private fun CommerceHomeScreenContent(navController: NavHostController?) {
                 else -> PageStateView(productsState, onRetry = { productsRetryCount++ })
             }
         }
+    }
+}
+
+@Composable
+private fun CommerceCategoryChips(
+    selectedCategory: Int,
+    onSelected: (Int) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier.padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        itemsIndexed(commerceCategories) { index, category ->
+            val selected = index == selectedCategory
+            Surface(
+                onClick = { onSelected(index) },
+                shape = CircleShape,
+                color = if (selected) LightPrimaryContainer else LightSurfaceVariant,
+                contentColor = if (selected) LightOnPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+            ) {
+                Text(
+                    category.label,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommerceHomeHero(
+    onOpenCart: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val copy = commerceHomeHeroCopy()
+    DoyuCard(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(18.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(68.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(LightTertiaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.Storefront,
+                    contentDescription = null,
+                    tint = LightTertiary,
+                    modifier = Modifier.size(34.dp)
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                TagChip(copy[0], selected = true)
+                Text(
+                    copy[1],
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    copy[2],
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        DoyuOutlinedButton(
+            text = "查看购物车",
+            onClick = onOpenCart,
+            modifier = Modifier.fillMaxWidth(),
+            icon = Icons.Filled.ShoppingCart
+        )
     }
 }
 
@@ -583,7 +650,7 @@ private fun ProductDetailScreenContent(navController: NavHostController?, produc
                 is UiState.Success -> {
                     val product = state.data
                     val sku = product.skus.firstOrNull { it.status == SkuStatus.ON_SALE && it.availableStock > 0 }
-                    val canUseCart = product.type == ProductType.SELF_OPERATED
+                    val canUseCart = productCanUseStandardCart(product.type)
                     val canAddToCart = canUseCart &&
                             product.status == ProductStatus.ON_SALE &&
                             product.auditStatus == AuditStatus.PASS &&
@@ -883,7 +950,7 @@ private fun OrderConfirmScreenContent(navController: NavHostController?) {
                         Text("当前不拉起微信/支付宝，也不展示渠道完成态。仅展示联调支付单和服务端确认状态。", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
                     DoyuPrimaryButton(
-                        "缺少收货地址 · ${formatPriceCent(cart.payableAmountCent)}",
+                        orderConfirmCtaLabel(hasAddress = false, amountCent = cart.payableAmountCent),
                         onClick = ::disabledClick,
                         icon = Icons.Filled.Payments,
                         modifier = Modifier.fillMaxWidth(),
@@ -948,11 +1015,20 @@ private fun PaymentResultScreenContent(navController: NavHostController?, orderI
                 Text("订单状态: $orderStatus · 支付单: ${payment?.paymentId ?: "未创建"} ${payment?.status ?: ""}", color = LightPrimary, fontWeight = FontWeight.SemiBold)
                 if (payment != null) {
                     Spacer(Modifier.height(6.dp))
+                    val provider = payment.payParams["provider"] ?: "UNKNOWN"
                     Text(
-                        "渠道: ${payment.channel.name} · 金额: ${formatPriceCent(payment.amountCent)}",
+                        "类型: ${if (provider == "STUB") "STUB 联调支付单" else provider} · 渠道: ${payment.channel.name} · 金额: ${formatPriceCent(payment.amountCent)}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
+                    paymentProviderBoundaryMessage(provider)?.let { boundaryMessage ->
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            boundaryMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
             val currentOrderState = orderState

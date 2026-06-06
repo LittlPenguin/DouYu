@@ -15,7 +15,12 @@
   <rect x="106" y="260" width="278" height="88" class="card"/><text x="134" y="290" class="small">小岛豆友</text><text x="134" y="314" class="tiny">最后一条消息 · 未读 2</text><text x="134" y="334" class="tiny">互关正常聊天</text>
   <rect x="106" y="368" width="278" height="88" class="coral"/><text x="134" y="398" class="small">未互关会话</text><text x="134" y="422" class="tiny">剩余 1 条，超过后禁用输入</text>
   <rect x="106" y="482" width="278" height="88" class="sky"/><text x="134" y="512" class="small">通知详情目标</text><text x="134" y="536" class="tiny">通知只展示事件，不展示输入状态</text>
-  <rect x="112" y="682" width="266" height="26" rx="13" fill="#FFFFFF" stroke="#E0CDD0"/><text x="245" y="701" text-anchor="middle" class="tiny">Logo 导航</text>
+  <rect x="106" y="674" width="278" height="40" rx="20" fill="#FFFAF7" stroke="#E0CDD0"/>
+  <circle cx="130" cy="690" r="4" fill="#7A6B70"/><text x="130" y="704" text-anchor="middle" class="tiny">社区</text>
+  <circle cx="188" cy="690" r="4" fill="#7A6B70"/><text x="188" y="704" text-anchor="middle" class="tiny">商城</text>
+  <circle cx="245" cy="690" r="4" fill="#7A6B70"/><text x="245" y="704" text-anchor="middle" class="tiny">AI</text>
+  <rect x="280" y="680" width="48" height="28" rx="14" fill="#FFE0E6"/><circle cx="304" cy="690" r="4" class="petal"/><text x="304" y="704" text-anchor="middle" class="tiny">消息</text><rect x="292" y="709" width="24" height="3" rx="2" class="petal"/>
+  <circle cx="360" cy="690" r="4" fill="#7A6B70"/><text x="360" y="704" text-anchor="middle" class="tiny">我的</text>
 
   <rect x="630" y="104" width="330" height="620" class="phone"/>
   <rect x="656" y="132" width="278" height="48" class="bar"/><circle cx="682" cy="156" r="13" class="petal"/><text x="795" y="162" text-anchor="middle" class="label">我的</text><circle cx="908" cy="156" r="13" fill="#9EC9F5"/>
@@ -27,5 +32,10 @@
   <rect x="656" y="464" width="128" height="126" class="card"/><rect x="670" y="478" width="100" height="58" class="mint"/><text x="670" y="562" class="tiny">图纸/帖子卡</text>
   <rect x="806" y="464" width="128" height="126" class="card"/><rect x="820" y="478" width="100" height="58" class="sky"/><text x="820" y="562" class="tiny">统一卡片流</text>
   <rect x="656" y="614" width="278" height="48" class="coral"/><text x="795" y="642" text-anchor="middle" class="tiny">不在最新设计首屏展示订单、评论作品、关注作品；不代表代码已删除</text>
-  <rect x="662" y="682" width="266" height="26" rx="13" fill="#FFFFFF" stroke="#E0CDD0"/><text x="795" y="701" text-anchor="middle" class="tiny">Logo 导航</text>
+  <rect x="656" y="674" width="278" height="40" rx="20" fill="#FFFAF7" stroke="#E0CDD0"/>
+  <circle cx="680" cy="690" r="4" fill="#7A6B70"/><text x="680" y="704" text-anchor="middle" class="tiny">社区</text>
+  <circle cx="738" cy="690" r="4" fill="#7A6B70"/><text x="738" y="704" text-anchor="middle" class="tiny">商城</text>
+  <circle cx="795" cy="690" r="4" fill="#7A6B70"/><text x="795" y="704" text-anchor="middle" class="tiny">AI</text>
+  <circle cx="854" cy="690" r="4" fill="#7A6B70"/><text x="854" y="704" text-anchor="middle" class="tiny">消息</text>
+  <rect x="886" y="680" width="48" height="28" rx="14" fill="#FFE0E6"/><circle cx="910" cy="690" r="4" class="petal"/><text x="910" y="704" text-anchor="middle" class="tiny">我的</text><rect x="898" y="709" width="24" height="3" rx="2" class="petal"/>
 </svg>

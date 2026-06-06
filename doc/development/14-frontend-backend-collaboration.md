@@ -69,7 +69,7 @@ Android：
 
 ## ADB 真机调试
 
-本项目允许使用 ADB 进行远程真机调试，默认 ADB 路径为：
+本项目当前使用无线 ADB 进行远程真机调试，默认 ADB 路径为：
 
 ```powershell
 D:\AndroidChace\platform-tools\adb.exe
@@ -84,7 +84,8 @@ D:\AndroidChace\platform-tools\adb.exe devices -l
 验收规则：
 
 - 没有在线设备时，必须先告诉用户当前不能执行真机验收，不得把设备 QA 写成通过。
-- 无线调试可由用户在手机上开启；配对码、临时端口和一次性连接信息不得写入文档或提交记录。
+- 当前默认验收目标为用户指定真机 IP `10.64.241.158` 对应设备；实际 ADB serial 以 `adb devices -l` 为准。
+- 无线调试端口、配对码和一次性连接信息不得写入文档或提交记录；文档只保留目标 IP、通用命令和排障原则。
 - 真机截图、XML、logcat 等临时证据保存到 `.qa-output/`，该目录不提交。
 - 真机能访问电脑后端但 App 失败时，优先检查 `.env`、debug 包是否重建、HTTP 白名单和 Windows 防火墙。
 
@@ -92,11 +93,13 @@ D:\AndroidChace\platform-tools\adb.exe devices -l
 
 ```powershell
 $adb = "D:\AndroidChace\platform-tools\adb.exe"
+& $adb connect 10.64.241.158
 & $adb devices -l
-& $adb install -r D:\Studio\SpellBean\DouYu\app\build\outputs\apk\debug\app-debug.apk
-& $adb shell monkey -p cn.edu.app.douyu -c android.intent.category.LAUNCHER 1
+$serial = "<adb-serial-from-devices>"
+& $adb -s $serial install -r D:\Studio\SpellBean\DouYu\app\build\outputs\apk\debug\app-debug.apk
+& $adb -s $serial shell monkey -p cn.edu.app.douyu -c android.intent.category.LAUNCHER 1
 New-Item -ItemType Directory -Force -Path D:\Studio\SpellBean\.qa-output | Out-Null
-& $adb exec-out screencap -p > D:\Studio\SpellBean\.qa-output\current-screen.png
+& $adb -s $serial exec-out screencap -p > D:\Studio\SpellBean\.qa-output\current-screen.png
 ```
 
 ## Debug HTTP 与 Release HTTPS
@@ -126,23 +129,24 @@ New-Item -ItemType Directory -Force -Path D:\Studio\SpellBean\.qa-output | Out-N
 
 社区第一轮按 `05-api-contract.md` 对齐以下接口：
 
-| 场景 | 接口 | Android 行为 |
-|---|---|---|
-| 推荐 Feed | `GET /api/v1/posts/feed` | 免登录展示双列内容流 |
-| 关注 Feed | `GET /api/v1/posts/following` | 需要登录；未登录展示登录引导 |
-| 帖子详情 | `GET /api/v1/posts/{postId}` | 免登录可浏览 |
-| 评论列表 | `GET /api/v1/posts/{postId}/comments` | 免登录可浏览 |
-| 发帖 | `POST /api/v1/posts` | 需要登录；成功后展示“审核中” |
-| 评论 | `POST /api/v1/posts/{postId}/comments` | 需要登录；成功后展示“评论已提交，等待审核” |
-| 点赞/取消 | `POST/DELETE /api/v1/posts/{postId}/like` | 需要登录；响应 `{ liked }` |
-| 收藏/取消 | `POST/DELETE /api/v1/posts/{postId}/favorite` | 需要登录；响应 `{ favorited }` |
+| 场景      | 接口                                            | Android 行为              |
+| ------- | --------------------------------------------- | ----------------------- |
+| 推荐 Feed | `GET /api/v1/posts/feed`                      | 免登录展示双列内容流              |
+| 关注 Feed | `GET /api/v1/posts/following`                 | 需要登录；未登录展示登录引导          |
+| 帖子详情    | `GET /api/v1/posts/{postId}`                  | 免登录可浏览                  |
+| 评论列表    | `GET /api/v1/posts/{postId}/comments`         | 免登录可浏览                  |
+| 发帖      | `POST /api/v1/posts`                          | 需要登录；成功后展示“审核中”         |
+| 评论      | `POST /api/v1/posts/{postId}/comments`        | 需要登录；成功后展示“评论已提交，等待审核”  |
+| 点赞/取消   | `POST/DELETE /api/v1/posts/{postId}/like`     | 需要登录；响应服务端权威 `PostInteractionResult` |
+| 收藏/取消   | `POST/DELETE /api/v1/posts/{postId}/favorite` | 需要登录；响应服务端权威 `PostInteractionResult` |
 
 联调要求：
 
 - 发帖和评论返回 `REVIEWING` 时，Android 不得假装内容已经公开。
 - 重复点赞/收藏是幂等语义，计数不得重复增加。
 - 取消点赞/收藏时帖子不存在应返回 `NOT_FOUND`，不得返回假成功。
-- Android 使用 `PostInteractionResult` 解码 `{ liked }` / `{ favorited }`；需要最新计数时重新读取帖子详情。
+- Android 使用 `PostInteractionResult` 解码 `liked`、`favorited`、`likeCount`、`favoriteCount`、`likedByMe?`、`favoritedByMe?`，点赞/收藏后立即使用服务端返回的权威计数更新 UI，不能用本地 `+1/-1` 作为最终显示。
+- 推荐 Feed、帖子详情和话题作品列表均支持免登录浏览；请求带合法登录态时，后端必须回显当前用户的 `likedByMe`、`favoritedByMe`、`followedAuthorByMe`。
 - `UNAUTHORIZED` 映射登录引导；`FORBIDDEN` 映射无权限；网络异常映射弱网；其他 `ApiException` 保留可展示的 `traceId`。
 
 ## Android Studio / Gradle JDK 排障
@@ -252,14 +256,14 @@ Android 未登录状态应展示登录引导或 guest 占位，不应直接显�
 
 ## 常见排障
 
-| 现象 | 优先排查 |
-|---|---|
-| 真机连不上后端 | `.env` 是否写成电脑当前 Wi-Fi/LAN IPv4；手机和电脑是否同一局域网；Windows 防火墙是否放行 `8081`；后端 `DOUYU_SERVER_ADDRESS` 是否为 `0.0.0.0`；改 `.env` 后是否重新构建 debug 包 |
-| 图片、上传或预览 URL 不通 | `DOUYU_STORAGE_BASE_URL` 是否为 `http://<电脑 Wi-Fi IP>:8081`；Aliyun OSS 上传是否使用 `DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL`；后端是否在修改 `.env` 后重启 |
-| Aliyun OSS 预签名上传失败 | `.env` 是否设置 `DOUYU_OSS_PROVIDER=aliyun`；endpoint、region、bucket、public base URL 是否匹配；AccessKey 是否只在本机私有 `.env`；Bucket CORS 是否允许 Android `PUT` 和 `Content-Type` |
-| `cleartext traffic not permitted` | 是否安装 debug 包；`DOUYU_ANDROID_CLEARTEXT_HOSTS` 是否包含当前 host，且只写 host，不写协议和端口；改 `.env` 后是否重新构建 debug 包 |
-| 改 `.env` 后 App 没生效 | Android `BuildConfig.API_BASE_URL` 是构建期写入；必须重新构建并安装 debug 包。后端 Local OSS URL 也要重启后端才会更新 |
-| `jlink.exe does not exist` | Gradle JVM 选到了 VS Code Red Hat Java 扩展内置 JRE；改为 Android Studio JBR 或完整 JDK 21 后重新运行 `.\gradlew.bat --version` 和 `:app:assembleDebug` |
+| 现象                                | 优先排查                                                                                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 真机连不上后端                           | `.env` 是否写成电脑当前 Wi-Fi/LAN IPv4；手机和电脑是否同一局域网；Windows 防火墙是否放行 `8081`；后端 `DOUYU_SERVER_ADDRESS` 是否为 `0.0.0.0`；改 `.env` 后是否重新构建 debug 包                           |
+| 图片、上传或预览 URL 不通                   | `DOUYU_STORAGE_BASE_URL` 是否为 `http://<电脑 Wi-Fi IP>:8081`；Aliyun OSS 上传是否使用 `DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL`；后端是否在修改 `.env` 后重启                              |
+| Aliyun OSS 预签名上传失败                | `.env` 是否设置 `DOUYU_OSS_PROVIDER=aliyun`；endpoint、region、bucket、public base URL 是否匹配；AccessKey 是否只在本机私有 `.env`；Bucket CORS 是否允许 Android `PUT` 和 `Content-Type` |
+| `cleartext traffic not permitted` | 是否安装 debug 包；`DOUYU_ANDROID_CLEARTEXT_HOSTS` 是否包含当前 host，且只写 host，不写协议和端口；改 `.env` 后是否重新构建 debug 包                                                            |
+| 改 `.env` 后 App 没生效                | Android `BuildConfig.API_BASE_URL` 是构建期写入；必须重新构建并安装 debug 包。后端 Local OSS URL 也要重启后端才会更新                                                                       |
+| `jlink.exe does not exist`        | Gradle JVM 选到了 VS Code Red Hat Java 扩展内置 JRE；改为 Android Studio JBR 或完整 JDK 21 后重新运行 `.\gradlew.bat --version` 和 `:app:assembleDebug`                          |
 
 ## 字段冻结和同步
 

@@ -33,6 +33,8 @@
 - AI 调用额度和成本记录。
 - BeadPatternEngine：CIEDE2000、多色卡、难度、风格、色号图、材料清单。
 - PatternJobExecutor：异步任务、进度追踪、结果保存和 PDF 生成。
+- `PatternPdfGeneratorTest` 已覆盖材料 `hex` 为整数时的 SVG/PDF-like 输出，保证开发态图纸结果不会因为色值类型不一致退回失败占位。
+- Stage 8 Android 规则测试已覆盖 AI 开发态 Provider 边界文案、任务状态标签、历史空态和结果页 `材料购买待接入`；该测试只证明 UI 边界不误导，不代表真实 Provider 已接入。
 
 未完成：
 

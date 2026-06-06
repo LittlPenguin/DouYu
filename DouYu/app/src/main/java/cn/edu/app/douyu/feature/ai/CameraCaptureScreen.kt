@@ -1,10 +1,7 @@
 package cn.edu.app.douyu.feature.ai
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.view.OrientationEventListener
 import android.view.Surface
@@ -16,10 +13,8 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Refresh
@@ -27,9 +22,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -37,9 +29,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import cn.edu.app.douyu.core.ui.DoyuPrimaryButton
-import cn.edu.app.douyu.core.ui.DoyuOutlinedButton
 import cn.edu.app.douyu.core.ui.DoyuTopBar
-import java.io.ByteArrayOutputStream
 import java.io.File
 
 @Composable
@@ -66,23 +56,11 @@ private fun CameraCaptureScreenContent(navController: NavHostController?) {
         }
     }
 
-    // null = camera mode, non-null = preview confirmation mode
-    var capturedUri by remember { mutableStateOf<Uri?>(null) }
-    var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
-
     Scaffold(topBar = {
         DoyuTopBar(
-            if (capturedUri != null) "确认照片" else "拍照",
+            "拍照",
             canGoBack = true,
-            onBack = {
-                if (capturedUri != null) {
-                    // Go back to camera mode
-                    capturedUri = null
-                    previewBitmap = null
-                } else {
-                    navController?.popBackStack()
-                }
-            }
+            onBack = { navController?.popBackStack() }
         )
     }) { padding ->
         if (!hasCameraPermission) {
@@ -100,74 +78,16 @@ private fun CameraCaptureScreenContent(navController: NavHostController?) {
                     })
                 }
             }
-        } else if (capturedUri != null && previewBitmap != null) {
-            // Preview confirmation mode
-            PreviewConfirmationContent(
-                bitmap = previewBitmap!!,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                onRetake = {
-                    capturedUri = null
-                    previewBitmap = null
-                },
-                onConfirm = {
-                    navController?.previousBackStackEntry?.savedStateHandle?.set(
-                        "captured_uri", capturedUri.toString()
-                    )
-                    navController?.popBackStack()
-                }
-            )
         } else {
-            // Camera mode
             CameraPreviewContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
                 onImageCaptured = { uri ->
-                    capturedUri = uri
-                    previewBitmap = loadAndProcessImage(context, uri)
+                    navController?.previousBackStackEntry?.savedStateHandle?.set("captured_uri", uri.toString())
+                    navController?.previousBackStackEntry?.savedStateHandle?.set("captured_from_camera", true)
+                    navController?.popBackStack()
                 }
-            )
-        }
-    }
-}
-
-@Composable
-private fun PreviewConfirmationContent(
-    bitmap: Bitmap,
-    modifier: Modifier = Modifier,
-    onRetake: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    Box(modifier = modifier) {
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = "拍照预览",
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .align(Alignment.Center)
-                .clip(RoundedCornerShape(12.dp)),
-            contentScale = ContentScale.Crop
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .padding(32.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            DoyuOutlinedButton(
-                "重拍",
-                onClick = onRetake,
-                icon = Icons.Filled.Refresh,
-                modifier = Modifier.weight(1f)
-            )
-            DoyuPrimaryButton(
-                "使用这张",
-                onClick = onConfirm,
-                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -309,52 +229,5 @@ private fun CameraPreviewContent(
                 }
             }
         }
-    }
-}
-
-/**
- * Load image from URI, crop to square, and compress to under 2MB.
- * CameraX already handles EXIF orientation for captured images.
- * Returns a processed Bitmap for preview and writes the compressed result back to the file.
- */
-private fun loadAndProcessImage(context: Context, uri: Uri): Bitmap? {
-    return try {
-        val bitmap = BitmapFactory.decodeStream(context.contentResolver.openInputStream(uri))
-            ?: return null
-
-        // Crop to square (center crop)
-        val size = minOf(bitmap.width, bitmap.height)
-        val x = (bitmap.width - size) / 2
-        val y = (bitmap.height - size) / 2
-        val cropped = Bitmap.createBitmap(bitmap, x, y, size, size)
-
-        // Compress to under 2MB
-        val compressed = compressToLimit(cropped, 2 * 1024 * 1024)
-
-        // Write compressed result back to file for later use
-        val file = File(uri.path ?: return compressed)
-        file.outputStream().use { compressed.compress(Bitmap.CompressFormat.JPEG, 90, it) }
-
-        compressed
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
-private fun compressToLimit(bitmap: Bitmap, maxBytes: Int): Bitmap {
-    var quality = 90
-    var output: ByteArray
-    do {
-        val baos = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos)
-        output = baos.toByteArray()
-        quality -= 10
-    } while (output.size > maxBytes && quality > 10)
-
-    return if (output.size <= maxBytes) {
-        bitmap
-    } else {
-        BitmapFactory.decodeByteArray(output, 0, output.size) ?: bitmap
     }
 }

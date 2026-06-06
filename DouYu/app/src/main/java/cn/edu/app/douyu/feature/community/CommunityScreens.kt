@@ -40,6 +40,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +49,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AlternateEmail
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ChatBubbleOutline
@@ -99,6 +102,10 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -107,6 +114,7 @@ import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
+import cn.edu.app.douyu.core.model.Comment
 import cn.edu.app.douyu.core.model.CommentMediaAsset
 import cn.edu.app.douyu.core.model.ContentStatus
 import cn.edu.app.douyu.core.model.CreateCommentRequest
@@ -121,9 +129,11 @@ import cn.edu.app.douyu.core.model.UserProfile
 import cn.edu.app.douyu.core.network.upload
 import cn.edu.app.douyu.core.network.requireSuccess
 import cn.edu.app.douyu.core.navigation.AppRoute
+import cn.edu.app.douyu.core.navigation.BottomTab
 import cn.edu.app.douyu.core.ui.BeadCluster
 import cn.edu.app.douyu.core.ui.ColorSwatchStrip
 import cn.edu.app.douyu.core.ui.DoyuCard
+import cn.edu.app.douyu.core.ui.DoyuMainTopBar
 import cn.edu.app.douyu.core.ui.DoyuOutlinedButton
 import cn.edu.app.douyu.core.ui.DoyuPage
 import cn.edu.app.douyu.core.ui.DoyuPrimaryButton
@@ -143,6 +153,7 @@ import cn.edu.app.douyu.ui.theme.LightPrimaryContainer
 import cn.edu.app.douyu.ui.theme.LightSecondary
 import cn.edu.app.douyu.ui.theme.LightSecondaryContainer
 import cn.edu.app.douyu.ui.theme.LightSurfaceVariant
+import cn.edu.app.douyu.ui.theme.LightSurface
 import cn.edu.app.douyu.ui.theme.SpringFast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -160,12 +171,24 @@ private data class PendingCommentImage(
     val failed: Boolean = false
 )
 
-private data class SelectedMention(
+internal data class CommentImageUploadState(
+    val fileId: String?,
+    val progress: Float,
+    val failed: Boolean
+)
+
+internal data class CommentEmptyStateCopy(
+    val title: String,
+    val message: String,
+    val showRetry: Boolean
+)
+
+internal data class SelectedMention(
     val userId: String,
     val nickname: String
 )
 
-private data class SelectedTopic(
+internal data class SelectedTopic(
     val topicId: String,
     val name: String
 )
@@ -182,6 +205,67 @@ private fun insertCommentToken(current: String, token: String): String {
     return if (base.isBlank()) "$cleanToken " else "$base $cleanToken "
 }
 
+internal fun hasMeaningfulCommentText(
+    value: String,
+    mentions: List<SelectedMention>,
+    topics: List<SelectedTopic>
+): Boolean {
+    var clean = value
+    mentions.forEach { mention ->
+        clean = clean.replace("@${mention.nickname.ifBlank { mention.userId }}", "")
+    }
+    topics.forEach { topic ->
+        clean = clean.replace("#${topic.name.ifBlank { topic.topicId }}", "")
+    }
+    return clean.trim().isNotBlank()
+}
+
+internal fun shouldOfferCommentImageRetry(failed: Boolean, posting: Boolean): Boolean =
+    failed && !posting
+
+internal fun commentImageRetryActionLabel(failed: Boolean, posting: Boolean): String? =
+    if (shouldOfferCommentImageRetry(failed, posting)) "重试上传" else null
+
+internal fun commentFailedImagesRetryActionLabel(failedImageCount: Int, posting: Boolean): String? =
+    if (failedImageCount > 0 && !posting) "重试上传失败图片" else null
+
+internal fun commentImageUploadedState(fileId: String): CommentImageUploadState =
+    CommentImageUploadState(fileId = fileId, progress = 1f, failed = false)
+
+internal fun commentImageFailedState(): CommentImageUploadState =
+    CommentImageUploadState(fileId = null, progress = 0f, failed = true)
+
+internal fun commentImageLimitLabel(imageCount: Int): String? =
+    if (imageCount >= MaxCommentImages) "$MaxCommentImages/$MaxCommentImages 已达上限" else null
+
+internal fun commentCountAfterReviewingSubmit(currentPublicCount: Int): Int =
+    currentPublicCount
+
+internal fun publicCommentListItems(comments: List<Comment>): List<Comment> =
+    comments.filter { it.status == ContentStatus.VISIBLE }
+
+internal fun publicCommentEmptyStateCopy(
+    rawCommentCount: Int,
+    fallbackCount: Int
+): CommentEmptyStateCopy =
+    when {
+        rawCommentCount > 0 -> CommentEmptyStateCopy(
+            title = "暂无公开评论",
+            message = "评论提交后会等待审核，通过后才会公开展示。",
+            showRetry = false
+        )
+        fallbackCount > 0 -> CommentEmptyStateCopy(
+            title = "评论暂未加载",
+            message = "服务端显示已有评论数，但当前页没有返回评论列表，可稍后重试。",
+            showRetry = true
+        )
+        else -> CommentEmptyStateCopy(
+            title = "还没有评论",
+            message = "登录后可以留下拼豆建议或材料清单。",
+            showRetry = false
+        )
+    }
+
 private fun shouldCollapseCommentComposerOnFocusLoss(
     expanded: Boolean,
     focused: Boolean,
@@ -191,6 +275,30 @@ private fun shouldCollapseCommentComposerOnFocusLoss(
     toolInteractionInProgress: Boolean
 ): Boolean =
     expanded && everFocused && !focused && !posting && !pickerOpen && !toolInteractionInProgress
+
+internal fun postCarouselItems(coverImageUrl: String?, mediaFileIds: List<String>): List<String> {
+    val items = buildList {
+        val cover = coverImageUrl?.trim().orEmpty()
+        if (cover.isNotBlank()) add(cover)
+        mediaFileIds.map { it.trim() }
+            .filter { it.isNotBlank() }
+            .forEach { add(it) }
+    }.distinct()
+    return items.ifEmpty { listOf("fallback") }
+}
+
+fun communityHomeTopBarTitle(): String = "社区"
+
+fun communityHomeChannelLabels(): List<String> = listOf("推荐", "关注", "教程", "图纸", "新手")
+
+fun communityHomeHeroCopy(): List<String> =
+    listOf("今日灵感", "真实作品图优先展示", "图片失败时保持卡片宽度与高度上限，回退拼豆色块占位。")
+
+fun postComposeTopBarTitle(): String = "上传帖子"
+
+fun postComposePrimarySections(): List<String> = listOf("图片", "正文", "话题", "审核前预览")
+
+fun postComposeStateLabels(): List<String> = listOf("上传中", "上传失败", "9/9", "审核中")
 
 @Preview
 @Composable
@@ -206,7 +314,7 @@ fun CommunityFeedScreen(navController: NavHostController) {
 @Composable
 private fun CommunityFeedScreenContent(navController: NavHostController?) {
     var selectedTag by remember { mutableIntStateOf(0) }
-    val tags = listOf("推荐", "教程", "作品", "新手", "材料")
+    val tags = communityHomeChannelLabels()
     var searchQuery by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     var showLoginDialog by remember { mutableStateOf(false) }
@@ -224,41 +332,21 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
 
     Scaffold(
         topBar = {
-            DoyuTopBar(
-                title = "豆屿 Doyu",
-                action = {
-                    IconButton(onClick = { showSearch = !showSearch }) {
-                        Icon(Icons.Filled.Search, contentDescription = "搜索", tint = LightPrimary)
-                    }
-                    IconButton(onClick = {
-                        if (DoyuAppContainer.isLoggedIn) {
-                            navController?.navigate(AppRoute.POST_CREATE)
-                        } else {
-                            showLoginDialog = true
-                        }
-                    }) {
-                        Icon(Icons.Filled.Add, contentDescription = "发布", tint = LightPrimary)
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
+            DoyuMainTopBar(
+                title = communityHomeTopBarTitle(),
+                onSearch = { navController?.navigate(AppRoute.SEARCH) },
+                onOpenSettings = { navController?.navigate(AppRoute.SETTINGS) },
+                onOpenAi = { navController?.navigate(BottomTab.AI.route) },
+                onCreatePost = {
                     if (DoyuAppContainer.isLoggedIn) {
                         navController?.navigate(AppRoute.POST_CREATE)
                     } else {
-                        showLoginDialog = true
+                        navController?.navigate(AppRoute.login(AppRoute.POST_CREATE))
                     }
-                },
-                containerColor = LightPrimary,
-                contentColor = LightOnPrimary,
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "发布")
-            }
+                }
+            )
         }
-        ) { padding ->
+    ) { padding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -336,7 +424,16 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalItemSpacing = 12.dp
                         ) {
-                            itemsIndexed(filteredPosts) { index, post ->
+                            item(
+                                key = "community_home_hero",
+                                span = StaggeredGridItemSpan.FullLine
+                            ) {
+                                CommunityHomeHero()
+                            }
+                            itemsIndexed(
+                                items = filteredPosts,
+                                key = { _, post -> post.postId }
+                            ) { index, post ->
                                 StaggeredItemAnimator(index = index) {
                                     PostCard(
                                         post = post,
@@ -359,9 +456,72 @@ private fun CommunityFeedScreenContent(navController: NavHostController?) {
 }
 
 @Composable
+private fun CommunityHomeHero() {
+    val copy = communityHomeHeroCopy()
+    DoyuCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(62.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(LightPrimaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Filled.PhotoLibrary,
+                    contentDescription = null,
+                    tint = LightPrimary,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = LightSecondaryContainer,
+                    contentColor = LightSecondary
+                ) {
+                    Text(
+                        copy[0],
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+                Text(
+                    copy[1],
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    copy[2],
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun PostCard(post: Post, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val imageHeight = remember(post.postId) {
+        (120 + kotlin.math.abs(post.postId.hashCode() % 141)).dp
+    }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.97f else 1f,
         animationSpec = SpringFast,
@@ -382,7 +542,7 @@ private fun PostCard(post: Post, onClick: () -> Unit) {
                 beadSize = 42.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(0.78f + (post.likeCount % 3) * 0.12f)
+                    .height(imageHeight)
             )
 
             Column(modifier = Modifier.padding(12.dp)) {
@@ -512,10 +672,15 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
         commentImagePickerOpen = false
         if (uris.isNotEmpty()) {
             val existing = selectedCommentImages.map { it.uri }.toSet()
-            selectedCommentImages = (selectedCommentImages + uris.filterNot { it in existing }.map { PendingCommentImage(it) })
-                .take(MaxCommentImages)
+            val newUris = uris.filterNot { it in existing }
+            val availableSlots = (MaxCommentImages - selectedCommentImages.size).coerceAtLeast(0)
+            selectedCommentImages = selectedCommentImages + newUris.take(availableSlots).map { PendingCommentImage(it) }
             expandCommentComposer()
-            commentNotice = null
+            commentNotice = if (newUris.size > availableSlots) {
+                "最多添加 $MaxCommentImages 张图片，已保留前 $MaxCommentImages 张。"
+            } else {
+                null
+            }
         }
     }
 
@@ -662,7 +827,12 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                             return@CommentComposer
                         }
                         val text = commentText.trim()
-                        if (text.isBlank() && selectedCommentImages.isEmpty() && selectedStickers.isEmpty()) return@CommentComposer
+                        val hasMeaningfulText = hasMeaningfulCommentText(text, selectedMentions, selectedTopics)
+                        if (!hasMeaningfulText && selectedCommentImages.isEmpty() && selectedStickers.isEmpty()) {
+                            commentExpanded = true
+                            commentNotice = "请补充评论内容，不能只发送 @ 或 #。"
+                            return@CommentComposer
+                        }
                         actionInFlight = "comment"
                         actionError = null
                         commentNotice = null
@@ -676,9 +846,24 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                                             if (it.uri == uri) it.copy(progress = progress, failed = false) else it
                                         }
                                     },
+                                    onUploaded = { uri, fileId ->
+                                        selectedCommentImages = selectedCommentImages.map {
+                                            if (it.uri == uri) {
+                                                val state = commentImageUploadedState(fileId)
+                                                it.copy(fileId = state.fileId, progress = state.progress, failed = state.failed)
+                                            } else {
+                                                it
+                                            }
+                                        }
+                                    },
                                     onFailure = { uri ->
                                         selectedCommentImages = selectedCommentImages.map {
-                                            if (it.uri == uri) it.copy(failed = true) else it
+                                            if (it.uri == uri) {
+                                                val state = commentImageFailedState()
+                                                it.copy(fileId = state.fileId, progress = state.progress, failed = state.failed)
+                                            } else {
+                                                it
+                                            }
                                         }
                                     }
                                 )
@@ -704,9 +889,7 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                                 selectedStickers = emptyList()
                                 collapseCommentComposer()
                                 commentNotice = "评论已提交，等待审核"
-                                commentCount += 1
-                                commentsRetryCount++
-                                postRetryCount++
+                                commentCount = commentCountAfterReviewingSubmit(commentCount)
                             }.onFailure {
                                 commentExpanded = true
                                 commentNotice = ErrorMessages.fromException(it as Exception)
@@ -810,9 +993,11 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                                                     if (isLiked) repo.unlikePost(postId) else repo.likePost(postId)
                                                 }
                                             }.onSuccess { result ->
-                                                val nextLiked = result.liked ?: !isLiked
+                                                val nextLiked = result.likedByMe ?: result.liked ?: !isLiked
                                                 liked = nextLiked
-                                                likeCount = (displayLikeCount + if (nextLiked) 1 else -1).coerceAtLeast(0)
+                                                likeCount = result.likeCount ?: displayLikeCount
+                                                result.favoriteCount?.let { favoriteCount = it }
+                                                result.favoritedByMe?.let { favorited = it }
                                                 postRetryCount++
                                             }.onFailure { actionError = ErrorMessages.fromException(it as Exception) }
                                             actionInFlight = null
@@ -843,9 +1028,11 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                                                     if (isFavorited) repo.unfavoritePost(postId) else repo.favoritePost(postId)
                                                 }
                                             }.onSuccess { result ->
-                                                val nextFavorited = result.favorited ?: !isFavorited
+                                                val nextFavorited = result.favoritedByMe ?: result.favorited ?: !isFavorited
                                                 favorited = nextFavorited
-                                                favoriteCount = (displayFavoriteCount + if (nextFavorited) 1 else -1).coerceAtLeast(0)
+                                                favoriteCount = result.favoriteCount ?: displayFavoriteCount
+                                                result.likeCount?.let { likeCount = it }
+                                                result.likedByMe?.let { liked = it }
                                                 postRetryCount++
                                             }.onFailure { actionError = ErrorMessages.fromException(it as Exception) }
                                             actionInFlight = null
@@ -867,12 +1054,13 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
                         }
                     }
 
-                    item { SectionHeader("评论", subtitle = "新评论会按后端审核状态展示") }
+                    item { SectionHeader("评论", subtitle = "${displayCommentCount} 条 · 新评论会按后端审核状态展示") }
 
                     item {
                         CommentsSection(
                             postId = postId,
                             commentsRetryCount = commentsRetryCount,
+                            fallbackCount = displayCommentCount,
                             onRetry = { commentsRetryCount++ }
                         )
                     }
@@ -884,11 +1072,31 @@ private fun PostDetailScreenContent(navController: NavHostController?, postId: S
 }
 
 @Composable
-private fun CommentsSection(postId: String, commentsRetryCount: Int, onRetry: () -> Unit) {
+private fun CommentsSection(
+    postId: String,
+    commentsRetryCount: Int,
+    fallbackCount: Int,
+    onRetry: () -> Unit
+) {
     val commentsState = safeCallToState(postId, commentsRetryCount) { repo.comments(postId) }.value
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         when (val comments = commentsState) {
-            is UiState.Success -> comments.data.items.forEach { comment -> CommentListItem(comment) }
+            is UiState.Success -> {
+                val publicComments = publicCommentListItems(comments.data.items)
+                if (publicComments.isEmpty()) {
+                    val emptyState = publicCommentEmptyStateCopy(
+                        rawCommentCount = comments.data.items.size,
+                        fallbackCount = fallbackCount
+                    )
+                    EmptyContent(
+                        title = emptyState.title,
+                        message = emptyState.message,
+                        showRetry = emptyState.showRetry
+                    )
+                } else {
+                    publicComments.forEach { comment -> CommentListItem(comment) }
+                }
+            }
             UiState.Empty -> EmptyContent(
                 title = "还没有评论",
                 message = "登录后可以留下拼豆建议或材料清单。",
@@ -913,12 +1121,31 @@ fun PostCreateScreen(navController: NavHostController) {
 @Composable
 private fun PostCreateScreenContent(navController: NavHostController?) {
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
+    var selectedImages by remember { mutableStateOf<List<PendingCommentImage>>(emptyList()) }
+    var selectedTopics by remember { mutableStateOf<List<SelectedTopic>>(emptyList()) }
+    var topicPickerOpen by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var createdPost by remember { mutableStateOf<Post?>(null) }
     var showLoginDialog by remember { mutableStateOf(false) }
+    val imagePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(MaxCommentImages)
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            val existing = selectedImages.map { it.uri }.toSet()
+            val newUris = uris.filterNot { it in existing }
+            val availableSlots = (MaxCommentImages - selectedImages.size).coerceAtLeast(0)
+            selectedImages = selectedImages + newUris.take(availableSlots).map { PendingCommentImage(it) }
+            errorMessage = if (newUris.size > availableSlots) {
+                "最多添加 $MaxCommentImages 张图片，已保留前 $MaxCommentImages 张。"
+            } else {
+                null
+            }
+        }
+    }
 
     CommunityLoginDialog(
         visible = showLoginDialog,
@@ -930,14 +1157,119 @@ private fun PostCreateScreenContent(navController: NavHostController?) {
     LaunchedEffect(Unit) {
         if (!DoyuAppContainer.isLoggedIn) showLoginDialog = true
     }
+    if (topicPickerOpen) {
+        CommentTopicPickerDialog(
+            onDismiss = { topicPickerOpen = false },
+            onSelect = { topic ->
+                if (selectedTopics.none { it.topicId == topic.topicId }) {
+                    selectedTopics = selectedTopics + SelectedTopic(topic.topicId, topic.name)
+                }
+                topicPickerOpen = false
+            }
+        )
+    }
+
+    fun submitPost() {
+        if (!DoyuAppContainer.isLoggedIn) {
+            showLoginDialog = true
+            return
+        }
+        val cleanTitle = title.trim()
+        val cleanContent = content.trim()
+        if (cleanTitle.isBlank() || cleanContent.isBlank()) {
+            errorMessage = "请填写标题和正文。"
+            return
+        }
+        if (isSubmitting) return
+        isSubmitting = true
+        errorMessage = null
+        createdPost = null
+        scope.launch {
+            runCatching {
+                val uploadedImages = uploadCommentImages(
+                    images = selectedImages,
+                    context = context,
+                    onProgress = { uri, progress ->
+                        selectedImages = selectedImages.map {
+                            if (it.uri == uri) it.copy(progress = progress, failed = false) else it
+                        }
+                    },
+                    onUploaded = { uri, fileId ->
+                        selectedImages = selectedImages.map {
+                            if (it.uri == uri) {
+                                val state = commentImageUploadedState(fileId)
+                                it.copy(fileId = state.fileId, progress = state.progress, failed = state.failed)
+                            } else {
+                                it
+                            }
+                        }
+                    },
+                    onFailure = { uri ->
+                        selectedImages = selectedImages.map {
+                            if (it.uri == uri) {
+                                val state = commentImageFailedState()
+                                it.copy(fileId = state.fileId, progress = state.progress, failed = state.failed)
+                            } else {
+                                it
+                            }
+                        }
+                    }
+                )
+                selectedImages = uploadedImages
+                withContext(Dispatchers.IO) {
+                    repo.createPost(
+                        CreatePostRequest(
+                            title = cleanTitle,
+                            content = cleanContent,
+                            mediaFileIds = uploadedImages.mapNotNull { it.fileId },
+                            topicIds = selectedTopics.map { it.topicId }
+                        )
+                    )
+                }
+            }.onSuccess { post ->
+                createdPost = post
+                title = ""
+                content = ""
+                selectedImages = emptyList()
+                selectedTopics = emptyList()
+            }.onFailure { errorMessage = ErrorMessages.fromException(it as Exception) }
+            isSubmitting = false
+        }
+    }
 
     Scaffold(
         topBar = {
-            DoyuTopBar("发布作品", canGoBack = true, onBack = { navController?.popBackStack() })
+            DoyuTopBar(
+                postComposeTopBarTitle(),
+                canGoBack = true,
+                onBack = { navController?.popBackStack() },
+                action = {
+                    TextButton(
+                        onClick = { submitPost() },
+                        enabled = !isSubmitting && title.isNotBlank() && content.isNotBlank()
+                    ) {
+                        Text(if (isSubmitting) "提交中" else "发布")
+                    }
+                }
+            )
         }
     ) { padding ->
         DoyuPage(padding) {
-            DoyuCard {
+            PostComposeMediaSection(
+                images = selectedImages,
+                submitting = isSubmitting,
+                onPickImages = {
+                    imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+                onRemoveImage = { uri ->
+                    selectedImages = selectedImages.filterNot { it.uri == uri }
+                },
+                onRetryImage = { submitPost() }
+            )
+
+            DoyuCard(modifier = Modifier.fillMaxWidth()) {
+                SectionHeader("正文", "标题和正文不能为空；图片可选，发布后进入审核流程。")
+                Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = title,
                     onValueChange = {
@@ -961,7 +1293,21 @@ private fun PostCreateScreenContent(navController: NavHostController?) {
                 )
             }
 
-            MediaPublishBoundary()
+            PostComposeTopicSection(
+                selectedTopics = selectedTopics,
+                submitting = isSubmitting,
+                onPickTopic = { topicPickerOpen = true },
+                onRemoveTopic = { topicId ->
+                    selectedTopics = selectedTopics.filterNot { it.topicId == topicId }
+                }
+            )
+
+            PostComposePreviewSection(
+                title = title,
+                content = content,
+                images = selectedImages,
+                topics = selectedTopics
+            )
 
             if (errorMessage != null) InlineError(errorMessage.orEmpty())
 
@@ -971,7 +1317,7 @@ private fun PostCreateScreenContent(navController: NavHostController?) {
                     Spacer(Modifier.height(6.dp))
                     Text(
                         if (post.status == ContentStatus.REVIEWING) {
-                            "帖子已进入审核中，审核通过前不会包装成公开内容。"
+                            "审核中：帖子已提交审核，审核通过后展示。"
                         } else {
                             "服务端已返回状态：${statusLabel(post.status)}。"
                         },
@@ -996,39 +1342,7 @@ private fun PostCreateScreenContent(navController: NavHostController?) {
 
             DoyuPrimaryButton(
                 text = if (isSubmitting) "提交中" else "提交发布",
-                onClick = {
-                    if (!DoyuAppContainer.isLoggedIn) {
-                        showLoginDialog = true
-                        return@DoyuPrimaryButton
-                    }
-                    val cleanTitle = title.trim()
-                    val cleanContent = content.trim()
-                    if (cleanTitle.isBlank() || cleanContent.isBlank()) {
-                        errorMessage = "请填写标题和正文。"
-                        return@DoyuPrimaryButton
-                    }
-                    isSubmitting = true
-                    errorMessage = null
-                    createdPost = null
-                    scope.launch {
-                        runCatching {
-                            withContext(Dispatchers.IO) {
-                                repo.createPost(
-                                    CreatePostRequest(
-                                        title = cleanTitle,
-                                        content = cleanContent,
-                                        mediaFileIds = emptyList()
-                                    )
-                                )
-                            }
-                        }.onSuccess { post ->
-                            createdPost = post
-                            title = ""
-                            content = ""
-                        }.onFailure { errorMessage = ErrorMessages.fromException(it as Exception) }
-                        isSubmitting = false
-                    }
-                },
+                onClick = { submitPost() },
                 enabled = !isSubmitting && title.isNotBlank() && content.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -1037,15 +1351,217 @@ private fun PostCreateScreenContent(navController: NavHostController?) {
 }
 
 @Composable
+private fun PostComposeMediaSection(
+    images: List<PendingCommentImage>,
+    submitting: Boolean,
+    onPickImages: () -> Unit,
+    onRemoveImage: (Uri) -> Unit,
+    onRetryImage: () -> Unit
+) {
+    DoyuCard(modifier = Modifier.fillMaxWidth()) {
+        SectionHeader("图片", "最多 9 张，上传失败保留缩略图并可重试或删除。")
+        Spacer(Modifier.height(12.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(images, key = { it.uri.toString() }) { image ->
+                PendingCommentImageChip(
+                    image = image,
+                    posting = submitting,
+                    onRemove = { onRemoveImage(image.uri) },
+                    onRetry = onRetryImage
+                )
+            }
+            if (images.size < MaxCommentImages) {
+                item {
+                    AddCommentImageChip(enabled = !submitting, onClick = onPickImages)
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        val stateLabels = postComposeStateLabels()
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            CommentSelectionChip("${images.size}/$MaxCommentImages", enabled = false, onRemove = {})
+            if (submitting) CommentSelectionChip(stateLabels[0], enabled = false, onRemove = {})
+            if (images.any { it.failed }) CommentSelectionChip(stateLabels[1], enabled = false, onRemove = {})
+            if (images.size >= MaxCommentImages) CommentSelectionChip(stateLabels[2], enabled = false, onRemove = {})
+        }
+    }
+}
+
+@Composable
+private fun PostComposeTopicSection(
+    selectedTopics: List<SelectedTopic>,
+    submitting: Boolean,
+    onPickTopic: () -> Unit,
+    onRemoveTopic: (String) -> Unit
+) {
+    DoyuCard(modifier = Modifier.fillMaxWidth()) {
+        SectionHeader("话题", "选择话题有助于进入社区频道；未选择也可发布。")
+        Spacer(Modifier.height(12.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(selectedTopics, key = { it.topicId }) { topic ->
+                CommentSelectionChip(
+                    text = "#${topic.name.ifBlank { topic.topicId }}",
+                    enabled = !submitting,
+                    onRemove = { onRemoveTopic(topic.topicId) }
+                )
+            }
+            item {
+                Surface(
+                    onClick = onPickTopic,
+                    enabled = !submitting,
+                    shape = RoundedCornerShape(999.dp),
+                    color = LightSecondaryContainer.copy(alpha = 0.5f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(Icons.Filled.Tag, contentDescription = null, tint = LightSecondary, modifier = Modifier.size(18.dp))
+                        Text("添加话题", style = MaterialTheme.typography.labelMedium, color = LightSecondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PostComposePreviewSection(
+    title: String,
+    content: String,
+    images: List<PendingCommentImage>,
+    topics: List<SelectedTopic>
+) {
+    DoyuCard(modifier = Modifier.fillMaxWidth()) {
+        val sections = postComposePrimarySections()
+        SectionHeader(sections[3], "图片、正文和话题按作品详情结构预览。")
+        Spacer(Modifier.height(10.dp))
+        Text(
+            title.ifBlank { "标题预览" },
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            content.ifBlank { "正文预览会显示在这里。" },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis
+        )
+        if (topics.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(topics, key = { it.topicId }) { topic ->
+                    InlineCommentChip("#${topic.name.ifBlank { topic.topicId }}")
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            if (images.isEmpty()) "无上传图；图片可选，但标题/正文不能为空。" else "已选择 ${images.size} 张图片，发布前会先上传。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
 private fun PostHero(post: Post) {
-    PostCoverImage(
-        post = post,
-        beadSize = 72.dp,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(280.dp)
-            .clip(MaterialTheme.shapes.large)
-    )
+    val items = remember(post.postId, post.coverImageUrl, post.mediaFileIds) {
+        postCarouselItems(post.coverImageUrl, post.mediaFileIds)
+    }
+    var selectedIndex by remember(post.postId) { mutableIntStateOf(0) }
+    val selectedItem = items.getOrElse(selectedIndex) { items.first() }
+
+    DoyuCard(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(312.dp)
+                .clip(MaterialTheme.shapes.large)
+                .background(LightSurfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            CarouselImageFrame(
+                item = selectedItem,
+                title = post.title,
+                beadSize = 76.dp,
+                modifier = Modifier.fillMaxSize()
+            )
+            Surface(
+                shape = RoundedCornerShape(999.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+            ) {
+                Text(
+                    "${selectedIndex + 1}/${items.size}",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            if (items.size > 1) {
+                IconButton(
+                    onClick = {
+                        selectedIndex = if (selectedIndex == 0) items.lastIndex else selectedIndex - 1
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 8.dp)
+                        .size(42.dp)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.78f), CircleShape)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "上一张",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        selectedIndex = if (selectedIndex == items.lastIndex) 0 else selectedIndex + 1
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 8.dp)
+                        .size(42.dp)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.78f), CircleShape)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "下一张",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp)
+        ) {
+            itemsIndexed(items) { index, item ->
+                CarouselThumbnail(
+                    item = item,
+                    title = post.title,
+                    selected = selectedIndex == index,
+                    onClick = { selectedIndex = index }
+                )
+            }
+        }
+        Text(
+            "图片优先展示；非封面媒体当前只返回 fileId 时使用占位缩略图，不伪装成真实图片 URL。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+    }
 }
 
 @Composable
@@ -1078,6 +1594,85 @@ private fun PostCoverImage(post: Post, beadSize: androidx.compose.ui.unit.Dp, mo
                 error = { fallbackContent() }
             )
         }
+    }
+}
+
+@Composable
+private fun CarouselImageFrame(
+    item: String,
+    title: String,
+    beadSize: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier
+) {
+    if (item.startsWith("http://") || item.startsWith("https://")) {
+        SubcomposeAsyncImage(
+            model = item,
+            contentDescription = title.ifBlank { "作品图片" },
+            contentScale = ContentScale.Crop,
+            modifier = modifier,
+            loading = {
+                CarouselFallbackFrame(beadSize = beadSize, label = "加载中", modifier = Modifier.fillMaxSize())
+            },
+            error = {
+                CarouselFallbackFrame(beadSize = beadSize, label = "图片加载失败", modifier = Modifier.fillMaxSize())
+            }
+        )
+    } else {
+        CarouselFallbackFrame(
+            beadSize = beadSize,
+            label = if (item == "fallback") "暂无图片" else item,
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+private fun CarouselFallbackFrame(
+    beadSize: androidx.compose.ui.unit.Dp,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(LightSurfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            BeadCluster(beadSize)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 220.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CarouselThumbnail(
+    item: String,
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val borderColor = if (selected) LightSecondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.32f)
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = LightSurface,
+        border = androidx.compose.foundation.BorderStroke(if (selected) 2.dp else 1.dp, borderColor),
+        modifier = Modifier.size(width = 64.dp, height = 54.dp)
+    ) {
+        CarouselImageFrame(
+            item = item,
+            title = title,
+            beadSize = 22.dp,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
@@ -1142,9 +1737,12 @@ private fun CommentComposer(
     onClearDraft: () -> Unit,
     onSubmit: () -> Unit
 ) {
-    val canSubmit = !posting && (value.isNotBlank() || images.isNotEmpty() || stickers.isNotEmpty())
+    val hasMeaningfulText = hasMeaningfulCommentText(value, mentions, topics)
+    val canSubmit = !posting && (hasMeaningfulText || images.isNotEmpty() || stickers.isNotEmpty())
     val hasSelections = mentions.isNotEmpty() || topics.isNotEmpty() || stickers.isNotEmpty()
     val hasDraft = value.isNotBlank() || images.isNotEmpty() || hasSelections
+    val imageLimitLabel = commentImageLimitLabel(images.size)
+    val failedImagesRetryLabel = commentFailedImagesRetryActionLabel(images.count { it.failed }, posting)
     val toolTint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.76f)
     val shellShape = RoundedCornerShape(28.dp)
     val focusRequester = remember { FocusRequester() }
@@ -1178,22 +1776,48 @@ private fun CommentComposer(
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             AnimatedVisibility(visible = expanded && images.isNotEmpty()) {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 10.dp)
                 ) {
-                    items(images, key = { it.uri.toString() }) { image ->
-                        PendingCommentImageChip(
-                            image = image,
-                            posting = posting,
-                            onRemove = { onRemoveImage(image.uri) }
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        items(images, key = { it.uri.toString() }) { image ->
+                            PendingCommentImageChip(
+                                image = image,
+                                posting = posting,
+                                onRemove = { onRemoveImage(image.uri) },
+                                onRetry = onSubmit
+                            )
+                        }
+                        if (images.size < MaxCommentImages) {
+                            item {
+                                AddCommentImageChip(enabled = !posting, onClick = onPickImages)
+                            }
+                        }
+                    }
+                    if (imageLimitLabel != null) {
+                        Text(
+                            imageLimitLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = LightSecondary,
+                            modifier = Modifier.padding(top = 6.dp)
                         )
                     }
-                    if (images.size < MaxCommentImages) {
-                        item {
-                            AddCommentImageChip(enabled = !posting, onClick = onPickImages)
+                    if (failedImagesRetryLabel != null) {
+                        Surface(
+                            onClick = onSubmit,
+                            enabled = !posting,
+                            shape = RoundedCornerShape(999.dp),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Text(
+                                failedImagesRetryLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                            )
                         }
                     }
                 }
@@ -1577,8 +2201,11 @@ private fun CommentToolButton(
 private fun PendingCommentImageChip(
     image: PendingCommentImage,
     posting: Boolean,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onRetry: () -> Unit
 ) {
+    val retryEnabled = shouldOfferCommentImageRetry(failed = image.failed, posting = posting)
+    val retryLabel = commentImageRetryActionLabel(failed = image.failed, posting = posting)
     Box(
         modifier = Modifier
             .size(68.dp)
@@ -1620,10 +2247,28 @@ private fun PendingCommentImageChip(
             Box(
                 modifier = Modifier
                     .matchParentSize()
+                    .then(
+                        if (retryLabel != null) {
+                            Modifier.semantics {
+                                contentDescription = retryLabel
+                                role = Role.Button
+                            }
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .clickable(enabled = retryEnabled, onClick = onRetry)
                     .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.86f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("失败", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.labelSmall)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("失败", color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        retryLabel ?: "重试",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
         IconButton(
@@ -1856,7 +2501,7 @@ private fun CommentPickerRow(
 }
 
 @Composable
-private fun CommentListItem(comment: cn.edu.app.douyu.core.model.Comment) {
+private fun CommentListItem(comment: Comment) {
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
@@ -1972,6 +2617,7 @@ private suspend fun uploadCommentImages(
     images: List<PendingCommentImage>,
     context: android.content.Context,
     onProgress: (Uri, Float) -> Unit,
+    onUploaded: (Uri, String) -> Unit,
     onFailure: (Uri) -> Unit
 ): List<PendingCommentImage> {
     if (images.isEmpty()) return emptyList()
@@ -2013,6 +2659,7 @@ private suspend fun uploadCommentImages(
                     )
                 )
                 onProgress(image.uri, 1f)
+                onUploaded(image.uri, file.fileId)
                 image.copy(fileId = file.fileId, progress = 1f, failed = false)
             } catch (e: Exception) {
                 onFailure(image.uri)
@@ -2191,6 +2838,7 @@ private fun statusLabel(status: ContentStatus): String = when (status) {
     ContentStatus.REVIEWING -> "审核中"
     ContentStatus.VISIBLE -> "已公开"
     ContentStatus.SELF_VISIBLE -> "仅自己可见"
+    ContentStatus.PRIVATE -> "私密"
     ContentStatus.REJECTED -> "审核未通过"
     ContentStatus.DELETED -> "已删除"
 }

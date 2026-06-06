@@ -19,21 +19,21 @@ API 前缀固定为 `/api/v1`，统一响应由后端包装为：
 
 ## 模块划分
 
-| 模块 | Controller / 目录 | 职责 |
-|---|---|---|
-| Auth | `auth/AuthController.java` | 短信验证码、短信登录、Token 刷新、退出登录、账号注销申请 |
-| User | `user/UserController.java` | 当前用户、用户搜索、资料更新、关注/取关、实名、个人互动作品 |
-| Upload | `upload/UploadController.java` | 预签名上传、上传确认、FileAsset 元数据 |
-| Community | `community/CommunityController.java` | Feed、关注 Feed、帖子 CRUD、点赞、收藏、评论、话题、贴纸 |
-| Pattern | `pattern/PatternController.java` | AI 图纸任务、任务查询、取消、收藏、详情、配额 |
-| Commerce | `commerce/CommerceController.java` | 商品、SKU、购物车 |
-| Order | `order/OrderController.java` | 订单创建、列表、详情、取消 |
-| Payment | `payment/PaymentController.java` | 联调支付单、支付状态、回调骨架、退款骨架 |
-| Message | `message/MessageController.java` | 通知、通知已读、会话、私信发送 |
-| Reward | `reward/RewardController.java` | 签到、签到状态、积分、徽章 |
-| Report | `moderation/ReportController.java` | 用户举报 |
-| Admin | `admin/AdminAuthController.java`、`admin/AdminController.java` | 管理员登录、用户/内容/商品/订单/支付/AI/举报/日志后台 API |
-| Common | `common/*` | 统一响应、错误码、鉴权、实体、Repository、TraceId |
+| 模块        | Controller / 目录                                               | 职责                                  |
+| --------- | ------------------------------------------------------------- | ----------------------------------- |
+| Auth      | `auth/AuthController.java`                                    | 短信验证码、短信登录、Token 刷新、退出登录、账号注销申请     |
+| User      | `user/UserController.java`                                    | 当前用户、用户搜索、资料更新、关注/取关、实名、个人互动作品      |
+| Upload    | `upload/UploadController.java`                                | 预签名上传、上传确认、FileAsset 元数据            |
+| Community | `community/CommunityController.java`                          | Feed、关注 Feed、帖子 CRUD、点赞、收藏、评论、话题、贴纸 |
+| Pattern   | `pattern/PatternController.java`                              | AI 图纸任务、任务查询、取消、收藏、详情、配额            |
+| Commerce  | `commerce/CommerceController.java`                            | 商品、SKU、购物车                          |
+| Order     | `order/OrderController.java`                                  | 订单创建、列表、详情、取消                       |
+| Payment   | `payment/PaymentController.java`                              | 联调支付单、支付状态、回调骨架、退款骨架                |
+| Message   | `message/MessageController.java`                              | 通知、通知已读、会话、私信发送                     |
+| Reward    | `reward/RewardController.java`                                | 签到、签到状态、积分、徽章                       |
+| Report    | `moderation/ReportController.java`                            | 用户举报                                |
+| Admin     | `admin/AdminAuthController.java`、`admin/AdminController.java` | 管理员登录、用户/内容/商品/订单/支付/AI/举报/日志后台 API |
+| Common    | `common/*`                                                    | 统一响应、错误码、鉴权、实体、Repository、TraceId   |
 
 ## 安全与鉴权
 
@@ -56,20 +56,20 @@ API 前缀固定为 `/api/v1`，统一响应由后端包装为：
 
 ## Controller 覆盖状态
 
-| 模块 | 后端存在 | Android 当前接入 | 备注 |
-|---|---|---|---|
-| Auth | 是 | 部分接入 | 账号注销申请后端存在，Android 未接入完整入口。 |
-| User | 是 | 部分接入 | 资料更新、公开用户、实名后端存在；Profile Edit 仍是设计目标。 |
-| Upload | 是 | 接入 | 使用 `local|stub|aliyun` Provider；生产能力未完成。 |
-| Community | 是 | 部分接入 | 帖子编辑/删除、评论删除后端存在，Android 当前重点是详情和评论 UI 收敛。 |
-| Pattern | 是 | 部分接入 | `GET /quota` 后端存在，Android Retrofit 当前未声明。 |
-| Product / Cart | 是 | 接入 | 玩家商品不能走标准购物车。 |
-| Order | 是 | 接入 | 地址管理未闭环时不得伪造默认地址。 |
-| Payment | 是 | 部分接入 | 回调/退款后端存在，Android 当前只接创建和查询支付单。 |
-| Message | 是 | 接入 | 私信用通知表承载消息，互关 3 条限制由后端校验。 |
-| Reward | 是 | 接入 | 签到、积分、徽章基础接口存在。 |
-| Report | 是 | 未接入 Retrofit | 可作为后续举报入口任务。 |
-| Admin | 是 | 未接 Android | 属于后台 API，不是 App 内用户路径。 |
+| 模块             | 后端存在 | Android 当前接入 | 备注                                                          |
+| -------------- | ---- | ------------ | ----------------------------------------------------------- |
+| Auth           | 是    | 部分接入         | 账号注销申请后端存在，Android 未接入完整入口。                                 |
+| User           | 是    | 部分接入         | 资料更新已用于 Profile Edit 的昵称、头像文件和简介保存；公开用户、实名骨架仍未完整接入 Android。 |
+| Upload         | 是    | 接入           | 使用 `local                                                   |
+| Community      | 是    | 部分接入         | 帖子编辑/删除、评论删除后端存在，Android 当前重点是详情和评论 UI 收敛。                  |
+| Pattern        | 是    | 部分接入         | `GET /quota` 后端存在，Android Retrofit 当前未声明。                   |
+| Product / Cart | 是    | 接入           | 玩家商品不能走标准购物车。                                               |
+| Order          | 是    | 接入           | 地址管理未闭环时不得伪造默认地址。                                           |
+| Payment        | 是    | 部分接入         | 回调/退款后端存在，Android 当前只接创建和查询支付单。                             |
+| Message        | 是    | 接入           | 私信用通知表承载消息，互关 3 条限制由后端校验。                                   |
+| Reward         | 是    | 接入           | 签到、积分、徽章基础接口存在。                                             |
+| Report         | 是    | 未接入 Retrofit | 可作为后续举报入口任务。                                                |
+| Admin          | 是    | 未接 Android   | 属于后台 API，不是 App 内用户路径。                                      |
 
 ## 上传 Provider
 
@@ -208,4 +208,4 @@ cd doyu-server
 mvn test
 ```
 
-本轮只改文档和 SVG，不运行后端测试；若后续阶段修改 `doyu-server/`，必须补跑。
+本轮已触碰 `doyu-server/`，必须运行 `mvn test`。2026-06-06 后端回归结论以 `10-testing-acceptance.md` 为准；其中已覆盖 `PatternPdfGenerator` 整数/字符串 `hex` 兼容、点赞/收藏权威计数，以及推荐 Feed / 话题作品列表在带登录态时回显 `likedByMe`、`favoritedByMe`、`followedAuthorByMe`。

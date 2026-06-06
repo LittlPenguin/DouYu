@@ -154,6 +154,9 @@ class RealProfileRepository(
         return DashboardData(user, reward, jobsPage.items.size, 0, badges)
     }
 
+    override fun updateProfile(request: UpdateProfileRequest): UserProfile =
+        apiCall { userApi.updateMe(request) }
+
     override fun patterns(): List<PatternAsset> {
         val jobs = apiCall { patternApi.jobs(page = 1, size = 100) }
         return jobs.items

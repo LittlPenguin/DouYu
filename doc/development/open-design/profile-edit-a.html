@@ -12,7 +12,7 @@
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / 我的页补全设计稿</div>
         <h1 class="title">编辑资料：轻量资料维护</h1>
-        <p class="lead">编辑资料页用于补齐“我的”页的编辑入口，只做头像、昵称、简介、兴趣标签和城市/地区 UI-only 资料设计。不新增真实地图、实名、隐私合规或后端保存契约。</p>
+        <p class="lead">编辑资料页用于补齐“我的”页的编辑入口，覆盖头像、昵称、简介、兴趣标签和城市/地区资料设计。Android 当前已用现有 PATCH /api/v1/users/me 保存昵称、头像文件和简介；城市/地区、兴趣标签、地图定位、实名和生产合规仍是 UI-only 或待补能力。</p>
         <div class="chips">
           <span class="chip">头像编辑</span>
           <span class="chip">昵称 / 简介</span>
@@ -22,7 +22,7 @@
       </div>
       <div class="side-facts">
         <div class="fact"><b>入口</b><span>从我的页个人资料区“编辑资料”进入；返回后保持我的页资产 Tab 状态。</span></div>
-        <div class="fact"><b>边界</b><span>不新增 Android 路由或保存接口，不接地图 API，不写成实名资料或生产合规已完成。</span></div>
+        <div class="fact"><b>边界</b><span>Android 已有 profile_edit 路由和现有资料保存接口；不接地图 API，不写成实名资料或生产合规已完成。</span></div>
         <div class="fact"><b>保存规则</b><span>昵称为空禁用保存；头像上传失败保留旧头像并提供重试。</span></div>
       </div>
     </section>
@@ -68,7 +68,7 @@
           </div>
           <div class="spec-grid" style="margin-top:14px">
             <div class="spec"><h3>字段结构</h3><ul><li>头像、昵称、简介、年龄段、城市/地区、兴趣标签。</li><li>昵称为空禁用保存。</li><li>头像失败保留旧头像，给重试入口。</li><li>保存失败保留草稿。</li></ul></div>
-            <div class="state"><h3>不可宣称</h3><p>不新增保存接口、不接地图定位、不做实名资料，不把本页写成 Android 已实现。</p><div class="state-bar"><span class="state-dot warn">UI-only</span><span class="state-dot bad">禁假成功</span></div></div>
+            <div class="state"><h3>不可宣称</h3><p>不得把城市/地区、兴趣标签、地图定位、实名资料或生产合规写成已完成；保存失败必须保留草稿并允许重试。</p><div class="state-bar"><span class="state-dot warn">局部 UI-only</span><span class="state-dot bad">禁假成功</span></div></div>
           </div>
         </div>
       </div>

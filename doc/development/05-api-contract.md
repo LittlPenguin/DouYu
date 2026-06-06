@@ -88,7 +88,7 @@ Android 依赖：登录页、TokenStore、启动 hydrate、401 清理和登录�
 | GET | `/api/v1/users/me/commented-posts` | 是 | 是 | 是 | 我评论过的作品 |
 | GET | `/api/v1/users/me/favorite-posts` | 是 | 是 | 是 | 我收藏过的作品 |
 | GET | `/api/v1/users/me/followed-posts` | 是 | 是 | 是 | 我关注作者的作品 |
-| PATCH | `/api/v1/users/me` | 是 | 是 | 否 | 更新资料；Profile Edit 后续可接 |
+| PATCH | `/api/v1/users/me` | 是 | 是 | 是 | 更新资料；Profile Edit 当前接昵称、头像文件和简介 |
 | GET | `/api/v1/users/{userId}` | 否 | 是 | 否 | 用户公开资料 |
 | POST | `/api/v1/users/{userId}/follow` | 是 | 是 | 是 | 关注用户 |
 | DELETE | `/api/v1/users/{userId}/follow` | 是 | 是 | 是 | 取消关注 |
@@ -131,8 +131,8 @@ Android 页面依赖：
 边界：
 
 - `users/search` 不是全局搜索 API。
-- Profile Edit 是 UI 目标；Android 需后续接 `PATCH /me`。
-- 城市/地区资料仍是 UI-only，未接地图 API。
+- Profile Edit Android 路由已注册，并通过 `PATCH /api/v1/users/me` 保存 `nickname`、`avatarFileId`、`bio`。
+- 城市/地区、兴趣标签和地图定位资料仍是 UI-only，未接地图 API，也不是当前后端字段契约。
 
 ## Upload
 
@@ -196,7 +196,7 @@ Android 页面依赖：
 
 | 方法 | 路径 | 鉴权 | 后端 | Android | 说明 |
 |---|---|---|---|---|---|
-| GET | `/api/v1/posts/feed` | 否 | 是 | 是 | 推荐 Feed |
+| GET | `/api/v1/posts/feed` | 可选 | 是 | 是 | 推荐 Feed；带登录态时回显当前用户互动状态 |
 | GET | `/api/v1/posts/following` | 是 | 是 | 是 | 关注 Feed |
 | POST | `/api/v1/posts` | 是 | 是 | 是 | 发布帖子，进入审核 |
 | GET | `/api/v1/posts/{postId}` | 可选 | 是 | 是 | 作品详情 |
@@ -210,7 +210,7 @@ Android 页面依赖：
 | POST | `/api/v1/posts/{postId}/comments` | 是 | 是 | 是 | 发表评论 |
 | DELETE | `/api/v1/comments/{commentId}` | 是 | 是 | 否 | 删除评论 |
 | GET | `/api/v1/topics` | 否 | 是 | 是 | 话题列表 / 话题搜索 |
-| GET | `/api/v1/topics/{topicId}/posts` | 否 | 是 | 是 | 话题作品列表 |
+| GET | `/api/v1/topics/{topicId}/posts` | 可选 | 是 | 是 | 话题作品列表；带登录态时回显当前用户互动状态 |
 | GET | `/api/v1/sticker-packs` | 否 | 是 | 是 | 内置贴纸包 |
 
 ### 帖子字段
@@ -234,6 +234,27 @@ Android 页面依赖：
 - `likedByMe`
 - `favoritedByMe`
 - `followedAuthorByMe`
+
+列表与详情回显规则：
+
+- `GET /api/v1/posts/feed`、`GET /api/v1/posts/{postId}`、`GET /api/v1/topics/{topicId}/posts` 均允许免登录浏览。
+- 上述接口如果请求带合法登录态，`likedByMe`、`favoritedByMe`、`followedAuthorByMe` 必须按当前用户与数据库关系表返回真实状态；不得固定为 `false`。
+- 点赞/收藏计数以服务端权威聚合为准，Android 不得用本地 `+1/-1` 作为最终显示。
+
+`PostInteractionResult`：
+
+- `liked`
+- `favorited`
+- `likeCount`
+- `favoriteCount`
+- `likedByMe?`
+- `favoritedByMe?`
+
+互动接口规则：
+
+- `POST/DELETE /api/v1/posts/{postId}/like` 和 `POST/DELETE /api/v1/posts/{postId}/favorite` 不新增 endpoint，只做兼容响应字段扩展。
+- 返回的 `likeCount` / `favoriteCount` 是服务端权威计数，必须在关系变更后立即反映最新聚合值。
+- 重复点赞、重复收藏、重复取消保持幂等；已有 seed 聚合数不得因关系表从 0 开始而被重算成 1。
 
 `CreatePostRequest`：
 
@@ -333,6 +354,31 @@ Android 页面依赖：
 - `progress`
 - `failureReason?`
 - `patternId?`
+
+`PatternAsset` 字段：
+
+- `patternId`
+- `jobId`
+- `ownerId`
+- `title`
+- `previewFileId?`
+- `gridFileId?`
+- `colorMapFileId?`
+- `pdfFileId?`
+- `beadSize`
+- `widthCells`
+- `heightCells`
+- `totalBeads`
+- `paletteName`
+- `status`
+- `colorStats`
+- `materials`
+
+状态说明：
+
+- 后端生成的个人图纸结果当前可能返回 `status=PRIVATE`，表示该图纸是用户私有资产，不是社区公开内容。
+- Android `ContentStatus` 必须兼容 `PRIVATE`，不得因图纸结果私有状态导致结果页反序列化失败。
+- `PRIVATE` 不代表新增公共 API，也不代表图纸已经发布到社区。
 
 边界：
 

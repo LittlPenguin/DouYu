@@ -17,5 +17,10 @@
   <rect x="390" y="340" width="126" height="150" class="card"/><rect x="400" y="350" width="106" height="74" class="sky"/><text x="400" y="446" class="tiny">玩家二手套装</text><text x="400" y="468" class="tiny">禁用加购</text>
   <rect x="244" y="512" width="126" height="150" class="card"/><rect x="254" y="522" width="106" height="74" class="coral"/><text x="254" y="618" class="tiny">自营模板板</text><text x="254" y="640" class="tiny">¥18.0 · 售罄态</text>
   <rect x="390" y="512" width="126" height="150" class="card"/><rect x="400" y="522" width="106" height="74" fill="#FFE0E6" rx="14"/><text x="400" y="618" class="tiny">定制服务</text><text x="400" y="640" class="tiny">咨询边界</text>
-  <rect x="250" y="682" width="260" height="26" rx="13" fill="#FFFFFF" stroke="#E0CDD0"/><text x="380" y="701" text-anchor="middle" class="tiny">Logo 导航</text>
+  <rect x="242" y="674" width="276" height="40" rx="20" fill="#FFFAF7" stroke="#E0CDD0"/>
+  <circle cx="274" cy="690" r="4" fill="#7A6B70"/><text x="274" y="704" text-anchor="middle" class="tiny">社区</text>
+  <rect x="302" y="680" width="48" height="28" rx="14" fill="#FFE0E6"/><circle cx="326" cy="690" r="4" class="petal"/><text x="326" y="704" text-anchor="middle" class="tiny">商城</text><rect x="314" y="709" width="24" height="3" rx="2" class="petal"/>
+  <circle cx="380" cy="690" r="4" fill="#7A6B70"/><text x="380" y="704" text-anchor="middle" class="tiny">AI</text>
+  <circle cx="434" cy="690" r="4" fill="#7A6B70"/><text x="434" y="704" text-anchor="middle" class="tiny">消息</text>
+  <circle cx="486" cy="690" r="4" fill="#7A6B70"/><text x="486" y="704" text-anchor="middle" class="tiny">我的</text>
 </svg>

@@ -63,6 +63,7 @@ interface MessageRepository {
 
 interface ProfileRepository {
     fun dashboard(): DashboardData
+    fun updateProfile(request: UpdateProfileRequest): UserProfile
     fun patterns(): List<PatternAsset>
     fun favorites(): PageResponse<PatternAsset>
     fun checkinStatus(): CheckinStatus
@@ -486,13 +487,49 @@ class MockCommunityRepository : CommunityRepository {
 
     override fun followedPosts(): PageResponse<Post> = feed()
 
-    override fun likePost(postId: String): PostInteractionResult = PostInteractionResult(liked = true)
+    override fun likePost(postId: String): PostInteractionResult {
+        val post = MockData.posts.firstOrNull { it.postId == postId }
+        return PostInteractionResult(
+            liked = true,
+            likedByMe = true,
+            likeCount = post?.likeCount?.plus(1),
+            favoriteCount = post?.favoriteCount,
+            favoritedByMe = post?.favoritedByMe
+        )
+    }
 
-    override fun unlikePost(postId: String): PostInteractionResult = PostInteractionResult(liked = false)
+    override fun unlikePost(postId: String): PostInteractionResult {
+        val post = MockData.posts.firstOrNull { it.postId == postId }
+        return PostInteractionResult(
+            liked = false,
+            likedByMe = false,
+            likeCount = post?.likeCount?.minus(1)?.coerceAtLeast(0),
+            favoriteCount = post?.favoriteCount,
+            favoritedByMe = post?.favoritedByMe
+        )
+    }
 
-    override fun favoritePost(postId: String): PostInteractionResult = PostInteractionResult(favorited = true)
+    override fun favoritePost(postId: String): PostInteractionResult {
+        val post = MockData.posts.firstOrNull { it.postId == postId }
+        return PostInteractionResult(
+            favorited = true,
+            favoritedByMe = true,
+            favoriteCount = post?.favoriteCount?.plus(1),
+            likeCount = post?.likeCount,
+            likedByMe = post?.likedByMe
+        )
+    }
 
-    override fun unfavoritePost(postId: String): PostInteractionResult = PostInteractionResult(favorited = false)
+    override fun unfavoritePost(postId: String): PostInteractionResult {
+        val post = MockData.posts.firstOrNull { it.postId == postId }
+        return PostInteractionResult(
+            favorited = false,
+            favoritedByMe = false,
+            favoriteCount = post?.favoriteCount?.minus(1)?.coerceAtLeast(0),
+            likeCount = post?.likeCount,
+            likedByMe = post?.likedByMe
+        )
+    }
 
     override fun followUser(userId: String): FollowResult =
         FollowResult(followed = true, followedByMe = true)
@@ -597,6 +634,12 @@ class MockProfileRepository : ProfileRepository {
         orderCount = 3,
         badges = MockData.badges
     )
+
+    override fun updateProfile(request: UpdateProfileRequest): UserProfile =
+        MockData.user.copy(
+            nickname = request.nickname,
+            bio = request.bio ?: MockData.user.bio
+        )
 
     override fun patterns(): List<PatternAsset> = MockData.patterns
 

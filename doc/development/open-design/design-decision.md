@@ -22,7 +22,7 @@
 - 社区首页改为双列 masonry，图片视觉高度建议控制在 120-260dp。
 - 帖子详情评论栏改为 Google 风格底部悬浮栏，支持折叠、展开、多图堆叠和轮播预览。
 - 评论工具全部 icon 化：图片、@、#；删除“帖子”入口，`#` 后不保留旧发帖入口或含义不清的额外 icon。
-- 新增 Search 搜索页和上传帖子 UI-only 原型，并为主页面搜索、快捷新增菜单、底部导航、消息列表和 Settings 列表补齐可点击去向。
+- 新增 Search 搜索页和上传帖子视觉参考，并为主页面搜索、快捷新增菜单、底部导航、消息列表和 Settings 列表补齐可点击去向；Android 当前已有 `search` 和 `post_create` 路由，但 Search 仍无全局搜索后端，发帖不代表生产审核闭环完成。
 - 消息页补齐私信对话详情和通知详情，通知页删除会话输入状态。
 - 我的页优化统计区；删除“我的订单”“评论作品”“关注作品”展示；“我的图纸”“点赞作品”“收藏作品”进入同一 Tab。
 - 我的页统计项按最新要求调整为“获赞 / 作品 / 关注 / 粉丝”，不再沿用“作品 / 获赞 / 收藏 / 关注”的顺序。
@@ -40,7 +40,7 @@
 - `doyu-design-directions.html`：方向总览。
 - `community-home-a.html`：社区首页。
 - `post-detail-comment-toolbar-a.html`：作品详情评论区、轮播和评论工具条。
-- `post-compose-a.html`：上传帖子 UI-only 原型。
+- `post-compose-a.html`：上传帖子视觉参考；Android 已有 `post_create`，不新增后端 API 或生产审核承诺。
 - `search-a.html`：Search 搜索页 UI-only 原型。
 - `commerce-home-a.html`：商城首页。
 - `ai-home-a.html`：AI 创作首页。
@@ -48,7 +48,7 @@
 - `message-conversation-a.html`：私信对话详情。
 - `notification-detail-a.html`：通知详情。
 - `profile-a.html`：我的页。
-- `profile-edit-a.html`：编辑资料 UI-only 原型。
+- `profile-edit-a.html`：编辑资料视觉参考；Android 已接现有资料保存字段，城市/地区仍 UI-only。
 - `settings-home-a.html`：Settings 首页。
 - `settings-account-security-a.html`：账号与安全。
 - `settings-privacy-permissions-a.html`：隐私与权限。

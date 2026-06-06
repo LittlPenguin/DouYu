@@ -14,5 +14,10 @@
   <rect x="244" y="458" width="128" height="96" class="card"/><rect x="256" y="470" width="104" height="48" class="mint"/><text x="256" y="540" class="tiny">历史图纸</text>
   <rect x="388" y="458" width="128" height="96" class="card"/><rect x="400" y="470" width="104" height="48" class="dev"/><text x="400" y="540" class="tiny">失败重试</text>
   <rect x="244" y="576" width="272" height="68" class="dev"/><text x="380" y="604" text-anchor="middle" class="small">未来大模型生图</text><text x="380" y="626" text-anchor="middle" class="tiny">UI-only / 当前不接后端</text>
-  <rect x="250" y="682" width="260" height="26" rx="13" fill="#FFFFFF" stroke="#E0CDD0"/><text x="380" y="701" text-anchor="middle" class="tiny">Logo 导航</text>
+  <rect x="242" y="674" width="276" height="40" rx="20" fill="#FFFAF7" stroke="#E0CDD0"/>
+  <circle cx="274" cy="690" r="4" fill="#7A6B70"/><text x="274" y="704" text-anchor="middle" class="tiny">社区</text>
+  <circle cx="326" cy="690" r="4" fill="#7A6B70"/><text x="326" y="704" text-anchor="middle" class="tiny">商城</text>
+  <rect x="356" y="680" width="48" height="28" rx="14" fill="#FFE0E6"/><circle cx="380" cy="690" r="4" class="petal"/><text x="380" y="704" text-anchor="middle" class="tiny">AI</text><rect x="368" y="709" width="24" height="3" rx="2" class="petal"/>
+  <circle cx="434" cy="690" r="4" fill="#7A6B70"/><text x="434" y="704" text-anchor="middle" class="tiny">消息</text>
+  <circle cx="486" cy="690" r="4" fill="#7A6B70"/><text x="486" y="704" text-anchor="middle" class="tiny">我的</text>
 </svg>

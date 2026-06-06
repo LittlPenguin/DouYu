@@ -12,6 +12,7 @@ import cn.edu.app.douyu.core.model.FollowResult
 import cn.edu.app.douyu.core.model.Post
 import cn.edu.app.douyu.core.model.PostInteractionResult
 import cn.edu.app.douyu.core.model.AuditStatus
+import cn.edu.app.douyu.core.model.UpdateProfileRequest
 import cn.edu.app.douyu.core.model.UserProfile
 import cn.edu.app.douyu.core.network.ApiResponse
 import cn.edu.app.douyu.core.network.CommunityApi
@@ -35,10 +36,25 @@ class CommunityRepositoryContractTest {
         )
         assertEquals(ContentStatus.REVIEWING, created.status)
 
-        assertEquals(true, repository.likePost(created.postId).liked)
-        assertEquals(false, repository.unlikePost(created.postId).liked)
-        assertEquals(true, repository.favoritePost(created.postId).favorited)
-        assertEquals(false, repository.unfavoritePost(created.postId).favorited)
+        val liked = repository.likePost(created.postId)
+        assertEquals(true, liked.liked)
+        assertEquals(true, liked.likedByMe)
+        assertEquals(41, liked.likeCount)
+
+        val unliked = repository.unlikePost(created.postId)
+        assertEquals(false, unliked.liked)
+        assertEquals(false, unliked.likedByMe)
+        assertEquals(40, unliked.likeCount)
+
+        val favorited = repository.favoritePost(created.postId)
+        assertEquals(true, favorited.favorited)
+        assertEquals(true, favorited.favoritedByMe)
+        assertEquals(8, favorited.favoriteCount)
+
+        val unfavorited = repository.unfavoritePost(created.postId)
+        assertEquals(false, unfavorited.favorited)
+        assertEquals(false, unfavorited.favoritedByMe)
+        assertEquals(7, unfavorited.favoriteCount)
         assertEquals(true, repository.followUser(MockData.user.userId).followedByMe)
         assertEquals(false, repository.unfollowUser(MockData.user.userId).followedByMe)
 
@@ -84,6 +100,9 @@ class CommunityRepositoryContractTest {
 
         override suspend fun searchUsers(keyword: String, page: Int, size: Int): ApiResponse<PageResponse<UserProfile>> =
             ApiResponse("OK", "success", PageResponse(listOf(MockData.user), page, size, 1, false), "trace_search_users")
+
+        override suspend fun updateMe(request: UpdateProfileRequest): ApiResponse<UserProfile> =
+            ApiResponse("OK", "success", MockData.user.copy(nickname = request.nickname, bio = request.bio.orEmpty()), "trace_update_me")
 
         override suspend fun likedPosts(page: Int, size: Int): ApiResponse<PageResponse<Post>> =
             ApiResponse("OK", "success", PageResponse(listOf(MockData.posts.first().copy(postId = "post_contract")), page, size, 1, false), "trace_liked_posts")
@@ -132,16 +151,16 @@ class CommunityRepositoryContractTest {
             ApiResponse("OK", "success", post.copy(postId = postId), "trace_post")
 
         override suspend fun likePost(postId: String): ApiResponse<PostInteractionResult> =
-            ApiResponse("OK", "success", PostInteractionResult(liked = true), "trace_like")
+            ApiResponse("OK", "success", PostInteractionResult(liked = true, likedByMe = true, likeCount = 41, favoriteCount = 7, favoritedByMe = false), "trace_like")
 
         override suspend fun unlikePost(postId: String): ApiResponse<PostInteractionResult> =
-            ApiResponse("OK", "success", PostInteractionResult(liked = false), "trace_unlike")
+            ApiResponse("OK", "success", PostInteractionResult(liked = false, likedByMe = false, likeCount = 40, favoriteCount = 7, favoritedByMe = false), "trace_unlike")
 
         override suspend fun favoritePost(postId: String): ApiResponse<PostInteractionResult> =
-            ApiResponse("OK", "success", PostInteractionResult(favorited = true), "trace_favorite")
+            ApiResponse("OK", "success", PostInteractionResult(favorited = true, favoritedByMe = true, favoriteCount = 8, likeCount = 40, likedByMe = false), "trace_favorite")
 
         override suspend fun unfavoritePost(postId: String): ApiResponse<PostInteractionResult> =
-            ApiResponse("OK", "success", PostInteractionResult(favorited = false), "trace_unfavorite")
+            ApiResponse("OK", "success", PostInteractionResult(favorited = false, favoritedByMe = false, favoriteCount = 7, likeCount = 40, likedByMe = false), "trace_unfavorite")
 
         override suspend fun comments(postId: String, page: Int, size: Int): ApiResponse<PageResponse<Comment>> =
             ApiResponse("OK", "success", PageResponse(emptyList(), page, size, 0, false), "trace_comments")

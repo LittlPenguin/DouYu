@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import cn.edu.app.douyu.core.data.ApiException
 import cn.edu.app.douyu.core.data.DoyuAppContainer
 import cn.edu.app.douyu.core.data.safeCallToState
 import cn.edu.app.douyu.core.model.ChatMessage
@@ -43,6 +44,32 @@ import cn.edu.app.douyu.ui.theme.*
 import kotlinx.coroutines.launch
 
 private val repo = DoyuAppContainer.messageRepository
+
+fun messageHomeTabLabels(): List<String> = listOf("私信", "通知")
+
+fun messageHomeHeroCopy(): List<String> =
+    listOf("新消息进入私信", "未读对话", "对话输入中、未互关剩余条数、禁发态只在私信里展示。")
+
+fun messageHomePreviewSectionLabels(): List<String> = listOf("未读对话", "通知预览")
+
+fun conversationStatusLabel(mutualFollow: Boolean, remaining: Int, canSend: Boolean): String = when {
+    mutualFollow -> "互关"
+    !canSend || remaining <= 0 -> "禁发"
+    else -> "${remaining.coerceAtMost(3)}/3"
+}
+
+fun shouldBlockConversationAfterSendError(message: String): Boolean =
+    message.contains("NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED")
+
+fun shouldBlockConversationAfterSendError(error: Throwable): Boolean =
+    (error as? ApiException)?.code == "NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED" ||
+        error.message?.let(::shouldBlockConversationAfterSendError) == true
+
+fun nonMutualLimitExceededMessage(): String =
+    "未互关私信已达 3 条上限，互相关注后可继续聊天。"
+
+fun conversationComposerCanSend(serverCanSend: Boolean?, blockedByLimit: Boolean): Boolean =
+    serverCanSend != false && !blockedByLimit
 
 @Preview
 @Composable
@@ -63,15 +90,18 @@ private fun MessageListScreenContent(navController: NavHostController?) {
         safeCallToState(conversationsRetryCount) { repo.conversations() }.value
     val isUnauthenticated = notificationsState is UiState.RequireLogin || conversationsState is UiState.RequireLogin
     val currentRefreshing = when (selectedTab) {
-        0 -> notificationsState is UiState.Loading
-        else -> conversationsState is UiState.Loading
+        0 -> conversationsState is UiState.Loading
+        else -> notificationsState is UiState.Loading
     }
 
     Scaffold(
         topBar = {
-            MessageTabsHeader(
-                selectedTab = selectedTab,
-                onSelected = { selectedTab = it }
+            DoyuMainTopBar(
+                title = "消息",
+                onSearch = { navController?.navigate(AppRoute.SEARCH) },
+                onOpenSettings = { navController?.navigate(AppRoute.SETTINGS) },
+                onOpenAi = { navController?.navigate(BottomTab.AI.route) },
+                onCreatePost = { navController?.navigate(AppRoute.POST_CREATE) }
             )
         }
     ) { padding ->
@@ -81,6 +111,10 @@ private fun MessageListScreenContent(navController: NavHostController?) {
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
+            MessageTabsHeader(
+                selectedTab = selectedTab,
+                onSelected = { selectedTab = it }
+            )
             if (isUnauthenticated) {
                 MessageLoginPrompt(navController)
             } else {
@@ -99,7 +133,7 @@ private fun MessageListScreenContent(navController: NavHostController?) {
                                 detectDragGestures(
                                     onDragEnd = {
                                         if (refreshDrag > 90f && !currentRefreshing) {
-                                            if (tab == 0) notificationsRetryCount++ else conversationsRetryCount++
+                                            if (tab == 0) conversationsRetryCount++ else notificationsRetryCount++
                                         }
                                         refreshDrag = 0f
                                     },
@@ -112,13 +146,209 @@ private fun MessageListScreenContent(navController: NavHostController?) {
                             }
                     ) {
                         when (tab) {
-                            0 -> NotificationList(notificationsState, onRetry = { notificationsRetryCount++ })
-                            1 -> ConversationList(conversationsState, navController, onRetry = { conversationsRetryCount++ })
+                            0 -> MessageOverviewList(
+                                conversationsState = conversationsState,
+                                notificationsState = notificationsState,
+                                navController = navController,
+                                onConversationsRetry = { conversationsRetryCount++ },
+                                onNotificationsRetry = { notificationsRetryCount++ }
+                            )
+                            1 -> NotificationList(
+                                state = notificationsState,
+                                navController = navController,
+                                onRetry = { notificationsRetryCount++ }
+                            )
                         }
                         if (currentRefreshing) {
                             LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = LightPrimary)
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessageOverviewList(
+    conversationsState: UiState<PageResponse<Conversation>>,
+    notificationsState: UiState<PageResponse<NotificationMessage>>,
+    navController: NavHostController?,
+    onConversationsRetry: () -> Unit,
+    onNotificationsRetry: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            MessageHomeHeroStrip()
+        }
+        item {
+            val labels = messageHomePreviewSectionLabels()
+            SectionHeader(
+                title = labels[0],
+                subtitle = "互关状态、剩余条数和禁发态只属于私信会话",
+                action = "刷新",
+                onAction = onConversationsRetry
+            )
+        }
+        when (val cs = conversationsState) {
+            is UiState.Success -> {
+                val conversations = cs.data.items
+                if (conversations.isEmpty()) {
+                    item {
+                        MessageInlineState("还没有私信", "有交易或社区沟通后，会话会显示在这里。")
+                    }
+                } else {
+                    items(conversations.take(3), key = { "overview-${it.conversationId}" }) { conversation ->
+                        ConversationRow(conversation, navController)
+                    }
+                }
+            }
+
+            is UiState.Empty -> item {
+                MessageInlineState("还没有私信", "有交易或社区沟通后，会话会显示在这里。")
+            }
+
+            is UiState.Loading -> item {
+                MessageInlineState("正在加载私信", "正在同步会话、未读和互关限制。")
+            }
+
+            is UiState.RequireLogin -> item {
+                MessageInlineState("登录后查看私信", "登录后可查看会话、未读和互关限制。")
+            }
+
+            is UiState.Forbidden -> item {
+                MessageInlineState("暂无私信权限", "当前账号暂时无法查看私信。")
+            }
+
+            is UiState.WeakNetwork -> item {
+                MessageInlineState("私信加载较慢", "检查网络后可重试。", action = "重试", onAction = onConversationsRetry)
+            }
+
+            is UiState.Error -> item {
+                MessageInlineState("私信加载失败", cs.message, action = "重试", onAction = onConversationsRetry)
+            }
+        }
+
+        item {
+            val labels = messageHomePreviewSectionLabels()
+            SectionHeader(
+                title = labels[1],
+                subtitle = "通知只展示事件摘要，不承载输入状态",
+                action = "刷新",
+                onAction = onNotificationsRetry
+            )
+        }
+        when (val ns = notificationsState) {
+            is UiState.Success -> {
+                val notifications = ns.data.items
+                if (notifications.isEmpty()) {
+                    item {
+                        MessageInlineState("还没有通知", "订单、互动和系统提醒会显示在这里。")
+                    }
+                } else {
+                    items(notifications.take(2), key = { "preview-${it.notificationId}" }) { notification ->
+                        NotificationRow(notification, navController)
+                    }
+                }
+            }
+
+            is UiState.Empty -> item {
+                MessageInlineState("还没有通知", "订单、互动和系统提醒会显示在这里。")
+            }
+
+            is UiState.Loading -> item {
+                MessageInlineState("正在加载通知", "正在同步互动、审核和系统提醒。")
+            }
+
+            is UiState.RequireLogin -> item {
+                MessageInlineState("登录后查看通知", "登录后可查看订单、互动和系统提醒。")
+            }
+
+            is UiState.Forbidden -> item {
+                MessageInlineState("暂无通知权限", "当前账号暂时无法查看通知。")
+            }
+
+            is UiState.WeakNetwork -> item {
+                MessageInlineState("通知加载较慢", "检查网络后可重试。", action = "重试", onAction = onNotificationsRetry)
+            }
+
+            is UiState.Error -> item {
+                MessageInlineState("通知加载失败", ns.message, action = "重试", onAction = onNotificationsRetry)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessageHomeHeroStrip() {
+    val copy = messageHomeHeroCopy()
+    DoyuCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = LightTertiaryContainer,
+            contentColor = LightTertiary
+        ) {
+            Text(
+                text = copy[0],
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            )
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = copy[1],
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = copy[2],
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun MessageInlineState(
+    title: String,
+    subtitle: String,
+    action: String? = null,
+    onAction: () -> Unit = {}
+) {
+    DoyuCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (action != null) {
+                TextButton(onClick = onAction) {
+                    Text(action)
                 }
             }
         }
@@ -139,9 +369,10 @@ private fun MessageTabsHeader(selectedTab: Int, onSelected: (Int) -> Unit) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                MessageTab("通知", selectedTab == 0, onClick = { onSelected(0) })
+                val labels = messageHomeTabLabels()
+                MessageTab(labels[0], selectedTab == 0, onClick = { onSelected(0) })
                 Spacer(Modifier.width(36.dp))
-                MessageTab("私信", selectedTab == 1, onClick = { onSelected(1) })
+                MessageTab(labels[1], selectedTab == 1, onClick = { onSelected(1) })
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.32f))
         }
@@ -178,6 +409,7 @@ private fun MessageTab(text: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun NotificationList(
     state: UiState<PageResponse<NotificationMessage>>,
+    navController: NavHostController?,
     onRetry: () -> Unit = {}
 ) {
     when (val ns = state) {
@@ -193,7 +425,7 @@ private fun NotificationList(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(items, key = { it.notificationId }) { notification ->
-                    NotificationRow(notification)
+                    NotificationRow(notification, navController)
                 }
             }
         }
@@ -203,9 +435,17 @@ private fun NotificationList(
 }
 
 @Composable
-private fun NotificationRow(notification: NotificationMessage) {
+private fun NotificationRow(notification: NotificationMessage, navController: NavHostController?) {
     val visual = notificationVisual(notification.type)
+    val route = AppRoute.notificationDetail(
+        notificationId = notification.notificationId,
+        title = notification.title,
+        content = notification.content,
+        type = notification.type.name,
+        createdAt = notification.createdAt.orEmpty()
+    )
     Surface(
+        onClick = { navController?.navigate(route) },
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = if (notification.unread) 1.dp else 0.dp,
@@ -265,9 +505,99 @@ private fun NotificationRow(notification: NotificationMessage) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
+            Spacer(Modifier.width(6.dp))
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = "查看通知详情",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }
+
+@Composable
+fun NotificationDetailScreen(
+    navController: NavHostController,
+    notificationId: String,
+    title: String,
+    content: String,
+    type: String,
+    createdAt: String
+) {
+    Scaffold(
+        topBar = {
+            DoyuTopBar("通知详情", canGoBack = true, onBack = { navController.popBackStack() })
+        }
+    ) { padding ->
+        DoyuPage(padding) {
+            DoyuCard(modifier = Modifier.fillMaxWidth()) {
+                SectionHeader(
+                    title = title.ifBlank { "通知" },
+                    subtitle = notificationDetailSubtitle(type, createdAt)
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    content.ifBlank { "当前通知没有更多内容。" },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(14.dp))
+                NotificationMetaRow(
+                    icon = Icons.Filled.Notifications,
+                    title = "通知编号",
+                    description = notificationId.ifBlank { "未返回通知编号" },
+                    status = "列表内详情"
+                )
+            }
+            DisabledFeatureNotice(
+                title = "详情来源说明",
+                message = "当前没有独立通知详情后端接口，本页只展示列表已返回的通知数据；后续如需要已读回写、跳转目标或富文本内容，需要先补接口契约。"
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotificationMetaRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    status: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(LightSurfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(status, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+private fun notificationDetailSubtitle(type: String, createdAt: String): String =
+    listOfNotNull(
+        type.takeIf { it.isNotBlank() }?.let { "类型 $it" },
+        createdAt.takeIf { it.isNotBlank() }?.let { "时间 ${compactTimeLabel(it)}" }
+    ).joinToString(" · ").ifBlank { "来自通知列表的详情" }
 
 @Composable
 private fun ConversationList(
@@ -337,12 +667,10 @@ private fun ConversationRow(conversation: Conversation, navController: NavHostCo
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(8.dp))
-                    ReadOnlyBadge()
+                    ConversationStatusBadge(conversation)
                 }
                 Text(
-                    conversation.lastMessage.ifBlank {
-                        if (conversation.mutualFollow) "互相关注，可以继续交流" else "未互关最多发送 3 条消息"
-                    },
+                    conversationPreviewSubtitle(conversation),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -386,18 +714,46 @@ private fun ConversationRow(conversation: Conversation, navController: NavHostCo
 }
 
 @Composable
-private fun ReadOnlyBadge() {
+private fun ConversationStatusBadge(conversation: Conversation) {
+    val label = conversationStatusLabel(
+        mutualFollow = conversation.mutualFollow,
+        remaining = conversation.remainingNonMutualMessages,
+        canSend = conversation.canSend
+    )
+    val color = when (label) {
+        "互关" -> LightPrimaryContainer
+        "禁发" -> MaterialTheme.colorScheme.errorContainer
+        else -> LightTertiaryContainer
+    }
+    val contentColor = when (label) {
+        "互关" -> LightOnPrimaryContainer
+        "禁发" -> MaterialTheme.colorScheme.onErrorContainer
+        else -> LightTertiary
+    }
     Surface(
         shape = CircleShape,
-        color = LightSurfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        color = color,
+        contentColor = contentColor
     ) {
         Text(
-            "只读",
+            label,
             style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
         )
     }
+}
+
+private fun conversationPreviewSubtitle(conversation: Conversation): String {
+    val status = when {
+        conversation.mutualFollow -> "互相关注"
+        !conversation.canSend || conversation.remainingNonMutualMessages <= 0 -> "超过 3 条，互相关注后可继续聊天"
+        else -> "未互关剩余 ${conversation.remainingNonMutualMessages.coerceAtMost(3)} 条"
+    }
+    return conversation.lastMessage
+        .takeIf { it.isNotBlank() }
+        ?.let { "$status · $it" }
+        ?: status
 }
 
 @Composable
@@ -490,6 +846,7 @@ private fun ConversationScreenContent(navController: NavHostController?, convers
             var refreshKey by remember { mutableIntStateOf(0) }
             var input by remember { mutableStateOf("") }
             var sendState by remember { mutableStateOf<UiState<ChatMessage>?>(null) }
+            var sendBlocked by remember { mutableStateOf(false) }
             val sendScope = rememberCoroutineScope()
             val detailState: UiState<ConversationDetail> =
                 safeCallToState(conversationId, refreshKey) { repo.conversation(conversationId) }.value
@@ -507,6 +864,7 @@ private fun ConversationScreenContent(navController: NavHostController?, convers
                         conversation = conversation,
                         input = input,
                         sendState = sendState,
+                        blockedByLimit = sendBlocked,
                         onInputChange = { input = it },
                         onSend = {
                             val content = input.trim()
@@ -517,10 +875,20 @@ private fun ConversationScreenContent(navController: NavHostController?, convers
                                     .fold(
                                         onSuccess = {
                                             input = ""
+                                            sendBlocked = false
                                             refreshKey++
                                             UiState.Success(it)
                                         },
-                                        onFailure = { UiState.Error(it.message ?: "发送失败") }
+                                        onFailure = {
+                                            val message = it.message ?: "发送失败"
+                                            if (shouldBlockConversationAfterSendError(it)) {
+                                                sendBlocked = true
+                                                refreshKey++
+                                                UiState.Error(nonMutualLimitExceededMessage())
+                                            } else {
+                                                UiState.Error(message)
+                                            }
+                                        }
                                     )
                             }
                         }
@@ -538,10 +906,11 @@ private fun ConversationComposer(
     conversation: Conversation?,
     input: String,
     sendState: UiState<ChatMessage>?,
+    blockedByLimit: Boolean = false,
     onInputChange: (String) -> Unit,
     onSend: () -> Unit
 ) {
-    val canSend = conversation?.canSend != false
+    val canSend = conversationComposerCanSend(conversation?.canSend, blockedByLimit)
     val helper = when {
         conversation == null -> "正在确认会话关系"
         conversation.mutualFollow -> "你们已互相关注，可以继续交流。"

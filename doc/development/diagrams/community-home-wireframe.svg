@@ -18,5 +18,10 @@
   <rect x="390" y="246" width="126" height="238" class="card"/><rect x="400" y="256" width="106" height="162" class="sky"/><text x="453" y="342" text-anchor="middle" class="tiny">高图裁切</text><text x="400" y="440" class="tiny">透明拼豆杯垫</text><text x="400" y="462" class="tiny">作者 · 评 26</text>
   <rect x="244" y="448" width="126" height="222" class="card"/><rect x="254" y="458" width="106" height="146" class="mint"/><text x="307" y="534" text-anchor="middle" class="tiny">审核中</text><text x="254" y="626" class="tiny">复古像素花</text><text x="254" y="648" class="tiny">作者 · 收藏 45</text>
   <rect x="390" y="502" width="126" height="168" class="card"/><rect x="400" y="512" width="106" height="96" class="img"/><text x="453" y="565" text-anchor="middle" class="tiny">fallback</text><text x="400" y="630" class="tiny">小岛吊坠</text><text x="400" y="652" class="tiny">作者 · 赞 72</text>
-  <rect x="250" y="682" width="260" height="26" rx="13" fill="#FFFFFF" stroke="#E0CDD0"/><text x="380" y="701" text-anchor="middle" class="tiny">Logo 导航</text>
+  <rect x="242" y="674" width="276" height="40" rx="20" fill="#FFFAF7" stroke="#E0CDD0"/>
+  <rect x="250" y="680" width="48" height="28" rx="14" fill="#FFE0E6"/><circle cx="274" cy="690" r="4" class="petal"/><text x="274" y="704" text-anchor="middle" class="tiny">社区</text><rect x="262" y="709" width="24" height="3" rx="2" class="petal"/>
+  <circle cx="326" cy="690" r="4" fill="#7A6B70"/><text x="326" y="704" text-anchor="middle" class="tiny">商城</text>
+  <circle cx="380" cy="690" r="4" fill="#7A6B70"/><text x="380" y="704" text-anchor="middle" class="tiny">AI</text>
+  <circle cx="434" cy="690" r="4" fill="#7A6B70"/><text x="434" y="704" text-anchor="middle" class="tiny">消息</text>
+  <circle cx="486" cy="690" r="4" fill="#7A6B70"/><text x="486" y="704" text-anchor="middle" class="tiny">我的</text>
 </svg>

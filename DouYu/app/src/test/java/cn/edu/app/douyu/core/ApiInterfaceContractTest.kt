@@ -42,6 +42,7 @@ class ApiInterfaceContractTest {
         assertGet(method<CommunityApi>("topicPosts"), "/api/v1/topics/{topicId}/posts")
         assertGet(method<CommunityApi>("stickerPacks"), "/api/v1/sticker-packs")
         assertGet(method<UserApi>("searchUsers"), "/api/v1/users/search")
+        assertPatch(method<UserApi>("updateMe"), "/api/v1/users/me")
         assertGet(method<UserApi>("likedPosts"), "/api/v1/users/me/liked-posts")
         assertGet(method<UserApi>("commentedPosts"), "/api/v1/users/me/commented-posts")
         assertGet(method<UserApi>("favoritePosts"), "/api/v1/users/me/favorite-posts")
@@ -69,6 +70,42 @@ class ApiInterfaceContractTest {
     }
 
     @Test
+    fun patternAssetDtoAcceptsPrivateStatusFromGeneratedResult() {
+        val response = DoyuJson.decodeFromString<ApiResponse<PatternAsset>>(
+            """
+            {
+              "code": "OK",
+              "message": "success",
+              "data": {
+                "patternId": "pattern_private_contract",
+                "jobId": "job_private_contract",
+                "ownerId": "user_contract",
+                "title": "generated pattern",
+                "previewFileId": "file_preview",
+                "gridFileId": "file_grid",
+                "colorMapFileId": "file_color_map",
+                "pdfFileId": "file_pdf",
+                "beadSize": "MM_2_6",
+                "widthCells": 32,
+                "heightCells": 32,
+                "totalBeads": 1024,
+                "paletteName": "standard",
+                "status": "PRIVATE",
+                "colorStats": [],
+                "materials": {
+                  "totalBeads": 1024,
+                  "colors": []
+                }
+              },
+              "traceId": "trace_pattern_private"
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(ContentStatus.PRIVATE, response.data?.status)
+    }
+
+    @Test
     fun loginAndCommunityDtosMatchDocumentedJsonContract() {
         val user = DoyuJson.decodeFromString<UserProfile>(
             """
@@ -86,6 +123,17 @@ class ApiInterfaceContractTest {
         )
         assertEquals("https://cdn.example.test/avatar.png", user.avatarUrl)
 
+        val updateProfileJson = DoyuJson.encodeToString(
+            UpdateProfileRequest(
+                nickname = "豆屿岛民",
+                avatarFileId = "file_avatar_1",
+                bio = "喜欢拼豆和晒作品"
+            )
+        )
+        assertTrue(updateProfileJson.contains("\"nickname\":\"豆屿岛民\""))
+        assertTrue(updateProfileJson.contains("\"avatarFileId\":\"file_avatar_1\""))
+        assertTrue(updateProfileJson.contains("\"bio\":\"喜欢拼豆和晒作品\""))
+
         val loginJson = DoyuJson.encodeToString(SmsLoginRequest("13800000000", "123456"))
         assertTrue(loginJson.contains("\"ageGroup\":\"AGE_18_PLUS\""))
 
@@ -94,12 +142,22 @@ class ApiInterfaceContractTest {
             {
               "code": "OK",
               "message": "success",
-              "data": { "liked": true },
+              "data": {
+                "liked": true,
+                "likedByMe": true,
+                "likeCount": 41,
+                "favoriteCount": 7,
+                "favoritedByMe": false
+              },
               "traceId": "trace_like"
             }
             """.trimIndent()
         )
         assertEquals(true, likeResponse.data?.liked)
+        assertEquals(true, likeResponse.data?.likedByMe)
+        assertEquals(41, likeResponse.data?.likeCount)
+        assertEquals(7, likeResponse.data?.favoriteCount)
+        assertEquals(false, likeResponse.data?.favoritedByMe)
         assertNull(likeResponse.data?.favorited)
 
         val favoriteResponse = DoyuJson.decodeFromString<ApiResponse<PostInteractionResult>>(
@@ -107,12 +165,22 @@ class ApiInterfaceContractTest {
             {
               "code": "OK",
               "message": "success",
-              "data": { "favorited": false },
+              "data": {
+                "favorited": false,
+                "favoritedByMe": false,
+                "favoriteCount": 6,
+                "likeCount": 41,
+                "likedByMe": true
+              },
               "traceId": "trace_favorite"
             }
             """.trimIndent()
         )
         assertEquals(false, favoriteResponse.data?.favorited)
+        assertEquals(false, favoriteResponse.data?.favoritedByMe)
+        assertEquals(6, favoriteResponse.data?.favoriteCount)
+        assertEquals(41, favoriteResponse.data?.likeCount)
+        assertEquals(true, favoriteResponse.data?.likedByMe)
         assertNull(favoriteResponse.data?.liked)
 
         val postResponse = DoyuJson.decodeFromString<ApiResponse<Post>>(
