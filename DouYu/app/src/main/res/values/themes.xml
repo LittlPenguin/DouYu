@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.DouYu" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.DouYu" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">@color/doyu_page</item>
+        <item name="android:navigationBarColor">@color/doyu_surface</item>
+        <item name="colorPrimary">@color/doyu_petal</item>
+        <item name="colorPrimaryVariant">@color/doyu_coral</item>
+        <item name="colorSecondary">@color/doyu_mint</item>
+        <item name="colorAccent">@color/doyu_petal</item>
+        <item name="android:windowBackground">@color/doyu_page</item>
+    </style>
 </resources>

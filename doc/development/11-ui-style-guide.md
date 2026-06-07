@@ -1,318 +1,78 @@
-# 11. UI 风格与设计系统
+# UI Style Guide
 
-本文件是豆屿 Doyu 当前唯一 UI 权威规范。当前可用页面蓝图和设计图入口见 `13-ui-screen-blueprints.md`、`diagrams/README.md` 和 Open Design 项目 `SpellBean`；仓库副本位于 `open-design/index.html`。历史外部探索资产不作为日常可用入口，也不直接覆盖本规范。
+## Authority
 
-## 当前 UI 目标
+The UI authority is the Open Design HTML set in
+`doc/development/open-design/`. Android Java/XML screens must follow those files
+for structure, copy, hierarchy, states, and interaction.
 
-本阶段 UI 目标是把现有 Android App 收敛成 **开发态可演示、主链路可跑、不可用能力不误导用户** 的 MVP。
-第六轮在第二轮 App Shell / 消息 / 我的统一基线、第三轮商城主链路和第四轮真实图文基础上，优先收口品牌视觉、五个主 Tab 首屏、社区/商城/AI/消息/我的主链路展示，以及关注/互关私信的基础互动。
+## Visual Direction
 
-豆屿 UI 应体现：
-
-- 年轻女性友好，但不幼稚。
-- 轻盈、精致、有呼吸感。
-- 手作拼豆质感作为局部品牌识别，不堆满装饰。
-- “拼豆小岛”作为第一版品牌方向：可使用岛屿、拼豆颗粒、暖色手作台面和轻自然元素，但必须克制、清晰、可缩放。
-- 社区页面亲近、内容优先。
-- AI 创作页面有创作感和过程反馈。
-- 商城、订单、支付页面克制、可信、可读。
-- 半成品能力必须明确隐藏、禁用或展示开发态边界，不能伪装成已完成。
-
-第六轮当前已选 Open Design 方向为 **A：内容发现 + 创作工具平衡**：社区承担内容发现和互动入口，AI 保持清楚的创作工具定位，商城使用克制可信的交易界面，消息和我的页突出状态与资产边界。
-
-禁止方向：
-
-- 高饱和粉紫、重紫蓝渐变、霓虹色。
-- 儿童教育 App 风格。
-- 过度贴纸、过度卡通、装饰抢内容。
-- emoji 作为功能图标。
-- 卡片套卡片、页面区块全部浮卡化。
-- 为了视觉效果牺牲可读性、点击热区或支付可信度。
-- 首页做营销落地页；第一屏必须是可用 App 体验。
-
-## 品牌和 Logo
-
-- Logo 第一版采用“拼豆小岛”方向，服务于应用图标、顶部品牌区、空态和少量品牌露出。
-- 图形应在 48dp、72dp、adaptive launcher icon 和 round icon 中保持可识别，不依赖细小文字。
-- App 内品牌标识可以展示“豆屿 Doyu”，但页面标题和内容优先，不把 Logo 当作大面积装饰背景。
-- 禁止使用外部品牌、IP 角色、未授权插画、真人可识别素材或版权不清图片做 Logo。
-- 品牌色继续使用 `DoyuPetal`、`DoyuMint`、`DoyuSky` 的轻量组合，避免高饱和粉紫和重渐变。
-
-## 历史视觉探索映射
-
-历史 Stitch 页面只代表早期视觉探索方向；若当前工作树缺少这些资产，不要为了 UI 实现自动恢复旧资产。后续 Android UI 重构以本文件、`13-ui-screen-blueprints.md` 和 `diagrams/README.md` 为当前可用入口。历史探索对应关系如下：
-
-| 设计资产 | 用途 | Android 落地参考 |
-|---|---|---|
-| `_1/screen.png` | 社区首页 / 主 Feed | 全局主骨架：顶部品牌栏、频道 Tab、双列内容流、发布 FAB、圆角底部导航 |
-| `_2/screen.png` | 商城首页 | 搜索栏、品类 Chip、横向 Banner、双列商品卡、价格和销量层级 |
-| `ai/screen.png` | AI 创作首页 | AI Hero、正在生成任务卡、创作历史双列 Grid |
-| `_4/screen.png` | 消息页 | 通知/私信 Tab、通知列表、未读强调条、时间与摘要截断 |
-| `_3/screen.png` | 我的页 | 个人资料区、统计卡、我的工坊入口、签到卡；落地时必须中文化并降低卡片嵌套 |
-| `DESIGN.md` | 历史设计系统探索稿 | 可参考 “Restrained Vitality” 的克制活力、手作温度、留白、圆角和动效原则 |
-
-冲突处理：
-
-- 颜色、圆角、间距、排版最终以本文件为准。
-- 历史探索中的 `#fdf9f5` 背景统一收敛为 `#FFFBF7`。
-- 历史探索中较深的 `#9e3d54` 可作为文字强调或暗色派生，不升级为全局主按钮色。
-- 历史探索中的英文文案全部中文化。
-- 历史探索里的毛玻璃、弹性动效、阴影只做克制迁移，不把所有导航和卡片都做成重玻璃拟态。
-
-## 颜色令牌
-
-品牌色：
-
-| 令牌 | 色值 | 用途 |
-|---|---|---|
-| `DoyuPetal` | `#F48FA4` | 主品牌识别、频道选中、柔和强调 |
-| `DoyuCoral` | `#FF8F75` | 热门、推荐、次级强调 |
-| `DoyuMint` | `#A8DCC6` | 成功、签到、奖励 |
-| `DoyuSky` | `#9EC9F5` | AI、信息、提示 |
-
-浅色主题：
-
-| 令牌 | 色值 | 用途 |
-|---|---|---|
-| `primary` | `#E8778E` | 主按钮、选中态、主强调 |
-| `onPrimary` | `#FFFFFF` | 主色上的文字 |
-| `primaryContainer` | `#FFE0E6` | 轻主色容器、底部导航选中背景 |
-| `onPrimaryContainer` | `#3B0714` | 轻主色容器文字 |
-| `secondary` | `#7DB89A` | 次强调、成功方向 |
-| `secondaryContainer` | `#D4F0E0` | 次强调容器 |
-| `tertiary` | `#7AADE0` | AI/信息方向 |
-| `tertiaryContainer` | `#D6E8FF` | AI/信息容器 |
-| `background` | `#FFFBF7` | 页面背景 |
-| `surface` | `#FFFFFF` | 卡片和组件表面 |
-| `surfaceVariant` | `#FFF0F3` | 标签、次级表面 |
-| `outline` | `#E0CDD0` | 边框和分割线 |
-| `error` | `#D95F6A` | 错误 |
-| `success` | `#5AAE7A` | 成功 |
-| `warning` | `#E9934C` | 警告 |
-
-暗色主题不是当前 UI MVP 优先项。若实现暗色主题，必须保证对比度、支付/订单可读性和状态颜色一致。
-
-## 形状、间距和层级
-
-圆角：
-
-| 令牌 | 圆角 | 用途 |
-|---|---:|---|
-| `ShapeXs` | 8dp | 小按钮、输入框、标签 |
-| `ShapeSm` | 12dp | 列表项、紧凑容器 |
-| `ShapeMd` | 16dp | 标准按钮、普通卡片 |
-| `ShapeLg` | 20dp | 大卡片、底部弹窗 |
-| `ShapeXl` | 28dp | Hero 区块、全屏重点容器 |
-
-间距使用 4dp 网格：
-
-| 令牌 | 值 |
-|---|---:|
-| `SpaceXs` | 4dp |
-| `SpaceSm` | 8dp |
-| `SpaceMd` | 12dp |
-| `SpaceLg` | 16dp |
-| `SpaceXl` | 20dp |
-| `SpaceXxl` | 24dp |
-| `Space3xl` | 32dp |
-| `Space4xl` | 48dp |
-
-层级规则：
-
-- 页面背景不加阴影。
-- 普通卡片使用轻阴影或 surface tint。
-- 浮动按钮、弹窗、底部面板可提高 elevation，但不得制造厚重拟物感。
-- 不要把页面区块都做成浮卡；卡片用于内容项、工具面板、弹窗和确实需要框定的信息。
-- 个人中心可保留历史 Stitch `_3` 探索中的 Bento 感，但当前落地以 `13-ui-screen-blueprints.md` 为准，并避免“大卡套小卡”。
-
-## 字体与排版
-
-- 中文优先使用系统中文字体或 Noto Sans SC 风格；保持清晰、现代、不过度圆润。
-- 标题使用 SemiBold/Bold，正文使用 Regular/Medium。
-- 页面大标题用于一级页面；卡片内部标题克制。
-- 价格、订单状态、库存、错误提示必须高可读。
-- 避免大段居中文字；社区内容和商品说明优先左对齐。
-- 字距保持 0 或系统默认，不使用负字距。
-
-推荐字号层级：
-
-| 角色 | 字号 | 用途 |
-|---|---:|---|
-| displayMedium | 30sp | 重点数字、少量英雄信息 |
-| headlineMedium | 24sp | 一级页面标题 |
-| headlineSmall | 20sp | 区块标题 |
-| titleLarge | 18sp | 卡片标题 |
-| titleMedium | 16sp | 列表标题 |
-| bodyLarge | 16sp | 主要正文 |
-| bodyMedium | 14sp | 普通说明 |
-| bodySmall | 12sp | 辅助信息 |
-| labelMedium | 12sp | 标签、状态 |
+- Light, clear, handmade, restrained.
+- Warm off-white page background.
+- Petal pink, mint, sky blue, and coral accents.
+- Content and commerce readability before decoration.
+- No emoji as functional icons.
+- No fake content to make screens look populated.
 
 ## App Shell
 
-底部主导航固定为 5 个 Tab：
+- Five bottom tabs: `社区 / 商城 / AI / 消息 / 我的`.
+- Bottom navigation uses icon + label for every item.
+- Main tabs show bottom navigation.
+- Detail and flow screens hide bottom navigation unless the Open Design screen
+  explicitly shows it.
+- Top bar actions must have real navigation, disabled state, or UI-only copy.
 
-- 社区。
-- 商城。
-- AI。
-- 消息。
-- 我的。
+## Screen States
 
-全局 Shell 规则：
+Every screen must support the states that apply to its data source:
 
-- App Shell 是第二轮 UI 统一基线的优先收口点，所有页面先服从同一套顶部栏、底部栏和页面容器语言。
-- 五个主 Tab 的一级页面顶部统一为：左侧 `新增 icon`、中间页面标题、右侧 `搜索 icon`。
-- 点击 `新增 icon` 打开下拉快捷菜单，固定包含 `Setting`、`AI 创作`、`上传帖子` 三个入口；每个入口必须有真实跳转、禁用态或开发态说明。
-- 右侧 `搜索 icon` 进入 Search 搜索页；全局搜索未接后端前只能作为 UI-only 原型或本地筛选，不得写成真实全站搜索已完成。
-- `上传帖子` 快捷入口进入发帖 UI-only 原型或真实发帖流程；未实现时必须显式开发态，不允许空点击。
-- 主 Tab 页面展示底部导航；详情页、参数页、拍照页、订单确认页等流程页隐藏底部导航。
-- 底部导航是 Stage 8 UI 视觉对齐阶段的唯一预设例外，但例外只限容器样式：暖白浮动圆角胶囊、轻描边和阴影、选中浅粉圆角容器、粉色图标文字、底部短横、未选中深灰图标文字、主 Tab 显示和流程页隐藏均以当前 Android 真机 UI 为准，不要求 Android 追旧设计图底栏容器样式。
-- 底部导航 icon 语义和文字文案以 Open Design / SVG 为准：`社区 / 商城 / AI / 消息 / 我的`。当前 Android 已显示 `AI`，不改变底栏容器样式。
-- Open Design、HTML、SVG 和文档中的底部导航必须反向同步当前 Android 底栏容器样式，同时保留设计图 icon 语义和文字。
-- 底部导航每个 Tab 必须显示品牌化 Logo / icon，社区、商城、AI、消息、我的都不能只显示文字、空框或 emoji。
-- AI Tab 可略强调，但不做破坏底栏一致性的中心大按钮。
-- FAB 只用于明确创建动作，例如社区发布；不能用作装饰。
+- Loading
+- Empty
+- Error
+- Retry
+- Not logged in
+- Forbidden/disabled
+- UI-only/development boundary
 
-### Open Design 交互链接
+The empty state is the required replacement for deleted mock/seed content.
 
-Open Design 页面稿必须表达基本可点击去向，避免只做静态截图：
+## Layout Rules
 
-- 主页面底部导航五项互相跳转：社区、商城、AI、消息、我的。
-- 顶部搜索 icon 进入 `search-a.html`。
-- 新增菜单固定三项：`Setting -> settings-home-a.html`、`AI 创作 -> ai-home-a.html`、`上传帖子 -> post-compose-a.html`。
-- 社区卡片进入帖子详情；私信行进入对话详情；通知行进入通知详情；Settings 行进入对应内页。
-- 若实际 Android 尚未接入对应路由，文档和原型必须标注 UI-only / 开发态，不得把 HTML 链接写成业务代码已完成。
+- XML layouts must be stable at common phone widths around 360dp to 430dp.
+- Buttons and tabs must not overflow.
+- RecyclerView items must keep stable dimensions and not resize surrounding UI.
+- Cards are for repeated items or framed tools, not for every page section.
+- Text must be left aligned for content and commerce descriptions unless the
+  Open Design file shows another structure.
 
-## 通用组件规则
+## Component Rules
 
-- 自定义组件使用 `Doyu` 前缀。
-- 按钮必须有明确主次层级：主按钮用于提交/购买/继续，次按钮用于取消/返回/更多。
-- 图标使用 Compose Material Icons 或统一线性图标，不使用 emoji。
-- 标签、分类、筛选项应有明确选中态和可点击反馈。
-- 空状态可使用拼豆颗粒或轻插画，但必须提供具体行动按钮或说明。
-- 错误状态必须展示用户可理解文案；有 traceId 时可单独展示。
-- 未登录状态统一使用登录引导弹窗或 guest 占位，不直接暴露技术错误。
-- 不可用功能必须使用禁用态、隐藏或明确开发态说明，禁止可点击但无效果。
+- Use Material Components for buttons, text fields, chips, tabs, and bottom
+  navigation.
+- Use RecyclerView for feeds, product grids, messages, comments, and assets.
+- Use Glide for network images and placeholders.
+- Use CameraX PreviewView for camera screens.
+- Use disabled controls and explanatory copy for unavailable future features.
 
-## 页面规则
+## Screen Mapping
 
-| 页面 | 当前蓝图 / 历史映射 | MVP 重点 |
-|---|---|---|
-| 社区 | `13-ui-screen-blueprints.md` + `community-home-wireframe.svg`，历史 `_1` 映射 | 图片和正文优先，双列内容流，频道筛选轻量，发布入口明确 |
-| 帖子详情 | `post-detail-comment-toolbar-wireframe.svg`，历史 `_1` 延展映射 | 正文、评论、点赞、收藏、关注状态清楚；评论提交后短提示等待审核，列表不展示审核中字样 |
-| 发帖 | `13-ui-screen-blueprints.md`，历史 `_1` 延展映射 | 输入区稳定、上传失败可重试、发布结果为审核中，不假装立即公开 |
-| AI 创作 | `ai-home-wireframe.svg`，历史 `ai` 映射 | Hero、上传、参数、生成进度、结果和历史形成连续流程 |
-| 图纸结果 | `13-ui-screen-blueprints.md`，历史 `ai` 延展映射 | 预览、色号图、材料清单、保存清楚；加购/PDF/分享未闭环时禁用 |
-| 商城 | `commerce-home-wireframe.svg`，历史 `_2` 映射 | 商品图、价格、规格、库存、购买路径可信 |
-| 购物车/订单 | `commerce-order-payment-flow.svg`，历史 `_2` 延展映射 | 金额、数量、状态和服务端确认语义清楚；地址未接入不伪装 |
-| 支付结果 | `commerce-order-payment-flow.svg`，历史 `_2` 延展映射 | 仅显示联调支付单状态和服务端确认，不展示正式渠道完成态 |
-| 消息 | `message-profile-wireframes.svg`，历史 `_4` 映射 | 通知/私信区分，未读醒目；私信发送未闭环时不做强聊天 |
-| 我的 | `message-profile-wireframes.svg`，历史 `_3` 映射 | 个人资产中心，中文化，区分已实现和开发态入口 |
-| 设置 | `13-ui-screen-blueprints.md`，历史 `_3` 延展映射 | 账号、隐私、权限、注销、协议入口清楚，但不包装成生产合规完成 |
+- Community home: `community-home-a.html`
+- Post detail: `post-detail-comment-toolbar-a.html`
+- Post compose: `post-compose-a.html`
+- Search: `search-a.html`
+- Commerce home: `commerce-home-a.html`
+- AI home and flow: `ai-home-a.html`
+- Messages and conversation: `messages-a.html`, `message-conversation-a.html`
+- Profile and edit: `profile-a.html`, `profile-edit-a.html`
+- Settings: `settings-*.html`
 
-### Search 搜索页
+## Prohibited UI Behavior
 
-Search 页面是第六轮设计补全项，承接所有页面顶部搜索 icon：
-
-- 顶部结构为返回按钮、搜索输入框、取消/清空动作；返回保持来源页面状态。
-- 搜索范围使用 Tab / Chip：全部、作品、图纸、商品、用户、话题。
-- 状态必须覆盖默认推荐、输入中、结果、空结果、加载失败、未登录受限和开发态。
-- 结果卡片按类型区分作品、图纸、商品、用户、话题；卡片点击去向必须存在、禁用或说明开发态。
-- 真实全局搜索后端未接入前，不得宣称全站搜索、个性化热榜、用户搜索或话题搜索已完成；只能写 UI-only 或本地筛选目标。
-
-### 社区瀑布流
-
-社区首页内容流采用第六轮 A 方向的双列 masonry 目标：
-
-- 图片根据实际比例形成竖向错落，类似小红书内容发现，但不得变成无限高长图流。
-- 卡片图片视觉高度建议控制在 120dp-260dp；超出上限裁切，不能撑高整屏或造成底部导航遮挡。
-- 标题最多两行，作者、点赞/收藏/评论等元信息保持固定层级。
-- 图片加载失败时保持卡片尺寸，显示拼豆色块或轻占位，不让布局跳动。
-- Android 当前已用 `LazyVerticalStaggeredGrid` 落地双列瀑布流，卡片图片高度在 120dp-260dp 区间内错落展示；后续验收重点是继续对齐 Open Design 的视觉密度、图片裁切和状态占位。
-
-### 作品详情评论工具条
-
-作品详情页最新设计顺序为 **图片 -> 内容 -> 评论区 -> 底部悬浮评论栏**。首屏先展示作品图片集合，必须让用户看出这是 gallery / carousel：大图、`2/5` 页码、左右切换箭头或滑动提示、底部缩略图 strip 和当前选中边框同时存在。作者、标题、正文、话题和互动状态放在图片之后；评论区是独立区域，不得只展示评论工具条。
-
-评论区必须覆盖标题、评论数量、评论列表、文字评论、含图片评论、含 `@` / `#` 的评论行、空态和加载失败状态。评论提交后只提示等待审核，不把审核中假数据插入列表；公开列表只展示 `VISIBLE` 评论，若当前页只有审核中评论，显示“暂无公开评论 / 评论提交后会等待审核，通过后才会公开展示。”。
-
-作品详情页评论输入采用 **Google 风格底部悬浮栏**，保留轻量默认态和同一输入区展开语义。折叠态是悬浮在底部安全区上方的白色胶囊；展开态平滑增高为浮动面板，必须分层显示素材 Chip、多行输入、icon 工具栏和右侧清空/发送操作，不能把头像、图片、@、#、清空、发送和文本框挤在同一行。
-
-- 默认态：底部悬浮白色轻量胶囊，约 52-56dp 高，中间单行提示“写下你的评论”，右侧保留展开入口；不展示发送按钮，不遮挡帖子正文、评论列表或系统导航。
-- 展开态：输入区高度增加，支持多行输入；图片/附件预览行在上，评论输入内容在下，底部工具栏只保留图片、@、# 和发送操作，不能变成遮挡正文的大面板。
-- 工具按钮：图片、@、# 全部使用 icon 按钮，不使用“图 / @ / # / 帖子”等文字按钮；删除“帖子”工具入口，`#` 后不得放置旧发帖入口或含义不清的额外 icon。
-- 缩略图与选择态：无图、一图、多图堆叠、上传中、上传失败和达到 9 图上限都要有状态；多图在紧凑态使用堆叠缩略图，点击后进入明确的轮播 / gallery 预览；已选 @ 用户和 # 话题使用轻量 Chip 展示，均不得挤压文字输入框。
-- 颜色：外层 surface 使用白色，页面背景为 `#FFFBF7`；边框使用 `outline` 低透明度；发送按钮使用 `secondary` / `DoyuMint` 方向；图片、@、# 等辅助工具使用灰绿线性图标，避免高饱和粉紫和重渐变。
-- 状态：发送按钮仅在有文字或图片且未发送中时启用；禁用态降低透明度。@ 必须展示用户搜索输入、用户结果、已选用户 Chip、空结果和加载失败；# 必须展示话题搜索、热门/推荐话题、已选话题 Chip、空结果和开发态边界。未接真实搜索面板时必须明确开发态或禁用，不能展示空入口或假成功。
-- 焦点：展开态文本框失去焦点、清空、发送成功或点击详情内容区后回到折叠态；内部工具按钮点击需要先完成本次操作，不能被失焦收起逻辑抢先中断。
-- 动效：展开、收起和缩略图行出现使用 Spring Standard 风格，优先 `animateContentSize`、`AnimatedVisibility`、alpha/尺寸过渡，必须顺滑、可中断，不阻塞输入、选图和发送。
-
-### 消息、我的和 Settings
-
-- 消息首页必须清楚拆分私信和通知；通知行进入通知详情，私信行进入对话详情。
-- 通知区域不得展示会话输入状态；新消息、输入中、未互关剩余条数和超过 3 条禁发态只属于私信/对话。
-- 对话详情覆盖互关正常聊天、未互关剩余条数、超过 3 条禁用输入、发送失败保留草稿、空会话和加载失败。
-- 我的页第六轮最新设计目标是轻量资产中心：统计区按顺序展示获赞、作品、关注、粉丝；资产区把“我的图纸”“点赞作品”“收藏作品”放入同一 Tab，Tab 内容展示图纸或帖子卡。
-- 我的页资料区的“编辑资料”进入 `profile-edit-a.html` 原型和 Android `profile_edit` 路由。当前 Android 已通过现有 `PATCH /api/v1/users/me` 保存昵称、头像文件和简介；年龄段展示、城市/地区 UI-only、兴趣标签、地图定位、实名和生产合规能力仍不得写成已完成。
-- 我的页最新设计稿不展示“我的订单”“评论作品”“关注作品”；这只是 UI 目标，不代表当前 Android 代码或后端接口已删除历史入口。
-- Settings 页面组包括首页、账号与安全、隐私与权限、通知设置、关于与合规。合规相关入口必须标注待补或生产前必须补齐，不得写成已完成。
-
-### 未来能力 UI-only 标识
-
-地图 API、真实支付 API、大模型生图 API 只允许作为未来能力 UI-only 设计出现：
-
-- 页面必须显著标注 `UI-only / 当前不接后端 / 当前不可用`。
-- 地图只展示位置授权、位置选择、无权限、定位失败和手动选择城市/区域的设计状态，不触发真实地理服务。
-- 真实支付只展示支付方式选择、处理中、失败、服务端状态查询和结果不确定状态，不展示正式成功态或收款完成态。
-- 大模型生图只展示提示词、参考图、生成中、排队中、失败重试、内容安全拦截和结果选择，不承诺真实 Provider 或生成质量。
-- 这些 UI-only 页面不新增 API 字段、路径或契约，不改变当前阶段不做项。
-
-## MVP 收敛规则
-
-- 能真实调用已有后端并返回明确状态的入口，保留并接完整 UI。
-- 后端有接口但 Android 未接的入口，标为“接入已有接口”的 P0/P1 任务。
-- 后端/客户端都未闭环的入口，隐藏、禁用或改成明确的“开发态不可用”。
-- 支付只展示“联调支付 / 支付单状态”，不包装成真实微信/支付宝支付。
-- AI 只展示开发态图纸生成，不承诺真实视觉理解质量。
-- 审核、合规、风控、玩家交易只保留必要状态提示，不扩展生产能力。
-- 不能出现空 `onClick`、假成功 Toast、可点击但无结果的设置入口。
-- 地图、真实支付、真实 AI Provider、上线生产化不在第六轮 UI 收敛范围内；不得提前展示为当前可用能力。
-- 好友第一版只展示关注/已关注/互相关注，不展示“待通过”“好友申请中”等当前未实现状态。
-- 未互关私信超过 3 条时，输入区必须禁用或展示“互相关注后可继续聊天”，不能假装发送成功。
-
-## 动效规则
-
-- 动效必须服务状态变化，不为炫技。
-- 按钮反馈应小于 100ms。
-- 普通过渡建议 150-250ms。
-- 页面级过渡建议 200-350ms。
-- 进度、上传、AI 生成可以有轻微循环动效，但不能影响阅读和操作。
-- 动效应可中断，不阻塞快速切换。
-- 不强制引入 Haze、Lottie、MotionLayout 等新依赖；如需新增依赖，必须先说明收益和维护成本。
-
-推荐参数：
-
-```kotlin
-const val DURATION_FAST = 150
-const val DURATION_NORMAL = 250
-const val DURATION_SLOW = 350
-```
-
-## 响应式与兼容
-
-- 优先保证 360dp-430dp 宽度的主流 Android 手机体验。
-- 当前手机端 MVP 固定竖屏；横屏和平板布局后期单独设计，不作为第三轮商城验收范围。
-- 小屏页面不得出现按钮文字溢出、底部栏遮挡、输入框不可见。
-- 大屏和平板可以增加横向内边距和网格列数，不强制重做布局。
-- 相机、Photo Picker、上传、支付返回、深色模式、弱网、无网都必须有明确状态。
-
-## 验收标准
-
-- 核心页面覆盖加载、空状态、失败、未登录、无权限和弱网重试。
-- 375dp 宽度下无明显遮挡、溢出或不可点击区域。
-- 社区首页符合 `13-ui-screen-blueprints.md` 和 `community-home-wireframe.svg` 的主骨架：统一顶部栏、频道 Tab、双列内容流/瀑布流目标、发布入口、圆角底栏。
-- 商城、AI、消息、我的分别符合 `commerce-home-wireframe.svg`、`ai-home-wireframe.svg`、`message-profile-wireframes.svg` 和 `13-ui-screen-blueprints.md` 的页面结构。
-- 商城、订单、支付页面不使用过度卡通表达。
-- AI 生成过程可理解，失败原因可读，可重试或返回。
-- 所有开发态能力边界清楚；没有空点击、假成功、误导性支付或合规表达。
-- 权威 UI 规范只引用本文件；Stitch 目录只作为视觉参考和归档资产。
+- Fake success Toasts.
+- Clickable controls with no result.
+- Runtime demo cards or fake lists.
+- Static seed images as live content.
+- Claims of real payment, real AI provider, production compliance, or map
+  support when the backend capability is not implemented.

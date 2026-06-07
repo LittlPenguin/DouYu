@@ -11,7 +11,7 @@ import java.util.Map;
  * 返回合理默认值，不实际调用外部 AI 服务。
  */
 @Component
-@Profile({"default", "dev", "test"})
+@Profile({"default", "dev", "test", "qa-empty"})
 public class StubAiVisionProvider implements AiVisionProvider {
 
     @Override

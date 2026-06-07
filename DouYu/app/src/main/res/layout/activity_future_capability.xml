@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/doyu_page"
+    android:orientation="vertical">
+
+    <include layout="@layout/include_page_toolbar" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:text="地图 API&#10;位置授权、位置选择、无权限、定位失败、手动选择城市/区域。当前不触发定位。"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:text="真实支付 API&#10;支付方式选择、支付处理中、支付失败、服务端状态查询、支付结果不确定。当前不创建真实支付参数。"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:padding="16dp"
+                android:text="大模型生图 API&#10;提示词、参考图、生成中、排队中、失败重试、内容安全拦截、生成结果选择。当前未接 Provider。"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="18dp"
+                android:enabled="false"
+                android:text="UI-only / 当前不接后端"
+                app:cornerRadius="8dp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

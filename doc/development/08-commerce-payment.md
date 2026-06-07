@@ -95,17 +95,17 @@ SKU 必须包含：
 
 订单状态客户端展示标签：
 
-| 状态 | 标签 |
-|---|---|
-| CREATED | 已创建 |
+| 状态              | 标签  |
+| --------------- | --- |
+| CREATED         | 已创建 |
 | WAITING_PAYMENT | 待付款 |
-| PAID | 已付款 |
-| FULFILLING | 备货中 |
-| SHIPPED | 已发货 |
-| COMPLETED | 已完成 |
-| CANCELED | 已取消 |
-| REFUNDING | 退款中 |
-| REFUNDED | 已退款 |
+| PAID            | 已付款 |
+| FULFILLING      | 备货中 |
+| SHIPPED         | 已发货 |
+| COMPLETED       | 已完成 |
+| CANCELED        | 已取消 |
+| REFUNDING       | 退款中 |
+| REFUNDED        | 已退款 |
 
 当前 Android 代码仍有订单列表路由，可通过订单相关入口查看 `GET /orders` 分页结果。最新我的页设计稿不把订单作为首屏展示入口；这只是目标 UI 调整，不代表订单列表接口或历史路由已删除。
 

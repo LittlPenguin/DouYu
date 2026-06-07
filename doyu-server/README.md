@@ -131,6 +131,66 @@ cd D:\Studio\SpellBean\doyu-server
 mvn test
 ```
 
+## QA empty database profile
+
+Use `qa-empty` when backend QA needs a known-empty database without touching the
+normal dev database or its Docker volume. It uses separate containers, ports,
+and volumes:
+
+- PostgreSQL container: `douyu-postgres-qa-empty`
+- PostgreSQL port: `55433`
+- PostgreSQL volume: `douyu-server_douyu_qa_empty_postgres_data`
+- Redis container: `douyu-redis-qa-empty`
+- Redis port: `56379`
+- Redis volume: `douyu-server_douyu_qa_empty_redis_data`
+- Spring profile: `qa-empty`
+- Suggested backend port: `8082`
+
+Start infrastructure:
+
+```powershell
+cd D:\Studio\SpellBean\doyu-server
+docker compose -f docker-compose.qa-empty.yml up -d postgres-qa-empty redis-qa-empty
+```
+
+Start the backend against the isolated empty database:
+
+```powershell
+$env:DOUYU_BACKEND_PORT="8082"
+mvn spring-boot:run -Dspring-boot.run.profiles=qa-empty
+```
+
+Verify the public empty-list contract:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\verify-qa-empty.ps1 -BaseUrl http://127.0.0.1:8082
+```
+
+Shutdown after QA:
+
+```powershell
+docker compose -f docker-compose.qa-empty.yml stop postgres-qa-empty redis-qa-empty
+```
+
+Do not use `docker compose down -v` unless you intentionally want to delete the
+QA empty volume. The default dev volume `douyu_postgres_data` is not used by
+this profile.
+
+## Dev seed/demo residue diagnostic
+
+The normal dev database may still contain old persisted rows such as
+`post_seed%` posts or `prod_%` products from earlier runtime seeders. Do not
+delete those rows as part of QA empty verification. To inspect them read-only:
+
+```powershell
+cd D:\Studio\SpellBean\doyu-server
+docker compose up -d postgres
+powershell -ExecutionPolicy Bypass -File .\scripts\diagnose-dev-seed-residue.ps1
+```
+
+This diagnostic only runs `SELECT` statements. It exists to explain RB-001 and
+RB-002 evidence without modifying the dev persistent database.
+
 ## 开发 Stub
 
 - 短信验证码：`123456`

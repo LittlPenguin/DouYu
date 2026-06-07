@@ -11,14 +11,14 @@
   </defs>
   <rect width="1160" height="620" fill="#0f172a"/><rect width="1160" height="620" fill="url(#grid)"/>
   <text x="34" y="42" class="title">Auth Session Flow</text>
-  <text x="34" y="64" class="note">登录请求当前仍传 ageGroup=AGE_18_PLUS；DataStore 是 Android 登录态持久化事实</text>
+  <text x="34" y="64" class="note">登录请求当前仍传 ageGroup=AGE_18_PLUS；SharedPreferences 是 Android 登录态持久化事实</text>
 
   <rect x="60" y="120" width="180" height="70" class="box start"/><text x="150" y="150" text-anchor="middle" class="label">输入手机号</text><text x="150" y="172" text-anchor="middle" class="small">验证码 Stub 123456</text>
   <rect x="300" y="120" width="190" height="70" class="box api"/><text x="395" y="150" text-anchor="middle" class="label">POST /sms-code</text><text x="395" y="172" text-anchor="middle" class="small">sent + expiresIn</text>
   <rect x="550" y="120" width="220" height="70" class="box api"/><text x="660" y="150" text-anchor="middle" class="label">POST /login/sms</text><text x="660" y="172" text-anchor="middle" class="small">phone + code + ageGroup</text>
   <rect x="830" y="120" width="220" height="70" class="box store"/><text x="940" y="150" text-anchor="middle" class="label">保存 Token</text><text x="940" y="172" text-anchor="middle" class="small">access / refresh / user</text>
 
-  <rect x="60" y="300" width="180" height="70" class="box store"/><text x="150" y="330" text-anchor="middle" class="label">App 启动</text><text x="150" y="352" text-anchor="middle" class="small">DataStore hydrate</text>
+  <rect x="60" y="300" width="180" height="70" class="box store"/><text x="150" y="330" text-anchor="middle" class="label">App 启动</text><text x="150" y="352" text-anchor="middle" class="small">SharedPreferences hydrate</text>
   <rect x="300" y="300" width="190" height="70" class="box api"/><text x="395" y="330" text-anchor="middle" class="label">携带 Bearer</text><text x="395" y="352" text-anchor="middle" class="small">访问受保护接口</text>
   <rect x="560" y="292" width="200" height="86" class="box decision"/><text x="660" y="325" text-anchor="middle" class="label">返回 401?</text><text x="660" y="350" text-anchor="middle" class="small">过期或无效</text>
   <rect x="830" y="270" width="220" height="70" class="box api"/><text x="940" y="300" text-anchor="middle" class="label">POST /refresh</text><text x="940" y="322" text-anchor="middle" class="small">更新 TokenStore</text>

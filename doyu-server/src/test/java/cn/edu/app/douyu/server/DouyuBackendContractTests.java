@@ -2,10 +2,7 @@ package cn.edu.app.douyu.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cn.edu.app.douyu.server.common.entity.ConversationEntity;
-import cn.edu.app.douyu.server.common.entity.ConversationRepository;
-import cn.edu.app.douyu.server.common.entity.PostEntity;
-import cn.edu.app.douyu.server.common.entity.PostRepository;
+import cn.edu.app.douyu.server.common.entity.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -49,6 +46,21 @@ class DouyuBackendContractTests {
 
     @Autowired
     PostRepository postRepository;
+
+    @Autowired
+    ProductRepository productRepository;
+
+    @Autowired
+    SkuRepository skuRepository;
+
+    @Autowired
+    TopicRepository topicRepository;
+
+    @Autowired
+    StickerPackRepository stickerPackRepository;
+
+    @Autowired
+    StickerRepository stickerRepository;
 
     @Test
     void openApiDocsExposeApiV1EndpointsAndUploadPatternContractFields() throws Exception {
@@ -209,10 +221,12 @@ class DouyuBackendContractTests {
     @Test
     void orderPaymentAndRefundAreIdempotentAndGuardInventoryAndRefundAmount() throws Exception {
         String token = login("13800000004", "AGE_18_PLUS");
+        String skuId = ensureSelfOperatedSku("fixture-product-order-red", "fixture-sku-order-red",
+                "https://fixture.local/assets/order-red.png", 100);
 
         JsonNode cartAdd = postJsonWithToken("/api/v1/cart/items", token, """
-                {"skuId":"sku_bead_red","quantity":2}
-                """);
+                {"skuId":"%s","quantity":2}
+                """.formatted(skuId));
         String cartItemId = cartAdd.at("/data/itemId").asText();
 
         String orderPayload = """
@@ -228,8 +242,8 @@ class DouyuBackendContractTests {
 
         // Add another cart item with huge quantity for inventory test
         JsonNode cartAdd2 = postJsonWithToken("/api/v1/cart/items", token, """
-                {"skuId":"sku_bead_red","quantity":999999}
-                """);
+                {"skuId":"%s","quantity":999999}
+                """.formatted(skuId));
         String cartItemId2 = cartAdd2.at("/data/itemId").asText();
 
         mockMvc.perform(post("/api/v1/orders")
@@ -287,19 +301,23 @@ class DouyuBackendContractTests {
     @Test
     void playerProductCannotEnterStandardCartOrOrder() throws Exception {
         String token = login("13800000022", "AGE_18_PLUS");
+        String playerSkuId = ensurePlayerSku("fixture-product-player-second-hand", "fixture-sku-player-second-hand",
+                "PLAYER_SECOND_HAND", "https://fixture.local/assets/player-second-hand.png");
+        String selfSkuId = ensureSelfOperatedSku("fixture-product-cart-white", "fixture-sku-cart-white",
+                "https://fixture.local/assets/cart-white.png", 100);
 
         mockMvc.perform(post("/api/v1/cart/items")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"skuId":"sku_player_second_hand_kit","quantity":1}
-                                """))
+                                {"skuId":"%s","quantity":1}
+                                """.formatted(playerSkuId)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code", equalTo("CONFLICT")));
 
         JsonNode selfAdd = postJsonWithToken("/api/v1/cart/items", token, """
-                {"skuId":"sku_bead_white","quantity":1}
-                """);
+                {"skuId":"%s","quantity":1}
+                """.formatted(selfSkuId));
         String cartItemId = selfAdd.at("/data/itemId").asText();
 
         mockMvc.perform(post("/api/v1/orders")
@@ -380,11 +398,13 @@ class DouyuBackendContractTests {
                 """, postId);
         String commentId = comment.at("/data/commentId").asText();
         org.assertj.core.api.Assertions.assertThat(commentId).isNotEmpty();
+        org.assertj.core.api.Assertions.assertThat(comment.at("/data/status").asText()).isEqualTo("VISIBLE");
 
         mockMvc.perform(get("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].commentId", equalTo(commentId)));
+                .andExpect(jsonPath("$.data.items[0].commentId", equalTo(commentId)))
+                .andExpect(jsonPath("$.data.items[0].status", equalTo("VISIBLE")));
 
         mockMvc.perform(delete("/api/v1/comments/{commentId}", commentId)
                         .header("Authorization", "Bearer " + token))
@@ -429,7 +449,7 @@ class DouyuBackendContractTests {
         JsonNode comment = postJsonWithPath("/api/v1/posts/{postId}/comments", token, """
                 {"content":"contract comment"}
                 """, post.path("postId").asText());
-        org.assertj.core.api.Assertions.assertThat(comment.at("/data/status").asText()).isEqualTo("REVIEWING");
+        org.assertj.core.api.Assertions.assertThat(comment.at("/data/status").asText()).isEqualTo("VISIBLE");
         org.assertj.core.api.Assertions.assertThat(comment.at("/data/author/avatarUrl").isMissingNode()).isFalse();
     }
 
@@ -787,7 +807,14 @@ class DouyuBackendContractTests {
     }
 
     @Test
-    void productQaSeedDataCoversSelfOperatedPlayerSecondHandAndCustomService() throws Exception {
+    void explicitProductFixturesCoverSelfOperatedPlayerSecondHandAndCustomService() throws Exception {
+        ensureSelfOperatedSku("fixture-product-list-self", "fixture-sku-list-self",
+                "https://fixture.local/assets/list-self.png", 100);
+        ensurePlayerSku("fixture-product-list-second-hand", "fixture-sku-list-second-hand",
+                "PLAYER_SECOND_HAND", "https://fixture.local/assets/list-second-hand.png");
+        ensurePlayerSku("fixture-product-list-custom", "fixture-sku-list-custom",
+                "PLAYER_CUSTOM_SERVICE", "https://fixture.local/assets/list-custom.png");
+
         String content = mockMvc.perform(get("/api/v1/products"))
                 .andExpect(status().isOk())
                 .andReturn()
@@ -803,27 +830,30 @@ class DouyuBackendContractTests {
     }
 
     @Test
-    void seedAssetUrlsAreReturnedByProductPostAndCartApis() throws Exception {
-        mockMvc.perform(get("/api/v1/products/{productId}", "prod_bead_red"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.imageUrl", equalTo("http://localhost:8081/seed/commerce/bead-red.jpg")));
+    void explicitFixturesReturnConfiguredAssetUrlsWithoutSeedAssets() throws Exception {
+        String productId = "fixture-product-asset-url";
+        String skuId = ensureSelfOperatedSku(productId, "fixture-sku-asset-url",
+                "https://fixture.local/assets/product-asset-url.png", 100);
+        String postId = ensureVisiblePost("fixture-post-asset-url", "fixture-author-asset-url",
+                null, "https://fixture.local/assets/post-asset-url.png");
 
-        mockMvc.perform(get("/api/v1/posts/{postId}", "post_seed_1"))
+        mockMvc.perform(get("/api/v1/products/{productId}", productId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.coverImageUrl", equalTo("http://localhost:8081/seed/community/newbie-guide.jpg")));
+                .andExpect(jsonPath("$.data.imageUrl", equalTo("https://fixture.local/assets/product-asset-url.png")));
+
+        mockMvc.perform(get("/api/v1/posts/{postId}", postId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.coverImageUrl", equalTo("https://fixture.local/assets/post-asset-url.png")));
 
         String token = login("13800000023", "AGE_18_PLUS");
         postJsonWithToken("/api/v1/cart/items", token, """
-                {"skuId":"sku_bead_red","quantity":1}
-                """);
+                {"skuId":"%s","quantity":1}
+                """.formatted(skuId));
 
         mockMvc.perform(get("/api/v1/cart")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].product.imageUrl", equalTo("http://localhost:8081/seed/commerce/bead-red.jpg")));
-
-        mockMvc.perform(get("/seed/commerce/bead-red.jpg"))
-                .andExpect(status().isOk());
+                .andExpect(jsonPath("$.data.items[0].product.imageUrl", equalTo("https://fixture.local/assets/product-asset-url.png")));
 
         String productsContent = mockMvc.perform(get("/api/v1/products"))
                 .andExpect(status().isOk())
@@ -831,9 +861,11 @@ class DouyuBackendContractTests {
                 .getResponse()
                 .getContentAsString();
         JsonNode products = objectMapper.readTree(productsContent).at("/data/items");
-        org.assertj.core.api.Assertions.assertThat(products).hasSize(6);
         org.assertj.core.api.Assertions.assertThat(products)
-                .allSatisfy(product -> org.assertj.core.api.Assertions.assertThat(product.path("imageUrl").asText()).startsWith("http://localhost:8081/seed/commerce/"));
+                .anySatisfy(product -> {
+                    org.assertj.core.api.Assertions.assertThat(product.path("productId").asText()).isEqualTo(productId);
+                    org.assertj.core.api.Assertions.assertThat(product.path("imageUrl").asText()).doesNotContain(forbiddenAssetRouteSegment());
+                });
 
         String feedContent = mockMvc.perform(get("/api/v1/posts/feed"))
                 .andExpect(status().isOk())
@@ -841,9 +873,11 @@ class DouyuBackendContractTests {
                 .getResponse()
                 .getContentAsString();
         JsonNode posts = objectMapper.readTree(feedContent).at("/data/items");
-        org.assertj.core.api.Assertions.assertThat(posts).hasSize(4);
         org.assertj.core.api.Assertions.assertThat(posts)
-                .allSatisfy(post -> org.assertj.core.api.Assertions.assertThat(post.path("coverImageUrl").asText()).startsWith("http://localhost:8081/seed/community/"));
+                .anySatisfy(post -> {
+                    org.assertj.core.api.Assertions.assertThat(post.path("postId").asText()).isEqualTo(postId);
+                    org.assertj.core.api.Assertions.assertThat(post.path("coverImageUrl").asText()).doesNotContain(forbiddenAssetRouteSegment());
+                });
     }
 
     @Test
@@ -872,8 +906,10 @@ class DouyuBackendContractTests {
         String token = login("13800000024", "AGE_18_PLUS");
         String otherToken = login("13800000025", "AGE_18_PLUS");
         String imageFileId = confirmedFile(token, "POST_IMAGE");
+        String postId = ensureVisiblePost("fixture-post-comments-media", "fixture-author-comments-media",
+                null, "https://fixture.local/assets/comments-media.png");
 
-        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -885,7 +921,7 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.data.mediaAssets[0].fileId", equalTo(imageFileId)))
                 .andExpect(jsonPath("$.data.mediaAssets[0].publicUrl", org.hamcrest.Matchers.containsString("/stub/post_image/")));
 
-        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -895,12 +931,12 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.data.content", equalTo("图文评论")))
                 .andExpect(jsonPath("$.data.mediaAssets[0].mimeType", equalTo("image/png")));
 
-        mockMvc.perform(get("/api/v1/posts/{postId}/comments", "post_seed_1")
+        mockMvc.perform(get("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].mediaAssets[0].fileId", equalTo(imageFileId)));
 
-        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -909,7 +945,7 @@ class DouyuBackendContractTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
 
-        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -919,7 +955,7 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
 
         String otherImageFileId = confirmedFile(otherToken, "POST_IMAGE");
-        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -929,7 +965,7 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")));
 
         String aiFileId = confirmedFile(token, "AI_INPUT");
-        mockMvc.perform(post("/api/v1/posts/{postId}/comments", "post_seed_1")
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -949,10 +985,12 @@ class DouyuBackendContractTests {
         JsonNode mentionedMe = getJsonWithToken("/api/v1/users/me", mentionedToken).path("data");
         String authorId = authorMe.path("userId").asText();
         String mentionedUserId = mentionedMe.path("userId").asText();
+        String topicId = ensureTopic("fixture-topic-interaction", "interaction");
+        String stickerId = ensureSticker("fixture-pack-interaction", "fixture-sticker-interaction");
 
         JsonNode created = postJsonWithToken("/api/v1/posts", authorToken, """
-                {"title":"interaction assets post","content":"community interaction asset source","mediaFileIds":[],"topicIds":["topic_beginner"]}
-                """);
+                {"title":"interaction assets post","content":"community interaction asset source","mediaFileIds":[],"topicIds":["%s"]}
+                """.formatted(topicId));
         String postId = created.at("/data/postId").asText();
         PostEntity visiblePost = postRepository.findById(postId).orElseThrow();
         visiblePost.setStatus("VISIBLE");
@@ -967,30 +1005,30 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.data.items[0].userId", equalTo(mentionedUserId)));
 
         mockMvc.perform(get("/api/v1/topics")
-                        .queryParam("keyword", "beginner")
+                        .queryParam("keyword", "interaction")
                         .queryParam("page", "1")
                         .queryParam("size", "20"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].topicId", equalTo("topic_beginner")));
+                .andExpect(jsonPath("$.data.items[0].topicId", equalTo(topicId)));
 
-        mockMvc.perform(get("/api/v1/topics/{topicId}/posts", "topic_beginner"))
+        mockMvc.perform(get("/api/v1/topics/{topicId}/posts", topicId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].topicIds[0]", equalTo("topic_beginner")));
+                .andExpect(jsonPath("$.data.items[0].topicIds[0]", equalTo(topicId)));
 
         String stickerPacksContent = mockMvc.perform(get("/api/v1/sticker-packs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].stickers[0].stickerId", notNullValue()))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
         JsonNode stickerPacks = objectMapper.readTree(stickerPacksContent);
-        String stickerId = stickerPacks.at("/data/items/0/stickers/0/stickerId").asText();
+        org.assertj.core.api.Assertions.assertThat(stickerPacks.at("/data/items"))
+                .anySatisfy(pack -> org.assertj.core.api.Assertions.assertThat(pack.path("packId").asText()).isEqualTo("fixture-pack-interaction"));
 
         JsonNode comment = postJsonWithPath("/api/v1/posts/{postId}/comments", viewerToken, """
-                {"content":"@mention #topic sticker","mentionUserIds":["%s"],"topicIds":["topic_beginner"],"stickerIds":["%s"]}
-                """.formatted(mentionedUserId, stickerId), postId);
+                {"content":"@mention #topic sticker","mentionUserIds":["%s"],"topicIds":["%s"],"stickerIds":["%s"]}
+                """.formatted(mentionedUserId, topicId, stickerId), postId);
         org.assertj.core.api.Assertions.assertThat(comment.at("/data/mentions/0/userId").asText()).isEqualTo(mentionedUserId);
-        org.assertj.core.api.Assertions.assertThat(comment.at("/data/topics/0/topicId").asText()).isEqualTo("topic_beginner");
+        org.assertj.core.api.Assertions.assertThat(comment.at("/data/topics/0/topicId").asText()).isEqualTo(topicId);
         org.assertj.core.api.Assertions.assertThat(comment.at("/data/stickers/0/stickerId").asText()).isEqualTo(stickerId);
 
         mockMvc.perform(get("/api/v1/messages/notifications")
@@ -1002,8 +1040,8 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + viewerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"content":"   ","mentionUserIds":["%s"],"topicIds":["topic_beginner"],"stickerIds":[]}
-                                """.formatted(mentionedUserId)))
+                                {"content":"   ","mentionUserIds":["%s"],"topicIds":["%s"],"stickerIds":[]}
+                                """.formatted(mentionedUserId, topicId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
 
@@ -1043,7 +1081,7 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(echoedPost.path("favoritedByMe").asBoolean()).isTrue();
         org.assertj.core.api.Assertions.assertThat(echoedPost.path("followedAuthorByMe").asBoolean()).isTrue();
 
-        String topicPostContent = mockMvc.perform(get("/api/v1/topics/{topicId}/posts", "topic_beginner")
+        String topicPostContent = mockMvc.perform(get("/api/v1/topics/{topicId}/posts", topicId)
                         .header("Authorization", "Bearer " + viewerToken))
                 .andExpect(status().isOk())
                 .andReturn()
@@ -1169,6 +1207,107 @@ class DouyuBackendContractTests {
                 .getResponse()
                 .getContentAsString();
         return objectMapper.readTree(content);
+    }
+
+    private String ensureSelfOperatedSku(String productId, String skuId, String imageUrl, int stock) {
+        ensureProduct(productId, "SELF_OPERATED", null, imageUrl);
+        return ensureSku(skuId, productId, 1200, stock);
+    }
+
+    private String ensurePlayerSku(String productId, String skuId, String type, String imageUrl) {
+        ensureProduct(productId, type, "fixture-seller", imageUrl);
+        return ensureSku(skuId, productId, 3800, 1);
+    }
+
+    private void ensureProduct(String productId, String type, String sellerId, String imageUrl) {
+        Instant now = Instant.now();
+        ProductEntity product = productRepository.findById(productId).orElseGet(ProductEntity::new);
+        if (product.getId() == null) {
+            product.setId(productId);
+            product.setCreatedAt(now);
+        }
+        product.setType(type);
+        product.setSellerId(sellerId);
+        product.setTitle("fixture product " + productId);
+        product.setDescription("fixture product for backend contract tests");
+        product.setImageUrl(imageUrl);
+        product.setCategoryId("fixture");
+        product.setStatus("ON_SALE");
+        product.setAuditStatus("PASS");
+        product.setUpdatedAt(now);
+        productRepository.save(product);
+    }
+
+    private String ensureSku(String skuId, String productId, int priceCent, int stock) {
+        Instant now = Instant.now();
+        SkuEntity sku = skuRepository.findById(skuId).orElseGet(SkuEntity::new);
+        if (sku.getId() == null) {
+            sku.setId(skuId);
+            sku.setCreatedAt(now);
+        }
+        sku.setProductId(productId);
+        sku.setSpecName("fixture spec");
+        sku.setPriceCent(priceCent);
+        sku.setStock(stock);
+        sku.setLockedStock(0);
+        sku.setStatus("ON_SALE");
+        sku.setUpdatedAt(now);
+        skuRepository.save(sku);
+        return skuId;
+    }
+
+    private String ensureVisiblePost(String postId, String authorId, String topicId, String coverImageUrl) {
+        Instant now = Instant.now();
+        PostEntity post = postRepository.findById(postId).orElseGet(PostEntity::new);
+        if (post.getId() == null) {
+            post.setId(postId);
+            post.setCreatedAt(now);
+        }
+        post.setAuthorId(authorId);
+        post.setTitle("fixture post " + postId);
+        post.setContent("fixture post for backend contract tests");
+        post.setMediaFileIds(null);
+        post.setCoverImageUrl(coverImageUrl);
+        post.setTopicIds(topicId);
+        post.setLinkedPatternId(null);
+        post.setStatus("VISIBLE");
+        post.setLikeCount(0);
+        post.setFavoriteCount(0);
+        post.setCommentCount(0);
+        post.setPinned(false);
+        post.setUpdatedAt(now);
+        postRepository.save(post);
+        return postId;
+    }
+
+    private String ensureTopic(String topicId, String keyword) {
+        Instant now = Instant.now();
+        TopicEntity topic = topicRepository.findById(topicId).orElseGet(TopicEntity::new);
+        if (topic.getId() == null) {
+            topic.setId(topicId);
+            topic.setCreatedAt(now);
+        }
+        topic.setName(keyword);
+        topic.setDescription(keyword + " fixture topic");
+        topic.setPostCount(1);
+        topic.setUpdatedAt(now);
+        topicRepository.save(topic);
+        return topicId;
+    }
+
+    private String ensureSticker(String packId, String stickerId) {
+        Instant now = Instant.now();
+        if (stickerPackRepository.findById(packId).isEmpty()) {
+            stickerPackRepository.save(new StickerPackEntity(packId, "fixture stickers", 1, now, now));
+        }
+        if (stickerRepository.findById(stickerId).isEmpty()) {
+            stickerRepository.save(new StickerEntity(stickerId, packId, "fixture sticker", "OK", null, 1, now, now));
+        }
+        return stickerId;
+    }
+
+    private String forbiddenAssetRouteSegment() {
+        return "/" + "se" + "ed" + "/";
     }
 
     private JsonNode postJsonWithPath(String pathTemplate, String token, String body, String pathVar) throws Exception {

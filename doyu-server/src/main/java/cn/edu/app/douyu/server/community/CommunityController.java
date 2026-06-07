@@ -281,7 +281,7 @@ public class CommunityController {
         validateCommentPayload(userId, content, mediaFileIds, mentionUserIds, topicIds, stickerIds);
         Instant now = Instant.now();
         CommentEntity comment = new CommentEntity(idGenerator.next("cmt"), postId, userId, request.parentId(),
-                content, "REVIEWING", now, now);
+                content, "VISIBLE", now, now);
         comment.setMediaFileIds(joinList(mediaFileIds));
         commentRepository.save(comment);
         for (String mentionedUserId : mentionUserIds) {

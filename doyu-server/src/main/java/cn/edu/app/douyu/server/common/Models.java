@@ -105,8 +105,8 @@ public final class Models {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("totalBeads", totalBeads);
         data.put("colors", java.util.List.of(
-                Map.of("colorCode", "R01", "displayName", "豆沙红", "beadCount", 128, "skuId", "sku_bead_red"),
-                Map.of("colorCode", "W01", "displayName", "奶油白", "beadCount", 128, "skuId", "sku_bead_white")
+                Map.of("colorCode", "R01", "displayName", "Red", "beadCount", 128, "skuId", ""),
+                Map.of("colorCode", "W01", "displayName", "White", "beadCount", 128, "skuId", "")
         ));
         return data;
     }

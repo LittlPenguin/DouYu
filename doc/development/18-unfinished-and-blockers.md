@@ -1,55 +1,79 @@
-# 未完成与阻塞项集中清单
+# Unfinished Items And Blockers
 
-> 更新日期：2026-06-06
-> 用途：集中记录 Stage 8 收口后仍不能写成已完成、仍阻塞真机验收或需要后续阶段单独关闭的事项。`current-status.md` 只保留当前事实和下一步入口，本文件作为未完成项的唯一集中清单。
+## Current Uncovered Items
 
-## P0：仍需专项验收
+- Repair-stage verification is recorded in
+  `doc/development/verification/2026-06-07-repair-stage-verification.md`.
+- The active repair-stage execution plan is
+  `doc/development/verification/2026-06-07-repair-stage-plan.md`.
+- Production provider integrations remain outside this rewrite scope: real SMS,
+  real payment SDK/callbacks, production object storage hardening, map/location
+  provider, production AI provider, and complete compliance documents.
 
-### 联调支付状态页真机链路
+## No Longer Blocked
 
-- 当前状态：商城首页、玩家商品禁用标准购物车、自营加购、购物车和订单确认地址缺口已经有 JVM 规则测试和无线真机 smoke 证据。
-- 阻塞原因：完整地址管理未闭环，不能伪造默认地址绕过订单确认，也不能为了 smoke 伪造真实支付单。
-- 关闭条件：在合法地址和联调订单前置闭合后，使用现有订单/支付接口生成 `STUB` 联调支付单，真机验收支付状态页展示 `paymentId`、`orderId`、`channel`、`amountCent`、服务端状态和 `payParams.provider=STUB，不代表真实微信或支付宝收款。`
+- Android source migration from Kotlin/Compose to Java/XML is no longer a known
+  blocker under `DouYu/app/src`.
+- Android Kotlin/Compose dependency residue is no longer a known blocker in
+  `DouYu/app`, `DouYu/build.gradle.kts`, or `DouYu/gradle/libs.versions.toml`.
+- Backend runtime seed/demo content is no longer a known blocker.
+- Static seed resources and `/seed/**` public exposure are no longer present.
+- Clean-backend API verification is no longer a blocker for the repair stage:
+  `qa-empty` returned empty lists for feed, products, topics, and sticker packs.
+- Android 401 mapping is no longer a local-code blocker: unit tests cover 401 to
+  login-boundary state.
+- Repair-stage real-device UI parity is no longer blocked:
+  `VisualSmokeInstrumentedTest` and `RealBackendSmokeInstrumentedTest` passed on
+  `10.64.241.158:40739`, and screenshots were pulled to the repair-stage
+  evidence directory.
 
-### 本轮最新真机回归的剩余未覆盖点
+## Repair Stage Blockers
 
-- 当前状态：点赞/收藏权威计数、推荐 Feed / 话题列表登录态回显、AI 拍照后进入确认页、消息/上传帖子/我的页 P0 结构和底部导航文案已经有最新无线真机截图/XML；TBLogo 图标资源已打入 debug 包并安装成功。
-- 仍未覆盖：启动器桌面上的 App 图标视觉未单独截图；AI 拍照后的确认流已覆盖，但真实手持旋转时的物理方向 / EXIF 像素结果没有独立纵横向对照截图。
-- 关闭条件：如需把这两项也写成真机通过，先执行 `D:\AndroidChace\platform-tools\adb.exe devices -l`，确认目标 IP `10.64.241.158` 对应无线设备在线，再补启动器图标截图，以及纵向/横向各一次拍照后的预览截图或可读 EXIF 证据。
+- `RB-001`: Closed. `qa-empty` feed returned an empty list and
+  `main_community.png` records the real-device empty-state boundary.
+- `RB-002`: Closed. `qa-empty` products returned an empty list and
+  `main_commerce.png` records the real-device empty-state boundary.
+- `RB-003`: Clean-backend topic and sticker-pack behavior is closed on
+  `qa-empty`. Dev persistent rows remain diagnostic-only and must not be deleted
+  automatically.
+- `RB-004`: Closed. Unit tests cover 401 mapping and the repair-stage AI,
+  Messages, and Profile screenshots do not show raw `HTTP 401`.
+- `RB-005`: Closed for supported real-ID flows. Real-device smoke captured
+  backend-returned post, product, AI job/pattern, conversation, and notification
+  detail screenshots.
+- Current active blockers are limited to future production integrations outside
+  this Java/XML repair stage.
 
-## P1：产品能力未闭环
+## Out Of Scope For This Rewrite
 
-- 真实 AI Provider：`AliyunBailianProvider` 仍是占位实现，当前只允许开发态图纸生成和本地算法/Stub 联调。
-- 大模型生图 API：仅允许 UI-only 展示，不接当前生产链路。
-- 真实微信/支付宝支付、退款、对账和支付 SDK：当前支付只允许 `STUB` 联调支付单和服务端状态查询。
-- 完整地址管理：不能伪造默认地址，订单确认继续清楚显示 `收货地址暂未接入`。
-- 地图 API、定位和城市选择：Profile Edit 的城市/地区仍是 UI-only 字段。
-- Search 全局后端：Android Search 只能聚合已有局部能力或标注 UI-only，不代表全站搜索。
-- 生产合规材料：隐私政策、用户协议、备案、SDK 清单、版权投诉、应用市场上线材料仍未完成。
-- 生产级内容审核、图片审核、版权识别、诈骗识别和交易风控仍未完成。
-- 玩家二手/定制交易闭环：担保、评价、纠纷、提现、卖家资质审核和完整交易流程仍未完成。
-- 生产对象存储：Aliyun OSS Provider 只是后端切换骨架；STS、最小权限、CORS 最终收敛、CDN、防盗链、图片审核、病毒扫描、缩略图和运维监控仍需后续补齐。
-- 独立通知详情后端接口、通知跳转目标和已读回写闭环未完成；当前 Android 通知详情只展示列表已返回数据。
-- Settings 生产配置能力未完成；分区页只能表达开发态/待补说明。
+These remain future work unless separate requirements are added:
 
-## P2：视觉与体验后续优化
+- Real SMS provider, production rate limits, and fraud controls.
+- Real payment channel SDKs, refunds, reconciliation, and production callbacks.
+- Real AI vision provider or large-model generation quality guarantee.
+- Production object storage security, CDN, and signed delivery.
+- Full address management.
+- Map/location provider.
+- Production privacy policy, user agreement, SDK list, filing, and copyright
+  complaint documents.
+- Complete player marketplace transaction lifecycle.
 
-- 非 P0 的 Open Design A 细节仍可继续微调，包括卡片密度、动效节奏、局部间距、弱网骨架屏和更多空态插画。
-- 我的页 `获赞` 当前暂用现有奖励点数展示；若要真实获赞数，需要后端新增字段和契约。
-- 后端 `Post` 当前只提供封面 URL 和 `mediaFileIds`，非封面媒体在详情 carousel 中仍可能使用占位缩略图；完整多图公开 URL 需要后续扩展返回结构。
-- 纯贴纸评论仍缺少新的独立真机截图证据；当前评论富内容专项已覆盖文字、图片、@、# 和贴纸公开展示，以及图片上传失败重试。
+## Static Data Follow-Up
 
-## 不得写成通过
+Tests and local QA must continue to use explicit test fixtures. Runtime startup
+must not restore content seeders. App screens must render empty states instead
+of adding local fake data when APIs return empty lists.
 
-没有新的命令输出、截图、XML 或测试记录时，不得把以下内容写成已验收：
+The clean-backend verification environment must be non-destructive. It may use a
+dedicated Docker Compose project, dedicated ports, or a dedicated profile, but
+it must not clear `douyu_postgres_data` or any existing developer data volume.
 
-- 真机支付状态页全链路。
-- 真实 AI Provider 或真实大模型生图。
-- 真实微信/支付宝收款、退款、对账。
-- 地址管理完成。
-- 全局搜索后端完成。
-- 地图定位完成。
-- 生产合规材料完成。
-- 生产对象存储完成。
-- 玩家交易闭环完成。
-- 独立通知详情后端和通知已读回写完成。
+## Verification Risks
+
+- Passing unit tests alone do not prove Open Design parity; use the 2026-06-07
+  parity matrix and real-device screenshots for UI evidence.
+- Screenshots from old Kotlin/Compose builds do not prove Java/XML parity; only
+  current Java/XML real-device evidence is accepted.
+- Empty search results are valid only if the empty state is visible and clear.
+- Stub provider behavior must be labeled as development integration, not
+  production capability.

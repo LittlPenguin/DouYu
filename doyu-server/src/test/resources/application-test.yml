@@ -27,6 +27,6 @@ douyu:
     bootstrap-password: admin123
   storage:
     local-path: ./target/doyu-test-storage
-    base-url: http://localhost:8081
+    base-url: http://10.64.241.153:8081
   oss:
     provider: stub

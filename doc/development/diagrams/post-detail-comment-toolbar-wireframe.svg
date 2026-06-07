@@ -12,8 +12,8 @@
   <rect x="82" y="132" width="278" height="44" class="bar"/><text x="221" y="160" text-anchor="middle" class="small">返回 · 作品详情 · 更多</text>
   <rect x="82" y="196" width="278" height="178" class="sky"/><text x="221" y="260" text-anchor="middle" class="label">作品图片 Carousel</text><text x="221" y="286" text-anchor="middle" class="small">2/5 · 左右切换 · 缩略图 strip</text>
   <rect x="96" y="338" width="42" height="24" rx="8" fill="#fff"/><text x="117" y="354" text-anchor="middle" class="tiny">1</text><rect x="146" y="338" width="42" height="24" rx="8" fill="#FFE0E6" stroke="#F48FA4"/><text x="167" y="354" text-anchor="middle" class="tiny">2</text><rect x="196" y="338" width="42" height="24" rx="8" fill="#fff"/><text x="217" y="354" text-anchor="middle" class="tiny">3</text>
-  <rect x="82" y="390" width="278" height="100" class="card"/><text x="104" y="418" class="small">作者 · 关注</text><text x="104" y="444" class="label">透明小岛拼豆杯垫</text><text x="104" y="468" class="tiny">正文内容、话题 Chip、点赞/收藏/评论计数</text>
-  <rect x="82" y="508" width="278" height="112" class="card"/><text x="104" y="536" class="small">评论区 28</text><line x1="104" y1="552" x2="338" y2="552" class="line"/><text x="104" y="574" class="tiny">小豆友：太可爱了 @豆豆 #杯垫</text><text x="104" y="598" class="tiny">含图片评论 / 贴纸评论 / 空态 / 加载失败</text>
+  <rect x="82" y="390" width="278" height="100" class="card"/><text x="104" y="418" class="small">作者 · 关注</text><text x="104" y="444" class="label">透明小岛拼豆杯垫</text><text x="104" y="468" class="tiny">正文内容、话题 Chip、点赞/收藏状态</text>
+  <rect x="82" y="508" width="278" height="112" class="card"/><text x="104" y="536" class="small">评论区</text><line x1="104" y1="552" x2="338" y2="552" class="line"/><text x="104" y="574" class="tiny">小豆友：太可爱了 @豆豆 #杯垫</text><text x="104" y="598" class="tiny">含图片评论 / 贴纸评论 / 空态 / 加载失败</text>
   <rect x="82" y="636" width="278" height="54" class="card"/><text x="104" y="668" class="tiny">写下你的评论</text><circle cx="330" cy="662" r="14" class="mint"/>
 
   <rect x="430" y="104" width="230" height="228" class="card"/>
@@ -45,5 +45,5 @@
   <rect x="430" y="558" width="500" height="96" class="coral"/>
   <text x="680" y="590" text-anchor="middle" class="label">关键状态</text>
   <text x="680" y="616" text-anchor="middle" class="small">无图 / 一图 / 多图堆叠 / 上传中 / 上传失败可重试 / 9 图上限 / 发送禁用</text>
-  <text x="680" y="640" text-anchor="middle" class="tiny">纯 @/# 不可发送；失败时不假成功；评论提交后只提示等待审核</text>
+  <text x="680" y="640" text-anchor="middle" class="tiny">纯 @/# 不可发送；失败时不假成功；评论成功后刷新列表</text>
 </svg>

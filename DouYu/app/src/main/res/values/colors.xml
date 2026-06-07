@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
+    <color name="doyu_page">#FFFFF8F1</color>
+    <color name="doyu_surface">#FFFFFFFF</color>
+    <color name="doyu_text">#FF2D2621</color>
+    <color name="doyu_text_muted">#FF7B6F66</color>
+    <color name="doyu_petal">#FFFF7FA2</color>
+    <color name="doyu_petal_soft">#FFFFE3EA</color>
+    <color name="doyu_petal_deep">#FFB24B62</color>
+    <color name="doyu_mint">#FF6BC6A6</color>
+    <color name="doyu_mint_soft">#FFE4F7EF</color>
+    <color name="doyu_sky">#FF79B8F2</color>
+    <color name="doyu_sky_soft">#FFE8F3FF</color>
+    <color name="doyu_coral">#FFFF8A66</color>
+    <color name="doyu_line">#1F2D2621</color>
+    <color name="doyu_open_line">#FFEADFD7</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="ic_launcher_background">#FFFFF8F1</color>

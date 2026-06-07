@@ -1,0 +1,34 @@
+services:
+  postgres-qa-empty:
+    image: postgres:16
+    container_name: douyu-postgres-qa-empty
+    environment:
+      POSTGRES_DB: douyu_qa_empty
+      POSTGRES_USER: douyu_qa
+      POSTGRES_PASSWORD: douyu_qa_password
+    ports:
+      - "55433:5432"
+    volumes:
+      - douyu_qa_empty_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U douyu_qa -d douyu_qa_empty"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis-qa-empty:
+    image: redis:7
+    container_name: douyu-redis-qa-empty
+    ports:
+      - "56379:6379"
+    volumes:
+      - douyu_qa_empty_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  douyu_qa_empty_postgres_data:
+  douyu_qa_empty_redis_data:

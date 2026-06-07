@@ -1,22 +1,36 @@
 # 豆屿 Doyu 项目接手手册
 
-> 更新日期：2026-06-04
-> 用途：让新接手工程师或主 Agent 在不依赖本地私有规则文件的情况下，快速理解项目当前事实、边界、目录、验证方式和下一步开发顺序。
+> 更新日期：2026-06-06
+> 用途：让新接手工程师或 Agent 快速理解当前迁移阶段、目录边界、验证方式和不可误导的能力边界。
 
 ## 一句话定位
 
-豆屿 Doyu 是面向中国大陆 16+ 用户的 Android 拼豆社区、AI 拼豆图纸、材料商城与玩家直连交易应用。当前不是生产上线阶段，而是把开发态 MVP 收敛到主链路可演示、UI 规则可落地、不可用能力不误导用户。
+豆屿 Doyu 是面向中国大陆 16+ 用户的 Android 拼豆社区、AI 拼豆图纸、材料商城与玩家交流应用。当前阶段不是生产上线，而是把 Android 客户端从历史 Kotlin + Jetpack Compose 实现重写为传统 Android Java + Activity/Fragment + XML，并同步删除运行期静态填充数据。
 
-当前权威阶段是 **第六轮 UI/品牌与主链路展示收敛阶段**。本轮之后新增 Stage 8 UI 视觉对齐重构：除底部导航容器样式外，Android 页面严格按 Open Design A 方向重构；底部导航样式保持当前 Android 真机 UI，底栏 icon 语义和文字追设计图。
+Open Design 本地 HTML 是 UI 还原权威。真实数据为空时，客户端必须显示空态、未登录态、错误态、禁用态或 UI-only 边界，不能用 mock/demo 数据撑满页面。
+
+## 本轮硬规则
+
+- 先文档和规则，后代码迁移。
+- Android 生产和测试源码全部使用 Java/XML，不保留 Kotlin/Compose。
+- UI 结构、视觉层级、文案、状态和交互以 `doc/development/open-design/*.html` 为准。
+- 删除 Android 运行态 MockData、mock repository、假列表、假订单、假支付参数。
+- 删除后端运行期 seed/demo 填充、`static/seed/**` 和公开 `/seed/**`。
+- 保留 SMS、OSS、AI、Payment Stub Provider，因为它们是开发联调能力。
+- 包括主线程在内最多 3 个 Codex 线程：主线程 + Android 工作线程 A + 后端工作线程 B。
+- 当前工作树有未提交改动，禁止 `git reset`、`git checkout --` 或无差别回滚用户改动。
+- 构建、测试、真机、截图结论必须来自实际命令或截图；不可伪造。
 
 ## 接手先读
 
-1. `current-status.md`：当前代码事实、阶段状态和不能宣称完成的能力。
-2. `README.md`：公开文档索引和职责映射。
-3. `16-stage-development-roadmap.md`：下一阶段 Stage 0-7 开发流程。
-4. `05-api-contract.md`：真实 Controller 和 Retrofit 对齐后的接口契约。
-5. `13-ui-screen-blueprints.md`：页面结构、状态、禁用态和点击去向。
-6. `diagrams/README.md`：开发流程图、API 图、导航图和 UI 线框图。
+1. `AGENTS.md`：本轮任务硬规则和线程边界。
+2. `current-status.md`：当前迁移状态、已完成项和未完成项。
+3. `01-tech-stack.md`：Java/XML Android 目标技术栈。
+4. `03-android-client.md`：Android 迁移边界、页面组织和残留检查。
+5. `04-backend-services.md`：后端 seed/demo 清理边界。
+6. `10-testing-acceptance.md`：残留检查、构建、后端测试和 UI 验收门禁。
+7. `11-ui-style-guide.md`、`13-ui-screen-blueprints.md`：Open Design 落地规则和页面蓝图。
+8. `16-stage-development-roadmap.md`、`18-unfinished-and-blockers.md`：阶段路线和未完成项。
 
 按职责继续读：
 
@@ -27,52 +41,53 @@
 | 主链路理解              | `12-feature-and-flow-map.md`、`diagrams/README.md`                          |
 | AI 图纸              | `07-ai-pattern-generation.md`、`15-ai-pattern-provider-selection.md`        |
 | 商城 / 订单 / 支付       | `08-commerce-payment.md`                                                   |
-| 联调 / 真机 QA         | `14-frontend-backend-collaboration.md`、`10-testing-acceptance.md`          |
+| 联调 / QA            | `14-frontend-backend-collaboration.md`、`10-testing-acceptance.md`          |
 | 安全 / 合规            | `09-security-compliance.md`                                                |
 
 ## 目录地图
 
-| 路径                                                          | 职责                                                                                 | 接手注意                                                                           |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `DouYu/`                                                    | Android App，Kotlin + Jetpack Compose，单 Activity                                    | 本轮计划不改业务代码；后续实现时遵守现有 `DoyuAppContainer`、Repository、Navigation Compose 结构。      |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/core/navigation/` | 5 个主 Tab 和当前 Android 路由                                                            | 当前代码已注册 Search、Profile Edit、Settings 分区页和通知详情；未来地图/真实支付/大模型生图仍不是 Android 真实链路。 |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/core/network/`    | Retrofit 接口、DTO、ApiClient、TokenStore                                               | 登录请求仍传 `ageGroup=AGE_18_PLUS`；debug baseUrl 由 `.env` 在构建期注入。                   |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/core/data/`       | Repository、真实/Mock 数据源、AppContainer                                                | 真实页面优先走后端接口；Mock 只用于测试或预览。                                                     |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/core/ui/`         | 通用 Compose 组件、状态页、按钮、卡片                                                            | 后续 UI 重构优先收敛统一组件，不做每页自定义状态。                                                    |
-| `DouYu/app/src/main/java/cn/edu/app/douyu/feature/`         | auth、community、ai、commerce、message、profile 页面                                      | 多个页面仍在 Composable 内处理副作用；后续复杂写操作应逐步迁移到 ViewModel。                              |
-| `doyu-server/`                                              | Java 21 + Spring Boot 后端                                                           | API 前缀 `/api/v1`；统一响应 `{ code, message, data, traceId }`。                      |
-| `doyu-server/src/main/java/cn/edu/app/douyu/server/*`       | Auth、User、Upload、Community、Pattern、Commerce、Order、Payment、Message、Reward、Admin 等模块 | Controller 是当前接口事实源；文档不得新增未实现公共 API。                                           |
-| `doc/development/`                                          | 当前公开开发文档和 SVG 流程图                                                                  | 本轮只允许修改这里的文档和设计图，不改业务实现。                                                       |
-| `doc/development/open-design/`                              | Open Design HTML 原型副本                                                              | 表达 UI 目标，不代表 Android 当前路由已存在。                                                  |
+| 路径                                                    | 职责                       | 接手注意                                                                                                 |
+| ----------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `DouYu/`                                              | Android App              | 当前目标是 Java + Activity/Fragment + XML；构建脚本可继续 Kotlin DSL。                                             |
+| `DouYu/app/src/main/java/cn/edu/app/douyu/`           | Java 源码根目录               | 必须保留包结构：`core`、`network`、`model`、`data`、`ui`、`auth`、`community`、`commerce`、`ai`、`message`、`profile`。 |
+| `DouYu/app/src/main/res/layout/`                      | XML 页面和列表 item           | 主入口为 `activity_main.xml`；主 Tab 用 Fragment XML；二级流程页用 Activity XML。                                   |
+| `DouYu/app/src/main/res/values/`                      | 颜色、主题、文案                 | 对齐 Open Design 品牌色和状态文案。                                                                             |
+| `doyu-server/`                                        | Java 21 + Spring Boot 后端 | API 前缀 `/api/v1`；统一响应 `{ code, message, data, traceId }`。                                            |
+| `doyu-server/src/main/java/cn/edu/app/douyu/server/*` | 后端业务模块                   | 本轮删除运行期 seed/demo，不改变公开 API 契约。                                                                      |
+| `doyu-server/src/main/resources/static/seed/`         | 历史 seed 静态资源             | 本轮必须删除，不能作为线上内容来源。                                                                                   |
+| `doc/development/`                                    | 当前公开开发文档                 | 本轮已改为 Java/XML 迁移口径。                                                                                 |
+| `doc/development/open-design/`                        | Open Design HTML 权威稿     | UI 1:1 对照源，不代表后端数据一定存在。                                                                              |
 
-## 当前 Android 路由事实
+## 当前 Android 页面事实
 
-底部主 Tab：
+目标主入口：
 
-- `community`：社区。
-- `commerce`：商城。
-- `ai`：AI 创作入口；Stage 8 底栏文案已按设计图收敛为 `AI`。
-- `message`：消息。
-- `profile`：我的。
+- `MainActivity.java` 承载顶部栏、Fragment 容器和底部导航。
+- 五个主 Tab 固定为：社区、商城、AI、消息、我的。
+- 主 Tab 对应 Open Design：
+  - 社区：`community-home-a.html`
+  - 商城：`commerce-home-a.html`
+  - AI：`ai-home-a.html`
+  - 消息：`messages-a.html`
+  - 我的：`profile-a.html`
 
-当前已存在的主要二级路由：
+二级流程页使用 Java Activity：
 
-- 登录：`splash`、`login`、`login_return?returnTo={returnTo}`。
-- 社区：`post/{postId}`、`post_create`、`image_select`、`camera_capture`。
-- AI：`ai_params/{uploadedFileId}`、`ai_progress/{jobId}`、`pattern/{patternId}`、`pattern_history`。
-- 商城：`product_list`、`product/{productId}`、`cart`、`order_confirm`、`payment_result/{orderId}`。
-- 消息：`conversation/{conversationId}`。
-- 我的：`my_patterns`、`favorites`、`liked_posts`、`commented_posts`、`favorite_posts`、`followed_posts`、`my_orders`、`settings`。
+- 社区：Search、发帖、作品详情、评论栏。
+- AI：图片选择、CameraX 拍照、参数、进度、结果、历史。
+- 商城：商品列表、商品详情、购物车、订单确认、支付结果。
+- 消息：会话详情、通知详情。
+- 我的：资料编辑、Settings 首页和分区页。
 
-设计目标中当前已落地的 Android 入口包括：`search-a.html` 对应 Search、`profile-edit-a.html` 对应编辑资料、Settings 分区页和通知列表内详情。未来地图/真实支付/大模型生图仍只允许作为 UI-only 页面或文档说明，不是当前真实链路。
+每个页面必须覆盖加载、空态、错误、未登录、禁用或 UI-only 状态。没有真实数据时不得出现本地假列表。
 
 ## 当前后端事实
 
-后端模块和 Controller 已覆盖：
+后端模块包括：
 
 - Auth：短信验证码、短信登录、刷新、退出、账号注销申请。
-- User：当前用户、公开用户、用户搜索、资料更新、关注/取关、实名提交、个人互动作品列表。
-- Upload：预签名上传和上传确认，Provider 支持 `local|stub|aliyun` 切换。
+- User：当前用户、公开用户、用户搜索、资料更新、关注/取关、实名认证提交、个人互动作品列表。
+- Upload：预签名上传和上传确认，Provider 支持 `local|stub|aliyun`。
 - Community：Feed、关注 Feed、帖子 CRUD、点赞、收藏、评论、话题、贴纸。
 - Pattern：AI 图纸任务、任务列表、取消、收藏、详情、配额。
 - Commerce：商品、购物车。
@@ -80,15 +95,13 @@
 - Payment：联调支付单、支付查询、回调骨架、退款骨架。
 - Message：通知、通知已读、会话、会话详情、私信发送。
 - Reward：签到、签到状态、积分、徽章。
-- Admin：用户、内容、商品、订单、支付、AI 任务、举报、操作日志等后台 API。
+- Admin：后台管理 API。
 
-Android Retrofit 当前没有接入全部后端接口，例如账号注销、资料更新、实名、举报、退款、Pattern 配额、Admin API 等；`05-api-contract.md` 会分别标注“后端存在”和“Android 已接入”。
+本轮后端只清理运行期 seed/demo 填充和静态 seed 暴露，不删除 Stub Provider，不改变 `/api/v1` 路径。
 
 ## 本地联调
 
-常用地址：
-
-| 项               | 值                                             |
+| 项               | 默认值                                           |
 | --------------- | --------------------------------------------- |
 | API base        | `http://localhost:8081/api/v1`                |
 | Swagger UI      | `http://localhost:8081/swagger-ui/index.html` |
@@ -96,14 +109,13 @@ Android Retrofit 当前没有接入全部后端接口，例如账号注销、资
 | PostgreSQL 宿主端口 | `5433`                                        |
 | Redis 端口        | `6379`                                        |
 | Stub SMS code   | `123456`                                      |
-| Default admin   | `admin / admin123`                            |
 
 联调规则：
 
-- 仓库根目录 `.env` 是本地联调唯一生效文件，不提交。
-- Android debug `BuildConfig.API_BASE_URL` 在构建期从 `.env` 注入，修改 `.env` 后需要重启后端并重新构建 debug 包。
-- 当前默认只维护真机联调配置，不维护模拟器/真机双模板。
+- 仓库根目录 `.env` 是本地联调配置文件，不提交。
+- Android debug `BuildConfig.API_BASE_URL` 在构建期从 `.env` 或环境变量注入。
 - 客户端不得保存 OSS Secret、支付密钥或 AI 密钥。
+- 空库启动后列表 API 返回空列表是合法行为，App 必须显示空态。
 
 ## 不可宣称完成
 
@@ -112,34 +124,30 @@ Android Retrofit 当前没有接入全部后端接口，例如账号注销、资
 - 真实 AI Provider 和真实视觉理解质量。
 - 地图 API、定位服务和真实地理能力。
 - 真实微信/支付宝支付、退款、对账和支付 SDK。
-- 完整地址管理；订单确认仍必须清楚表达地址缺口。
+- 完整地址管理。
 - 生产级内容审核、图片审核、版权识别、诈骗识别和交易风控。
 - 玩家二手/定制交易完整闭环、担保、评价、纠纷、提现和卖家资质审核。
 - 备案、隐私政策、用户协议、SDK 清单、版权投诉和应用市场上线材料。
-- 生产对象存储；Aliyun OSS 只代表后端 Provider 骨架可联调。
-- Search 全局后端、Settings 生产配置能力、独立通知详情后端接口和通知已读/跳转闭环。
-- Profile Edit Android 路由已接现有 `PATCH /api/v1/users/me`，但只能覆盖当前后端已有资料字段；城市/地区仍是 UI-only，不代表地图或定位能力已接入。
+- 生产对象存储；Aliyun OSS 当前只代表后端 Provider 骨架可联调。
+- 全局搜索后端、Settings 生产配置、独立通知详情后端接口。
 
 ## 接手后先做什么
 
-1. 运行 `git status --short`，识别已有未提交改动，不能回退用户工作。
-2. 对照 `current-status.md` 和 `16-stage-development-roadmap.md` 确认任务属于哪个 Stage。
-3. 涉及接口时先对照 `05-api-contract.md`、后端 Controller、Android Retrofit。
-4. 涉及 UI 时先对照 `11-ui-style-guide.md`、`13-ui-screen-blueprints.md`、`diagrams/README.md` 和 Open Design HTML。
-5. 涉及联调时先检查 `.env`、后端端口、设备在线状态和 API baseUrl。
-6. 完成修改后按 `10-testing-acceptance.md` 跑对应验证，并把结果写清楚。
+1. 运行 `git status --short`，识别已有未提交改动，不回滚用户工作。
+2. 对照 `current-status.md` 和 `16-stage-development-roadmap.md` 确认当前阶段。
+3. 涉及接口先对照 `05-api-contract.md`、后端 Controller、Android Retrofit。
+4. 涉及 UI 先对照 `11-ui-style-guide.md`、`13-ui-screen-blueprints.md` 和 Open Design HTML。
+5. 完成修改后按 `10-testing-acceptance.md` 运行残留检查、构建、测试和 UI 对照验收。
 
-## 文档类验证
+## 最小验证
 
-只改文档和 SVG 时至少运行：
+文档和源码改动完成后至少运行：
 
 ```powershell
 git diff --check
-git status --short
-git diff --name-only -- DouYu doyu-server
-Get-ChildItem doc\development\diagrams -Filter *.svg | ForEach-Object {
-  [xml](Get-Content -Raw -Encoding UTF8 $_.FullName) | Out-Null
-}
+rg --files DouYu/app/src | rg "\.kt$"
+rg -n "compose|Composable|Navigation Compose|kotlinx|MockData|coil.compose|paging.compose" DouYu/app
+rg -n "DataInitializer|static/seed|/seed/|post_seed|prod_|seedTopic|seedProduct|seedPost" doyu-server/src/main doyu-server/src/test
 ```
 
-如果意外触碰 Android 或后端源码，必须补跑对应构建/测试，并在最终说明中报告原因。
+完整验收按 `10-testing-acceptance.md` 执行 Android 构建、后端测试和 UI 截图对照。真机不可用时只能记录“未覆盖”，不能写成通过。

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
  * 生产环境需替换为真实的 WeChat/Alipay SDK 验签。
  */
 @Component
-@Profile({"default", "dev", "test"})
+@Profile({"default", "dev", "test", "qa-empty"})
 public class StubPaymentCallbackVerifier implements PaymentCallbackVerifier {
 
     @Override

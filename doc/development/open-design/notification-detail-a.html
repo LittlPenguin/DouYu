@@ -44,7 +44,7 @@
             <div class="spec"><h3>通知类型</h3><ul><li>审核：发帖/评论提交、通过、拒绝。</li><li>互动：点赞、收藏、评论、@ 提及。</li><li>任务：AI 图纸生成完成或失败。</li><li>系统：账号、合规、版本或安全提示。</li></ul></div>
             <div class="spec"><h3>详情结构</h3><ul><li>顶部返回 + 标题。</li><li>事件摘要、发生时间、关联对象卡。</li><li>可解释动作：查看作品、查看图纸、标为已读、重试加载。</li><li>无输入框、无私信限制状态。</li></ul></div>
             <div class="state"><h3>空/错状态</h3><p>通知不存在或加载失败时展示重试，不吞成空白，不暴露技术堆栈。</p><div class="state-bar"><span class="state-dot warn">可重试</span><span class="state-dot bad">禁空白</span></div></div>
-            <div class="state"><h3>审核边界</h3><p>评论提交后只提示等待审核；通知不能暗示内容已经公开。</p><div class="state-bar"><span class="state-dot warn">审核中</span><span class="state-dot bad">禁立即公开</span></div></div>
+            <div class="state"><h3>边界说明</h3><p>发帖审核通知只说明帖子状态；评论成功不进入通知详情输入链路。</p><div class="state-bar"><span class="state-dot warn">状态清楚</span><span class="state-dot bad">禁伪装私信</span></div></div>
           </div>
         </div>
       </div>

@@ -30,8 +30,8 @@
 
   <rect x="40" y="112" width="210" height="110" class="box client"/>
   <text x="145" y="145" text-anchor="middle" class="label">Android App</text>
-  <text x="145" y="168" text-anchor="middle" class="small">Compose / Navigation</text>
-  <text x="145" y="188" text-anchor="middle" class="small">Retrofit / DataStore</text>
+  <text x="145" y="168" text-anchor="middle" class="small">Java Activity/Fragment + XML</text>
+  <text x="145" y="188" text-anchor="middle" class="small">Retrofit / SharedPreferences</text>
 
   <rect x="330" y="112" width="250" height="110" class="box api"/>
   <text x="455" y="145" text-anchor="middle" class="label">Spring Boot API</text>
