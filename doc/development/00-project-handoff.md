@@ -2,6 +2,8 @@
 
 > 更新日期：2026-06-06
 > 用途：让新接手工程师或 Agent 快速理解当前迁移阶段、目录边界、验证方式和不可误导的能力边界。
+> 完整文档索引、分册清单和事实优先级见 `README.md`；当前工程事实见
+> `current-status.md`。
 
 ## 一句话定位
 
@@ -17,13 +19,12 @@ Open Design 本地 HTML 是 UI 还原权威。真实数据为空时，客户端�
 - 删除 Android 运行态 MockData、mock repository、假列表、假订单、假支付参数。
 - 删除后端运行期 seed/demo 填充、`static/seed/**` 和公开 `/seed/**`。
 - 保留 SMS、OSS、AI、Payment Stub Provider，因为它们是开发联调能力。
-- 包括主线程在内最多 3 个 Codex 线程：主线程 + Android 工作线程 A + 后端工作线程 B。
 - 当前工作树有未提交改动，禁止 `git reset`、`git checkout --` 或无差别回滚用户改动。
 - 构建、测试、真机、截图结论必须来自实际命令或截图；不可伪造。
 
 ## 接手先读
 
-1. `AGENTS.md`：本轮任务硬规则和线程边界。
+1. `AGENTS.md`：本轮任务硬规则。
 2. `current-status.md`：当前迁移状态、已完成项和未完成项。
 3. `01-tech-stack.md`：Java/XML Android 目标技术栈。
 4. `03-android-client.md`：Android 迁移边界、页面组织和残留检查。
@@ -54,7 +55,6 @@ Open Design 本地 HTML 是 UI 还原权威。真实数据为空时，客户端�
 | `DouYu/app/src/main/res/values/`                      | 颜色、主题、文案                 | 对齐 Open Design 品牌色和状态文案。                                                                             |
 | `doyu-server/`                                        | Java 21 + Spring Boot 后端 | API 前缀 `/api/v1`；统一响应 `{ code, message, data, traceId }`。                                            |
 | `doyu-server/src/main/java/cn/edu/app/douyu/server/*` | 后端业务模块                   | 本轮删除运行期 seed/demo，不改变公开 API 契约。                                                                      |
-| `doyu-server/src/main/resources/static/seed/`         | 历史 seed 静态资源             | 本轮必须删除，不能作为线上内容来源。                                                                                   |
 | `doc/development/`                                    | 当前公开开发文档                 | 本轮已改为 Java/XML 迁移口径。                                                                                 |
 | `doc/development/open-design/`                        | Open Design HTML 权威稿     | UI 1:1 对照源，不代表后端数据一定存在。                                                                              |
 

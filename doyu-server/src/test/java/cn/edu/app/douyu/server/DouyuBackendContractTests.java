@@ -423,6 +423,50 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void approvedCommunityPostAppearsInFeedWithTopicNamesAndCoverDimensions() throws Exception {
+        String token = login("13800000061", "AGE_18_PLUS");
+        String topicId = ensureTopic("fixture-topic-cover-dimensions", "cover dimensions");
+        String fileId = confirmedFile(token, "POST_IMAGE", 480, 720);
+
+        JsonNode created = postJsonWithToken("/api/v1/posts", token, """
+                {"title":"ratio cover post","content":"post with real cover dimensions","mediaFileIds":["%s"],"topicIds":["%s"]}
+                """.formatted(fileId, topicId));
+        String postId = created.at("/data/postId").asText();
+
+        JsonNode adminLogin = postJson("/api/v1/admin/auth/login", """
+                {"username":"admin","password":"admin123"}
+                """);
+        String adminToken = adminLogin.at("/data/accessToken").asText();
+        mockMvc.perform(post("/api/v1/admin/posts/{postId}/audit", postId)
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"approved":true,"reason":"fixture approved"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status", equalTo("VISIBLE")));
+
+        mockMvc.perform(get("/api/v1/posts/{postId}", postId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status", equalTo("VISIBLE")))
+                .andExpect(jsonPath("$.data.coverImageUrl", org.hamcrest.Matchers.containsString("/stub/post_image/")))
+                .andExpect(jsonPath("$.data.coverWidth", equalTo(480)))
+                .andExpect(jsonPath("$.data.coverHeight", equalTo(720)))
+                .andExpect(jsonPath("$.data.topicNames[0]", equalTo("cover dimensions")));
+
+        mockMvc.perform(get("/api/v1/posts/feed"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].postId", equalTo(postId)))
+                .andExpect(jsonPath("$.data.items[0].coverWidth", equalTo(480)))
+                .andExpect(jsonPath("$.data.items[0].coverHeight", equalTo(720)));
+
+        mockMvc.perform(get("/api/v1/topics/{topicId}/posts", topicId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].postId", equalTo(postId)))
+                .andExpect(jsonPath("$.data.items[0].topicNames[0]", equalTo("cover dimensions")));
+    }
+
+    @Test
     void loginAndCommunitySampleContractFieldsStayAligned() throws Exception {
         JsonNode login = postJson("/api/v1/auth/login/sms", """
                 {"phone":"13800000016","code":"123456","ageGroup":"AGE_18_PLUS","nickname":"contract-user"}
@@ -1167,12 +1211,16 @@ class DouyuBackendContractTests {
     }
 
     private String confirmedFile(String token, String usage) throws Exception {
+        return confirmedFile(token, usage, 64, 64);
+    }
+
+    private String confirmedFile(String token, String usage, int width, int height) throws Exception {
         JsonNode presign = postJsonWithToken("/api/v1/uploads/presign", token, """
                 {"usage":"%s","mimeType":"image/png","sizeBytes":1024,"fileName":"file.png"}
                 """.formatted(usage));
         JsonNode confirmed = postJsonWithToken("/api/v1/uploads/confirm", token, """
-                {"fileKey":"%s","usage":"%s","mimeType":"image/png","sizeBytes":1024,"width":64,"height":64}
-                """.formatted(presign.at("/data/fileKey").asText(), usage));
+                {"fileKey":"%s","usage":"%s","mimeType":"image/png","sizeBytes":1024,"width":%d,"height":%d}
+                """.formatted(presign.at("/data/fileKey").asText(), usage, width, height));
         return confirmed.at("/data/fileId").asText();
     }
 

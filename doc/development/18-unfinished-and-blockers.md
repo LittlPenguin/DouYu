@@ -4,8 +4,6 @@
 
 - Repair-stage verification is recorded in
   `doc/development/verification/2026-06-07-repair-stage-verification.md`.
-- The active repair-stage execution plan is
-  `doc/development/verification/2026-06-07-repair-stage-plan.md`.
 - Production provider integrations remain outside this rewrite scope: real SMS,
   real payment SDK/callbacks, production object storage hardening, map/location
   provider, production AI provider, and complete compliance documents.
@@ -27,7 +25,7 @@
   `10.64.241.158:40739`, and screenshots were pulled to the repair-stage
   evidence directory.
 
-## Repair Stage Blockers
+## Closed Repair Stage Items
 
 - `RB-001`: Closed. `qa-empty` feed returned an empty list and
   `main_community.png` records the real-device empty-state boundary.
@@ -41,8 +39,8 @@
 - `RB-005`: Closed for supported real-ID flows. Real-device smoke captured
   backend-returned post, product, AI job/pattern, conversation, and notification
   detail screenshots.
-- Current active blockers are limited to future production integrations outside
-  this Java/XML repair stage.
+- Current open items are limited to future production integrations outside this
+  Java/XML repair stage, plus any active feature work recorded separately.
 
 ## Out Of Scope For This Rewrite
 

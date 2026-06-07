@@ -12,6 +12,7 @@ import cn.edu.app.douyu.model.PatternAsset;
 import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.Product;
+import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
 import cn.edu.app.douyu.model.UserProfile;
 import cn.edu.app.douyu.network.ApiException;
@@ -31,6 +32,14 @@ public class DoyuRepository {
 
     public PageResponse<Post> feed() throws IOException {
         return body(api.feed(FIRST_PAGE, PAGE_SIZE));
+    }
+
+    public PageResponse<Topic> topics() throws IOException {
+        return body(api.topics(FIRST_PAGE, PAGE_SIZE));
+    }
+
+    public PageResponse<Post> topicPosts(String topicId) throws IOException {
+        return body(api.topicPosts(topicId, FIRST_PAGE, PAGE_SIZE));
     }
 
     public Post post(String postId) throws IOException {

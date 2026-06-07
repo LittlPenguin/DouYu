@@ -10,6 +10,7 @@ import cn.edu.app.douyu.model.PatternAsset;
 import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.Product;
+import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
 import cn.edu.app.douyu.model.UserProfile;
 import retrofit2.Call;
@@ -23,6 +24,12 @@ import retrofit2.http.Query;
 public interface DoyuApi {
     @GET("/api/v1/posts/feed")
     Call<ApiResponse<PageResponse<Post>>> feed(@Query("page") int page, @Query("size") int size);
+
+    @GET("/api/v1/topics")
+    Call<ApiResponse<PageResponse<Topic>>> topics(@Query("page") int page, @Query("size") int size);
+
+    @GET("/api/v1/topics/{topicId}/posts")
+    Call<ApiResponse<PageResponse<Post>>> topicPosts(@Path("topicId") String topicId, @Query("page") int page, @Query("size") int size);
 
     @GET("/api/v1/posts/{postId}")
     Call<ApiResponse<Post>> post(@Path("postId") String postId);

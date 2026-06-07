@@ -1,5 +1,12 @@
 package cn.edu.app.douyu.feature.community;
 
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.bumptech.glide.Glide;
+
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.model.Post;
@@ -38,6 +45,7 @@ public class PostDetailActivity extends XmlPageActivity {
             return;
         }
         String author = post.author == null ? "未知作者" : valueOrFallback(post.author.nickname, "未知作者");
+        bindCover(post);
         setText(R.id.post_detail_id,
                 "作品 ID：" + valueOrFallback(post.postId, "未知") + "\n"
                         + "标题：" + valueOrFallback(post.title, "未命名作品") + "\n"
@@ -52,5 +60,34 @@ public class PostDetailActivity extends XmlPageActivity {
 
     private static int count(Integer value) {
         return value == null ? 0 : value;
+    }
+
+    private void bindCover(Post post) {
+        ImageView cover = findViewById(R.id.post_cover_image);
+        TextView placeholder = findViewById(R.id.post_cover_placeholder);
+        TextView count = findViewById(R.id.post_image_count);
+        if (post.coverWidth != null && post.coverHeight != null && post.coverWidth > 0 && post.coverHeight > 0) {
+            ViewGroup.LayoutParams params = findViewById(R.id.post_cover_frame).getLayoutParams();
+            params.height = dp(Math.max(220, Math.min(360, Math.round(330f * post.coverHeight / post.coverWidth))));
+            findViewById(R.id.post_cover_frame).setLayoutParams(params);
+        }
+        if (post.coverImageUrl == null || post.coverImageUrl.isEmpty()) {
+            cover.setVisibility(View.GONE);
+            placeholder.setVisibility(View.VISIBLE);
+            count.setText("0/0");
+            return;
+        }
+        placeholder.setVisibility(View.GONE);
+        cover.setVisibility(View.VISIBLE);
+        count.setText("1/1");
+        Glide.with(cover)
+                .load(post.coverImageUrl)
+                .placeholder(R.drawable.bg_image_placeholder)
+                .error(R.drawable.bg_image_placeholder)
+                .into(cover);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 }

@@ -15,8 +15,8 @@
     1200x2664 each.
   - `RealBackendSmokeInstrumentedTest`: `OK (1 test)`, 5 real-ID screenshots,
     1200x2664 each.
-- Historical real-device evidence remains under
-  `doc/development/verification/android-java-xml-screenshots/real-device/`.
+- Earlier non-current screenshot directories were removed after the
+  repair-stage evidence replaced them.
 
 ## Acceptance Meaning
 

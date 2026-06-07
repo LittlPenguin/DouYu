@@ -1,5 +1,11 @@
 # 2026-06-07 Real Backend Repair Log
 
+> Status: Historical finding log. The `RB-001` through `RB-005` items listed as
+> open in this run were later closed or reclassified in
+> `2026-06-07-repair-stage-verification.md`. Old screenshot files from this
+> superseded run were removed; retained screenshot evidence lives under
+> `android-java-xml-screenshots/repair-stage/`.
+
 ## Purpose
 
 This record captures the real-backend, real-device smoke run requested after the
@@ -20,10 +26,8 @@ Secrets from `.env` are intentionally not copied into this document.
 - Android version: `16`
 - Screen size: `1200x2664`
 - Screen density: `520`
-- Screenshot directory:
-  `doc/development/verification/android-java-xml-screenshots/real-backend/visual-smoke`
-- Contact sheet:
-  `doc/development/verification/android-java-xml-screenshots/real-backend/visual-smoke-contact-sheet.png`
+- Historical screenshots from this run were removed after repair-stage evidence
+  replaced them.
 
 ## Commands And Results
 

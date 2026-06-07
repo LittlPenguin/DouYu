@@ -5,11 +5,14 @@ import android.content.SharedPreferences;
 
 import com.google.gson.GsonBuilder;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import cn.edu.app.douyu.BuildConfig;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -22,16 +25,7 @@ public final class DoyuApiClient {
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(20, TimeUnit.SECONDS)
-                .addInterceptor(chain -> {
-                    Request original = chain.request();
-                    String token = preferences.getString("accessToken", "");
-                    Request.Builder builder = original.newBuilder()
-                            .header("X-Request-Id", "android-java-xml");
-                    if (!token.isEmpty()) {
-                        builder.header("Authorization", "Bearer " + token);
-                    }
-                    return chain.proceed(builder.build());
-                })
+                .addInterceptor(new SessionInterceptor(preferences))
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
@@ -41,5 +35,47 @@ public final class DoyuApiClient {
                 .build();
 
         return retrofit.create(DoyuApi.class);
+    }
+
+    static final class SessionInterceptor implements Interceptor {
+        private final SharedPreferences preferences;
+
+        SessionInterceptor(SharedPreferences preferences) {
+            this.preferences = preferences;
+        }
+
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request original = chain.request();
+            String token = preferences.getString("accessToken", "");
+            Request request = addBaseHeaders(original, token);
+            Response response = chain.proceed(request);
+            if (response.code() == 401 && !token.isEmpty() && isAnonymousCommunityRead(original.method(), original.url().encodedPath())) {
+                response.close();
+                preferences.edit().remove("accessToken").remove("refreshToken").apply();
+                return chain.proceed(addBaseHeaders(original, ""));
+            }
+            return response;
+        }
+
+        private Request addBaseHeaders(Request original, String token) {
+            Request.Builder builder = original.newBuilder()
+                    .header("X-Request-Id", "android-java-xml");
+            if (!token.isEmpty()) {
+                builder.header("Authorization", "Bearer " + token);
+            } else {
+                builder.removeHeader("Authorization");
+            }
+            return builder.build();
+        }
+
+        static boolean isAnonymousCommunityRead(String method, String path) {
+            if (!"GET".equalsIgnoreCase(method)) {
+                return false;
+            }
+            return "/api/v1/posts/feed".equals(path)
+                    || path.matches("/api/v1/topics(/[^/]+/posts)?")
+                    || path.matches("/api/v1/posts/[^/]+");
+        }
     }
 }

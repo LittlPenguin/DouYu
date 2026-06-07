@@ -36,11 +36,21 @@
                     android:padding="12dp">
 
                     <FrameLayout
+                        android:id="@+id/post_cover_frame"
                         android:layout_width="match_parent"
                         android:layout_height="255dp"
                         android:background="@drawable/bg_thumb_petal">
 
+                        <ImageView
+                            android:id="@+id/post_cover_image"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="作品封面"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone" />
+
                         <TextView
+                            android:id="@+id/post_image_count"
                             android:layout_width="wrap_content"
                             android:layout_height="26dp"
                             android:layout_gravity="top|end"
@@ -55,6 +65,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/post_cover_placeholder"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"

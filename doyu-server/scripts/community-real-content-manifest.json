@@ -1,0 +1,122 @@
+[
+  {
+    "id": "community_bead_heart_beaded",
+    "title": "爱心挂件的边缘留白",
+    "content": "做小挂件时先从爱心、星星、花朵这类稳定轮廓开始，边缘留一圈浅色豆会让成品更干净。",
+    "topicId": "topic_beginner",
+    "topicName": "新手教程",
+    "topicDescription": "拼豆入门、基础形状和第一件作品",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/98/Perler_bead_heart_beaded_side.jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Perler_bead_heart_beaded_side.jpg",
+    "author": "Saintfevrier",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "community_bead_heart_fused",
+    "title": "熨烫后的背面质感",
+    "content": "熨烫时间不要一次拉满，短时间多观察更容易保留豆子的颗粒轮廓。",
+    "topicId": "topic_tutorial",
+    "topicName": "教程步骤",
+    "topicDescription": "图纸、铺豆、熨烫和收尾步骤",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/11/Perler_bead_heart_fused_side.jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Perler_bead_heart_fused_side.jpg",
+    "author": "Saintfevrier",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "community_bead_cropped_heart",
+    "title": "小图标适合试配色",
+    "content": "正式开大图前，可以先用同一套颜色做一个小图标，看实际熨烫后的颜色关系。",
+    "topicId": "topic_color",
+    "topicName": "配色灵感",
+    "topicDescription": "低饱和配色、色卡和主题搭配",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/38/Perler_bead_heart_fused_side_cropped_background.png",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Perler_bead_heart_fused_side_cropped_background.png",
+    "author": "IloveGreece",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "community_bead_buegelperlen",
+    "title": "低饱和色卡更耐看",
+    "content": "同一个图纸先选主色、阴影色和高光色，再补背景色，整体会比直接堆高饱和颜色更柔和。",
+    "topicId": "topic_color",
+    "topicName": "配色灵感",
+    "topicDescription": "低饱和配色、色卡和主题搭配",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/35/Buegelperlen_1.jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Buegelperlen_1.jpg",
+    "author": "Superbass",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "community_bead_workspace",
+    "title": "把常用色放在右手边",
+    "content": "拼大图时可以把本次用量最高的颜色放在右手侧，减少来回找色的时间。",
+    "topicId": "topic_workspace",
+    "topicName": "工作台",
+    "topicDescription": "桌面、收纳和拼豆效率配置",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3a/2022-01-06-B%C3%BCgelperlen-6920.jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2022-01-06-B%C3%BCgelperlen-6920.jpg",
+    "author": "Superbass",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "community_bead_perler_mix",
+    "title": "按色系分盒最省时间",
+    "content": "把常用豆按暖色、冷色、中性色分盒，比按品牌编号找色更适合日常创作。",
+    "topicId": "topic_workspace",
+    "topicName": "工作台",
+    "topicDescription": "桌面、收纳和拼豆效率配置",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/74/Buegelperlen_perler_beads.jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Buegelperlen_perler_beads.jpg",
+    "author": "*Sally M*",
+    "license": "CC BY-SA 2.0"
+  },
+  {
+    "id": "community_bead_parlplatta",
+    "title": "完成后先平放冷却",
+    "content": "熨烫后不要马上拿起成品，压一本平整的书冷却几分钟，边缘会更服帖。",
+    "topicId": "topic_showcase",
+    "topicName": "作品展示",
+    "topicDescription": "晒完成品、复盘和细节检查",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/67/Parlplatta_%288457346%29.jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parlplatta_(8457346).jpg",
+    "author": "Bjorn Rixman",
+    "license": "CC BY-SA 2.0"
+  },
+  {
+    "id": "community_bead_mosaic",
+    "title": "长图需要控制首屏高度",
+    "content": "竖向作品很适合做瀑布流封面，但移动端需要限制最高显示高度，避免首屏只看到一张图。",
+    "topicId": "topic_showcase",
+    "topicName": "作品展示",
+    "topicDescription": "晒完成品、复盘和细节检查",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a9/StockholmArlandaPlasticBeadsMosaic.jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:StockholmArlandaPlasticBeadsMosaic.jpg",
+    "author": "Oddjob",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "community_bead_tools",
+    "title": "镊子尖端决定速度",
+    "content": "夹 2.6mm 小豆时，细尖镊子比普通镊子更稳定，连续铺色也更不容易碰倒周围豆子。",
+    "topicId": "topic_tools",
+    "topicName": "工具收纳",
+    "topicDescription": "镊子、模板、熨纸和材料收纳",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/02/Plastic_beads1.jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Plastic_beads1.jpg",
+    "author": "Aney",
+    "license": "CC BY 2.5"
+  },
+  {
+    "id": "community_bead_hama",
+    "title": "新手先拼轮廓再填色",
+    "content": "复杂角色图纸可以先铺最外轮廓，再分区域填色，这样更容易发现比例错误。",
+    "topicId": "topic_beginner",
+    "topicName": "新手教程",
+    "topicDescription": "拼豆入门、基础形状和第一件作品",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/85/Hama_beads.jpg",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hama_beads.jpg",
+    "author": "Pseudopanax",
+    "license": "Public domain"
+  }
+]

@@ -13,18 +13,17 @@ This stage replaced the Android client shell, feature entry screens, model,
 network, repository, layouts, resources, and unit tests with Java/XML code while
 preserving the existing `/api/v1` backend contract.
 
-Repair-stage work is now active. The real-backend smoke recorded in
-`doc/development/verification/2026-06-07-real-backend-repair-log.md` found
-follow-up items that must be fixed and re-verified before final 1:1 UI parity is
-claimed again. The active repair-stage execution plan is
-`doc/development/verification/2026-06-07-repair-stage-plan.md`. The latest
-repair-stage verification is
-`doc/development/verification/2026-06-07-repair-stage-verification.md`.
+The 2026-06-07 repair-stage verification is complete for the Java/XML rewrite
+and is recorded in
+`doc/development/verification/2026-06-07-repair-stage-verification.md`. The
+earlier real-backend smoke log remains as historical finding evidence; its
+RB-001 through RB-005 findings were closed or reclassified during the repair
+stage.
 
 ## Current Facts
 
-- `AGENTS.md` defines the Java/XML migration rules, thread limits, Open Design
-  authority, static-data policy, and verification rules.
+- `AGENTS.md` defines the Java/XML migration rules, Open Design authority,
+  static-data policy, and verification rules.
 - Android production and test source under `DouYu/app/src` has no `.kt` files.
 - Android app/build/version-catalog files no longer expose Compose, Navigation
   Compose, Kotlin serialization, Coil Compose, or Paging Compose dependencies.
@@ -46,11 +45,10 @@ repair-stage verification is
 - Open Design HTML under `doc/development/open-design/` remains the UI authority.
 - A real-device Java/XML visual smoke suite exists in
   `VisualSmokeInstrumentedTest.java` and captures 22 screens on the attached
-  device. The current screenshot evidence is stored under
-  `doc/development/verification/android-java-xml-screenshots/real-device/`.
-- Repair-stage evidence now needs a separate classification for real API-backed
-  detail flows versus boundary-only coverage on conversation/notification-style
-  pages.
+  device. The current retained screenshot evidence is stored under
+  `doc/development/verification/android-java-xml-screenshots/repair-stage/`.
+- Repair-stage evidence separates real API-backed detail flows from boundary,
+  disabled, empty, and UI-only coverage.
 
 ## Target Android Stack
 
@@ -128,10 +126,9 @@ Additional verification captured during the 2026-06-07 UI parity pass:
   CameraX preview/capture boundary, search, post compose/detail, product,
   payment, conversation, notification, profile edit, Settings sections, and
   future capability.
-- Latest real-device screenshot directory:
-  `doc/development/verification/android-java-xml-screenshots/real-device/visual-smoke`.
-- The latest XML changes have refreshed real-device screenshot evidence under
-  the real-device visual-smoke directory with 2026-06-07 11:52 timestamps.
+- The earlier real-device screenshot pass was superseded by the repair-stage
+  evidence set. Old non-current screenshot directories were removed so the
+  retained evidence path points to the latest repair-stage screenshots.
 - Final post-fix gate was rerun after replacing text back buttons and
   unreadable disabled CTAs: Android unit tests passed, Android lint passed with
   0 issues, backend tests passed with 54 tests, and all residue/static-filler
@@ -161,7 +158,15 @@ limited to real-device system bars versus the browser mock phone frame,
 environment-dependent CameraX preview content, and empty/error states replacing
 populated design examples when runtime data is not available.
 
-## Active Repair Verification Targets
+## Current Active Work
+
+- Community real-content repair is now in progress. The execution record is
+  `doc/development/verification/2026-06-07-community-real-content-repair.md`.
+  This stage intentionally rebuilds the default dev PostgreSQL/Redis volumes,
+  imports one-time OSS-backed real bead-art posts, and revalidates the
+  community tab on a real device.
+
+## Closed Repair Verification Targets
 
 - `RB-001`: Closed. `qa-empty` feed returned an empty list and
   `main_community.png` records the repair-stage real-device boundary.
@@ -175,8 +180,9 @@ populated design examples when runtime data is not available.
   smoke captured backend-returned post, product, AI job/pattern, conversation,
   and notification detail screenshots.
 
-Final repair-stage evidence must be stored in
-`doc/development/verification/2026-06-07-repair-stage-verification.md` and the
+Final repair-stage evidence is stored in
+`doc/development/verification/2026-06-07-repair-stage-verification.md`,
+`doc/development/verification/2026-06-07-open-design-parity-matrix.md`, and the
 repair-stage screenshot directory.
 
 ## Latest Repair-Stage Verification

@@ -138,7 +138,8 @@ Follow-up visual fix:
   controls to visible warning-pill TextViews so the boundary copy remains
   readable on the real device.
 - The final smoke after this fix again returned `OK (1 test)`, and the 22 PNG
-  screenshots under `real-device/visual-smoke` have 2026-06-07 11:52 timestamps.
+  screenshots were pulled during that run. Those older screenshot files were
+  later removed after the repair-stage evidence replaced them.
 
 Final gate after the last visual fix:
 
@@ -166,13 +167,16 @@ Result:
 
 ## Evidence
 
-Latest real-device screenshot evidence from the successful Java/XML smoke run:
+Historical real-device screenshot evidence from this Java/XML smoke run was
+superseded by the repair-stage evidence and the old PNG files were removed.
 
-`doc/development/verification/android-java-xml-screenshots/real-device/visual-smoke`
+Current retained screen evidence:
 
-This evidence proves the Java/XML screens render on hardware after the latest
+`doc/development/verification/android-java-xml-screenshots/repair-stage/visual-smoke`
+
+The historical run proved the Java/XML screens rendered on hardware after those
 XML edits, including CameraX preview, quick menu, five main tabs, search, post
 compose/detail, commerce/payment, message, profile edit, Settings sections, and
-future capability boundary. Screen-level Open Design parity for all 18 HTML
-references is recorded separately in
+future capability boundary. Current screen-level Open Design parity for all 18
+HTML references is recorded separately in
 `doc/development/verification/2026-06-07-open-design-parity-matrix.md`.

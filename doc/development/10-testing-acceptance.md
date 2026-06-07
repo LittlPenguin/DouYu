@@ -117,10 +117,8 @@ Each Open Design page must be mapped to an Android Java/XML screen:
 For each screen, record screenshot evidence or write `not covered` with the
 reason. Do not reuse Kotlin/Compose screenshots as Java/XML evidence.
 
-Current evidence:
+Current retained evidence:
 
-- Real-device Java/XML smoke screenshots exist under
-  `doc/development/verification/android-java-xml-screenshots/real-device/visual-smoke`.
 - Repair-stage real-device screenshots exist under
   `doc/development/verification/android-java-xml-screenshots/repair-stage/visual-smoke`
   and
@@ -156,13 +154,13 @@ No screen may use local fake data to avoid looking empty.
 
 ## Repair Stage Acceptance
 
-`RB-001` through `RB-005` can be closed only when
+`RB-001` through `RB-005` were closed only after
 `doc/development/verification/2026-06-07-repair-stage-verification.md` records
 fresh command output summaries, screenshot paths, and a page-by-page comparison
 against the Open Design HTML files. Any remaining deviation must stay open in
 the repair log instead of being counted as passed.
 
-The repair-stage execution plan itself is recorded in
+The historical repair-stage execution plan is recorded in
 `doc/development/verification/2026-06-07-repair-stage-plan.md`. That plan
 requires detail evidence to be labeled `real-api`, `boundary`, or
 `not-covered` so that UI smoke does not get mistaken for full backend flow

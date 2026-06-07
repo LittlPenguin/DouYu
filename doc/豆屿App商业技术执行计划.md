@@ -7,7 +7,7 @@
 > 推荐标语：把喜欢拼成圈子  
 > 当前日期：2026-05-11
 >
-> 说明：本文档是产品、商业和阶段方向总纲，不作为当前实现状态流水账。当前工程事实、未完成项和下一步优先级见 `development/current-status.md`。
+> 说明：本文档是产品、商业和阶段方向总纲，不作为当前实现状态流水账，也不作为当前工程实现依据。当前 Android 技术栈、后端行为、验收状态、未完成项和下一步优先级见 `development/current-status.md`、`development/01-tech-stack.md` 和 `development/10-testing-acceptance.md`。
 
 ## 0. 执行摘要
 
@@ -403,6 +403,8 @@ AI 拼图是核心差异化工具。
 - 管理后台：运营、客服、审核、商品和订单处理。
 
 ### 5.2 Android 客户端
+
+> 当前实现口径以 `development/01-tech-stack.md` 为准；本节保留历史产品技术设想，不覆盖 Java/XML 迁移规则。
 
 推荐技术方向：
 

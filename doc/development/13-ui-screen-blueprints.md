@@ -129,7 +129,7 @@ real device:
   `future_capability.png`.
 
 Evidence directory:
-`doc/development/verification/android-java-xml-screenshots/real-device/visual-smoke`.
+`doc/development/verification/android-java-xml-screenshots/repair-stage/visual-smoke`.
 
 After any XML or drawable change, rerun the visual smoke suite and replace the
 evidence screenshots before making final 1:1 parity claims.

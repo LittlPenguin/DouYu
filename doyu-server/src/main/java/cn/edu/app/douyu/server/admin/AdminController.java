@@ -194,7 +194,7 @@ public class AdminController {
                 .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "帖子不存在"));
         String beforeState = post.getStatus();
         Instant now = Instant.now();
-        post.setStatus(request.approved() ? "PUBLISHED" : "REJECTED");
+        post.setStatus(request.approved() ? "VISIBLE" : "REJECTED");
         post.setUpdatedAt(now);
         postRepository.save(post);
         writeLog(adminId, "AUDIT_POST", "POST", postId, beforeState, post.getStatus(), request.reason(), now);

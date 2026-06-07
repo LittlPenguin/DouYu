@@ -1,5 +1,9 @@
 # 2026-06-07 Repair Stage Plan
 
+> Status: Historical plan. The repair stage was later verified in
+> `2026-06-07-repair-stage-verification.md`, and the retained screen evidence is
+> under `android-java-xml-screenshots/repair-stage/`.
+
 ## Purpose
 
 This plan closes the remaining parity gaps found during the real-backend,
@@ -17,7 +21,6 @@ Design references without relying on static filler.
 - Keep the Android stack on Java + Activity/Fragment + XML.
 - Keep the backend public API paths unchanged.
 - Do not clear the user's persistent dev database volume.
-- Use at most three Codex threads total: main plus two workers.
 - Treat Open Design HTML under `doc/development/open-design/` as the visual
   authority.
 - Never use local fake lists or placeholder content to hide empty states.

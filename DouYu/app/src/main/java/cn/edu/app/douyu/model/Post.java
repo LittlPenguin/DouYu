@@ -7,6 +7,8 @@ public class Post {
     public String title;
     public String content;
     public String coverImageUrl;
+    public Integer coverWidth;
+    public Integer coverHeight;
     public String status;
     public UserProfile author;
     public Integer likeCount;
@@ -15,4 +17,6 @@ public class Post {
     public String linkedPatternId;
     public String createdAt;
     public List<String> imageUrls;
+    public List<String> topicIds;
+    public List<String> topicNames;
 }

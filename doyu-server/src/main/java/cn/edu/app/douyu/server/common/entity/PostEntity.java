@@ -28,6 +28,12 @@ public class PostEntity {
     @Column(name = "cover_image_url", length = 500)
     private String coverImageUrl;
 
+    @Column(name = "cover_width")
+    private Integer coverWidth;
+
+    @Column(name = "cover_height")
+    private Integer coverHeight;
+
     @Column(name = "topic_ids", length = 1000)
     private String topicIds;
 
@@ -89,6 +95,10 @@ public class PostEntity {
     public void setMediaFileIds(String mediaFileIds) { this.mediaFileIds = mediaFileIds; }
     public String getCoverImageUrl() { return coverImageUrl; }
     public void setCoverImageUrl(String coverImageUrl) { this.coverImageUrl = coverImageUrl; }
+    public Integer getCoverWidth() { return coverWidth; }
+    public void setCoverWidth(Integer coverWidth) { this.coverWidth = coverWidth; }
+    public Integer getCoverHeight() { return coverHeight; }
+    public void setCoverHeight(Integer coverHeight) { this.coverHeight = coverHeight; }
     public String getTopicIds() { return topicIds; }
     public void setTopicIds(String topicIds) { this.topicIds = topicIds; }
     public String getLinkedPatternId() { return linkedPatternId; }

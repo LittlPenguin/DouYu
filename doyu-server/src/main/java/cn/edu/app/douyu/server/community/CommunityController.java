@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1")
 public class CommunityController {
+    private static final List<String> PUBLIC_POST_STATUSES = List.of("VISIBLE");
+
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
@@ -82,7 +84,7 @@ public class CommunityController {
     @GetMapping("/posts/feed")
     PageResult<Map<String, Object>> feed(Authentication authentication, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         String userId = optionalUserId(authentication);
-        List<PostEntity> visible = postRepository.findByStatusOrderByPinnedDescCreatedAtDesc("VISIBLE");
+        List<PostEntity> visible = postRepository.findByStatusInOrderByPinnedDescCreatedAtDesc(PUBLIC_POST_STATUSES);
         List<Map<String, Object>> items = visible.stream().map(post -> postView(post, userId)).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
@@ -98,7 +100,7 @@ public class CommunityController {
         List<String> followed = followRepository.findByUserId(userId).stream()
                 .map(FollowEntity::getTargetUserId).toList();
         List<PostEntity> items = followed.isEmpty() ? List.of()
-                : postRepository.findByAuthorIdInAndStatusOrderByCreatedAtDesc(followed, "VISIBLE");
+                : postRepository.findByAuthorIdInAndStatusInOrderByCreatedAtDesc(followed, PUBLIC_POST_STATUSES);
         List<Map<String, Object>> views = items.stream().map(post -> postView(post, userId)).toList();
         return PageResult.of(slice(views, page, size), page, size, views.size());
     }
@@ -116,6 +118,7 @@ public class CommunityController {
         PostEntity post = new PostEntity(idGenerator.next("post"), userId, request.title(), request.content(),
                 joinList(request.mediaFileIds()), joinList(request.topicIds()), request.linkedPatternId(),
                 "REVIEWING", 0, 0, 0, false, now, now);
+        applyCoverFromMedia(post);
         postRepository.save(post);
         return postView(post, userId);
     }
@@ -149,6 +152,9 @@ public class CommunityController {
         if (request.mediaFileIds() != null) post.setMediaFileIds(joinList(request.mediaFileIds()));
         if (request.topicIds() != null) post.setTopicIds(joinList(request.topicIds()));
         if (request.linkedPatternId() != null) post.setLinkedPatternId(request.linkedPatternId());
+        if (request.mediaFileIds() != null) {
+            applyCoverFromMedia(post);
+        }
         post.setStatus("REVIEWING");
         postRepository.save(post);
         return postView(post, userId);
@@ -361,7 +367,7 @@ public class CommunityController {
         String userId = optionalUserId(authentication);
         requireTopic(topicId);
         List<Map<String, Object>> items = postRepository
-                .findByStatusAndTopicIdsContainingOrderByCreatedAtDesc("VISIBLE", topicId).stream()
+                .findByStatusInAndTopicIdsContainingOrderByCreatedAtDesc(PUBLIC_POST_STATUSES, topicId).stream()
                 .map(post -> postView(post, userId))
                 .toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
@@ -400,10 +406,17 @@ public class CommunityController {
         view.put("title", post.getTitle() == null ? "" : post.getTitle());
         view.put("content", post.getContent());
         view.put("mediaFileIds", splitList(post.getMediaFileIds()));
-        view.put("coverImageUrl", post.getCoverImageUrl() == null ? "" : post.getCoverImageUrl());
+        CoverAsset cover = coverAsset(post);
+        view.put("coverImageUrl", cover.url());
+        view.put("coverWidth", cover.width());
+        view.put("coverHeight", cover.height());
         view.put("mediaColors", List.of());
-        view.put("topicIds", splitList(post.getTopicIds()));
-        view.put("topicNames", List.of());
+        List<String> topicIds = splitList(post.getTopicIds());
+        view.put("topicIds", topicIds);
+        view.put("topicNames", topicIds.stream()
+                .map(topicId -> topicRepository.findById(topicId).map(TopicEntity::getName).orElse(""))
+                .filter(name -> !name.isBlank())
+                .toList());
         view.put("linkedPatternId", post.getLinkedPatternId());
         view.put("status", post.getStatus());
         view.put("likeCount", post.getLikeCount());
@@ -602,6 +615,44 @@ public class CommunityController {
         return view;
     }
 
+    private void applyCoverFromMedia(PostEntity post) {
+        List<String> mediaFileIds = splitList(post.getMediaFileIds());
+        if (mediaFileIds.isEmpty()) {
+            return;
+        }
+        FileAssetEntity file = fileAssetRepository.findById(mediaFileIds.get(0)).orElse(null);
+        if (file == null) {
+            return;
+        }
+        if (file.getPublicUrl() != null && !file.getPublicUrl().isBlank()) {
+            post.setCoverImageUrl(file.getPublicUrl());
+        }
+        post.setCoverWidth(file.getWidth());
+        post.setCoverHeight(file.getHeight());
+    }
+
+    private CoverAsset coverAsset(PostEntity post) {
+        String coverUrl = post.getCoverImageUrl() == null ? "" : post.getCoverImageUrl();
+        Integer coverWidth = post.getCoverWidth();
+        Integer coverHeight = post.getCoverHeight();
+        List<String> mediaFileIds = splitList(post.getMediaFileIds());
+        if (!mediaFileIds.isEmpty()) {
+            FileAssetEntity file = fileAssetRepository.findById(mediaFileIds.get(0)).orElse(null);
+            if (file != null) {
+                if (coverUrl.isBlank() && file.getPublicUrl() != null) {
+                    coverUrl = file.getPublicUrl();
+                }
+                if (coverWidth == null) {
+                    coverWidth = file.getWidth();
+                }
+                if (coverHeight == null) {
+                    coverHeight = file.getHeight();
+                }
+            }
+        }
+        return new CoverAsset(coverUrl, coverWidth, coverHeight);
+    }
+
     private Map<String, Object> commentTopicView(TopicEntity topic) {
         Map<String, Object> view = new java.util.LinkedHashMap<>();
         view.put("topicId", topic.getId());
@@ -621,6 +672,9 @@ public class CommunityController {
 
     public record PostRequest(String title, @NotBlank String content,
                               List<String> mediaFileIds, List<String> topicIds, String linkedPatternId) {
+    }
+
+    private record CoverAsset(String url, Integer width, Integer height) {
     }
 
     public record CommentRequest(String content, String parentId, List<String> mediaFileIds,

@@ -1,5 +1,9 @@
 # Stage Development Roadmap
 
+> Status: Historical stage plan for the Java/XML rewrite. Use
+> `current-status.md`, `10-testing-acceptance.md`, and the latest files under
+> `doc/development/verification/` for current gates and evidence.
+
 ## Stage 9: Java/XML Android Rewrite
 
 This stage replaces the Kotlin + Compose Android client with Java +
@@ -8,20 +12,18 @@ Activity/Fragment + XML.
 ## Order
 
 1. Documentation and rules.
-2. Thread creation and ownership split.
-3. Android build migration.
-4. Java core layer.
-5. Main shell and tab fragments.
-6. Flow Activities.
-7. Runtime mock/seed cleanup.
-8. Integration and verification.
+2. Android build migration.
+3. Java core layer.
+4. Main shell and tab fragments.
+5. Flow Activities.
+6. Runtime mock/seed cleanup.
+7. Integration and verification.
 
 ## Stage 9.1 Documentation
 
 - Create `AGENTS.md`.
 - Rewrite development docs for Java/XML migration.
-- Record thread limit, Open Design authority, seed deletion policy, and test
-  gates.
+- Record Open Design authority, seed deletion policy, and test gates.
 
 ## Stage 9.2 Android Build
 
