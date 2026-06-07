@@ -15,6 +15,7 @@
         <p class="lead">作品详情页从“内容、图片、评论区域”调整为“图片、内容、评论区域”。首屏先展示作品图片集合和明确的 gallery / carousel 结构，随后展示作者、标题、正文、话题和互动状态，评论区独立成块，底部保留 Google 风格悬浮评论栏。</p>
         <div class="chips">
           <span class="chip">图片 / 内容 / 评论区</span>
+          <span class="chip">点赞 / 评论 / 收藏</span>
           <span class="chip">评论列表</span>
           <span class="chip">清晰轮播</span>
           <span class="chip">@ 用户选择</span>
@@ -23,7 +24,7 @@
         </div>
       </div>
       <div class="side-facts">
-        <div class="fact"><b>结构更新</b><span>详情主顺序固定为图片集合、内容信息、评论区、底部悬浮评论输入栏。</span></div>
+        <div class="fact"><b>结构更新</b><span>详情主顺序固定为图片集合、内容信息、点赞评论收藏互动区、评论区、底部悬浮评论输入栏。</span></div>
         <div class="fact"><b>工具边界</b><span>工具栏只保留图片、@、# 三个核心 icon；删除“帖子”入口，`#` 后不得保留含义不清的额外 icon。</span></div>
         <div class="fact"><b>实现口径</b><span>本页是 Open Design / HTML 原型，不声明 Android 当前已完成新顺序、编辑面板或真实搜索能力。</span></div>
       </div>
@@ -35,7 +36,7 @@
         <p>左侧展示作品详情主稿；右侧展示评论工具条、轮播、@ 用户和 # 话题选择的关键状态。</p>
       </div>
       <div class="canvas">
-        <div class="phone">
+        <div class="phone detail-overview">
           <div class="screen">
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar">
@@ -65,11 +66,15 @@
                 <h3>草莓小熊杯垫</h3>
                 <p>Petal 和 Coral 适合做甜点系小物，底色保持暖白会更轻。图片优先展示，内容说明放在作品图之后，便于先看成品再阅读教程。</p>
                 <div class="chips-row tight"><span class="pill">#草莓色卡</span><span class="pill">#新手杯垫</span><span class="pill ok">关联图纸</span></div>
-                <div class="chips-row tight"><span class="pill ok">已收藏 1</span><span class="pill warn">点赞 0 待复验</span></div>
+                <div class="engagement-row" aria-label="作品互动">
+                  <button class="engagement-action on"><span class="icon heart"></span><b>已点赞</b><small>126</small></button>
+                  <button class="engagement-action"><span class="icon comment"></span><b>评论</b><small>3</small></button>
+                  <button class="engagement-action on"><span class="icon bookmark"></span><b>已收藏</b><small>18</small></button>
+                </div>
               </section>
 
               <section class="comment-section">
-                <div class="comment-title"><b>评论区</b></div>
+                <div class="comment-title"><b>评论 3</b><span>最新</span></div>
                 <article class="comment-row">
                   <span class="avatar"></span>
                   <div class="comment-main"><b>阿澄</b><p>好喜欢这个配色，特别适合新手入门。</p><small>2 分钟前 · 回复</small></div>
@@ -80,7 +85,7 @@
                 </article>
                 <article class="comment-row">
                   <span class="avatar"></span>
-                  <div class="comment-main"><b>海盐豆</b><p>图片上传失败时要保留缩略图，恢复网络后可以重试。</p><small>12 分钟前</small></div>
+                  <div class="comment-main"><b>海盐豆</b><p>图片上传失败时要保留缩略图，恢复网络后可以重试。</p><small>12 分钟前 · 回复</small></div>
                 </article>
               </section>
             </div>
@@ -93,6 +98,11 @@
         </div>
         <div class="stack">
           <div class="mini-phones">
+            <div class="mini-screen"><div class="mini-head">互动主状态</div><div class="mini-body"><div class="engagement-row"><button class="engagement-action on"><span class="icon heart"></span><b>已点赞</b><small>126</small></button><button class="engagement-action"><span class="icon comment"></span><b>评论</b><small>3</small></button><button class="engagement-action on"><span class="icon bookmark"></span><b>已收藏</b><small>18</small></button></div><div class="state-bar"><span class="state-dot good">三项可点</span><span class="state-dot good">计数清楚</span></div></div></div>
+            <div class="mini-screen"><div class="mini-head">未登录互动</div><div class="mini-body"><div class="warning-band">未登录时点击点赞、评论或收藏，进入登录提示；不得本地假计数。</div><div class="engagement-row"><button class="engagement-action disabled"><span class="icon heart"></span><b>点赞</b><small>126</small></button><button class="engagement-action disabled"><span class="icon comment"></span><b>评论</b><small>3</small></button><button class="engagement-action disabled"><span class="icon bookmark"></span><b>收藏</b><small>18</small></button></div></div></div>
+            <div class="mini-screen"><div class="mini-head">点赞切换</div><div class="mini-body"><div class="engagement-row compact"><button class="engagement-action on"><span class="icon heart"></span><b>已点赞</b><small>126</small></button><button class="engagement-action"><span class="icon heart"></span><b>点赞</b><small>125</small></button></div><div class="warning-band" style="margin-top:10px">请求失败时保持原状态，给重试提示，不允许先改成成功。</div></div></div>
+            <div class="mini-screen"><div class="mini-head">收藏切换</div><div class="mini-body"><div class="engagement-row compact"><button class="engagement-action on"><span class="icon bookmark"></span><b>已收藏</b><small>18</small></button><button class="engagement-action"><span class="icon bookmark"></span><b>收藏</b><small>17</small></button></div><div class="state-bar"><span class="state-dot good">成功后更新</span><span class="state-dot bad">禁假成功</span></div></div></div>
+            <div class="mini-screen"><div class="mini-head">评论入口</div><div class="mini-body"><div class="engagement-row compact"><button class="engagement-action"><span class="icon comment"></span><b>评论</b><small>聚焦输入</small></button></div><div class="floating-bar" style="position:relative;left:auto;right:auto;bottom:auto;margin-top:10px"><div class="input-line">写下你的评论</div><div class="tool-row"><button class="tool-btn"><span class="icon image"></span></button><button class="tool-btn"><span class="icon at"></span></button><button class="tool-btn"><span class="icon hash"></span></button></div></div></div></div>
             <div class="mini-screen"><div class="mini-head">无上传图</div><div class="mini-body"><div class="floating-bar" style="position:relative;left:auto;right:auto;bottom:auto"><div class="input-line">写下你的评论</div><div class="tool-row"><button class="tool-btn"><span class="icon image"></span></button><button class="tool-btn"><span class="icon at"></span></button><button class="tool-btn"><span class="icon hash"></span></button></div></div></div></div>
             <div class="mini-screen"><div class="mini-head">多图堆叠</div><div class="mini-body"><div class="floating-bar" style="position:relative;left:auto;right:auto;bottom:auto"><div class="media-row"><div class="stacked-media"><span></span><span></span><span></span></div><span class="pill warn">点击进入轮播</span></div><div class="input-line">多图评论草稿</div><div class="tool-row"><button class="tool-btn"><span class="icon image"></span></button><button class="send-btn" style="margin-left:auto">发送</button></div></div></div></div>
             <div class="mini-screen"><div class="mini-head">上传失败</div><div class="mini-body"><div class="floating-bar" style="position:relative;left:auto;right:auto;bottom:auto"><div class="media-row"><div class="stacked-media"><span></span><span></span></div><span class="pill stop">失败</span></div><div class="input-line">图片上传失败，请重试</div><div class="tool-row"><button class="button ghost">重试</button><button class="send-btn disabled" style="margin-left:auto">发送</button></div></div></div></div>
