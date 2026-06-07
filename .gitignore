@@ -65,3 +65,4 @@ tmp/
 temp/
 .qa-output/
 do.md
+.playwright-cli/
