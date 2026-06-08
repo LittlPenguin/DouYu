@@ -2,6 +2,8 @@ package cn.edu.app.douyu.network;
 
 import cn.edu.app.douyu.model.AuthSession;
 import cn.edu.app.douyu.model.ChatMessage;
+import cn.edu.app.douyu.model.Comment;
+import cn.edu.app.douyu.model.CommentRequest;
 import cn.edu.app.douyu.model.Conversation;
 import cn.edu.app.douyu.model.ConversationDetail;
 import cn.edu.app.douyu.model.FileAsset;
@@ -10,6 +12,7 @@ import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.PatternAsset;
 import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
+import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ReadReceipt;
 import cn.edu.app.douyu.model.SendMessageRequest;
@@ -30,6 +33,7 @@ import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
@@ -50,6 +54,24 @@ public interface DoyuApi {
 
     @GET("/api/v1/posts/{postId}")
     Call<ApiResponse<Post>> post(@Path("postId") String postId);
+
+    @GET("/api/v1/posts/{postId}/comments")
+    Call<ApiResponse<PageResponse<Comment>>> comments(@Path("postId") String postId, @Query("page") int page, @Query("size") int size);
+
+    @POST("/api/v1/posts/{postId}/comments")
+    Call<ApiResponse<Comment>> createComment(@Path("postId") String postId, @Body CommentRequest request);
+
+    @POST("/api/v1/posts/{postId}/like")
+    Call<ApiResponse<PostInteraction>> likePost(@Path("postId") String postId);
+
+    @DELETE("/api/v1/posts/{postId}/like")
+    Call<ApiResponse<PostInteraction>> unlikePost(@Path("postId") String postId);
+
+    @POST("/api/v1/posts/{postId}/favorite")
+    Call<ApiResponse<PostInteraction>> favoritePost(@Path("postId") String postId);
+
+    @DELETE("/api/v1/posts/{postId}/favorite")
+    Call<ApiResponse<PostInteraction>> unfavoritePost(@Path("postId") String postId);
 
     @GET("/api/v1/products")
     Call<ApiResponse<PageResponse<Product>>> products(@Query("page") int page, @Query("size") int size);

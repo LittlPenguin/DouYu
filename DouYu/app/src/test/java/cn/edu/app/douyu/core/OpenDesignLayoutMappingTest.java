@@ -105,6 +105,27 @@ public class OpenDesignLayoutMappingTest {
     }
 
     @Test
+    public void postDetailLayoutContainsOpenDesignDetailStructure() throws IOException {
+        String xml = new String(Files.readAllBytes(Path.of("src/main/res/layout", "activity_post_detail.xml")), StandardCharsets.UTF_8);
+
+        assertTrue(xml.contains("@+id/post_gallery_section"));
+        assertTrue(xml.contains("@+id/post_carousel_count"));
+        assertTrue(xml.contains("左右滑动查看作品图片"));
+        assertTrue(xml.contains("@+id/post_thumbnail_strip"));
+        assertTrue(xml.contains("@+id/post_like_action"));
+        assertTrue(xml.contains("@+id/post_comment_action"));
+        assertTrue(xml.contains("@+id/post_favorite_action"));
+        assertTrue(xml.contains("@+id/post_comments_container"));
+        assertTrue(xml.contains("@+id/post_comment_empty"));
+        assertTrue(xml.contains("@+id/post_comment_error_box"));
+        assertTrue(xml.contains("@+id/post_comment_input"));
+        assertTrue(xml.contains("@+id/post_comment_tool_image"));
+        assertTrue(xml.contains("@+id/post_comment_tool_mention"));
+        assertTrue(xml.contains("@+id/post_comment_tool_topic"));
+        assertFalse(xml.contains("详情顺序遵循 Open Design"));
+    }
+
+    @Test
     public void openDesignAndDiagramsUseJavaXmlArchitectureWording() throws IOException {
         DocExpectation[] expectations = new DocExpectation[]{
                 new DocExpectation("../../doc/development/open-design/index.html",
