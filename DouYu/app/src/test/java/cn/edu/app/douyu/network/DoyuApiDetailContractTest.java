@@ -7,12 +7,17 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 import cn.edu.app.douyu.model.ConversationDetail;
+import cn.edu.app.douyu.model.Comment;
+import cn.edu.app.douyu.model.CommentRequest;
 import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.PatternJob;
+import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.Topic;
 import retrofit2.Call;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
+import retrofit2.http.POST;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -43,6 +48,34 @@ public class DoyuApiDetailContractTest {
         assertPageItemType(topics, Topic.class);
         assertEquals("/api/v1/topics/{topicId}/posts", topicPosts.getAnnotation(GET.class).value());
         assertPageItemType(topicPosts, Post.class);
+    }
+
+    @Test
+    public void postCommentsUseBackendCommentEndpoints() throws Exception {
+        Method comments = DoyuApi.class.getMethod("comments", String.class, int.class, int.class);
+        Method createComment = DoyuApi.class.getMethod("createComment", String.class, CommentRequest.class);
+
+        assertEquals("/api/v1/posts/{postId}/comments", comments.getAnnotation(GET.class).value());
+        assertPageItemType(comments, Comment.class);
+        assertEquals("/api/v1/posts/{postId}/comments", createComment.getAnnotation(POST.class).value());
+        assertCallDataType(createComment, Comment.class);
+    }
+
+    @Test
+    public void postInteractionEndpointsUseBackendPaths() throws Exception {
+        Method like = DoyuApi.class.getMethod("likePost", String.class);
+        Method unlike = DoyuApi.class.getMethod("unlikePost", String.class);
+        Method favorite = DoyuApi.class.getMethod("favoritePost", String.class);
+        Method unfavorite = DoyuApi.class.getMethod("unfavoritePost", String.class);
+
+        assertEquals("/api/v1/posts/{postId}/like", like.getAnnotation(POST.class).value());
+        assertCallDataType(like, PostInteraction.class);
+        assertEquals("/api/v1/posts/{postId}/like", unlike.getAnnotation(DELETE.class).value());
+        assertCallDataType(unlike, PostInteraction.class);
+        assertEquals("/api/v1/posts/{postId}/favorite", favorite.getAnnotation(POST.class).value());
+        assertCallDataType(favorite, PostInteraction.class);
+        assertEquals("/api/v1/posts/{postId}/favorite", unfavorite.getAnnotation(DELETE.class).value());
+        assertCallDataType(unfavorite, PostInteraction.class);
     }
 
     private static void assertCallDataType(Method method, Class<?> expectedDataType) {

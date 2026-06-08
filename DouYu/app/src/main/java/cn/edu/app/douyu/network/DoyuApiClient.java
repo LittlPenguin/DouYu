@@ -75,6 +75,7 @@ public final class DoyuApiClient {
             }
             return "/api/v1/posts/feed".equals(path)
                     || path.matches("/api/v1/topics(/[^/]+/posts)?")
+                    || path.matches("/api/v1/posts/[^/]+/comments")
                     || path.matches("/api/v1/posts/[^/]+");
         }
     }

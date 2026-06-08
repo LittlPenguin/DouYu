@@ -16,6 +16,10 @@ public class Post {
     public Integer commentCount;
     public String linkedPatternId;
     public String createdAt;
+    public Boolean likedByMe;
+    public Boolean favoritedByMe;
+    public Boolean followedAuthorByMe;
+    public List<String> mediaFileIds;
     public List<String> imageUrls;
     public List<String> topicIds;
     public List<String> topicNames;

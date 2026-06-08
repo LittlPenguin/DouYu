@@ -12,6 +12,7 @@ public class DoyuApiClientTest {
         assertTrue(DoyuApiClient.SessionInterceptor.isAnonymousCommunityRead("GET", "/api/v1/topics"));
         assertTrue(DoyuApiClient.SessionInterceptor.isAnonymousCommunityRead("GET", "/api/v1/topics/topic_color/posts"));
         assertTrue(DoyuApiClient.SessionInterceptor.isAnonymousCommunityRead("GET", "/api/v1/posts/post_123"));
+        assertTrue(DoyuApiClient.SessionInterceptor.isAnonymousCommunityRead("GET", "/api/v1/posts/post_123/comments"));
 
         assertFalse(DoyuApiClient.SessionInterceptor.isAnonymousCommunityRead("POST", "/api/v1/posts/feed"));
         assertFalse(DoyuApiClient.SessionInterceptor.isAnonymousCommunityRead("GET", "/api/v1/users/me"));

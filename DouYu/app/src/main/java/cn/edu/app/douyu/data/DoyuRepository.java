@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import cn.edu.app.douyu.model.AuthSession;
 import cn.edu.app.douyu.model.ChatMessage;
+import cn.edu.app.douyu.model.Comment;
+import cn.edu.app.douyu.model.CommentRequest;
 import cn.edu.app.douyu.model.Conversation;
 import cn.edu.app.douyu.model.ConversationDetail;
 import cn.edu.app.douyu.model.NotificationMessage;
@@ -11,6 +13,7 @@ import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.PatternAsset;
 import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
+import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
@@ -44,6 +47,30 @@ public class DoyuRepository {
 
     public Post post(String postId) throws IOException {
         return body(api.post(postId));
+    }
+
+    public PageResponse<Comment> comments(String postId) throws IOException {
+        return body(api.comments(postId, FIRST_PAGE, PAGE_SIZE));
+    }
+
+    public Comment createComment(String postId, CommentRequest request) throws IOException {
+        return body(api.createComment(postId, request));
+    }
+
+    public PostInteraction likePost(String postId) throws IOException {
+        return body(api.likePost(postId));
+    }
+
+    public PostInteraction unlikePost(String postId) throws IOException {
+        return body(api.unlikePost(postId));
+    }
+
+    public PostInteraction favoritePost(String postId) throws IOException {
+        return body(api.favoritePost(postId));
+    }
+
+    public PostInteraction unfavoritePost(String postId) throws IOException {
+        return body(api.unfavoritePost(postId));
     }
 
     public PageResponse<Product> products() throws IOException {
