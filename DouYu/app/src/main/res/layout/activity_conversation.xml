@@ -13,76 +13,240 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <ScrollView
+        <LinearLayout
+            android:id="@+id/conversation_content"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingBottom="92dp">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="14dp"
+                android:background="@drawable/bg_card"
                 android:orientation="vertical"
                 android:padding="16dp">
 
                 <TextView
-                    android:id="@+id/conversation_detail_id"
-                    android:layout_width="match_parent"
+                    android:id="@+id/conversation_hero_pill"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_card"
-                    android:padding="16dp"
-                    android:textColor="@color/doyu_text"
-                    android:textSize="15sp" />
+                    android:background="@drawable/bg_pill_ok"
+                    android:gravity="center"
+                    android:minHeight="26dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:text="互相关注"
+                    android:textColor="@color/doyu_mint_deep"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/conversation_hero_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_card"
-                    android:padding="16dp"
-                    android:text="发送规则&#10;互相关注可继续聊天；未互关 3 条限制由后端会话状态控制。"
+                    android:layout_marginTop="8dp"
+                    android:text="可以继续聊天"
                     android:textColor="@color/doyu_text"
-                    android:textSize="15sp" />
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/conversation_hero_desc"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_card"
-                    android:padding="16dp"
-                    android:text="发送失败&#10;网络异常时保留草稿并展示重试入口；超过限制后输入框禁用，不弹出发送成功。"
-                    android:textColor="@color/doyu_text"
-                    android:textSize="15sp" />
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/doyu_text_muted"
+                    android:textSize="12sp" />
             </LinearLayout>
-        </ScrollView>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/conversation_messages"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="6dp"
+                    android:clipToPadding="false"
+                    android:paddingBottom="10dp" />
+
+                <TextView
+                    android:id="@+id/conversation_empty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:gravity="center"
+                    android:text="还没有消息，发送第一条私信开始聊天。"
+                    android:textColor="@color/doyu_text_muted"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/conversation_loading"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center" />
+
+        <LinearLayout
+            android:id="@+id/conversation_error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            android:background="@drawable/bg_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/conversation_error_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/doyu_text_muted"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/conversation_retry_load"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="重试" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/conversation_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/doyu_surface"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <TextView
+            android:id="@+id/conversation_warning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/bg_message_warning_band"
+            android:paddingStart="14dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="12dp"
+            android:textColor="@color/doyu_warn"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/conversation_retry_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/conversation_send_retry"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="重试"
+                android:textColor="@color/doyu_text_muted" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/conversation_send_cancel"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:text="取消"
+                android:textColor="@color/doyu_text_muted" />
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="82dp"
-            android:layout_gravity="bottom"
-            android:background="@color/doyu_surface"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="12dp">
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_floating_bar"
+            android:orientation="vertical"
+            android:padding="10dp">
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_card"
+            <EditText
+                android:id="@+id/conversation_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:gravity="top"
+                android:hint="输入私信内容"
+                android:inputType="textMultiLine|textShortMessage"
+                android:maxLines="4"
+                android:minHeight="38dp"
+                android:textColor="@color/doyu_text"
+                android:textColorHint="@color/doyu_text_muted"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:gravity="center_vertical"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:text="发送能力依赖后端会话状态"
-                android:textColor="@color/doyu_text_muted"
-                android:textSize="13sp" />
+                android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:layout_width="78dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="10dp"
-                android:enabled="false"
-                android:text="发送"
-                app:cornerRadius="8dp" />
+                <TextView
+                    android:id="@+id/conversation_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_pill_ok"
+                    android:gravity="center"
+                    android:minHeight="26dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:text="互关可发送"
+                    android:textColor="@color/doyu_mint_deep"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/conversation_send"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="发送"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/doyu_mint_deep"
+                    app:cornerRadius="13dp" />
+            </LinearLayout>
         </LinearLayout>
-    </FrameLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/conversation_follow"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="去关注"
+            android:textColor="@color/doyu_text_muted"
+            android:visibility="gone" />
+    </LinearLayout>
 </LinearLayout>

@@ -12,6 +12,9 @@ public final class IntentExtras {
     public static final String TITLE = "title";
     public static final String BODY = "body";
     public static final String SECTION = "section";
+    public static final String PEER_NAME = "peerName";
+    public static final String TYPE = "type";
+    public static final String CREATED_AT = "createdAt";
 
     private IntentExtras() {
     }

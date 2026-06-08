@@ -12,6 +12,8 @@ import cn.edu.app.douyu.model.PatternAsset;
 import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.Product;
+import cn.edu.app.douyu.model.ReadReceipt;
+import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
 import cn.edu.app.douyu.model.UserProfile;
@@ -76,6 +78,14 @@ public class DoyuRepository {
 
     public ConversationDetail conversation(String conversationId) throws IOException {
         return body(api.conversation(conversationId));
+    }
+
+    public ChatMessage sendMessage(String conversationId, String content) throws IOException {
+        return body(api.sendMessage(conversationId, new SendMessageRequest(content)));
+    }
+
+    public ReadReceipt markNotificationsRead() throws IOException {
+        return body(api.markNotificationsRead());
     }
 
     public UserProfile me() throws IOException {

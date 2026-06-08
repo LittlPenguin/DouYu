@@ -1,10 +1,27 @@
 package cn.edu.app.douyu.feature.message;
 
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.core.content.ContextCompat;
+
+import com.google.android.material.button.MaterialButton;
+
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.ui.XmlPageActivity;
 
+/**
+ * Notification detail: event type, title, summary and related object — no chat input,
+ * no private-message quota state. The only action is the real "mark all read" call.
+ * Object jumps (view post / view pattern) stay a labelled UI-only boundary until the
+ * backend returns linked objects; no dead fake entries are shown.
+ */
 public class NotificationDetailActivity extends XmlPageActivity {
+    private MaterialButton markRead;
+
     @Override
     protected int layoutRes() {
         return R.layout.activity_notification_detail;
@@ -17,17 +34,63 @@ public class NotificationDetailActivity extends XmlPageActivity {
 
     @Override
     protected void bindViews() {
+        TextView pill = findViewById(R.id.notification_pill);
+        TextView title = findViewById(R.id.notification_detail_title);
+        TextView body = findViewById(R.id.notification_detail_body);
+        View eventCard = findViewById(R.id.notification_event_card);
+        ImageView eventIcon = findViewById(R.id.notification_event_icon);
+        TextView eventTitle = findViewById(R.id.notification_event_title);
+        TextView eventSub = findViewById(R.id.notification_event_sub);
+        TextView eventTime = findViewById(R.id.notification_event_time);
+        markRead = findViewById(R.id.notification_mark_read);
+
         String notificationId = extra(IntentExtras.NOTIFICATION_ID);
-        String title = extra(IntentExtras.TITLE);
-        String body = extra(IntentExtras.BODY);
         if (notificationId.isEmpty()) {
-            setText(R.id.notification_detail_id, "缺少 notificationId，无法定位通知。");
-            setText(R.id.notification_detail_title, "通知边界");
-            setText(R.id.notification_detail_body, "请从通知列表进入详情页。通知详情不使用本地 fixture 内容。");
+            stylePill(pill, "通知边界", R.drawable.bg_chip_plain, R.color.doyu_text_muted);
+            title.setText("缺少通知");
+            body.setText("请从通知列表进入详情页。通知详情不使用本地 fixture 内容。");
+            eventCard.setVisibility(View.GONE);
+            markRead.setVisibility(View.GONE);
             return;
         }
-        setText(R.id.notification_detail_id, "通知 ID：" + notificationId);
-        setText(R.id.notification_detail_title, valueOrFallback(title, "通知事件"));
-        setText(R.id.notification_detail_body, valueOrFallback(body, "这条通知没有正文。"));
+
+        String type = extra(IntentExtras.TYPE);
+        String notificationTitle = extra(IntentExtras.TITLE);
+        String notificationBody = extra(IntentExtras.BODY);
+        String createdAt = extra(IntentExtras.CREATED_AT);
+
+        stylePill(pill, NotificationTypes.heroLabel(type), NotificationTypes.heroPillBg(type), NotificationTypes.heroPillColor(type));
+        title.setText(valueOrFallback(notificationTitle, "通知事件"));
+        body.setText(valueOrFallback(notificationBody, "这条通知没有正文。"));
+
+        eventIcon.setImageResource(NotificationTypes.iconRes(type));
+        eventTitle.setText(valueOrFallback(notificationTitle, "通知事件"));
+        eventSub.setText(NotificationTypes.heroLabel(type));
+        eventTime.setText(NotificationTypes.shortTime(createdAt));
+
+        markRead.setOnClickListener(v -> markAllRead());
+    }
+
+    private void markAllRead() {
+        markRead.setEnabled(false);
+        markRead.setText("标记中…");
+        loadDetail(
+                repository -> repository.markNotificationsRead(),
+                receipt -> {
+                    markRead.setText("已标记已读");
+                    Toast.makeText(this, "已将通知标记为已读", Toast.LENGTH_SHORT).show();
+                },
+                (state, message) -> {
+                    markRead.setEnabled(true);
+                    markRead.setText("标为已读");
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                }
+        );
+    }
+
+    private void stylePill(TextView pill, String text, int bgRes, int colorRes) {
+        pill.setText(text);
+        pill.setBackgroundResource(bgRes);
+        pill.setTextColor(ContextCompat.getColor(this, colorRes));
     }
 }
