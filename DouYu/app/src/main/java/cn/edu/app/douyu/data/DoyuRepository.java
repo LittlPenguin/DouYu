@@ -8,6 +8,7 @@ import cn.edu.app.douyu.model.AuthSession;
 import cn.edu.app.douyu.model.ChatMessage;
 import cn.edu.app.douyu.model.Conversation;
 import cn.edu.app.douyu.model.ConversationDetail;
+import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.NotificationMessage;
 import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.PatternAsset;
@@ -18,6 +19,9 @@ import cn.edu.app.douyu.model.ReadReceipt;
 import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
+import cn.edu.app.douyu.model.UploadConfirmRequest;
+import cn.edu.app.douyu.model.UploadPresignRequest;
+import cn.edu.app.douyu.model.UploadPresignResponse;
 import cn.edu.app.douyu.model.UserProfile;
 import cn.edu.app.douyu.model.AiQuota;
 import cn.edu.app.douyu.model.ConfirmUploadRequest;
@@ -33,6 +37,7 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -157,11 +162,48 @@ public class DoyuRepository {
     }
 
     public UserProfile updateMe(String nickname, String bio) throws IOException {
-        return body(api.updateMe(new UpdateProfileRequest(nickname, bio)));
+        return updateMe(nickname, bio, null);
+    }
+
+    public UserProfile updateMe(String nickname, String bio, String avatarFileId) throws IOException {
+        return body(api.updateMe(new UpdateProfileRequest(nickname, avatarFileId, bio)));
+    }
+
+    /**
+     * Uploads an avatar image through the real presign -> PUT -> confirm flow and
+     * returns the resulting fileId for use in {@link #updateMe(String, String, String)}.
+     */
+    public String uploadAvatar(byte[] bytes, String mimeType, String fileName, Integer width, Integer height) throws IOException {
+        UploadPresignResponse presign = body(api.uploadPresign(
+                new UploadPresignRequest("AVATAR", mimeType, bytes.length, fileName)));
+        if (presign == null || presign.uploadUrl == null || presign.fileKey == null) {
+            throw new ApiException("上传地址无效");
+        }
+        RequestBody putBody = RequestBody.create(bytes, MediaType.parse(mimeType));
+        Response<ResponseBody> putResponse = api.uploadPut(presign.uploadUrl, putBody).execute();
+        try {
+            if (!putResponse.isSuccessful()) {
+                throw new ApiException(putResponse.code(), "头像上传失败 HTTP " + putResponse.code());
+            }
+        } finally {
+            if (putResponse.body() != null) {
+                putResponse.body().close();
+            }
+        }
+        FileAsset asset = body(api.uploadConfirm(
+                new UploadConfirmRequest(presign.fileKey, "AVATAR", mimeType, bytes.length, width, height)));
+        if (asset == null || asset.fileId == null) {
+            throw new ApiException("头像确认失败");
+        }
+        return asset.fileId;
     }
 
     public PageResponse<Post> likedPosts() throws IOException {
         return body(api.likedPosts(FIRST_PAGE, PAGE_SIZE));
+    }
+
+    public PageResponse<Post> favoritePosts() throws IOException {
+        return body(api.favoritePosts(FIRST_PAGE, PAGE_SIZE));
     }
 
     public PageResponse<PatternAsset> favoritePatterns() throws IOException {

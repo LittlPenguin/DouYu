@@ -9,4 +9,7 @@ public class UserProfile {
     public Integer postCount;
     public Integer followingCount;
     public Integer followerCount;
+    public String ageGroup;
+    public Integer level;
+    public Boolean isMinor;
 }
