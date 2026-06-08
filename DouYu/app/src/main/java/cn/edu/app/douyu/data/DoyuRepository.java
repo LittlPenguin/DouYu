@@ -1,6 +1,8 @@
 package cn.edu.app.douyu.data;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import cn.edu.app.douyu.model.AuthSession;
 import cn.edu.app.douyu.model.ChatMessage;
@@ -17,9 +19,20 @@ import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
 import cn.edu.app.douyu.model.UserProfile;
+import cn.edu.app.douyu.model.AiQuota;
+import cn.edu.app.douyu.model.ConfirmUploadRequest;
+import cn.edu.app.douyu.model.CreatePatternJobRequest;
+import cn.edu.app.douyu.model.FavoriteResult;
+import cn.edu.app.douyu.model.FileAsset;
+import cn.edu.app.douyu.model.PresignUploadRequest;
+import cn.edu.app.douyu.model.PresignUploadResponse;
 import cn.edu.app.douyu.network.ApiException;
 import cn.edu.app.douyu.network.ApiResponse;
 import cn.edu.app.douyu.network.DoyuApi;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -27,9 +40,18 @@ public class DoyuRepository {
     private static final int FIRST_PAGE = 1;
     private static final int PAGE_SIZE = 20;
     private final DoyuApi api;
+    private final OkHttpClient uploadClient;
 
     public DoyuRepository(DoyuApi api) {
+        this(api, new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build());
+    }
+
+    public DoyuRepository(DoyuApi api, OkHttpClient uploadClient) {
         this.api = api;
+        this.uploadClient = uploadClient;
     }
 
     public PageResponse<Post> feed() throws IOException {
@@ -66,6 +88,48 @@ public class DoyuRepository {
 
     public PatternAsset pattern(String patternId) throws IOException {
         return body(api.pattern(patternId));
+    }
+
+    public PresignUploadResponse uploadPresign(String usage, String mimeType, long sizeBytes, String fileName) throws IOException {
+        return body(api.uploadPresign(new PresignUploadRequest(usage, mimeType, sizeBytes, fileName)));
+    }
+
+    public void uploadPresignedBytes(String uploadUrl, byte[] bytes, String mimeType, Map<String, String> headers) throws IOException {
+        Request.Builder builder = new Request.Builder()
+                .url(uploadUrl)
+                .put(RequestBody.create(MediaType.parse(mimeType), bytes));
+        if (headers != null) {
+            for (Map.Entry<String, String> header : headers.entrySet()) {
+                if (header.getKey() != null && header.getValue() != null) {
+                    builder.header(header.getKey(), header.getValue());
+                }
+            }
+        }
+        try (okhttp3.Response response = uploadClient.newCall(builder.build()).execute()) {
+            if (!response.isSuccessful()) {
+                throw new ApiException(response.code(), "上传失败：" + response.code());
+            }
+        }
+    }
+
+    public FileAsset uploadConfirm(String fileKey, String usage, String mimeType, long sizeBytes, Integer width, Integer height) throws IOException {
+        return body(api.uploadConfirm(new ConfirmUploadRequest(fileKey, usage, mimeType, sizeBytes, width, height)));
+    }
+
+    public PatternJob createPatternJob(String inputFileId, String beadSize, String targetSize, String difficulty, String paletteId, String style) throws IOException {
+        return body(api.createPatternJob(new CreatePatternJobRequest(inputFileId, beadSize, targetSize, difficulty, paletteId, style)));
+    }
+
+    public PatternJob cancelPatternJob(String jobId) throws IOException {
+        return body(api.cancelPatternJob(jobId));
+    }
+
+    public FavoriteResult favoritePattern(String patternId) throws IOException {
+        return body(api.favoritePattern(patternId));
+    }
+
+    public AiQuota aiQuota() throws IOException {
+        return body(api.aiQuota());
     }
 
     public PageResponse<NotificationMessage> notifications() throws IOException {

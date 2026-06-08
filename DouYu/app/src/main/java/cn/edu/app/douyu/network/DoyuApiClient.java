@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import cn.edu.app.douyu.BuildConfig;
+import cn.edu.app.douyu.data.DoyuRepository;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -35,6 +36,17 @@ public final class DoyuApiClient {
                 .build();
 
         return retrofit.create(DoyuApi.class);
+    }
+
+    public static DoyuRepository createRepository(Context context) {
+        return new DoyuRepository(create(context), createUploadClient());
+    }
+
+    static OkHttpClient createUploadClient() {
+        return new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build();
     }
 
     static final class SessionInterceptor implements Interceptor {

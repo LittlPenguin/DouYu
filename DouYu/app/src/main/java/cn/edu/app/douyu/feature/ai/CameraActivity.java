@@ -1,7 +1,9 @@
 package cn.edu.app.douyu.feature.ai;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.widget.TextView;
 
@@ -33,8 +35,10 @@ public class CameraActivity extends AppCompatActivity {
     private PreviewView previewView;
     private TextView status;
     private MaterialButton captureButton;
+    private MaterialButton usePhotoButton;
     private ImageCapture imageCapture;
     private ExecutorService cameraExecutor;
+    private File lastPhotoFile;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -45,9 +49,12 @@ public class CameraActivity extends AppCompatActivity {
         previewView = findViewById(R.id.camera_preview);
         status = findViewById(R.id.camera_status);
         captureButton = findViewById(R.id.camera_capture);
+        usePhotoButton = findViewById(R.id.camera_use_photo);
         cameraExecutor = Executors.newSingleThreadExecutor();
         captureButton.setEnabled(false);
         captureButton.setOnClickListener(v -> capturePhoto());
+        usePhotoButton.setEnabled(false);
+        usePhotoButton.setOnClickListener(v -> openAiFlowWithPhoto());
 
         if (hasCameraPermission()) {
             startCamera();
@@ -129,8 +136,10 @@ public class CameraActivity extends AppCompatActivity {
             @Override
             public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
                 runOnUiThread(() -> {
+                    lastPhotoFile = photoFile;
                     captureButton.setEnabled(true);
-                    status.setText("照片已保存，等待上传接入：" + photoFile.getName());
+                    usePhotoButton.setEnabled(true);
+                    status.setText("照片已保存。点击使用照片后进入 AI 图纸流程，由后续页面执行真实上传。");
                 });
             }
 
@@ -142,5 +151,16 @@ public class CameraActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    private void openAiFlowWithPhoto() {
+        if (lastPhotoFile == null || !lastPhotoFile.isFile()) {
+            status.setText("还没有可使用的照片，请先拍照。");
+            return;
+        }
+        Intent intent = new Intent(this, AiFlowActivity.class);
+        intent.setData(Uri.fromFile(lastPhotoFile));
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(intent);
     }
 }

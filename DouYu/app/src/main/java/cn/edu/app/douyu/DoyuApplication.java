@@ -11,7 +11,7 @@ public class DoyuApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        repository = new DoyuRepository(DoyuApiClient.create(this));
+        repository = DoyuApiClient.createRepository(this);
     }
 
     public DoyuRepository repository() {

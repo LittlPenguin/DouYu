@@ -15,6 +15,13 @@ import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
 import cn.edu.app.douyu.model.UserProfile;
+import cn.edu.app.douyu.model.AiQuota;
+import cn.edu.app.douyu.model.ConfirmUploadRequest;
+import cn.edu.app.douyu.model.CreatePatternJobRequest;
+import cn.edu.app.douyu.model.FavoriteResult;
+import cn.edu.app.douyu.model.FileAsset;
+import cn.edu.app.douyu.model.PresignUploadRequest;
+import cn.edu.app.douyu.model.PresignUploadResponse;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -50,6 +57,24 @@ public interface DoyuApi {
 
     @GET("/api/v1/patterns/{patternId}")
     Call<ApiResponse<PatternAsset>> pattern(@Path("patternId") String patternId);
+
+    @POST("/api/v1/uploads/presign")
+    Call<ApiResponse<PresignUploadResponse>> uploadPresign(@Body PresignUploadRequest request);
+
+    @POST("/api/v1/uploads/confirm")
+    Call<ApiResponse<FileAsset>> uploadConfirm(@Body ConfirmUploadRequest request);
+
+    @POST("/api/v1/patterns/jobs")
+    Call<ApiResponse<PatternJob>> createPatternJob(@Body CreatePatternJobRequest request);
+
+    @POST("/api/v1/patterns/jobs/{jobId}/cancel")
+    Call<ApiResponse<PatternJob>> cancelPatternJob(@Path("jobId") String jobId);
+
+    @POST("/api/v1/patterns/{patternId}/favorite")
+    Call<ApiResponse<FavoriteResult>> favoritePattern(@Path("patternId") String patternId);
+
+    @GET("/api/v1/patterns/quota")
+    Call<ApiResponse<AiQuota>> aiQuota();
 
     @GET("/api/v1/messages/notifications")
     Call<ApiResponse<PageResponse<NotificationMessage>>> notifications(@Query("page") int page, @Query("size") int size);

@@ -12,7 +12,6 @@ import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
-import cn.edu.app.douyu.feature.ai.AiFlowActivity;
 import cn.edu.app.douyu.feature.ai.AiFragment;
 import cn.edu.app.douyu.feature.commerce.CommerceFragment;
 import cn.edu.app.douyu.feature.community.CommunityFragment;
@@ -48,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
         });
         findViewById(R.id.quick_ai).setOnClickListener(v -> {
             hideQuickMenu();
-            startActivity(new Intent(this, AiFlowActivity.class));
+            openTab(2);
         });
         findViewById(R.id.quick_post).setOnClickListener(v -> {
             hideQuickMenu();
