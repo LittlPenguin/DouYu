@@ -9,9 +9,12 @@
     <color name="doyu_petal_deep">#FFB24B62</color>
     <color name="doyu_mint">#FF6BC6A6</color>
     <color name="doyu_mint_soft">#FFE4F7EF</color>
+    <color name="doyu_mint_deep">#FF237D65</color>
     <color name="doyu_sky">#FF79B8F2</color>
     <color name="doyu_sky_soft">#FFE8F3FF</color>
     <color name="doyu_coral">#FFFF8A66</color>
+    <color name="doyu_warn">#FFD9852B</color>
+    <color name="doyu_danger">#FFB84D3F</color>
     <color name="doyu_line">#1F2D2621</color>
     <color name="doyu_open_line">#FFEADFD7</color>
     <color name="black">#FF000000</color>

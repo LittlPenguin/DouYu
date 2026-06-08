@@ -10,6 +10,8 @@ import cn.edu.app.douyu.model.PatternAsset;
 import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.Product;
+import cn.edu.app.douyu.model.ReadReceipt;
+import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
 import cn.edu.app.douyu.model.UserProfile;
@@ -57,6 +59,12 @@ public interface DoyuApi {
 
     @GET("/api/v1/messages/conversations/{conversationId}")
     Call<ApiResponse<ConversationDetail>> conversation(@Path("conversationId") String conversationId);
+
+    @POST("/api/v1/messages/conversations/{conversationId}")
+    Call<ApiResponse<ChatMessage>> sendMessage(@Path("conversationId") String conversationId, @Body SendMessageRequest request);
+
+    @POST("/api/v1/messages/notifications/read")
+    Call<ApiResponse<ReadReceipt>> markNotificationsRead();
 
     @GET("/api/v1/users/me")
     Call<ApiResponse<UserProfile>> me();

@@ -115,8 +115,14 @@ public class MessageController {
     }
 
     private Map<String, Object> notificationView(NotificationEntity message) {
-        return Map.of("notificationId", message.getId(), "type", message.getType(), "title", message.getTitle(),
-                "content", message.getContent(), "unread", message.getReadAt() == null);
+        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        view.put("notificationId", message.getId());
+        view.put("type", message.getType());
+        view.put("title", message.getTitle());
+        view.put("content", message.getContent());
+        view.put("unread", message.getReadAt() == null);
+        view.put("createdAt", message.getCreatedAt() == null ? null : message.getCreatedAt().toString());
+        return view;
     }
 
     private ConversationEntity requireConversation(String conversationId, String userId) {
