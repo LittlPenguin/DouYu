@@ -46,18 +46,20 @@ public class OpenDesignLayoutMappingTest {
 
     @Test
     public void mainTabStateContainersStartHiddenInXml() throws IOException {
-        String[] layouts = {
-                "fragment_ai_home.xml",
-                "fragment_messages_home.xml",
-                "fragment_profile_home.xml"
+        TabStateContainers[] tabs = new TabStateContainers[]{
+                new TabStateContainers("fragment_ai_home.xml",
+                        "@+id/error_box", "@+id/error_text", "@+id/retry_button", "@+id/empty_text"),
+                new TabStateContainers("fragment_messages_home.xml",
+                        "@+id/error_box", "@+id/error_text", "@+id/retry_button", "@+id/empty_text"),
+                new TabStateContainers("fragment_profile_home.xml",
+                        "@+id/asset_error_box", "@+id/asset_empty")
         };
 
-        for (String layout : layouts) {
-            String xml = new String(Files.readAllBytes(Path.of("src/main/res/layout", layout)), StandardCharsets.UTF_8);
-            assertViewHasGoneVisibility(layout, xml, "@+id/error_box");
-            assertViewHasGoneVisibility(layout, xml, "@+id/error_text");
-            assertViewHasGoneVisibility(layout, xml, "@+id/retry_button");
-            assertViewHasGoneVisibility(layout, xml, "@+id/empty_text");
+        for (TabStateContainers tab : tabs) {
+            String xml = new String(Files.readAllBytes(Path.of("src/main/res/layout", tab.layout)), StandardCharsets.UTF_8);
+            for (String goneId : tab.goneIds) {
+                assertViewHasGoneVisibility(tab.layout, xml, goneId);
+            }
         }
     }
 
@@ -191,6 +193,16 @@ public class OpenDesignLayoutMappingTest {
         LayoutMapping(String openDesignPage, int layoutId) {
             this.openDesignPage = openDesignPage;
             this.layoutId = layoutId;
+        }
+    }
+
+    private static final class TabStateContainers {
+        final String layout;
+        final String[] goneIds;
+
+        TabStateContainers(String layout, String... goneIds) {
+            this.layout = layout;
+            this.goneIds = goneIds;
         }
     }
 
