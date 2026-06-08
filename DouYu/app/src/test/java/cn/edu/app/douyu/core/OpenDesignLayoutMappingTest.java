@@ -62,6 +62,49 @@ public class OpenDesignLayoutMappingTest {
     }
 
     @Test
+    public void commerceScreenRemovesBeginnerSupplyActivityAndKeepsRealDataStates() throws IOException {
+        String androidXml = readUtf8("src/main/res/layout/fragment_commerce_home.xml");
+        String openDesignHtml = readUtf8("../../doc/development/open-design/commerce-home-a.html");
+        String removedActivityTitle = "新手材料" + "补给";
+        String removedActivityInstruction = "只展示真实可解释活动，" + "点击路径必须存在";
+
+        assertFalse("Android commerce runtime must not show removed activity banner",
+                androidXml.contains(removedActivityTitle));
+        assertFalse("Android commerce runtime must not keep the removed activity instruction",
+                androidXml.contains(removedActivityInstruction));
+        assertFalse("Open Design commerce source must not show removed activity banner",
+                openDesignHtml.contains(removedActivityTitle));
+        assertFalse("Open Design commerce source must not keep the removed activity instruction",
+                openDesignHtml.contains(removedActivityInstruction));
+
+        assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/section_chips");
+        assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/summary_list");
+        assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/loading");
+        assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/empty_text");
+        assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/error_box");
+    }
+
+    @Test
+    public void commercePaymentBoundaryPathExistsAndPaymentCtaStartsDisabled() throws IOException {
+        String productDetailXml = readUtf8("src/main/res/layout/activity_product_detail.xml");
+        String paymentBoundaryXml = readUtf8("src/main/res/layout/activity_payment_boundary.xml");
+
+        assertViewIdExists("activity_product_detail.xml", productDetailXml, "@+id/product_payment_boundary");
+        String disabledPaymentCta = tagContaining(paymentBoundaryXml,
+                "android:text=\"当前为 UI-only 边界，等待真实支付接入\"");
+        assertTrue("Payment boundary page must keep the CTA disabled until real payment is connected",
+                disabledPaymentCta.contains("android:enabled=\"false\""));
+        assertTrue("Disabled payment CTA must keep readable text instead of relying on default low-contrast disabled styling",
+                disabledPaymentCta.contains("android:textColor=\"@color/doyu_text\""));
+        assertTrue("Disabled payment CTA must use an explicit visible background",
+                disabledPaymentCta.contains("app:backgroundTint=\"@color/doyu_surface\""));
+        assertTrue("Disabled payment CTA must keep a visible boundary stroke",
+                disabledPaymentCta.contains("app:strokeColor=\"@color/doyu_open_line\""));
+        assertTrue("Disabled payment CTA must keep a non-zero stroke width",
+                disabledPaymentCta.contains("app:strokeWidth=\"1dp\""));
+    }
+
+    @Test
     public void openDesignAndDiagramsUseJavaXmlArchitectureWording() throws IOException {
         DocExpectation[] expectations = new DocExpectation[]{
                 new DocExpectation("../../doc/development/open-design/index.html",
@@ -101,6 +144,19 @@ public class OpenDesignLayoutMappingTest {
         String tag = xml.substring(tagStart, tagEnd);
         assertTrue(layout + " " + id + " should start gone", tag.contains("android:visibility=\"gone\""));
         assertFalse(layout + " " + id + " should not start visible", tag.contains("android:visibility=\"visible\""));
+    }
+
+    private static void assertViewIdExists(String layout, String xml, String id) {
+        assertTrue(layout + " missing " + id, xml.contains("android:id=\"" + id + "\""));
+    }
+
+    private static String tagContaining(String xml, String needle) {
+        int needleIndex = xml.indexOf(needle);
+        assertTrue("Missing XML tag containing " + needle, needleIndex >= 0);
+        int tagStart = xml.lastIndexOf('<', needleIndex);
+        int tagEnd = xml.indexOf('>', needleIndex);
+        assertTrue("Malformed XML tag containing " + needle, tagStart >= 0 && tagEnd > needleIndex);
+        return xml.substring(tagStart, tagEnd);
     }
 
     private static String readUtf8(String relativePath) throws IOException {

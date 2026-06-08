@@ -25,7 +25,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="微信 / 支付宝&#10;当前只保留联调边界，不创建假支付参数，不展示假成功。"
+                android:text="微信 / 支付宝&#10;当前只保留联调边界，不创建虚构支付参数，不展示虚构成功。"
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
@@ -55,7 +55,11 @@
                 android:layout_marginTop="18dp"
                 android:enabled="false"
                 android:text="当前为 UI-only 边界，等待真实支付接入"
-                app:cornerRadius="8dp" />
+                android:textColor="@color/doyu_text"
+                app:backgroundTint="@color/doyu_surface"
+                app:cornerRadius="8dp"
+                app:strokeColor="@color/doyu_open_line"
+                app:strokeWidth="1dp" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

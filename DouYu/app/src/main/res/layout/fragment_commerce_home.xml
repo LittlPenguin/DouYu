@@ -45,7 +45,7 @@
             android:gravity="center"
             android:paddingStart="10dp"
             android:paddingEnd="10dp"
-            android:text="自营精选"
+            android:text="真实商品边界"
             android:textColor="@color/white"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -54,7 +54,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="新手材料补给"
+            android:text="商城规则说明"
             android:textColor="@color/doyu_text"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -63,7 +63,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="商品卡展示图片、标题、类型标签、价格和库存边界；玩家商品不混入标准购物车。"
+            android:text="商品列表只展示后端返回的数据；自营商品可进入详情链路，玩家二手/定制只展示交易边界。"
             android:textColor="@color/doyu_text_muted"
             android:textSize="12sp" />
     </LinearLayout>
