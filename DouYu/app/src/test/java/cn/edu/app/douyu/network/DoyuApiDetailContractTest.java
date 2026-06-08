@@ -11,8 +11,16 @@ import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.Topic;
+import cn.edu.app.douyu.model.AiQuota;
+import cn.edu.app.douyu.model.ConfirmUploadRequest;
+import cn.edu.app.douyu.model.CreatePatternJobRequest;
+import cn.edu.app.douyu.model.FavoriteResult;
+import cn.edu.app.douyu.model.FileAsset;
+import cn.edu.app.douyu.model.PresignUploadRequest;
+import cn.edu.app.douyu.model.PresignUploadResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.POST;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -32,6 +40,29 @@ public class DoyuApiDetailContractTest {
 
         assertEquals("/api/v1/patterns/jobs/{jobId}", method.getAnnotation(GET.class).value());
         assertCallDataType(method, PatternJob.class);
+    }
+
+    @Test
+    public void aiUploadAndPatternActionsUseExistingBackendEndpoints() throws Exception {
+        Method presign = DoyuApi.class.getMethod("uploadPresign", PresignUploadRequest.class);
+        Method confirm = DoyuApi.class.getMethod("uploadConfirm", ConfirmUploadRequest.class);
+        Method createJob = DoyuApi.class.getMethod("createPatternJob", CreatePatternJobRequest.class);
+        Method cancelJob = DoyuApi.class.getMethod("cancelPatternJob", String.class);
+        Method favorite = DoyuApi.class.getMethod("favoritePattern", String.class);
+        Method quota = DoyuApi.class.getMethod("aiQuota");
+
+        assertEquals("/api/v1/uploads/presign", presign.getAnnotation(POST.class).value());
+        assertCallDataType(presign, PresignUploadResponse.class);
+        assertEquals("/api/v1/uploads/confirm", confirm.getAnnotation(POST.class).value());
+        assertCallDataType(confirm, FileAsset.class);
+        assertEquals("/api/v1/patterns/jobs", createJob.getAnnotation(POST.class).value());
+        assertCallDataType(createJob, PatternJob.class);
+        assertEquals("/api/v1/patterns/jobs/{jobId}/cancel", cancelJob.getAnnotation(POST.class).value());
+        assertCallDataType(cancelJob, PatternJob.class);
+        assertEquals("/api/v1/patterns/{patternId}/favorite", favorite.getAnnotation(POST.class).value());
+        assertCallDataType(favorite, FavoriteResult.class);
+        assertEquals("/api/v1/patterns/quota", quota.getAnnotation(GET.class).value());
+        assertCallDataType(quota, AiQuota.class);
     }
 
     @Test
