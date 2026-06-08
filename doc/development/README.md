@@ -16,7 +16,7 @@
 ## 事实优先级
 
 1. 当前代码、构建配置、测试输出和实际截图。
-2. `AGENTS.md` 本轮任务规则。
+2. 仓库根目录 `AGENTS.md` 本轮任务规则。
 3. `current-status.md` 当前状态。
 4. 领域分册：API 看 `05-api-contract.md`，Android 看 `03-android-client.md`，后端看 `04-backend-services.md`，UI 看 `11-ui-style-guide.md` 和 `13-ui-screen-blueprints.md`。
 5. `16-stage-development-roadmap.md` 阶段路线。
@@ -74,12 +74,15 @@
 | `16-stage-development-roadmap.md` | Java/XML 分阶段开发路线和退出标准 |
 | `17-ui-parity-refactor-plan.md` | Open Design UI 还原计划 |
 | `18-unfinished-and-blockers.md` | 未完成、阻塞、不能写成通过和后续 P0/P1 项集中清单 |
+| `19-community-post-detail-open-design-plan.md` | 社区作品详情页 Open Design 还原计划 |
+| `19-messages-open-design-rebuild-plan.md` | 消息页三屏 Open Design 重建计划 |
+| `19-profile-open-design-plan.md` | 我的页 Open Design 还原计划 |
 | `current-status.md` | 当前事实、已完成项和下一步未关闭项 |
 | `diagrams/README.md` | 架构图、API 图、UI 信息架构图和页面线框图索引 |
 
 ## Open Design 入口
 
-Open Design 本地页面稿在 `doc/development/open-design/`，共 18 个 HTML，是 UI 结构、视觉层级、文案、状态和交互验收权威：
+Open Design 本地页面稿在 `doc/development/open-design/`，共 19 个 HTML（含入口索引页 `index.html` 与下列 18 个页面稿），是 UI 结构、视觉层级、文案、状态和交互验收权威：
 
 | 文件 | 用途 |
 |---|---|
@@ -101,6 +104,7 @@ Open Design 本地页面稿在 `doc/development/open-design/`，共 18 个 HTML�
 | `settings-about-compliance-a.html` | 关于与合规 |
 | `future-capability-ui-a.html` | 地图、真实支付、大模型生图 UI-only 占位 |
 | `doyu-design-directions.html` | 设计方向说明 |
+| `index.html` | Open Design 入口索引页 |
 
 Open Design 只表达目标 UI，不代表 Android 路由、后端接口或真实数据已经完成。
 

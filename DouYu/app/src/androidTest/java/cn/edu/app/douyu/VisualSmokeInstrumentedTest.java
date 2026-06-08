@@ -63,7 +63,7 @@ public class VisualSmokeInstrumentedTest {
         captureActivity(outputDir, "notification_detail", new Intent(targetContext, NotificationDetailActivity.class)
                 .putExtra(IntentExtras.NOTIFICATION_ID, "notif_visual_check")
                 .putExtra(IntentExtras.TITLE, "通知事件")
-                .putExtra(IntentExtras.BODY, "通知详情视觉验证"));
+                .putExtra(IntentExtras.BODY, "通知详情视觉验收"));
         captureActivity(outputDir, "profile_edit", new Intent(targetContext, ProfileEditActivity.class));
         captureActivity(outputDir, "settings_home", new Intent(targetContext, SettingsActivity.class));
         captureActivity(outputDir, "settings_account_security", new Intent(targetContext, SettingsActivity.class)

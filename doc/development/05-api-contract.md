@@ -42,6 +42,48 @@ The following are explicit development boundaries:
 
 Do not document these as production capabilities.
 
+## Upload (`/api/v1/uploads`)
+
+Object upload uses a presign → PUT → confirm flow:
+
+- `POST /api/v1/uploads/presign` returns an upload URL and a file key for the
+  target object. Request carries the upload purpose/scene, MIME type, byte size,
+  and file name.
+- `PUT {uploadUrl}` uploads the raw bytes directly to the returned URL (OSS
+  stub/local provider in development; not an `/api/v1` path).
+- `POST /api/v1/uploads/confirm` finalizes the upload and returns a `FileAsset`
+  with a `fileId` used by profile avatar and AI source-image flows.
+
+Known boundary: the Android `DoyuApi` currently exposes two parallel
+presign/confirm method pairs that target the same backend paths but use
+different request DTOs (AI flow: `PresignUploadRequest`/`ConfirmUploadRequest`;
+profile flow: `UploadPresignRequest`/`UploadConfirmRequest`). The backend
+contract is a single endpoint pair; the duplicate client DTOs are a merge
+artifact to be unified later and do not change the backend contract.
+
+## AI Pattern (`/api/v1/patterns`)
+
+- `GET /api/v1/patterns/jobs` lists the current user's AI pattern jobs (also the
+  "我的图纸" tab source).
+- `GET /api/v1/patterns/jobs/{jobId}` returns one job's detail.
+- `POST /api/v1/patterns/jobs` creates a pattern job from a confirmed source
+  image and generation parameters; returns the created `PatternJob`.
+- `POST /api/v1/patterns/jobs/{jobId}/cancel` cancels a running job and returns
+  the updated `PatternJob`.
+- `GET /api/v1/patterns/{patternId}` returns a generated pattern asset.
+- `POST /api/v1/patterns/{patternId}/favorite` toggles favorite on a pattern and
+  returns a `FavoriteResult`.
+- `GET /api/v1/patterns/quota` returns the current AI generation quota
+  (`AiQuota`).
+
+## Community Comments (`/api/v1/posts/{postId}/comments`)
+
+- `GET /api/v1/posts/{postId}/comments` returns a paged list of `Comment` for a
+  post. Anonymous read is allowed for community reads.
+- `POST /api/v1/posts/{postId}/comments` creates a comment from a
+  `CommentRequest` (text plus optional media/mention/topic/sticker references)
+  and returns the created `Comment`.
+
 ## Profile (`/api/v1/users/me`)
 
 `GET /api/v1/users/me` returns the current profile view. Real fields used by the

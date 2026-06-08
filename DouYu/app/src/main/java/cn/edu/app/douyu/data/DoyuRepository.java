@@ -18,6 +18,7 @@ import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.model.Product;
+import cn.edu.app.douyu.model.ProductCategory;
 import cn.edu.app.douyu.model.ReadReceipt;
 import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
@@ -104,6 +105,17 @@ public class DoyuRepository {
 
     public PageResponse<Product> products() throws IOException {
         return body(api.products(FIRST_PAGE, PAGE_SIZE));
+    }
+
+    public PageResponse<Product> products(String categoryId) throws IOException {
+        if (categoryId == null || categoryId.trim().isEmpty()) {
+            return products();
+        }
+        return body(api.products(FIRST_PAGE, PAGE_SIZE, categoryId));
+    }
+
+    public PageResponse<ProductCategory> productCategories() throws IOException {
+        return body(api.productCategories());
     }
 
     public Product product(String productId) throws IOException {

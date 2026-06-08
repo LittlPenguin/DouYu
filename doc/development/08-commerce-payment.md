@@ -6,6 +6,17 @@
 
 ## 商城结构
 
+### 商城首页
+
+2026-06-08 起，Android 商城首页目标为真实后端商品驱动：
+
+- 顶部分类 chip 来自 `GET /api/v1/product-categories`，固定包含推荐入口 `精选`，其余分类按后端公开商品聚合。
+- `精选` 请求 `GET /api/v1/products?page=1&size=20`，其它分类请求 `GET /api/v1/products?page=1&size=20&categoryId=...`。
+- 商品列表只展示 `status=ON_SALE` 且 `auditStatus=PASS` 的商品。
+- 商品卡使用后端返回的 `imageUrl`、`imageWidth`、`imageHeight` 计算双列不等高瀑布流；无真实宽高时只能使用稳定 fallback，不允许用本地假图或假商品填充。
+- 首屏不再固定展示“商城规则说明”卡。交易、支付、地址和玩家商品边界在商品详情、支付边界页和文档中表达。
+- 本阶段可通过显式 dev 导入脚本写入 10-15 条 OSS 商品作为验收数据；该数据不是运行期 seed，服务启动不得自动插入。
+
 ### 自营精选
 
 适合平台直接销售：

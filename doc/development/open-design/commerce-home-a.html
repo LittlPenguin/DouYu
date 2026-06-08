@@ -12,8 +12,8 @@
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / A 方向页面级设计稿</div>
         <h1 class="title">商城首页：可信材料购买</h1>
-        <p class="lead">商城沿用统一主页面框架，自营商品走标准购买链路，玩家二手/定制只展示边界，不混入标准购物车。真实支付只在未来能力页中作为 UI-only 占位。</p>
-        <div class="chips"><span class="chip">自营可加购</span><span class="chip">玩家商品边界</span><span class="chip">地址缺口</span><span class="chip">支付 Stub 不误导</span></div>
+        <p class="lead">商城首页由真实商品接口驱动，顶部分类切换请求对应商品；自营商品走购买边界，玩家二手/定制只展示咨询边界，不使用本地假商品撑满页面。</p>
+        <div class="chips"><span class="chip">真实分类</span><span class="chip">OSS 商品图</span><span class="chip">不等高商品卡</span><span class="chip">支付边界清晰</span></div>
       </div>
       <div class="side-facts">
         <div class="fact"><b>框架统一</b><span>顶部同样使用新增 icon - 商城 - 搜索 icon，底部使用品牌 Logo 导航。</span></div>
@@ -38,13 +38,12 @@
               </div>
             </div>
             <div class="scroll">
-              <div class="tabs"><span class="tab on">精选</span><span class="tab">豆子</span><span class="tab">板子</span><span class="tab">工具</span><span class="tab">玩家</span></div>
-              <div class="hero-strip" style="background:linear-gradient(135deg,#fff,var(--sky2))"><span class="pill ok">真实商品边界</span><h3>商城规则说明</h3><p>列表只承载后端返回的商品；玩家二手/定制不承诺标准购物车或真实支付。</p></div>
+              <div class="tabs"><span class="tab on">精选</span><span class="tab">豆子</span><span class="tab">板子</span><span class="tab">工具</span><span class="tab">套装</span><span class="tab">玩家</span></div>
               <div class="masonry">
-                <a class="product-card" href="future-capability-ui-a.html"><div class="thumb sky h-sm"></div><div class="card-body"><span class="pill ok">自营</span><div class="mini-title">雾粉 1000 颗</div><div class="meta"><span>¥18</span><span>库存 42</span></div></div></a>
-                <a class="product-card" href="future-capability-ui-a.html"><div class="thumb h-md"></div><div class="card-body"><span class="pill ok">自营</span><div class="mini-title">透明方板套装</div><div class="meta"><span>¥26</span><span>可加购</span></div></div></a>
-                <div class="product-card"><div class="thumb coral h-sm"></div><div class="card-body"><span class="pill warn">玩家二手</span><div class="mini-title">闲置混色豆</div><div class="meta"><span>¥12</span><span>直连</span></div></div></div>
-                <div class="product-card"><div class="thumb mint h-md"></div><div class="card-body"><span class="pill warn">定制</span><div class="mini-title">头像图纸代拼</div><div class="meta"><span>¥60</span><span>禁标准加购</span></div></div></div>
+                <a class="product-card" href="future-capability-ui-a.html"><div class="thumb sky h-sm"></div><div class="card-body"><span class="pill ok">豆子</span><div class="mini-title">雾粉拼豆补充包</div><div class="meta"><span>¥18</span><span>库存 42</span></div></div></a>
+                <a class="product-card" href="future-capability-ui-a.html"><div class="thumb h-md"></div><div class="card-body"><span class="pill ok">板子</span><div class="mini-title">透明方板套装</div><div class="meta"><span>¥26</span><span>库存 18</span></div></div></a>
+                <a class="product-card" href="future-capability-ui-a.html"><div class="thumb coral h-tall"></div><div class="card-body"><span class="pill ok">工具</span><div class="mini-title">镊子和离型纸组合</div><div class="meta"><span>¥32</span><span>库存 9</span></div></div></a>
+                <a class="product-card" href="future-capability-ui-a.html"><div class="thumb mint h-md"></div><div class="card-body"><span class="pill warn">玩家</span><div class="mini-title">玩家闲置混色豆</div><div class="meta"><span>¥12</span><span>咨询边界</span></div></div></a>
               </div>
             </div>
             <div class="bottom-nav">
@@ -58,7 +57,7 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>首屏结构</h3><ul><li>品类 Chip、规则说明卡、双列商品卡。</li><li>商品卡展示图片、标题、类型标签、价格、库存/边界信息。</li><li>搜索入口未接真实全站搜索时标注开发态或做本地筛选。</li></ul></div>
+            <div class="spec"><h3>首屏结构</h3><ul><li>顶部只保留真实品类 Chip 和商品瀑布流。</li><li>商品卡展示 OSS 图片、标题、类型标签、价格、库存和边界信息。</li><li>空库、空分类和网络失败必须展示明确状态，不显示本地假商品。</li></ul></div>
             <div class="spec"><h3>类型规则</h3><ul><li>SELF_OPERATED：可进入标准购物车和订单链路。</li><li>PLAYER_SECOND_HAND：只展示信息和直连边界。</li><li>PLAYER_CUSTOM_SERVICE：只展示定制沟通边界，不进入标准购物车。</li></ul></div>
             <div class="state"><h3>订单确认</h3><p>地址管理未闭环时展示地址缺口并禁用伪下单；金额以服务端为准。</p><div class="state-bar"><span class="state-dot bad">禁伪地址</span><span class="state-dot warn">地址缺口</span></div></div>
             <div class="state"><h3>支付状态</h3><p>真实支付 API 只在未来能力页做 UI-only 参考；当前不得展示正式渠道完成态。</p><div class="state-bar"><span class="state-dot warn">Stub 支付</span><span class="state-dot bad">禁正式成功态</span></div></div>

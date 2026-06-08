@@ -64,26 +64,35 @@ public class OpenDesignLayoutMappingTest {
     }
 
     @Test
-    public void commerceScreenRemovesBeginnerSupplyActivityAndKeepsRealDataStates() throws IOException {
+    public void commerceScreenRemovesRuleCardsAndKeepsRealDataStates() throws IOException {
         String androidXml = readUtf8("src/main/res/layout/fragment_commerce_home.xml");
+        String productCardXml = readUtf8("src/main/res/layout/item_commerce_product.xml");
         String openDesignHtml = readUtf8("../../doc/development/open-design/commerce-home-a.html");
         String removedActivityTitle = "新手材料" + "补给";
         String removedActivityInstruction = "只展示真实可解释活动，" + "点击路径必须存在";
+        String removedRuleTitle = "商城规则说明";
 
         assertFalse("Android commerce runtime must not show removed activity banner",
                 androidXml.contains(removedActivityTitle));
         assertFalse("Android commerce runtime must not keep the removed activity instruction",
                 androidXml.contains(removedActivityInstruction));
+        assertFalse("Android commerce runtime must not show the old fixed rules card",
+                androidXml.contains(removedRuleTitle));
         assertFalse("Open Design commerce source must not show removed activity banner",
                 openDesignHtml.contains(removedActivityTitle));
         assertFalse("Open Design commerce source must not keep the removed activity instruction",
                 openDesignHtml.contains(removedActivityInstruction));
+        assertFalse("Open Design commerce source must not show the old fixed rules card",
+                openDesignHtml.contains(removedRuleTitle));
 
         assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/section_chips");
         assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/summary_list");
         assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/loading");
         assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/empty_text");
         assertViewIdExists("fragment_commerce_home.xml", androidXml, "@+id/error_box");
+        assertViewIdExists("item_commerce_product.xml", productCardXml, "@+id/commerce_product_image");
+        assertViewIdExists("item_commerce_product.xml", productCardXml, "@+id/commerce_product_price");
+        assertViewIdExists("item_commerce_product.xml", productCardXml, "@+id/commerce_product_stock");
     }
 
     @Test

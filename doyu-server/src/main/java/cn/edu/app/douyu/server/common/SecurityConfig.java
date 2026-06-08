@@ -45,6 +45,7 @@ public class SecurityConfig {
                                 "/api/v1/topics",
                                 "/api/v1/topics/*/posts",
                                 "/api/v1/sticker-packs",
+                                "/api/v1/product-categories",
                                 "/api/v1/products",
                                 "/api/v1/products/*",
                                 "/uploads/**"

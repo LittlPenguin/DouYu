@@ -11,7 +11,11 @@ public class Product {
     public Integer priceCents;
     public String type;
     public String productType;
+    public String categoryId;
     public String categoryName;
+    public Integer imageWidth;
+    public Integer imageHeight;
+    public Integer stock;
     public String status;
     public String auditStatus;
     public List<ProductSku> skus;

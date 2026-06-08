@@ -1,6 +1,6 @@
 # Current Status
 
-> Updated: 2026-06-07
+> Updated: 2026-06-08
 
 ## Stage Conclusion
 
@@ -160,11 +160,64 @@ populated design examples when runtime data is not available.
 
 ## Current Active Work
 
-- Community real-content repair is now in progress. The execution record is
-  `doc/development/verification/2026-06-07-community-real-content-repair.md`.
-  This stage intentionally rebuilds the default dev PostgreSQL/Redis volumes,
-  imports one-time OSS-backed real bead-art posts, and revalidates the
-  community tab on a real device.
+- No open-design feature branch is currently in flight. The five Open Design
+  branches below were merged into `main` on 2026-06-08; see "2026-06-08
+  Post-Merge Snapshot".
+
+## 2026-06-08 Open Design Merge
+
+Five Open Design feature branches were merged into `main` and verified:
+
+- `codex/commerce-open-design-boundary` — commerce home/payment boundary parity.
+- `codex/messages-open-design` — messages three-screen rebuild (home,
+  conversation, notification detail).
+- `codex/ai-creation-detail` — AI creation detail flow (upload presign/confirm,
+  pattern job create/cancel/favorite, quota).
+- `profile-open-design` — "我的" page Open Design with real `/me` statistics and
+  the `asset_*` state containers.
+- `codex/community-post-detail-open-design` — community post detail with comment
+  endpoints and toolbar.
+
+Per-branch plans/verification:
+`doc/development/19-community-post-detail-open-design-plan.md`,
+`doc/development/19-messages-open-design-rebuild-plan.md`,
+`doc/development/19-profile-open-design-plan.md`,
+`doc/development/verification/2026-06-07-ai-creation-detail-plan.md`,
+`doc/development/verification/2026-06-07-commerce-open-design-plan.md`,
+`doc/development/verification/2026-06-08-profile-open-design-verification.md`.
+
+Known follow-up: the AI and profile flows merged two parallel client-side
+upload DTO pairs (`PresignUploadRequest`/`ConfirmUploadRequest` vs
+`UploadPresignRequest`/`UploadConfirmRequest`) that target the same backend
+upload endpoints; unifying them is a pending cleanup (see `05-api-contract.md`,
+Upload section).
+
+## 2026-06-08 Commerce Real Products Repair
+
+The current commerce follow-up replaces the previous empty commerce boundary
+with real API-backed product content. The target commerce home is:
+
+- backend category chips with `精选` as the all-products default;
+- a two-column masonry product grid whose card image heights follow backend
+  `imageWidth` and `imageHeight`;
+- real OSS product cover images imported by an explicit dev-only command;
+- no runtime `商城规则说明` card or local mock product filler.
+
+This import is a manual dev verification dataset. It is not a startup seed and
+does not change the rule that fresh runtime databases start without content.
+
+## 2026-06-08 Post-Merge Snapshot
+
+Verification run on `main` after the five-branch merge:
+
+- `cd doyu-server && mvn -o test`: passed, `Tests run: 65`.
+- `cd DouYu && .\gradlew.bat :app:compileDebugUnitTestJavaWithJavac`: BUILD
+  SUCCESSFUL (Android Java/XML production + unit-test sources compile, confirming
+  the merged `DoyuApi` overloads and repository changes).
+- `cd DouYu && .\gradlew.bat :app:testDebugUnitTest`: passed, 38 unit tests.
+  `OpenDesignLayoutMappingTest.mainTabStateContainersStartHiddenInXml` was
+  updated to assert the profile tab's redesigned `asset_error_box`/`asset_empty`
+  gone-state containers (AI/messages still assert `error_box`/`empty_text`).
 
 ## Closed Repair Verification Targets
 

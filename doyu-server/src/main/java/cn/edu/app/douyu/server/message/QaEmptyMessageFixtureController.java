@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.util.Map;
 
-@Tag(name = "QA Empty Fixtures", description = "qa-empty profile only fixtures for real-device smoke tests")
+@Tag(name = "QA Device Fixtures", description = "dev and qa-empty profile fixtures for real-device smoke tests")
 @RestController
-@Profile("qa-empty")
+@Profile({"dev", "qa-empty"})
 @RequestMapping("/api/v1/qa-empty/fixtures")
 public class QaEmptyMessageFixtureController {
     private final UserRepository userRepository;
@@ -44,7 +44,7 @@ public class QaEmptyMessageFixtureController {
     Map<String, Object> messageThread(Authentication authentication) {
         Instant now = Instant.now();
         UserEntity userA = requireCurrentUser(authentication);
-        UserEntity userB = user("qa_fixture_user_b", "13900001002", "QA peer", now);
+        UserEntity userB = user("qa_fixture_user_b", "13900001002", "验收搭子", now);
 
         ConversationEntity conversation = conversationRepository.findByUserAIdAndUserBId(userA.getId(), userB.getId())
                 .orElseGet(() -> {
@@ -65,8 +65,8 @@ public class QaEmptyMessageFixtureController {
         message.setSenderId(userA.getId());
         message.setRecipientId(userB.getId());
         message.setType("PRIVATE");
-        message.setTitle("QA private message");
-        message.setContent("Real conversation fixture message");
+        message.setTitle("验收私信");
+        message.setContent("这是一条真实会话验收消息");
         message.setCreatedAt(now);
         message.setUpdatedAt(now);
         notificationRepository.save(message);
@@ -77,8 +77,8 @@ public class QaEmptyMessageFixtureController {
         notification.setSenderId(userB.getId());
         notification.setRecipientId(userA.getId());
         notification.setType("MENTION");
-        notification.setTitle("QA notification");
-        notification.setContent("Real notification fixture content");
+        notification.setTitle("验收通知");
+        notification.setContent("真实后端通知详情内容");
         notification.setCreatedAt(now);
         notification.setUpdatedAt(now);
         notificationRepository.save(notification);

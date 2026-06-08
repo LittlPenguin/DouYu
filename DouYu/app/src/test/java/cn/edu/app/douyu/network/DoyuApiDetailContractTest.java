@@ -13,6 +13,8 @@ import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.model.Post;
+import cn.edu.app.douyu.model.Product;
+import cn.edu.app.douyu.model.ProductCategory;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.AiQuota;
 import cn.edu.app.douyu.model.ConfirmUploadRequest;
@@ -25,6 +27,7 @@ import retrofit2.Call;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.Query;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -78,6 +81,18 @@ public class DoyuApiDetailContractTest {
         assertPageItemType(topics, Topic.class);
         assertEquals("/api/v1/topics/{topicId}/posts", topicPosts.getAnnotation(GET.class).value());
         assertPageItemType(topicPosts, Post.class);
+    }
+
+    @Test
+    public void commerceCategoriesAndFilteredProductsUseBackendEndpoints() throws Exception {
+        Method categories = DoyuApi.class.getMethod("productCategories");
+        Method products = DoyuApi.class.getMethod("products", int.class, int.class, String.class);
+
+        assertEquals("/api/v1/product-categories", categories.getAnnotation(GET.class).value());
+        assertPageItemType(categories, ProductCategory.class);
+        assertEquals("/api/v1/products", products.getAnnotation(GET.class).value());
+        assertPageItemType(products, Product.class);
+        assertEquals("categoryId", products.getParameters()[2].getAnnotation(Query.class).value());
     }
 
     @Test

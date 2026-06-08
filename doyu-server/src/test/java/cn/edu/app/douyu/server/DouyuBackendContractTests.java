@@ -874,6 +874,49 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void productListHidesDraftOrPendingReviewProductsButDetailShowsBoundary() throws Exception {
+        ensureSelfOperatedSku("fixture-product-public-list", "fixture-sku-public-list",
+                "https://fixture.local/assets/public-list.png", 5);
+
+        Instant now = Instant.now();
+        ProductEntity draft = productRepository.findById("fixture-product-draft-hidden").orElseGet(ProductEntity::new);
+        if (draft.getId() == null) {
+            draft.setId("fixture-product-draft-hidden");
+            draft.setCreatedAt(now);
+        }
+        draft.setType("SELF_OPERATED");
+        draft.setSellerId("fixture-seller");
+        draft.setTitle("draft hidden product");
+        draft.setDescription("draft product should not appear in public list");
+        draft.setImageUrl("https://fixture.local/assets/draft-hidden.png");
+        draft.setCategoryId("fixture");
+        draft.setStatus("DRAFT");
+        draft.setAuditStatus("NEED_MANUAL_REVIEW");
+        draft.setUpdatedAt(now);
+        productRepository.save(draft);
+
+        String content = mockMvc.perform(get("/api/v1/products"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode items = objectMapper.readTree(content).at("/data/items");
+
+        org.assertj.core.api.Assertions.assertThat(items)
+                .anySatisfy(item -> org.assertj.core.api.Assertions.assertThat(item.path("productId").asText())
+                        .isEqualTo("fixture-product-public-list"));
+        for (JsonNode item : items) {
+            org.assertj.core.api.Assertions.assertThat(item.path("productId").asText())
+                    .isNotEqualTo("fixture-product-draft-hidden");
+        }
+
+        mockMvc.perform(get("/api/v1/products/{productId}", "fixture-product-draft-hidden"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status", equalTo("DRAFT")))
+                .andExpect(jsonPath("$.data.auditStatus", equalTo("NEED_MANUAL_REVIEW")));
+    }
+
+    @Test
     void explicitFixturesReturnConfiguredAssetUrlsWithoutSeedAssets() throws Exception {
         String productId = "fixture-product-asset-url";
         String skuId = ensureSelfOperatedSku(productId, "fixture-sku-asset-url",

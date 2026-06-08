@@ -39,6 +39,7 @@ public class SourceMojibakeSpotTest {
     };
 
     private static final String[] MOJIBAKE_FRAGMENTS = {
+            "閫氱煡", "瑙嗚",
             "閸", "闁", "鐠", "锟", "�", "绉佷俊", "鍥剧焊", "鎴戠殑",
             "鍟嗗煄", "娑堟伅", "鏂板", "璇︽儏", "涓婁紶", "鏈櫥"
     };

@@ -40,7 +40,7 @@ public class RealBackendSmokeInstrumentedTest {
     public void captureRealBackendDetailScreens() throws Exception {
         File outputDir = prepareOutputDir();
         String baseUrl = BuildConfig.API_BASE_URL;
-        String token = login(baseUrl, "13900001000", "AGE_18_PLUS");
+        String token = login(baseUrl, "13900001999", "AGE_18_PLUS");
         persistToken(token);
 
         String postId = createPost(baseUrl, token);
@@ -77,7 +77,7 @@ public class RealBackendSmokeInstrumentedTest {
                 .put("phone", phone)
                 .put("code", "123456")
                 .put("ageGroup", ageGroup)
-                .put("nickname", "QA Smoke")
+                .put("nickname", "真机验收")
                 .toString();
         String response = post(apiUrl(baseUrl, "/api/v1/auth/login/sms"), body, null);
         return new JSONObject(response).getJSONObject("data").getString("accessToken");
@@ -85,8 +85,8 @@ public class RealBackendSmokeInstrumentedTest {
 
     private String createPost(String baseUrl, String token) throws Exception {
         JSONObject body = new JSONObject()
-                .put("title", "QA real post")
-                .put("content", "QA real post content")
+                .put("title", "真机验收作品")
+                .put("content", "真实后端作品详情内容")
                 .put("mediaFileIds", new org.json.JSONArray())
                 .put("topicIds", new org.json.JSONArray())
                 .put("linkedPatternId", JSONObject.NULL);
@@ -96,13 +96,13 @@ public class RealBackendSmokeInstrumentedTest {
 
     private String createProduct(String baseUrl, String token) throws Exception {
         JSONObject sku = new JSONObject()
-                .put("specName", "QA smoke sku")
+                .put("specName", "验收规格")
                 .put("priceCent", 12800)
                 .put("stock", 8);
         JSONObject body = new JSONObject()
                 .put("type", "SELF_OPERATED")
-                .put("title", "QA smoke product")
-                .put("description", "QA smoke product description")
+                .put("title", "真机验收商品")
+                .put("description", "真实后端商品详情内容")
                 .put("sku", sku);
         String response = post(apiUrl(baseUrl, "/api/v1/products"), body.toString(), token);
         return new JSONObject(response).getJSONObject("data").getString("productId");

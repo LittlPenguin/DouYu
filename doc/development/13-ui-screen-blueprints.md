@@ -27,10 +27,11 @@ Android XML: `fragment_commerce_home.xml`
 Required structure:
 
 - Search or filter entry.
-- Category chips.
-- Operational banner only if it is real or clearly UI-only.
-- Product grid from backend data.
+- Backend-driven category chips with a default `精选` tab.
+- Two-column masonry product grid from backend data; image height follows the
+  returned cover dimensions.
 - Empty product state without mock products.
+- No fixed `商城规则说明` module on the runtime screen.
 
 ### AI
 

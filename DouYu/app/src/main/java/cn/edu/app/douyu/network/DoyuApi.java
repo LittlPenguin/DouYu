@@ -14,6 +14,7 @@ import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.model.Product;
+import cn.edu.app.douyu.model.ProductCategory;
 import cn.edu.app.douyu.model.ReadReceipt;
 import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
@@ -75,6 +76,12 @@ public interface DoyuApi {
 
     @GET("/api/v1/products")
     Call<ApiResponse<PageResponse<Product>>> products(@Query("page") int page, @Query("size") int size);
+
+    @GET("/api/v1/products")
+    Call<ApiResponse<PageResponse<Product>>> products(@Query("page") int page, @Query("size") int size, @Query("categoryId") String categoryId);
+
+    @GET("/api/v1/product-categories")
+    Call<ApiResponse<PageResponse<ProductCategory>>> productCategories();
 
     @GET("/api/v1/products/{productId}")
     Call<ApiResponse<Product>> product(@Path("productId") String productId);

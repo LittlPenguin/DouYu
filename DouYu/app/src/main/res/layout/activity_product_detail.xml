@@ -20,42 +20,55 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
+            <ImageView
+                android:id="@+id/product_image"
                 android:layout_width="match_parent"
                 android:layout_height="220dp"
                 android:background="@drawable/bg_image_placeholder"
-                android:gravity="center"
-                android:text="商品图片 / 库存 / 类型边界"
-                android:textColor="@color/doyu_text_muted"
-                android:textSize="15sp" />
+                android:contentDescription="@null"
+                android:scaleType="centerCrop" />
 
-            <TextView
-                android:id="@+id/product_detail_id"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/bg_card"
-                android:padding="16dp"
-                android:textColor="@color/doyu_text"
-                android:textSize="15sp" />
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/product_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/doyu_text"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/product_price"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/doyu_petal_deep"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/product_detail_id"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColor="@color/doyu_text_muted"
+                    android:textSize="14sp" />
+            </LinearLayout>
 
             <TextView
+                android:id="@+id/product_trade_boundary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="标题、图片、价格、库存和审核状态都从后端读取；空值展示边界状态。"
-                android:textColor="@color/doyu_text"
-                android:textSize="15sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_card"
-                android:padding="16dp"
-                android:text="交易边界&#10;真实支付、地址管理和玩家交易闭环未完成时不能声称可用。"
                 android:textColor="@color/doyu_text_muted"
                 android:textSize="14sp" />
 

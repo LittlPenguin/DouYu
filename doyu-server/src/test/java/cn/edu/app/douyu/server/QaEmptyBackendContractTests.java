@@ -155,8 +155,8 @@ class QaEmptyBackendContractTests {
                 .andExpect(jsonPath("$.data.conversationId").isNotEmpty())
                 .andExpect(jsonPath("$.data.notificationId").isNotEmpty())
                 .andExpect(jsonPath("$.data.userAId", equalTo(userId)))
-                .andExpect(jsonPath("$.data.notificationTitle", equalTo("QA notification")))
-                .andExpect(jsonPath("$.data.notificationBody", equalTo("Real notification fixture content")));
+                .andExpect(jsonPath("$.data.notificationTitle", equalTo("验收通知")))
+                .andExpect(jsonPath("$.data.notificationBody", equalTo("真实后端通知详情内容")));
 
         org.assertj.core.api.Assertions.assertThat(conversationRepository.count()).isEqualTo(1);
         org.assertj.core.api.Assertions.assertThat(notificationRepository.count()).isEqualTo(2);

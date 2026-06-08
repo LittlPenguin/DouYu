@@ -52,11 +52,40 @@ public class CommerceController {
     @Operation(summary = "商品列表")
     @ApiResponse(responseCode = "200", description = "成功")
     @GetMapping("/products")
-    PageResult<Map<String, Object>> products(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        List<Map<String, Object>> items = productRepository.findByStatusNot("DELETED").stream()
+    PageResult<Map<String, Object>> products(@RequestParam(defaultValue = "1") int page,
+                                             @RequestParam(defaultValue = "20") int size,
+                                             @RequestParam(required = false) String categoryId) {
+        List<ProductEntity> products = isBlank(categoryId)
+                ? productRepository.findByStatusAndAuditStatus("ON_SALE", "PASS")
+                : productRepository.findByStatusAndAuditStatusAndCategoryId("ON_SALE", "PASS", categoryId);
+        List<Map<String, Object>> items = products.stream()
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .map(this::productView).toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
+    }
+
+    @Operation(summary = "商品分类")
+    @ApiResponse(responseCode = "200", description = "成功")
+    @GetMapping("/product-categories")
+    Map<String, Object> productCategories() {
+        Map<String, CategoryCount> counts = new java.util.LinkedHashMap<>();
+        for (ProductEntity product : productRepository.findByStatusAndAuditStatus("ON_SALE", "PASS")) {
+            String categoryId = valueOrDefault(product.getCategoryId(), "other");
+            CategoryCount count = counts.computeIfAbsent(categoryId,
+                    id -> new CategoryCount(id, categoryLabel(id, product.getCategoryName()), 0));
+            count.count++;
+        }
+        List<Map<String, Object>> items = counts.values().stream()
+                .sorted((a, b) -> Integer.compare(categoryRank(a.categoryId), categoryRank(b.categoryId)))
+                .map(c -> {
+                    Map<String, Object> view = new java.util.LinkedHashMap<>();
+                    view.put("categoryId", c.categoryId);
+                    view.put("name", c.name);
+                    view.put("productCount", c.count);
+                    return view;
+                })
+                .toList();
+        return Map.of("items", items);
     }
 
     @Operation(summary = "商品详情")
@@ -219,10 +248,14 @@ public class CommerceController {
         view.put("title", product.getTitle());
         view.put("description", product.getDescription());
         view.put("imageUrl", valueOrEmpty(product.getImageUrl()));
+        view.put("imageWidth", product.getImageWidth());
+        view.put("imageHeight", product.getImageHeight());
         view.put("categoryId", product.getCategoryId());
-        view.put("categoryName", product.getCategoryId());
+        view.put("categoryName", categoryLabel(product.getCategoryId(), product.getCategoryName()));
         view.put("status", product.getStatus());
         view.put("auditStatus", product.getAuditStatus());
+        view.put("priceCents", firstPrice(productSkus));
+        view.put("stock", totalStock(productSkus));
         view.put("skus", productSkus.stream().map(this::skuView).toList());
         view.put("swatchColor", 0xFF6B8E7B);
         return view;
@@ -254,6 +287,65 @@ public class CommerceController {
 
     private String valueOrEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    private String valueOrDefault(String value, String fallback) {
+        return isBlank(value) ? fallback : value;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private int firstPrice(List<SkuEntity> skus) {
+        if (skus == null || skus.isEmpty()) {
+            return 0;
+        }
+        return skus.get(0).getPriceCent();
+    }
+
+    private int totalStock(List<SkuEntity> skus) {
+        if (skus == null || skus.isEmpty()) {
+            return 0;
+        }
+        return skus.stream().mapToInt(SkuEntity::getAvailableStock).sum();
+    }
+
+    private String categoryLabel(String categoryId, String categoryName) {
+        if (!isBlank(categoryName)) {
+            return categoryName;
+        }
+        return switch (valueOrDefault(categoryId, "other")) {
+            case "beads" -> "豆子";
+            case "boards" -> "板子";
+            case "tools" -> "工具";
+            case "kits" -> "套装";
+            case "player" -> "玩家";
+            default -> "精选";
+        };
+    }
+
+    private int categoryRank(String categoryId) {
+        return switch (valueOrDefault(categoryId, "other")) {
+            case "beads" -> 0;
+            case "boards" -> 1;
+            case "tools" -> 2;
+            case "kits" -> 3;
+            case "player" -> 4;
+            default -> 99;
+        };
+    }
+
+    private static class CategoryCount {
+        final String categoryId;
+        final String name;
+        int count;
+
+        CategoryCount(String categoryId, String name, int count) {
+            this.categoryId = categoryId;
+            this.name = name;
+            this.count = count;
+        }
     }
 
     public record ProductRequest(@NotBlank String type, @NotBlank String title, String description, @Valid ProductSkuRequest sku) {
