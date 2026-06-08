@@ -143,8 +143,12 @@ public class OpenDesignLayoutMappingTest {
         assertTrue(xml.contains("@+id/post_comment_tool_image"));
         assertTrue(xml.contains("@+id/post_comment_tool_mention"));
         assertTrue(xml.contains("@+id/post_comment_tool_topic"));
+        assertTrue(xml.contains("@+id/post_comment_media_strip"));
+        assertTrue(xml.contains("@+id/post_comment_chip_row"));
         assertViewHasGoneVisibility("activity_post_detail.xml", xml, "@+id/post_comment_editor");
         assertViewHasGoneVisibility("activity_post_detail.xml", xml, "@+id/post_comment_overlay_container");
+        assertViewHasGoneVisibility("activity_post_detail.xml", xml, "@+id/post_comment_media_scroll");
+        assertViewHasGoneVisibility("activity_post_detail.xml", xml, "@+id/post_comment_chip_scroll");
 
         Element editor = requireElementById(document, "@+id/post_comment_editor");
         Element overlay = requireElementById(document, "@+id/post_comment_overlay_container");
@@ -165,6 +169,12 @@ public class OpenDesignLayoutMappingTest {
                 subtreeContainsId(overlay, "@+id/post_comment_input"));
         assertTrue("Real comment send should remain inside the overlay subtree",
                 subtreeContainsId(overlay, "@+id/post_comment_send"));
+        assertTrue("Comment image draft strip should live in the overlay subtree",
+                subtreeContainsId(overlay, "@+id/post_comment_media_strip"));
+        assertTrue("Selected @/# chips should live in the overlay subtree",
+                subtreeContainsId(overlay, "@+id/post_comment_chip_row"));
+        assertFalse("Static comment bar must not contain the image draft strip",
+                subtreeContainsId(staticBar, "@+id/post_comment_media_strip"));
         assertTrue("Post detail actions should live in the bottom static comment entry",
                 xml.indexOf("@+id/post_like_action") > xml.indexOf("@+id/post_comment_bar"));
         assertFalse("Post detail must not keep a separate engagement card above comments",
@@ -187,6 +197,14 @@ public class OpenDesignLayoutMappingTest {
                 activity.contains("SOFT_INPUT_ADJUST_RESIZE"));
         assertTrue("Post detail must use the shared SystemBarInsets helper for input insets",
                 activity.contains("SystemBarInsets.applyToContentWithBottomContainers"));
+        assertTrue("Post detail must receive IME visibility changes so manual keyboard hide restores the static bar",
+                activity.contains("SystemBarInsets.applyToContentWithBottomContainers(this, this::onImeVisibilityChanged"));
+        assertTrue("Post detail must collapse the real input when blank scroll content is tapped",
+                activity.contains("post_detail_scroll") && activity.contains("setOnClickListener(v -> collapseCommentInputIfVisible())"));
+        assertTrue("Post detail must expose a single guarded collapse path for blank taps and IME hide",
+                activity.contains("collapseCommentInputIfVisible"));
+        assertTrue("Post detail must restore the static input when IME becomes hidden",
+                activity.contains("onImeVisibilityChanged") && activity.contains("!visible"));
         assertFalse("PostDetailActivity must not directly override the root insets listener",
                 activity.contains("setOnApplyWindowInsetsListener"));
         assertFalse("Post detail keyboard input must not scroll to the comment section",
@@ -195,6 +213,8 @@ public class OpenDesignLayoutMappingTest {
                 systemBarInsets.contains("WindowInsetsCompat.Type.ime()"));
         assertTrue("SystemBarInsets must avoid double-counting navigation and IME bottom insets",
                 systemBarInsets.contains("Math.max(ime.bottom, bars.bottom)"));
+        assertTrue("SystemBarInsets must notify pages when IME visibility changes",
+                systemBarInsets.contains("ImeVisibilityListener") && systemBarInsets.contains("listener.onImeVisibilityChanged"));
         assertTrue("SystemBarInsets must preserve original padding when replacing the base listener",
                 systemBarInsets.contains("originalPadding(root)"));
     }
@@ -248,10 +268,30 @@ public class OpenDesignLayoutMappingTest {
                 source.contains("createComment("));
         assertTrue("Post detail repair must have a focused real-device smoke entry",
                 source.contains("captureRealBackendPostDetailOnly"));
+        assertTrue("Post detail extended smoke must cover the real comment editor paths",
+                source.contains("captureRealBackendPostDetailComposer"));
+        assertTrue("Post detail extended smoke must add an uploaded comment image through the real flow",
+                source.contains("testAddCommentImage"));
+        assertTrue("Post detail extended smoke must use the backend-returned image URL for the photo viewer",
+                source.contains("commentImageUrls(newest)"));
+        assertTrue("Post detail extended smoke must verify blank taps collapse the real input",
+                source.contains("testTapBlankArea") && source.contains("\"post_detail_editor_after_blank_tap\""));
+        assertFalse("Real backend smoke must not use seed asset URLs for evidence",
+                source.contains("/" + "seed" + "/") || source.contains("doyu-" + "public"));
         assertFalse("Real backend fixture copy must be readable Chinese, not mojibake",
                 source.contains(chars(0x942a, 0x71b8, 0x6e80))
                         || source.contains(chars(0x6960, 0x5c7e, 0x6579))
                         || source.contains(chars(0x7487, 0xfe3d, 0x510f)));
+    }
+
+    @Test
+    public void commentImageUploadUsesPresignedHeaders() throws IOException {
+        String repository = readUtf8("src/main/java/cn/edu/app/douyu/data/DoyuRepository.java");
+
+        assertTrue("Comment image upload must send the headers returned by the presign API",
+                repository.contains("uploadPresignedBytes(presign.uploadUrl, bytes, mimeType, presign.headers)"));
+        assertFalse("Comment image upload must not bypass presign headers with a raw Retrofit PUT",
+                repository.contains("api.uploadPut(presign.uploadUrl"));
     }
 
     private static void assertViewHasGoneVisibility(String layout, String xml, String id) {

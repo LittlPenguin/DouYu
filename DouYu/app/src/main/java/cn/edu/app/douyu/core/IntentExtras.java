@@ -15,6 +15,8 @@ public final class IntentExtras {
     public static final String PEER_NAME = "peerName";
     public static final String TYPE = "type";
     public static final String CREATED_AT = "createdAt";
+    public static final String IMAGE_URLS = "imageUrls";
+    public static final String IMAGE_INDEX = "imageIndex";
 
     private IntentExtras() {
     }

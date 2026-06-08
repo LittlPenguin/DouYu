@@ -643,6 +643,17 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void userCannotFollowThemselves() throws Exception {
+        String tokenA = login("13800000019", "AGE_18_PLUS");
+        JsonNode userA = getJsonWithToken("/api/v1/users/me", tokenA);
+        String userAId = userA.at("/data/userId").asText();
+
+        mockMvc.perform(post("/api/v1/users/{userId}/follow", userAId)
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void rewardCheckinAndStatusWork() throws Exception {
         String token = login("13800000013", "AGE_18_PLUS");
 

@@ -32,6 +32,7 @@ import cn.edu.app.douyu.model.ConfirmUploadRequest;
 import cn.edu.app.douyu.model.CreatePatternJobRequest;
 import cn.edu.app.douyu.model.FavoriteResult;
 import cn.edu.app.douyu.model.FileAsset;
+import cn.edu.app.douyu.model.FollowResult;
 import cn.edu.app.douyu.model.PresignUploadRequest;
 import cn.edu.app.douyu.model.PresignUploadResponse;
 import cn.edu.app.douyu.network.ApiException;
@@ -41,7 +42,6 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -213,28 +213,42 @@ public class DoyuRepository {
      * returns the resulting fileId for use in {@link #updateMe(String, String, String)}.
      */
     public String uploadAvatar(byte[] bytes, String mimeType, String fileName, Integer width, Integer height) throws IOException {
+        return uploadImage("AVATAR", bytes, mimeType, fileName, width, height);
+    }
+
+    /**
+     * Uploads a comment image through the real presign -> PUT -> confirm flow with
+     * usage POST_IMAGE and returns the resulting fileId for comment mediaFileIds.
+     */
+    public String uploadPostImage(byte[] bytes, String mimeType, String fileName, Integer width, Integer height) throws IOException {
+        return uploadImage("POST_IMAGE", bytes, mimeType, fileName, width, height);
+    }
+
+    private String uploadImage(String usage, byte[] bytes, String mimeType, String fileName, Integer width, Integer height) throws IOException {
         UploadPresignResponse presign = body(api.uploadPresign(
-                new UploadPresignRequest("AVATAR", mimeType, bytes.length, fileName)));
+                new UploadPresignRequest(usage, mimeType, bytes.length, fileName)));
         if (presign == null || presign.uploadUrl == null || presign.fileKey == null) {
             throw new ApiException("上传地址无效");
         }
-        RequestBody putBody = RequestBody.create(bytes, MediaType.parse(mimeType));
-        Response<ResponseBody> putResponse = api.uploadPut(presign.uploadUrl, putBody).execute();
-        try {
-            if (!putResponse.isSuccessful()) {
-                throw new ApiException(putResponse.code(), "头像上传失败 HTTP " + putResponse.code());
-            }
-        } finally {
-            if (putResponse.body() != null) {
-                putResponse.body().close();
-            }
-        }
+        uploadPresignedBytes(presign.uploadUrl, bytes, mimeType, presign.headers);
         FileAsset asset = body(api.uploadConfirm(
-                new UploadConfirmRequest(presign.fileKey, "AVATAR", mimeType, bytes.length, width, height)));
+                new UploadConfirmRequest(presign.fileKey, usage, mimeType, bytes.length, width, height)));
         if (asset == null || asset.fileId == null) {
-            throw new ApiException("头像确认失败");
+            throw new ApiException("图片确认失败");
         }
         return asset.fileId;
+    }
+
+    public PageResponse<UserProfile> searchUsers(String keyword) throws IOException {
+        return body(api.searchUsers(keyword == null ? "" : keyword, FIRST_PAGE, PAGE_SIZE));
+    }
+
+    public FollowResult followUser(String userId) throws IOException {
+        return body(api.followUser(userId));
+    }
+
+    public FollowResult unfollowUser(String userId) throws IOException {
+        return body(api.unfollowUser(userId));
     }
 
     public PageResponse<Post> likedPosts() throws IOException {

@@ -14,6 +14,10 @@ import java.util.WeakHashMap;
 public final class SystemBarInsets {
     private static final WeakHashMap<View, Padding> ORIGINAL_PADDING = new WeakHashMap<>();
 
+    public interface ImeVisibilityListener {
+        void onImeVisibilityChanged(boolean visible);
+    }
+
     private SystemBarInsets() {
     }
 
@@ -37,6 +41,14 @@ public final class SystemBarInsets {
     }
 
     public static void applyToContentWithBottomContainers(Activity activity, View... bottomContainers) {
+        applyToContentWithBottomContainers(activity, null, bottomContainers);
+    }
+
+    public static void applyToContentWithBottomContainers(
+            Activity activity,
+            ImeVisibilityListener listener,
+            View... bottomContainers
+    ) {
         WindowCompat.setDecorFitsSystemWindows(activity.getWindow(), false);
         View root = contentRoot(activity);
         if (root == null) {
@@ -54,6 +66,9 @@ public final class SystemBarInsets {
         ViewCompat.setOnApplyWindowInsetsListener(root, (view, windowInsets) -> {
             Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             Insets ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
+            if (listener != null) {
+                listener.onImeVisibilityChanged(windowInsets.isVisible(WindowInsetsCompat.Type.ime()));
+            }
             view.setPadding(
                     rootPadding.left + bars.left,
                     rootPadding.top + bars.top,

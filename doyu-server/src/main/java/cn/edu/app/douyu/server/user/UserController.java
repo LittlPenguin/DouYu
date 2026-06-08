@@ -191,6 +191,9 @@ public class UserController {
     @PostMapping("/{userId}/follow")
     Map<String, Object> follow(Authentication authentication, @PathVariable String userId) {
         String currentUserId = CurrentUser.userId(authentication);
+        if (currentUserId.equals(userId)) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "不能关注自己");
+        }
         authService.requireUser(userId);
         Instant now = Instant.now();
         followRepository.findByUserIdAndTargetUserId(currentUserId, userId).orElseGet(() ->

@@ -8,6 +8,7 @@ import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.content.SharedPreferences;
 import android.view.View;
@@ -91,6 +92,55 @@ public class RealBackendSmokeInstrumentedTest {
         }
         createComment(baseUrl, token, postId, "真实后端预置评论：用于验证评论列表能从 API 渲染。");
         capturePostDetailCommentFlow(outputDir, postId);
+    }
+
+    @Test
+    public void captureRealBackendPostDetailComposer() throws Exception {
+        File outputDir = prepareOutputDir();
+        String baseUrl = BuildConfig.API_BASE_URL;
+        sendProgress("login-main-start");
+        String token = login(baseUrl, "13900001999", "AGE_18_PLUS");
+        persistToken(token);
+        sendProgress("login-main-done");
+
+        sendProgress("login-author-start");
+        String authorToken = login(baseUrl, "13900002777", "AGE_18_PLUS");
+        String mentionUserId = currentUserId(baseUrl, authorToken);
+        sendProgress("login-author-done");
+        sendProgress("create-author-post-start");
+        String postId = createPost(baseUrl, authorToken);
+        sendProgress("create-author-post-done");
+        sendProgress("resolve-topic-start");
+        String topicId = resolveTopicId(baseUrl, token);
+        sendProgress("resolve-topic-done");
+        sendProgress("capture-editor-flow-start");
+        capturePostDetailComposerFlow(outputDir, postId, mentionUserId, topicId);
+        sendProgress("capture-editor-flow-done");
+    }
+
+    private String currentUserId(String baseUrl, String token) throws Exception {
+        JSONObject me = getJson(apiUrl(baseUrl, "/api/v1/users/me"), token);
+        return me.getJSONObject("data").getString("userId");
+    }
+
+    private String resolveTopicId(String baseUrl, String token) throws Exception {
+        JSONObject topics = getJson(apiUrl(baseUrl, "/api/v1/topics?page=1&size=1"), token);
+        JSONArray items = topics.getJSONObject("data").getJSONArray("items");
+        if (items.length() > 0) {
+            return items.getJSONObject(0).getString("topicId");
+        }
+        return upsertTopic(baseUrl, token, "真机话题", "真机验收话题");
+    }
+
+    private String upsertTopic(String baseUrl, String token, String name, String description) throws Exception {
+        String topicId = "topic-smoke-001";
+        JSONObject body = new JSONObject()
+                .put("topicId", topicId)
+                .put("name", name)
+                .put("description", description)
+                .put("postCount", 0);
+        post(apiUrl(baseUrl, "/api/v1/dev/community/topics"), body.toString(), token, "PUT");
+        return topicId;
     }
 
     private String login(String baseUrl, String phone, String ageGroup) throws Exception {
@@ -226,8 +276,12 @@ public class RealBackendSmokeInstrumentedTest {
     }
 
     private String post(String url, String body, String token) throws Exception {
+        return post(url, body, token, "POST");
+    }
+
+    private String post(String url, String body, String token, String method) throws Exception {
         java.net.HttpURLConnection connection = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
-        connection.setRequestMethod("POST");
+        connection.setRequestMethod(method);
         connection.setDoOutput(true);
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(20000);
@@ -279,6 +333,12 @@ public class RealBackendSmokeInstrumentedTest {
         return outputDir;
     }
 
+    private void sendProgress(String stage) {
+        Bundle bundle = new Bundle();
+        bundle.putString("realBackendStage", stage);
+        instrumentation.sendStatus(0, bundle);
+    }
+
     private void deleteChildren(File dir) throws IOException {
         File[] files = dir.listFiles();
         if (files == null) {
@@ -302,7 +362,7 @@ public class RealBackendSmokeInstrumentedTest {
         }
     }
 
-    private void capturePostDetailCommentFlow(File outputDir, String postId) throws Exception {
+    private void capturePostDetailCommentFlowImpl(File outputDir, String postId) throws Exception {
         Intent intent = new Intent(targetContext, PostDetailActivity.class)
                 .putExtra(IntentExtras.POST_ID, postId)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -330,6 +390,182 @@ public class RealBackendSmokeInstrumentedTest {
             });
             takeScreenshot(outputDir, "post_detail_comments_after_submit");
         }
+    }
+
+    private void capturePostDetailComposerFlow(File outputDir, String postId, String mentionUserId, String topicId)
+            throws Exception {
+        String baseUrl = BuildConfig.API_BASE_URL;
+        String token = login(baseUrl, "13900001999", "AGE_18_PLUS");
+        int beforeCount = commentCount(baseUrl, token, postId);
+
+        Uri imageUri = fileProviderImageUri();
+        Intent intent = new Intent(targetContext, PostDetailActivity.class)
+                .putExtra(IntentExtras.POST_ID, postId)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try (ActivityScenario<PostDetailActivity> scenario = ActivityScenario.launch(intent)) {
+            waitForScreen();
+
+            // Open the real comment editor overlay.
+            scenario.onActivity(PostDetailActivity::testOpenComposer);
+            waitForScreen();
+
+            // Empty editor: send must be disabled.
+            scenario.onActivity(activity -> {
+                assertEquals(View.GONE, activity.findViewById(R.id.post_comment_bar).getVisibility());
+                assertEquals(View.VISIBLE, activity.findViewById(R.id.post_comment_editor).getVisibility());
+                assertEquals(false, activity.testIsSendEnabled());
+            });
+
+            // Blank content taps must collapse the real editor and restore the static bar.
+            scenario.onActivity(PostDetailActivity::testTapBlankArea);
+            waitForScreen();
+            scenario.onActivity(activity -> {
+                assertEquals(View.VISIBLE, activity.findViewById(R.id.post_comment_bar).getVisibility());
+                assertEquals(View.GONE, activity.findViewById(R.id.post_comment_editor).getVisibility());
+            });
+            takeScreenshot(outputDir, "post_detail_editor_after_blank_tap");
+
+            scenario.onActivity(PostDetailActivity::testOpenComposer);
+            waitForScreen();
+            scenario.onActivity(activity -> assertEquals(false, activity.testIsSendEnabled()));
+
+            // @ mention and # topic via the same selection callbacks the picker uses.
+            scenario.onActivity(activity -> {
+                activity.testSelectMention(mentionUserId, "豆友被提及");
+                activity.testSelectTopic(topicId, "真机话题");
+                assertEquals(1, activity.testSelectedMentionCount());
+                assertEquals(1, activity.testSelectedTopicCount());
+            });
+            waitForScreen();
+            takeScreenshot(outputDir, "post_detail_editor_chips");
+
+            // Image: add via a controllable content URI and run the real upload flow.
+            scenario.onActivity(activity -> {
+                activity.testAddCommentImage(imageUri);
+                assertEquals(1, activity.testPendingMediaCount());
+                // While uploading, send is blocked.
+                assertEquals(false, activity.testIsSendEnabled());
+            });
+            waitForUpload(scenario);
+            takeScreenshot(outputDir, "post_detail_editor_image_uploaded");
+
+            // After successful upload: one done image, send enabled even with no extra text.
+            scenario.onActivity(activity -> {
+                assertEquals(1, activity.testDoneMediaCount());
+                EditText input = activity.findViewById(R.id.post_comment_input);
+                input.setText("真机评论编辑器：图片+@+#。");
+                input.setSelection(input.getText().length());
+                assertEquals(true, activity.testIsSendEnabled());
+            });
+
+            // Submit the real comment (media + mention + topic).
+            scenario.onActivity(PostDetailActivity::testSubmitComment);
+            waitForCommentRefresh();
+            takeScreenshot(outputDir, "post_detail_editor_after_submit");
+        }
+
+        // Verify backend echo: new comment carries media, mention, and topic.
+        int afterCount = commentCount(baseUrl, token, postId);
+        assertTrue("Composer submit must add a comment", afterCount > beforeCount);
+        JSONObject newest = newestComment(baseUrl, token, postId);
+        assertTrue("Comment must echo uploaded image",
+                newest.getJSONArray("mediaAssets").length() >= 1);
+        assertTrue("Comment must echo the @ mention",
+                newest.getJSONArray("mentions").length() >= 1);
+        assertTrue("Comment must echo the # topic",
+                newest.getJSONArray("topics").length() >= 1);
+        java.util.ArrayList<String> commentImageUrls = commentImageUrls(newest);
+        assertTrue("Uploaded comment image must expose a public URL for the viewer smoke",
+                !commentImageUrls.isEmpty());
+
+        // Follow toggle on the author through the real follow API.
+        capturePostDetailFollow(outputDir, postId);
+
+        // Large image viewer.
+        capturePhotoViewer(outputDir, commentImageUrls);
+    }
+
+    private void capturePostDetailFollow(File outputDir, String postId) throws Exception {
+        Intent intent = new Intent(targetContext, PostDetailActivity.class)
+                .putExtra(IntentExtras.POST_ID, postId)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try (ActivityScenario<PostDetailActivity> scenario = ActivityScenario.launch(intent)) {
+            waitForScreen();
+            final boolean[] before = new boolean[1];
+            scenario.onActivity(activity -> before[0] = activity.testFollowedByMe());
+            scenario.onActivity(PostDetailActivity::testToggleFollow);
+            waitForCommentRefresh();
+            scenario.onActivity(activity ->
+                    assertTrue("Follow state must flip", activity.testFollowedByMe() != before[0]));
+            takeScreenshot(outputDir, "post_detail_follow_toggled");
+            // Restore original state to keep the fixture clean.
+            scenario.onActivity(PostDetailActivity::testToggleFollow);
+            waitForCommentRefresh();
+        }
+    }
+
+    private java.util.ArrayList<String> commentImageUrls(JSONObject comment) throws Exception {
+        java.util.ArrayList<String> urls = new java.util.ArrayList<>();
+        JSONArray mediaAssets = comment.getJSONArray("mediaAssets");
+        for (int i = 0; i < mediaAssets.length(); i++) {
+            String publicUrl = mediaAssets.getJSONObject(i).optString("publicUrl", "");
+            if (publicUrl != null && !publicUrl.trim().isEmpty()) {
+                urls.add(publicUrl.trim());
+            }
+        }
+        return urls;
+    }
+
+    private void capturePhotoViewer(File outputDir, java.util.ArrayList<String> urls) throws Exception {
+        Intent intent = cn.edu.app.douyu.feature.community.PhotoViewerActivity.intent(targetContext, urls, 0)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try (ActivityScenario<?> ignored = ActivityScenario.launch(intent)) {
+            waitForScreen();
+            takeScreenshot(outputDir, "post_detail_photo_viewer");
+        }
+    }
+
+    private void waitForUpload(ActivityScenario<PostDetailActivity> scenario) throws InterruptedException {
+        for (int i = 0; i < 40; i++) {
+            final boolean[] done = new boolean[1];
+            scenario.onActivity(activity -> done[0] = activity.testDoneMediaCount() >= 1);
+            if (done[0]) {
+                return;
+            }
+            Thread.sleep(1000L);
+            instrumentation.waitForIdleSync();
+        }
+        throw new IllegalStateException("Comment image upload did not finish in time");
+    }
+
+    private Uri fileProviderImageUri() throws Exception {
+        File cacheDir = targetContext.getCacheDir();
+        File image = new File(cacheDir, "smoke-comment.png");
+        Bitmap bitmap = Bitmap.createBitmap(120, 120, Bitmap.Config.ARGB_8888);
+        bitmap.eraseColor(0xFFEFA8B8);
+        try (FileOutputStream stream = new FileOutputStream(image)) {
+            assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream));
+        } finally {
+            bitmap.recycle();
+        }
+        return androidx.core.content.FileProvider.getUriForFile(
+                targetContext, targetContext.getPackageName() + ".fileprovider", image);
+    }
+
+    private int commentCount(String baseUrl, String token, String postId) throws Exception {
+        JSONObject response = getJson(apiUrl(baseUrl, "/api/v1/posts/" + postId + "/comments?page=1&size=1"), token);
+        return response.getJSONObject("data").getInt("total");
+    }
+
+    private JSONObject newestComment(String baseUrl, String token, String postId) throws Exception {
+        JSONObject response = getJson(apiUrl(baseUrl, "/api/v1/posts/" + postId + "/comments?page=1&size=20"), token);
+        JSONArray items = response.getJSONObject("data").getJSONArray("items");
+        assertTrue("Comments must not be empty after submit", items.length() > 0);
+        return items.getJSONObject(0);
+    }
+
+    private void capturePostDetailCommentFlow(File outputDir, String postId) throws Exception {
+        capturePostDetailCommentFlowImpl(outputDir, postId);
     }
 
     private void waitForScreen() throws InterruptedException {

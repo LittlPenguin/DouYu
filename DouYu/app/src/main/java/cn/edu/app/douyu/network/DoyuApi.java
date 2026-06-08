@@ -28,6 +28,7 @@ import cn.edu.app.douyu.model.ConfirmUploadRequest;
 import cn.edu.app.douyu.model.CreatePatternJobRequest;
 import cn.edu.app.douyu.model.FavoriteResult;
 import cn.edu.app.douyu.model.FileAsset;
+import cn.edu.app.douyu.model.FollowResult;
 import cn.edu.app.douyu.model.PresignUploadRequest;
 import cn.edu.app.douyu.model.PresignUploadResponse;
 import okhttp3.RequestBody;
@@ -130,6 +131,15 @@ public interface DoyuApi {
 
     @GET("/api/v1/users/me")
     Call<ApiResponse<UserProfile>> me();
+
+    @GET("/api/v1/users/search")
+    Call<ApiResponse<PageResponse<UserProfile>>> searchUsers(@Query("keyword") String keyword, @Query("page") int page, @Query("size") int size);
+
+    @POST("/api/v1/users/{userId}/follow")
+    Call<ApiResponse<FollowResult>> followUser(@Path("userId") String userId);
+
+    @DELETE("/api/v1/users/{userId}/follow")
+    Call<ApiResponse<FollowResult>> unfollowUser(@Path("userId") String userId);
 
     @PATCH("/api/v1/users/me")
     Call<ApiResponse<UserProfile>> updateMe(@Body UpdateProfileRequest request);

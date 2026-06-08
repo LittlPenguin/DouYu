@@ -34,6 +34,7 @@
             android:windowSoftInputMode="adjustNothing" />
         <activity android:name=".feature.community.PostCreateActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.community.SearchActivity" android:screenOrientation="portrait" />
+        <activity android:name=".feature.community.PhotoViewerActivity" android:screenOrientation="portrait" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
