@@ -206,6 +206,25 @@ with real API-backed product content. The target commerce home is:
 This import is a manual dev verification dataset. It is not a startup seed and
 does not change the rule that fresh runtime databases start without content.
 
+## 2026-06-08 Post Detail Repair
+
+The post-detail follow-up has been implemented and verified against
+`post-detail-comment-toolbar-a.html`:
+
+- the standalone engagement card above comments is removed;
+- like/comment/favorite actions live in the bottom static comment entry;
+- tapping the static entry or comment action expands the real text input area
+  inside the comment section, so the keyboard does not cover it;
+- author metadata now renders readable copy such as `作品 · yyyy-MM-dd` instead
+  of raw backend status and full ISO timestamps;
+- comment rows use backend data and render mentions, topics, stickers, and
+  image-comment summaries through `PostDetailFormatter`;
+- real-backend post-detail smoke captured home, focused comment input, and
+  refreshed comments after a real submission on `10.64.241.158:41817`.
+
+Verification is recorded in
+`doc/development/verification/2026-06-08-post-detail-repair-verification.md`.
+
 ## 2026-06-08 Post-Merge Snapshot
 
 Verification run on `main` after the five-branch merge:

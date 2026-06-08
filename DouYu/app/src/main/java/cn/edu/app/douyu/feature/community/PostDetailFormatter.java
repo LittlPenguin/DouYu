@@ -5,6 +5,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import cn.edu.app.douyu.model.Comment;
+import cn.edu.app.douyu.model.CommentMediaAsset;
+import cn.edu.app.douyu.model.CommentMention;
+import cn.edu.app.douyu.model.CommentSticker;
+import cn.edu.app.douyu.model.CommentTopicRef;
 import cn.edu.app.douyu.model.Post;
 
 final class PostDetailFormatter {
@@ -56,6 +61,16 @@ final class PostDetailFormatter {
         return Boolean.TRUE.equals(post == null ? null : post.followedAuthorByMe) ? "已关注" : "未关注";
     }
 
+    static String authorMeta(Post post) {
+        String createdAt = post == null ? "" : safe(post.createdAt).trim();
+        if (createdAt.isEmpty()) {
+            return "作品详情";
+        }
+        int timeSeparator = createdAt.indexOf('T');
+        String readableDate = timeSeparator > 0 ? createdAt.substring(0, timeSeparator) : createdAt;
+        return "作品 · " + readableDate;
+    }
+
     static String likeLabel(Post post) {
         return Boolean.TRUE.equals(post == null ? null : post.likedByMe) ? "已点赞" : "点赞";
     }
@@ -66,6 +81,55 @@ final class PostDetailFormatter {
 
     static String commentEmptyText() {
         return COMMENT_EMPTY_TEXT;
+    }
+
+    static String commentSummary(Comment comment) {
+        if (comment == null) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        if (comment.mentions != null) {
+            for (CommentMention mention : comment.mentions) {
+                if (mention != null && mention.nickname != null && !mention.nickname.isEmpty()) {
+                    builder.append("@").append(mention.nickname).append(" ");
+                }
+            }
+        }
+        if (comment.content != null && !comment.content.isBlank()) {
+            builder.append(comment.content.trim());
+        }
+        if (comment.topics != null) {
+            for (CommentTopicRef topic : comment.topics) {
+                if (topic != null && topic.name != null && !topic.name.isEmpty()) {
+                    if (builder.length() > 0) {
+                        builder.append(" ");
+                    }
+                    builder.append("#").append(topic.name);
+                }
+            }
+        }
+        if (comment.stickers != null) {
+            for (CommentSticker sticker : comment.stickers) {
+                if (sticker != null && sticker.emojiText != null && !sticker.emojiText.isEmpty()) {
+                    if (builder.length() > 0) {
+                        builder.append(" ");
+                    }
+                    builder.append(sticker.emojiText);
+                }
+            }
+        }
+        int imageCount = commentImageCount(comment);
+        if (imageCount > 0) {
+            if (builder.length() > 0) {
+                builder.append(" ");
+            }
+            builder.append("[图片评论 ").append(imageCount).append("]");
+        }
+        return builder.length() == 0 ? "图片/贴纸评论" : builder.toString();
+    }
+
+    static boolean commentHasImages(Comment comment) {
+        return commentImageCount(comment) > 0;
     }
 
     static String countLabel(Integer value) {
@@ -81,5 +145,18 @@ final class PostDetailFormatter {
 
     private static String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private static int commentImageCount(Comment comment) {
+        if (comment == null || comment.mediaAssets == null) {
+            return 0;
+        }
+        int count = 0;
+        for (CommentMediaAsset asset : comment.mediaAssets) {
+            if (asset != null) {
+                count++;
+            }
+        }
+        return count;
     }
 }

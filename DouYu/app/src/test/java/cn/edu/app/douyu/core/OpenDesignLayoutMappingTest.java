@@ -126,6 +126,8 @@ public class OpenDesignLayoutMappingTest {
         assertTrue(xml.contains("@+id/post_like_action"));
         assertTrue(xml.contains("@+id/post_comment_action"));
         assertTrue(xml.contains("@+id/post_favorite_action"));
+        assertTrue(xml.contains("@+id/post_static_comment_trigger"));
+        assertTrue(xml.contains("@+id/post_comment_editor"));
         assertTrue(xml.contains("@+id/post_comments_container"));
         assertTrue(xml.contains("@+id/post_comment_empty"));
         assertTrue(xml.contains("@+id/post_comment_error_box"));
@@ -133,7 +135,27 @@ public class OpenDesignLayoutMappingTest {
         assertTrue(xml.contains("@+id/post_comment_tool_image"));
         assertTrue(xml.contains("@+id/post_comment_tool_mention"));
         assertTrue(xml.contains("@+id/post_comment_tool_topic"));
+        assertViewHasGoneVisibility("activity_post_detail.xml", xml, "@+id/post_comment_editor");
+        assertTrue("Expanded post detail input should sit inside the comment section so it can resize above the keyboard",
+                xml.indexOf("@+id/post_comment_editor") > xml.indexOf("@+id/post_comment_section")
+                        && xml.indexOf("@+id/post_comment_editor") < xml.indexOf("@+id/post_comments_container"));
+        assertTrue("Post detail actions should live in the bottom static comment entry",
+                xml.indexOf("@+id/post_like_action") > xml.indexOf("@+id/post_comment_bar"));
+        assertFalse("Post detail must not keep a separate engagement card above comments",
+                xml.contains("@+id/post_engagement_section"));
         assertFalse(xml.contains("详情顺序遵循 Open Design"));
+    }
+
+    @Test
+    public void postDetailActivityResizesForCommentKeyboard() throws IOException {
+        String manifest = readUtf8("src/main/AndroidManifest.xml");
+        String postDetailActivity = tagContaining(manifest, ".feature.community.PostDetailActivity");
+        String activity = readUtf8("src/main/java/cn/edu/app/douyu/feature/community/PostDetailActivity.java");
+
+        assertTrue("Post detail comment editor must resize above the soft keyboard",
+                postDetailActivity.contains("android:windowSoftInputMode=\"adjustResize\""));
+        assertTrue("Post detail should enforce adjustResize at runtime for device compatibility",
+                activity.contains("SOFT_INPUT_ADJUST_RESIZE"));
     }
 
     @Test
@@ -167,6 +189,26 @@ public class OpenDesignLayoutMappingTest {
                 source.contains("apiUrl(baseUrl,"));
     }
 
+    @Test
+    public void realBackendSmokeCoversPostDetailCommentFlow() throws IOException {
+        String source = readUtf8("src/androidTest/java/cn/edu/app/douyu/RealBackendSmokeInstrumentedTest.java");
+
+        assertTrue("Post detail real backend smoke must capture the first loaded detail state",
+                source.contains("\"post_detail_real_home\""));
+        assertTrue("Post detail real backend smoke must capture the focused comment input state",
+                source.contains("\"post_detail_comment_input\""));
+        assertTrue("Post detail real backend smoke must capture refreshed comments after submitting a real comment",
+                source.contains("\"post_detail_comments_after_submit\""));
+        assertTrue("Post detail real backend smoke must submit a real comment through the backend API",
+                source.contains("createComment("));
+        assertTrue("Post detail repair must have a focused real-device smoke entry",
+                source.contains("captureRealBackendPostDetailOnly"));
+        assertFalse("Real backend fixture copy must be readable Chinese, not mojibake",
+                source.contains(chars(0x942a, 0x71b8, 0x6e80))
+                        || source.contains(chars(0x6960, 0x5c7e, 0x6579))
+                        || source.contains(chars(0x7487, 0xfe3d, 0x510f)));
+    }
+
     private static void assertViewHasGoneVisibility(String layout, String xml, String id) {
         int idIndex = xml.indexOf("android:id=\"" + id + "\"");
         assertTrue(layout + " missing " + id, idIndex >= 0);
@@ -193,6 +235,14 @@ public class OpenDesignLayoutMappingTest {
 
     private static String readUtf8(String relativePath) throws IOException {
         return new String(Files.readAllBytes(Path.of(relativePath)), StandardCharsets.UTF_8);
+    }
+
+    private static String chars(int... values) {
+        char[] chars = new char[values.length];
+        for (int i = 0; i < values.length; i++) {
+            chars[i] = (char) values[i];
+        }
+        return new String(chars);
     }
 
     private static final class LayoutMapping {

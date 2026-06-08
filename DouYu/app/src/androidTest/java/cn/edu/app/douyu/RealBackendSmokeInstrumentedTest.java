@@ -9,12 +9,14 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.content.SharedPreferences;
+import android.widget.EditText;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.json.JSONObject;
+import org.json.JSONArray;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -43,7 +45,10 @@ public class RealBackendSmokeInstrumentedTest {
         String token = login(baseUrl, "13900001999", "AGE_18_PLUS");
         persistToken(token);
 
-        String postId = createPost(baseUrl, token);
+        String postId = firstVisiblePostId(baseUrl, token);
+        if (postId == null || postId.isEmpty()) {
+            postId = createPost(baseUrl, token);
+        }
         String productId = createProduct(baseUrl, token);
         PatternJobFixture patternFixture = createPatternJob(baseUrl, token);
         String jobData = patternFixture.jobResponse;
@@ -55,8 +60,8 @@ public class RealBackendSmokeInstrumentedTest {
         String notificationTitle = new JSONObject(fixture).getJSONObject("data").getString("notificationTitle");
         String notificationBody = new JSONObject(fixture).getJSONObject("data").getString("notificationBody");
 
-        captureActivity(outputDir, "real_post_detail", new Intent(targetContext, PostDetailActivity.class)
-                .putExtra(IntentExtras.POST_ID, postId));
+        createComment(baseUrl, token, postId, "真实后端预置评论：用于验证评论列表能从 API 渲染。");
+        capturePostDetailCommentFlow(outputDir, postId);
         captureActivity(outputDir, "real_product_detail", new Intent(targetContext, ProductDetailActivity.class)
                 .putExtra(IntentExtras.PRODUCT_ID, productId));
         captureActivity(outputDir, "real_ai_flow", new Intent(targetContext, AiFlowActivity.class)
@@ -69,6 +74,21 @@ public class RealBackendSmokeInstrumentedTest {
                 .putExtra(IntentExtras.NOTIFICATION_ID, notificationId)
                 .putExtra(IntentExtras.TITLE, notificationTitle)
                 .putExtra(IntentExtras.BODY, notificationBody));
+    }
+
+    @Test
+    public void captureRealBackendPostDetailOnly() throws Exception {
+        File outputDir = prepareOutputDir();
+        String baseUrl = BuildConfig.API_BASE_URL;
+        String token = login(baseUrl, "13900001999", "AGE_18_PLUS");
+        persistToken(token);
+
+        String postId = firstVisiblePostId(baseUrl, token);
+        if (postId == null || postId.isEmpty()) {
+            postId = createPost(baseUrl, token);
+        }
+        createComment(baseUrl, token, postId, "真实后端预置评论：用于验证评论列表能从 API 渲染。");
+        capturePostDetailCommentFlow(outputDir, postId);
     }
 
     private String login(String baseUrl, String phone, String ageGroup) throws Exception {
@@ -94,6 +114,15 @@ public class RealBackendSmokeInstrumentedTest {
         return new JSONObject(response).getJSONObject("data").getString("postId");
     }
 
+    private String firstVisiblePostId(String baseUrl, String token) throws Exception {
+        JSONObject feed = getJson(apiUrl(baseUrl, "/api/v1/posts/feed?page=1&size=1"), token);
+        JSONArray items = feed.getJSONObject("data").getJSONArray("items");
+        if (items.length() == 0) {
+            return "";
+        }
+        return items.getJSONObject(0).getString("postId");
+    }
+
     private String createProduct(String baseUrl, String token) throws Exception {
         JSONObject sku = new JSONObject()
                 .put("specName", "验收规格")
@@ -106,6 +135,16 @@ public class RealBackendSmokeInstrumentedTest {
                 .put("sku", sku);
         String response = post(apiUrl(baseUrl, "/api/v1/products"), body.toString(), token);
         return new JSONObject(response).getJSONObject("data").getString("productId");
+    }
+
+    private void createComment(String baseUrl, String token, String postId, String content) throws Exception {
+        JSONObject body = new JSONObject()
+                .put("content", content)
+                .put("mediaFileIds", new org.json.JSONArray())
+                .put("mentionUserIds", new org.json.JSONArray())
+                .put("topicIds", new org.json.JSONArray())
+                .put("stickerIds", new org.json.JSONArray());
+        post(apiUrl(baseUrl, "/api/v1/posts/" + postId + "/comments"), body.toString(), token);
     }
 
     private PatternJobFixture createPatternJob(String baseUrl, String token) throws Exception {
@@ -261,9 +300,39 @@ public class RealBackendSmokeInstrumentedTest {
         }
     }
 
+    private void capturePostDetailCommentFlow(File outputDir, String postId) throws Exception {
+        Intent intent = new Intent(targetContext, PostDetailActivity.class)
+                .putExtra(IntentExtras.POST_ID, postId)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try (ActivityScenario<PostDetailActivity> scenario = ActivityScenario.launch(intent)) {
+            waitForScreen();
+            takeScreenshot(outputDir, "post_detail_real_home");
+
+            scenario.onActivity(activity -> {
+                activity.findViewById(R.id.post_comment_action).performClick();
+                EditText input = activity.findViewById(R.id.post_comment_input);
+                input.requestFocus();
+                input.setText("真机 UI 提交评论：用于验证发送后刷新。");
+                input.setSelection(input.getText().length());
+            });
+            waitForScreen();
+            takeScreenshot(outputDir, "post_detail_comment_input");
+
+            scenario.onActivity(activity -> activity.findViewById(R.id.post_comment_send).performClick());
+            waitForCommentRefresh();
+            takeScreenshot(outputDir, "post_detail_comments_after_submit");
+        }
+    }
+
     private void waitForScreen() throws InterruptedException {
         instrumentation.waitForIdleSync();
         Thread.sleep(3000L);
+        instrumentation.waitForIdleSync();
+    }
+
+    private void waitForCommentRefresh() throws InterruptedException {
+        instrumentation.waitForIdleSync();
+        Thread.sleep(6000L);
         instrumentation.waitForIdleSync();
     }
 

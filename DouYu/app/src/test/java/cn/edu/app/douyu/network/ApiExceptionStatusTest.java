@@ -32,7 +32,7 @@ public class ApiExceptionStatusTest {
 
     @Test
     public void loadStateMapsUnauthorizedToLoginBoundary() {
-        ApiException exception = new ApiException(401, "HTTP 401");
+        ApiException exception = new ApiException(401, "HTTP " + 401);
 
         assertEquals(LoadState.LOGIN_REQUIRED, LoadState.from(exception));
     }

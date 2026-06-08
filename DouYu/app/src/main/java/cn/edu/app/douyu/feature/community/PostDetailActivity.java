@@ -3,6 +3,7 @@ package cn.edu.app.douyu.feature.community;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
 import android.widget.EditText;
@@ -24,11 +25,7 @@ import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.core.UiCopy;
 import cn.edu.app.douyu.model.Comment;
-import cn.edu.app.douyu.model.CommentMediaAsset;
-import cn.edu.app.douyu.model.CommentMention;
 import cn.edu.app.douyu.model.CommentRequest;
-import cn.edu.app.douyu.model.CommentSticker;
-import cn.edu.app.douyu.model.CommentTopicRef;
 import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
@@ -55,11 +52,13 @@ public class PostDetailActivity extends XmlPageActivity {
     private TextView commentEmpty;
     private View commentErrorBox;
     private TextView commentErrorText;
+    private View commentComposer;
     private EditText commentInput;
     private MaterialButton commentSend;
 
     @Override
     protected int layoutRes() {
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         return R.layout.activity_post_detail;
     }
 
@@ -97,6 +96,7 @@ public class PostDetailActivity extends XmlPageActivity {
         commentEmpty = findViewById(R.id.post_comment_empty);
         commentErrorBox = findViewById(R.id.post_comment_error_box);
         commentErrorText = findViewById(R.id.post_comment_error_text);
+        commentComposer = findViewById(R.id.post_comment_editor);
         commentInput = findViewById(R.id.post_comment_input);
         commentSend = findViewById(R.id.post_comment_send);
     }
@@ -104,6 +104,7 @@ public class PostDetailActivity extends XmlPageActivity {
     private void bindStaticActions() {
         galleryPrev.setOnClickListener(v -> moveGallery(-1));
         galleryNext.setOnClickListener(v -> moveGallery(1));
+        findViewById(R.id.post_static_comment_trigger).setOnClickListener(v -> focusCommentInput());
         findViewById(R.id.post_comment_action).setOnClickListener(v -> focusCommentInput());
         findViewById(R.id.post_like_action).setOnClickListener(v -> toggleLike());
         findViewById(R.id.post_favorite_action).setOnClickListener(v -> toggleFavorite());
@@ -159,11 +160,12 @@ public class PostDetailActivity extends XmlPageActivity {
     private void renderPost(Post post) {
         if (post == null) {
             showPageStatus("作品不存在或已不可见。", true);
+            setCommentInputEnabled(false);
             return;
         }
         bindGallery(post);
         setText(R.id.post_author_name, post.author == null ? "未知作者" : valueOrFallback(post.author.nickname, "未知作者"));
-        setText(R.id.post_author_meta, authorMeta(post));
+        setText(R.id.post_author_meta, PostDetailFormatter.authorMeta(post));
         setText(R.id.post_author_follow, PostDetailFormatter.authorFollowLabel(post, ""));
         setText(R.id.post_title, valueOrFallback(post.title, "未命名作品"));
         setText(R.id.post_body, valueOrFallback(post.content, "暂无正文"));
@@ -299,6 +301,9 @@ public class PostDetailActivity extends XmlPageActivity {
                 },
                 (state, message) -> {
                     setInteractionsEnabled(true);
+                    if (state == LoadState.LOGIN_REQUIRED) {
+                        setCommentInputEnabled(false);
+                    }
                     showPageStatus(message, true);
                 }
         );
@@ -318,6 +323,9 @@ public class PostDetailActivity extends XmlPageActivity {
                 },
                 (state, message) -> {
                     setInteractionsEnabled(true);
+                    if (state == LoadState.LOGIN_REQUIRED) {
+                        setCommentInputEnabled(false);
+                    }
                     showPageStatus(message, true);
                 }
         );
@@ -410,75 +418,19 @@ public class PostDetailActivity extends XmlPageActivity {
         main.addView(author);
 
         TextView body = new TextView(this);
-        body.setText(commentSummary(comment));
+        body.setText(PostDetailFormatter.commentSummary(comment));
         body.setTextColor(ContextCompat.getColor(this, R.color.doyu_text_muted));
         body.setTextSize(12);
         body.setLineSpacing(dp(2), 1f);
         main.addView(body);
 
         TextView meta = new TextView(this);
-        meta.setText(commentHasImages(comment) ? "含图片评论" : "回复");
+        meta.setText(PostDetailFormatter.commentHasImages(comment) ? "含图片评论" : "回复");
         meta.setTextColor(ContextCompat.getColor(this, R.color.doyu_text_muted));
         meta.setTextSize(10);
         main.addView(meta);
         row.addView(main);
         return row;
-    }
-
-    private String commentSummary(Comment comment) {
-        if (comment == null) {
-            return "";
-        }
-        StringBuilder builder = new StringBuilder();
-        if (comment.mentions != null) {
-            for (CommentMention mention : comment.mentions) {
-                if (mention != null && mention.nickname != null && !mention.nickname.isEmpty()) {
-                    builder.append("@").append(mention.nickname).append(" ");
-                }
-            }
-        }
-        if (comment.content != null && !comment.content.isBlank()) {
-            builder.append(comment.content.trim());
-        }
-        if (comment.topics != null) {
-            for (CommentTopicRef topic : comment.topics) {
-                if (topic != null && topic.name != null && !topic.name.isEmpty()) {
-                    if (builder.length() > 0) {
-                        builder.append(" ");
-                    }
-                    builder.append("#").append(topic.name);
-                }
-            }
-        }
-        if (comment.stickers != null) {
-            for (CommentSticker sticker : comment.stickers) {
-                if (sticker != null && sticker.emojiText != null && !sticker.emojiText.isEmpty()) {
-                    if (builder.length() > 0) {
-                        builder.append(" ");
-                    }
-                    builder.append(sticker.emojiText);
-                }
-            }
-        }
-        if (commentHasImages(comment)) {
-            if (builder.length() > 0) {
-                builder.append(" ");
-            }
-            builder.append("[图片评论 ").append(comment.mediaAssets.size()).append("]");
-        }
-        return builder.length() == 0 ? "图片/贴纸评论" : builder.toString();
-    }
-
-    private boolean commentHasImages(Comment comment) {
-        if (comment == null || comment.mediaAssets == null) {
-            return false;
-        }
-        for (CommentMediaAsset asset : comment.mediaAssets) {
-            if (asset != null && asset.publicUrl != null && !asset.publicUrl.isEmpty()) {
-                return true;
-            }
-        }
-        return !comment.mediaAssets.isEmpty();
     }
 
     private void renderCommentError(String message) {
@@ -507,6 +459,7 @@ public class PostDetailActivity extends XmlPageActivity {
                     submittingComment = false;
                     commentInput.setText("");
                     commentSend.setText("发送");
+                    collapseCommentInput();
                     updateSendEnabled();
                     if (currentPost != null) {
                         currentPost.commentCount = count(currentPost.commentCount) + 1;
@@ -518,6 +471,9 @@ public class PostDetailActivity extends XmlPageActivity {
                 (state, message) -> {
                     submittingComment = false;
                     commentSend.setText("发送");
+                    if (state == LoadState.LOGIN_REQUIRED) {
+                        setCommentInputEnabled(false);
+                    }
                     updateSendEnabled();
                     showPageStatus(message, true);
                 }
@@ -525,12 +481,26 @@ public class PostDetailActivity extends XmlPageActivity {
     }
 
     private void focusCommentInput() {
+        if (!commentInput.isEnabled()) {
+            showPageStatus(UiCopy.LOGIN_REQUIRED, true);
+            return;
+        }
+        commentComposer.setVisibility(View.VISIBLE);
         commentInput.requestFocus();
         InputMethodManager manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         if (manager != null) {
             manager.showSoftInput(commentInput, InputMethodManager.SHOW_IMPLICIT);
         }
         scrollView.post(() -> scrollView.smoothScrollTo(0, findViewById(R.id.post_comment_section).getTop()));
+    }
+
+    private void collapseCommentInput() {
+        commentInput.clearFocus();
+        InputMethodManager manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (manager != null) {
+            manager.hideSoftInputFromWindow(commentInput.getWindowToken(), 0);
+        }
+        commentComposer.setVisibility(View.GONE);
     }
 
     private void showToolBoundary(String message) {
@@ -545,18 +515,15 @@ public class PostDetailActivity extends XmlPageActivity {
 
     private void setCommentInputEnabled(boolean enabled) {
         commentInput.setEnabled(enabled);
+        if (!enabled) {
+            commentComposer.setVisibility(View.GONE);
+        }
         updateSendEnabled();
     }
 
     private void updateSendEnabled() {
         boolean hasText = commentInput != null && !commentInput.getText().toString().trim().isEmpty();
         commentSend.setEnabled(hasText && !submittingComment && commentInput.isEnabled());
-    }
-
-    private String authorMeta(Post post) {
-        String createdAt = post.createdAt == null || post.createdAt.isEmpty() ? "作品详情" : post.createdAt;
-        String status = post.status == null || post.status.isEmpty() ? "可见状态未知" : post.status;
-        return status + " · " + createdAt;
     }
 
     private static int count(Integer value) {

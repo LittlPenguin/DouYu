@@ -75,6 +75,7 @@
 | `17-ui-parity-refactor-plan.md` | Open Design UI 还原计划 |
 | `18-unfinished-and-blockers.md` | 未完成、阻塞、不能写成通过和后续 P0/P1 项集中清单 |
 | `19-community-post-detail-open-design-plan.md` | 社区作品详情页 Open Design 还原计划 |
+| `20-community-post-detail-repair-plan.md` | 作品详情真实评论流、键盘输入态和真机验收修复记录 |
 | `19-messages-open-design-rebuild-plan.md` | 消息页三屏 Open Design 重建计划 |
 | `19-profile-open-design-plan.md` | 我的页 Open Design 还原计划 |
 | `current-status.md` | 当前事实、已完成项和下一步未关闭项 |

@@ -28,7 +28,10 @@
         <activity android:name=".feature.message.ConversationActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.commerce.PaymentBoundaryActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.commerce.ProductDetailActivity" android:screenOrientation="portrait" />
-        <activity android:name=".feature.community.PostDetailActivity" android:screenOrientation="portrait" />
+        <activity
+            android:name=".feature.community.PostDetailActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name=".feature.community.PostCreateActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.community.SearchActivity" android:screenOrientation="portrait" />
         <activity

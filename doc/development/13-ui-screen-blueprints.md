@@ -76,7 +76,12 @@ Required structure:
 - Search follows `search-a.html`; Android XML is `activity_search.xml`; global
   search remains UI-only unless backend support exists.
 - Post detail follows `post-detail-comment-toolbar-a.html`; Android XML is
-  `activity_post_detail.xml`.
+  `activity_post_detail.xml`. Required runtime structure is image-first
+  carousel, content card, real comments, a bottom static comment entry with
+  like/comment/favorite actions, and an expanded text input area inside the
+  comment section for real comment submission. Author metadata must be readable
+  UI copy such as `作品 · yyyy-MM-dd`, not raw backend status or full ISO
+  timestamps.
 - Post compose follows `post-compose-a.html`; Android XML is
   `activity_post_create.xml`.
 - Conversation follows `message-conversation-a.html`; Android XML is
