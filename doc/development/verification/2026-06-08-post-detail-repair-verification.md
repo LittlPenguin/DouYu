@@ -2,7 +2,7 @@
 
 ## 目标
 
-验证 `PostDetailActivity` 是否符合 `doc/development/open-design/post-detail-comment-toolbar-a.html` 与开发文档要求：真实帖子详情、真实评论列表、真实评论提交、底部静态评论栏、展开输入区、点赞/收藏 API 边界和 375dp 左右真机宽度 UI parity。
+验证 `PostDetailActivity` 是否符合 `doc/development/open-design/post-detail-comment-toolbar-a.html` 与开发文档要求：真实帖子详情、真实评论列表、真实评论提交、底部静态评论栏、键盘上方真实输入 overlay、点赞/收藏 API 边界和 375dp 左右真机宽度 UI parity。
 
 ## 环境
 
@@ -23,7 +23,7 @@
 |---|---|---|---|---|
 | PDR-001 | 作品详情 | 真机 smoke 使用真实后端和真实评论流 | `captureRealBackendPostDetailOnly` 登录 dev 用户、读取真实 feed postId、写入真实评论、通过 UI 提交真实评论并截图 | Closed |
 | PDR-002 | 作品详情 | 用户可见文案不显示 raw `HTTP 401` 或乱码 | `LoadState.LOGIN_REQUIRED` 仍映射 `UiCopy.LOGIN_REQUIRED`；源码残留扫描和 `SourceMojibakeSpotTest` 覆盖作品详情相关 Java/XML/测试 fixture | Closed |
-| PDR-003 | 作品详情 | 底部评论栏和评论输入态在 375dp 左右宽度无遮挡 | 输入区从底部浮层移动到评论区内，`PostDetailActivity` 启用 `adjustResize`，截图 `post_detail_comment_input.png` 显示输入框、工具和发送按钮位于键盘上方 | Closed |
+| PDR-003 | 作品详情 | 底部评论栏和评论输入态在 375dp 左右宽度无遮挡 | 后续发现“输入区移动到评论区内”的实现与 Open Design 不一致；真实输入框必须是底部 overlay，并在 `21-post-detail-keyboard-composer-repair-plan.md` / `2026-06-08-post-detail-keyboard-composer-verification.md` 中重新验收 | Superseded |
 | PDR-004 | 作品详情 | 作者信息应为设计可读文案，不暴露后端状态字段 | `PostDetailFormatter.authorMeta` 将 `VISIBLE · ISO 时间` 改为 `作品 · yyyy-MM-dd`，截图 `post_detail_real_home.png` 已验证 | Closed |
 
 ## 命令结果
@@ -69,7 +69,7 @@
 文件：
 
 - `real-backend-smoke/post_detail_real_home.png`
-- `real-backend-smoke/post_detail_comment_input.png`
+- `real-backend-smoke/post_detail_comment_input.png`（旧截图名，已由 `post_detail_keyboard_composer.png` 取代）
 - `real-backend-smoke/post_detail_comments_after_submit.png`
 - `real-backend-smoke-contact-sheet.png`
 - `visual-smoke/*.png`
@@ -78,7 +78,7 @@
 截图结论：
 
 - `post_detail_real_home.png`：真实 OSS 拼豆封面、真实标题正文、话题 chip、可读 `作品 · 2026-06-07` 作者 meta、底部静态评论栏。
-- `post_detail_comment_input.png`：键盘打开时，评论输入框、`图 / @ / #` 工具和发送按钮均在键盘上方，无遮挡或溢出。
+- `post_detail_comment_input.png`：旧验收截图；后续发现输入框位置属于错误实现，改由 `post_detail_keyboard_composer.png` 验证底部 overlay 与键盘贴合。
 - `post_detail_comments_after_submit.png`：真实评论提交后评论数刷新，键盘收起，底部静态评论栏恢复。
 
 ## 未覆盖项

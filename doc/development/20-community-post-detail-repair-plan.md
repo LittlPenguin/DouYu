@@ -12,7 +12,7 @@
 - 评论列表来自真实 `/api/v1/posts/{postId}/comments`，支持加载、空态、错误重试和未登录边界。
 - 评论行通过 `PostDetailFormatter` 渲染作者、正文、`@`、`#`、贴纸文字和图片评论摘要。
 - 底部静态评论入口承载 `点赞 / 评论 / 收藏` 操作，移除了评论区上方独立互动卡。
-- 点击底部评论入口或评论按钮后，真实文本输入区在评论区内展开，避免被软键盘遮挡。
+- 点击底部评论入口或评论按钮后，真实文本输入区应作为底部 overlay 显示在键盘上方；此前“在评论区内展开”的实现已在 `21-post-detail-keyboard-composer-repair-plan.md` 中记录为偏差并修复。
 - 提交评论调用真实 `POST /api/v1/posts/{postId}/comments`，成功后清空输入、收起键盘并刷新评论列表。
 - 点赞/收藏调用真实 like/favorite API；接口失败时不伪造本地成功状态。
 - `图 / @ / #` 当前保持开发边界提示，不写入请求、不伪造选择结果。
@@ -54,7 +54,7 @@
 关键截图：
 
 - `post_detail_real_home.png`
-- `post_detail_comment_input.png`
+- `post_detail_comment_input.png`（旧截图名，已由 plan-21 的 `post_detail_keyboard_composer.png` 取代）
 - `post_detail_comments_after_submit.png`
 - `real-backend-smoke-contact-sheet.png`
 

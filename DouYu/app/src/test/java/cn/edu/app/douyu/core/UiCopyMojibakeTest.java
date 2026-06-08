@@ -8,7 +8,9 @@ import static org.junit.Assert.assertFalse;
 
 public class UiCopyMojibakeTest {
     private static final String[] MOJIBAKE_FRAGMENTS = {
-            "閸", "缁", "闁", "鐠", "锟", "涓", "绉", "鍥", "璇", "鎴", "�"
+            chars(0x95b8), chars(0x7f02), chars(0x95c1), chars(0x9420), chars(0x951f),
+            chars(0x5a11), chars(0x7ec9), chars(0x95b8), chars(0x9420), chars(0x95b9),
+            chars(0x951f), chars(0xfffd)
     };
 
     @Test
@@ -25,5 +27,13 @@ public class UiCopyMojibakeTest {
             assertFalse(name + " contains mojibake fragment " + fragment + ": " + value,
                     value != null && value.contains(fragment));
         }
+    }
+
+    private static String chars(int... values) {
+        char[] chars = new char[values.length];
+        for (int i = 0; i < values.length; i++) {
+            chars[i] = (char) values[i];
+        }
+        return new String(chars);
     }
 }

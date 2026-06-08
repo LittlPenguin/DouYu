@@ -213,8 +213,8 @@ The post-detail follow-up has been implemented and verified against
 
 - the standalone engagement card above comments is removed;
 - like/comment/favorite actions live in the bottom static comment entry;
-- tapping the static entry or comment action expands the real text input area
-  inside the comment section, so the keyboard does not cover it;
+- tapping the static entry or comment action hides the static bar and shows a
+  separate real-input overlay above the IME keyboard;
 - author metadata now renders readable copy such as `作品 · yyyy-MM-dd` instead
   of raw backend status and full ISO timestamps;
 - comment rows use backend data and render mentions, topics, stickers, and

@@ -13,6 +13,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
@@ -23,6 +24,7 @@ import java.util.List;
 
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.IntentExtras;
+import cn.edu.app.douyu.core.SystemBarInsets;
 import cn.edu.app.douyu.core.UiCopy;
 import cn.edu.app.douyu.model.Comment;
 import cn.edu.app.douyu.model.CommentRequest;
@@ -52,13 +54,15 @@ public class PostDetailActivity extends XmlPageActivity {
     private TextView commentEmpty;
     private View commentErrorBox;
     private TextView commentErrorText;
-    private View commentComposer;
+    private View commentBar;
+    private View commentOverlayContainer;
+    private View realCommentInput;
     private EditText commentInput;
     private MaterialButton commentSend;
 
     @Override
     protected int layoutRes() {
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         return R.layout.activity_post_detail;
     }
 
@@ -70,7 +74,9 @@ public class PostDetailActivity extends XmlPageActivity {
     @Override
     protected void bindViews() {
         bindViewFields();
+        SystemBarInsets.applyToContentWithBottomContainers(this, commentBar, commentOverlayContainer);
         bindStaticActions();
+        bindBackHandler();
         postId = extra(IntentExtras.POST_ID);
         if (postId.isEmpty()) {
             showPageStatus("缺少 postId，无法请求作品详情。", true);
@@ -96,9 +102,24 @@ public class PostDetailActivity extends XmlPageActivity {
         commentEmpty = findViewById(R.id.post_comment_empty);
         commentErrorBox = findViewById(R.id.post_comment_error_box);
         commentErrorText = findViewById(R.id.post_comment_error_text);
-        commentComposer = findViewById(R.id.post_comment_editor);
+        commentBar = findViewById(R.id.post_comment_bar);
+        commentOverlayContainer = findViewById(R.id.post_comment_overlay_container);
+        realCommentInput = findViewById(R.id.post_comment_editor);
         commentInput = findViewById(R.id.post_comment_input);
         commentSend = findViewById(R.id.post_comment_send);
+    }
+
+    private void bindBackHandler() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (isRealCommentInputVisible()) {
+                    collapseCommentInput();
+                    return;
+                }
+                finish();
+            }
+        });
     }
 
     private void bindStaticActions() {
@@ -485,13 +506,12 @@ public class PostDetailActivity extends XmlPageActivity {
             showPageStatus(UiCopy.LOGIN_REQUIRED, true);
             return;
         }
-        commentComposer.setVisibility(View.VISIBLE);
+        showRealCommentInput();
         commentInput.requestFocus();
         InputMethodManager manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
         if (manager != null) {
             manager.showSoftInput(commentInput, InputMethodManager.SHOW_IMPLICIT);
         }
-        scrollView.post(() -> scrollView.smoothScrollTo(0, findViewById(R.id.post_comment_section).getTop()));
     }
 
     private void collapseCommentInput() {
@@ -500,7 +520,23 @@ public class PostDetailActivity extends XmlPageActivity {
         if (manager != null) {
             manager.hideSoftInputFromWindow(commentInput.getWindowToken(), 0);
         }
-        commentComposer.setVisibility(View.GONE);
+        showStaticCommentBar();
+    }
+
+    private void showRealCommentInput() {
+        commentBar.setVisibility(View.GONE);
+        commentOverlayContainer.setVisibility(View.VISIBLE);
+        realCommentInput.setVisibility(View.VISIBLE);
+    }
+
+    private void showStaticCommentBar() {
+        realCommentInput.setVisibility(View.GONE);
+        commentOverlayContainer.setVisibility(View.GONE);
+        commentBar.setVisibility(View.VISIBLE);
+    }
+
+    private boolean isRealCommentInputVisible() {
+        return commentOverlayContainer != null && commentOverlayContainer.getVisibility() == View.VISIBLE;
     }
 
     private void showToolBoundary(String message) {
@@ -516,7 +552,7 @@ public class PostDetailActivity extends XmlPageActivity {
     private void setCommentInputEnabled(boolean enabled) {
         commentInput.setEnabled(enabled);
         if (!enabled) {
-            commentComposer.setVisibility(View.GONE);
+            showStaticCommentBar();
         }
         updateSendEnabled();
     }

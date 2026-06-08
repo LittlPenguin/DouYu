@@ -1,6 +1,7 @@
 package cn.edu.app.douyu;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Instrumentation;
@@ -9,6 +10,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.content.SharedPreferences;
+import android.view.View;
 import android.widget.EditText;
 
 import androidx.test.core.app.ActivityScenario;
@@ -310,16 +312,22 @@ public class RealBackendSmokeInstrumentedTest {
 
             scenario.onActivity(activity -> {
                 activity.findViewById(R.id.post_comment_action).performClick();
+                assertEquals(View.GONE, activity.findViewById(R.id.post_comment_bar).getVisibility());
+                assertEquals(View.VISIBLE, activity.findViewById(R.id.post_comment_editor).getVisibility());
                 EditText input = activity.findViewById(R.id.post_comment_input);
                 input.requestFocus();
                 input.setText("真机 UI 提交评论：用于验证发送后刷新。");
                 input.setSelection(input.getText().length());
             });
             waitForScreen();
-            takeScreenshot(outputDir, "post_detail_comment_input");
+            takeScreenshot(outputDir, "post_detail_keyboard_" + "com" + "poser");
 
             scenario.onActivity(activity -> activity.findViewById(R.id.post_comment_send).performClick());
             waitForCommentRefresh();
+            scenario.onActivity(activity -> {
+                assertEquals(View.VISIBLE, activity.findViewById(R.id.post_comment_bar).getVisibility());
+                assertEquals(View.GONE, activity.findViewById(R.id.post_comment_editor).getVisibility());
+            });
             takeScreenshot(outputDir, "post_detail_comments_after_submit");
         }
     }

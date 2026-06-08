@@ -78,8 +78,9 @@ Required structure:
 - Post detail follows `post-detail-comment-toolbar-a.html`; Android XML is
   `activity_post_detail.xml`. Required runtime structure is image-first
   carousel, content card, real comments, a bottom static comment entry with
-  like/comment/favorite actions, and an expanded text input area inside the
-  comment section for real comment submission. Author metadata must be readable
+  like/comment/favorite actions, and a separate bottom real-input overlay that
+  appears above the IME keyboard after the static entry is triggered. The real
+  input overlay is not part of the scrolling comment section. Author metadata must be readable
   UI copy such as `作品 · yyyy-MM-dd`, not raw backend status or full ISO
   timestamps.
 - Post compose follows `post-compose-a.html`; Android XML is

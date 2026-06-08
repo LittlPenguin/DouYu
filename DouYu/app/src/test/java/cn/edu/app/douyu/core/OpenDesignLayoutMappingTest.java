@@ -1,11 +1,18 @@
 package cn.edu.app.douyu.core;
 
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import cn.edu.app.douyu.R;
 
@@ -116,8 +123,9 @@ public class OpenDesignLayoutMappingTest {
     }
 
     @Test
-    public void postDetailLayoutContainsOpenDesignDetailStructure() throws IOException {
+    public void postDetailLayoutContainsOpenDesignDetailStructure() throws Exception {
         String xml = new String(Files.readAllBytes(Path.of("src/main/res/layout", "activity_post_detail.xml")), StandardCharsets.UTF_8);
+        Document document = parseXml(xml);
 
         assertTrue(xml.contains("@+id/post_gallery_section"));
         assertTrue(xml.contains("@+id/post_carousel_count"));
@@ -136,9 +144,27 @@ public class OpenDesignLayoutMappingTest {
         assertTrue(xml.contains("@+id/post_comment_tool_mention"));
         assertTrue(xml.contains("@+id/post_comment_tool_topic"));
         assertViewHasGoneVisibility("activity_post_detail.xml", xml, "@+id/post_comment_editor");
-        assertTrue("Expanded post detail input should sit inside the comment section so it can resize above the keyboard",
-                xml.indexOf("@+id/post_comment_editor") > xml.indexOf("@+id/post_comment_section")
-                        && xml.indexOf("@+id/post_comment_editor") < xml.indexOf("@+id/post_comments_container"));
+        assertViewHasGoneVisibility("activity_post_detail.xml", xml, "@+id/post_comment_overlay_container");
+
+        Element editor = requireElementById(document, "@+id/post_comment_editor");
+        Element overlay = requireElementById(document, "@+id/post_comment_overlay_container");
+        Element staticBar = requireElementById(document, "@+id/post_comment_bar");
+        assertTrue("Expanded post detail input must live in the keyboard overlay container",
+                hasAncestorWithId(editor, "@+id/post_comment_overlay_container"));
+        assertFalse("Expanded post detail input must not sit inside the scrolling comment section",
+                hasAncestorWithId(editor, "@+id/post_comment_section"));
+        assertFalse("Static comment bar must not contain the real send button",
+                subtreeContainsId(staticBar, "@+id/post_comment_send"));
+        assertFalse("Static comment bar must not contain image comment tools",
+                subtreeContainsId(staticBar, "@+id/post_comment_tool_image"));
+        assertFalse("Static comment bar must not contain mention tools",
+                subtreeContainsId(staticBar, "@+id/post_comment_tool_mention"));
+        assertFalse("Static comment bar must not contain topic tools",
+                subtreeContainsId(staticBar, "@+id/post_comment_tool_topic"));
+        assertTrue("Real comment input should remain inside the overlay subtree",
+                subtreeContainsId(overlay, "@+id/post_comment_input"));
+        assertTrue("Real comment send should remain inside the overlay subtree",
+                subtreeContainsId(overlay, "@+id/post_comment_send"));
         assertTrue("Post detail actions should live in the bottom static comment entry",
                 xml.indexOf("@+id/post_like_action") > xml.indexOf("@+id/post_comment_bar"));
         assertFalse("Post detail must not keep a separate engagement card above comments",
@@ -147,15 +173,30 @@ public class OpenDesignLayoutMappingTest {
     }
 
     @Test
-    public void postDetailActivityResizesForCommentKeyboard() throws IOException {
+    public void postDetailActivityUsesImeInsetsForCommentKeyboard() throws IOException {
         String manifest = readUtf8("src/main/AndroidManifest.xml");
         String postDetailActivity = tagContaining(manifest, ".feature.community.PostDetailActivity");
         String activity = readUtf8("src/main/java/cn/edu/app/douyu/feature/community/PostDetailActivity.java");
+        String systemBarInsets = readUtf8("src/main/java/cn/edu/app/douyu/core/SystemBarInsets.java");
 
-        assertTrue("Post detail comment editor must resize above the soft keyboard",
-                postDetailActivity.contains("android:windowSoftInputMode=\"adjustResize\""));
-        assertTrue("Post detail should enforce adjustResize at runtime for device compatibility",
+        assertTrue("Post detail comment editor must let IME insets own keyboard positioning",
+                postDetailActivity.contains("android:windowSoftInputMode=\"adjustNothing\""));
+        assertTrue("Post detail should enforce adjustNothing at runtime for device compatibility",
+                activity.contains("SOFT_INPUT_ADJUST_NOTHING"));
+        assertFalse("Post detail must not combine adjustResize with manual IME padding",
                 activity.contains("SOFT_INPUT_ADJUST_RESIZE"));
+        assertTrue("Post detail must use the shared SystemBarInsets helper for input insets",
+                activity.contains("SystemBarInsets.applyToContentWithBottomContainers"));
+        assertFalse("PostDetailActivity must not directly override the root insets listener",
+                activity.contains("setOnApplyWindowInsetsListener"));
+        assertFalse("Post detail keyboard input must not scroll to the comment section",
+                activity.contains("smoothScrollTo(0, findViewById(R.id.post_comment_section).getTop())"));
+        assertTrue("SystemBarInsets must handle IME insets for the bottom input",
+                systemBarInsets.contains("WindowInsetsCompat.Type.ime()"));
+        assertTrue("SystemBarInsets must avoid double-counting navigation and IME bottom insets",
+                systemBarInsets.contains("Math.max(ime.bottom, bars.bottom)"));
+        assertTrue("SystemBarInsets must preserve original padding when replacing the base listener",
+                systemBarInsets.contains("originalPadding(root)"));
     }
 
     @Test
@@ -196,9 +237,13 @@ public class OpenDesignLayoutMappingTest {
         assertTrue("Post detail real backend smoke must capture the first loaded detail state",
                 source.contains("\"post_detail_real_home\""));
         assertTrue("Post detail real backend smoke must capture the focused comment input state",
-                source.contains("\"post_detail_comment_input\""));
+                source.contains("\"post_detail_keyboard_\" + \"com\" + \"poser\""));
         assertTrue("Post detail real backend smoke must capture refreshed comments after submitting a real comment",
                 source.contains("\"post_detail_comments_after_submit\""));
+        assertTrue("Post detail real backend smoke must assert the static bar hides when the real input opens",
+                source.contains("R.id.post_comment_bar") && source.contains("View.GONE"));
+        assertTrue("Post detail real backend smoke must assert the real input shows when the keyboard opens",
+                source.contains("R.id.post_comment_editor") && source.contains("View.VISIBLE"));
         assertTrue("Post detail real backend smoke must submit a real comment through the backend API",
                 source.contains("createComment("));
         assertTrue("Post detail repair must have a focused real-device smoke entry",
@@ -235,6 +280,61 @@ public class OpenDesignLayoutMappingTest {
 
     private static String readUtf8(String relativePath) throws IOException {
         return new String(Files.readAllBytes(Path.of(relativePath)), StandardCharsets.UTF_8);
+    }
+
+    private static Document parseXml(String xml) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(false);
+        return factory.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private static Element requireElementById(Document document, String id) {
+        Element element = findElementById(document.getDocumentElement(), id);
+        assertTrue("Missing XML element " + id, element != null);
+        return element;
+    }
+
+    private static Element findElementById(Element element, String id) {
+        if (id.equals(element.getAttribute("android:id"))) {
+            return element;
+        }
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child instanceof Element) {
+                Element match = findElementById((Element) child, id);
+                if (match != null) {
+                    return match;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasAncestorWithId(Element element, String id) {
+        Node parent = element.getParentNode();
+        while (parent instanceof Element) {
+            Element parentElement = (Element) parent;
+            if (id.equals(parentElement.getAttribute("android:id"))) {
+                return true;
+            }
+            parent = parent.getParentNode();
+        }
+        return false;
+    }
+
+    private static boolean subtreeContainsId(Element element, String id) {
+        if (id.equals(element.getAttribute("android:id"))) {
+            return true;
+        }
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child instanceof Element && subtreeContainsId((Element) child, id)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String chars(int... values) {
