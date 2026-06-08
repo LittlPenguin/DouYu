@@ -75,7 +75,15 @@ public class UserController {
     })
     @GetMapping("/me")
     Map<String, Object> me(Authentication authentication) {
-        return authService.userView(authService.requireUser(CurrentUser.userId(authentication)));
+        String userId = CurrentUser.userId(authentication);
+        Map<String, Object> view = authService.userView(authService.requireUser(userId));
+        List<PostEntity> myPosts = postRepository.findByAuthorIdInOrderByCreatedAtDesc(List.of(userId)).stream()
+                .filter(this::isListablePost)
+                .toList();
+        long likes = myPosts.stream().mapToLong(PostEntity::getLikeCount).sum();
+        view.put("likedCount", (int) likes);
+        view.put("postCount", myPosts.size());
+        return view;
     }
 
     @Operation(summary = "搜索可提及用户")
