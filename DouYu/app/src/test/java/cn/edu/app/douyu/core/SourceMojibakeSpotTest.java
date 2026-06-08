@@ -12,16 +12,19 @@ import static org.junit.Assert.assertFalse;
 public class SourceMojibakeSpotTest {
     private static final String[] KEY_FILES = {
             "src/main/java/cn/edu/app/douyu/ui/BaseListFragment.java",
+            "src/main/java/cn/edu/app/douyu/ui/XmlPageActivity.java",
             "src/main/java/cn/edu/app/douyu/core/UiCopy.java",
             "src/main/java/cn/edu/app/douyu/feature/ai/AiFragment.java",
             "src/main/java/cn/edu/app/douyu/feature/message/MessagesFragment.java",
             "src/main/java/cn/edu/app/douyu/feature/profile/ProfileFragment.java",
             "src/main/java/cn/edu/app/douyu/feature/ai/AiFlowActivity.java",
             "src/main/java/cn/edu/app/douyu/feature/community/PostDetailActivity.java",
+            "src/main/java/cn/edu/app/douyu/feature/commerce/CommerceFragment.java",
             "src/main/java/cn/edu/app/douyu/feature/commerce/ProductDetailActivity.java",
             "src/main/java/cn/edu/app/douyu/feature/message/ConversationActivity.java",
             "src/main/java/cn/edu/app/douyu/feature/message/NotificationDetailActivity.java",
             "src/androidTest/java/cn/edu/app/douyu/VisualSmokeInstrumentedTest.java",
+            "src/main/res/layout/fragment_commerce_home.xml",
             "src/main/res/layout/fragment_ai_home.xml",
             "src/main/res/layout/fragment_messages_home.xml",
             "src/main/res/layout/fragment_profile_home.xml",
@@ -30,6 +33,7 @@ public class SourceMojibakeSpotTest {
             "src/main/res/layout/activity_notification_detail.xml",
             "src/main/res/layout/activity_post_detail.xml",
             "src/main/res/layout/activity_product_detail.xml",
+            "src/main/res/layout/activity_payment_boundary.xml",
             "src/main/res/layout/activity_main.xml",
             "src/main/res/values/strings.xml"
     };

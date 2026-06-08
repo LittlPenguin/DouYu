@@ -112,6 +112,9 @@ public abstract class XmlPageActivity extends AppCompatActivity {
         if (message == null || message.isEmpty()) {
             return UiCopy.ERROR_PREFIX + "服务暂不可用，请稍后重试。";
         }
+        if (message.contains("HTTP 404")) {
+            return "内容不存在或已下架。";
+        }
         if (message.contains("connect") || message.contains("timeout") || message.contains("Unable to resolve host")) {
             return UiCopy.ERROR_PREFIX + "暂时无法连接服务，请稍后重试。";
         }

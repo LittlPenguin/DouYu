@@ -28,7 +28,7 @@ public class CommerceFragment extends BaseListFragment {
 
     @Override
     protected String screenSubtitle() {
-        return "自营材料、玩家寄售和定制服务按接口状态展示；真实支付未接入前保持边界。";
+        return "商品列表来自真实 API；无数据显示空态，支付和订单未闭环时只展示边界。";
     }
 
     @Override
@@ -43,7 +43,7 @@ public class CommerceFragment extends BaseListFragment {
 
     @Override
     protected String[] chips() {
-        return new String[]{"自营", "二手", "定制", "材料"};
+        return new String[]{"精选", "豆子", "板子", "工具", "玩家"};
     }
 
     @Override
@@ -52,11 +52,15 @@ public class CommerceFragment extends BaseListFragment {
         List<SummaryItem> items = new ArrayList<>();
         if (page != null && page.items != null) {
             for (Product product : page.items) {
+                if (product == null || isBlank(product.productId)) {
+                    continue;
+                }
                 String title = first(product.title, product.name, "未命名商品");
+                String type = first(product.categoryName, product.type, product.productType, "未分类");
                 items.add(new SummaryItem(
                         product.productId,
                         title,
-                        MoneyFormatter.centsToYuan(product.priceCents) + " | " + safe(product.status),
+                        MoneyFormatter.centsToYuan(product.priceCents) + " | " + safe(product.status) + " | " + type,
                         product.imageUrl
                 ));
             }
@@ -71,12 +75,23 @@ public class CommerceFragment extends BaseListFragment {
         startActivity(intent);
     }
 
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
     private static String first(String a, String b, String fallback) {
+        return first(a, b, null, fallback);
+    }
+
+    private static String first(String a, String b, String c, String fallback) {
         if (a != null && !a.isEmpty()) {
             return a;
         }
         if (b != null && !b.isEmpty()) {
             return b;
+        }
+        if (c != null && !c.isEmpty()) {
+            return c;
         }
         return fallback;
     }
