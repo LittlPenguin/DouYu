@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>登录 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆笃 Doyu / Auth</div>
+        <h1 class="title">登录</h1>
+        <p class="lead">邮箱和密码登录。登录成功后写入真实 session token，再回到触发登录的受保护动作。</p>
+        <div class="chips"><span class="chip">邮箱</span><span class="chip">密码</span><span class="chip">加载/错误</span><span class="chip">注册互跳</span></div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>接口</b><span>POST /api/v1/auth/login</span></div>
+        <div class="fact"><b>边界</b><span>只使用邮箱密码登录。</span></div>
+        <div class="fact"><b>返回</b><span>AuthSession: accessToken, refreshToken, expiresIn, user。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar"><a class="icon-btn" href="index-logged-out.html"><span class="icon back"></span></a><div class="top-title">登录</div><span class="icon-btn"></span></div>
+            <div class="scroll no-nav">
+              <div class="hero-strip"><span class="pill ok">邮箱登录</span><h3>继续使用豆笃</h3><p>登录后可以编辑资料、上传作品、评论和查看个人数据。</p></div>
+              <div class="form-stack">
+                <label>邮箱</label>
+                <div class="input-line">name@example.com</div>
+                <label>密码</label>
+                <div class="input-line">••••••••</div>
+                <div class="warning-band">邮箱或密码错误时显示在这里；网络失败保留表单内容。</div>
+                <button class="button petal">登录</button>
+                <a class="button ghost" href="register-a.html">还没有账号，去注册</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="spec-grid">
+            <div class="spec"><h3>状态</h3><ul><li>提交中禁用邮箱、密码和登录按钮。</li><li>登录成功保存 token 并返回来源动作。</li><li>401 显示“邮箱或密码错误”。</li></ul></div>
+            <div class="spec"><h3>来源动作</h3><ul><li>个人资料：登录后进入编辑资料。</li><li>上传作品：登录后进入上传作品。</li><li>评论：登录后回到作品详情并展开评论输入。</li></ul></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

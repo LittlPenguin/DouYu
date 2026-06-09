@@ -42,6 +42,8 @@ public class OpenDesignLayoutMappingTest {
                 new LayoutMapping("profile-posts-a.html", R.layout.activity_profile_posts),
                 new LayoutMapping("profile-following-a.html", R.layout.activity_profile_users),
                 new LayoutMapping("profile-followers-a.html", R.layout.activity_profile_users),
+                new LayoutMapping("login-a.html", R.layout.activity_login),
+                new LayoutMapping("register-a.html", R.layout.activity_register),
                 new LayoutMapping("settings-home-a.html", R.layout.activity_settings_home),
                 new LayoutMapping("settings-account-security-a.html", R.layout.activity_settings_account_security),
                 new LayoutMapping("settings-privacy-permissions-a.html", R.layout.activity_settings_privacy_permissions),
@@ -51,7 +53,7 @@ public class OpenDesignLayoutMappingTest {
                 new LayoutMapping("doyu-design-directions.html", R.layout.activity_main)
         };
 
-        assertEquals(21, mappings.length);
+        assertEquals(23, mappings.length);
         for (LayoutMapping mapping : mappings) {
             assertTrue(mapping.openDesignPage.endsWith(".html"));
             assertTrue(mapping.layoutId > 0);
@@ -380,6 +382,130 @@ public class OpenDesignLayoutMappingTest {
                 conversationActivity.contains("mutualFollow")
                         && conversationActivity.contains("remainingNonMutualMessages")
                         && conversationActivity.contains("canSend"));
+    }
+
+    @Test
+    public void authEmailLoginRegisterAndLoggedOutBoundariesAreMapped() throws IOException {
+        String loginDesign = readUtf8("../../doc/development/open-design/login-a.html");
+        String registerDesign = readUtf8("../../doc/development/open-design/register-a.html");
+        String loggedOutIndex = readUtf8("../../doc/development/open-design/index-logged-out.html");
+        String loggedInIndex = readUtf8("../../doc/development/open-design/index.html");
+        String profileDesign = readUtf8("../../doc/development/open-design/profile-a.html");
+        String manifest = readUtf8("src/main/AndroidManifest.xml");
+        String loginXml = readUtf8("src/main/res/layout/activity_login.xml");
+        String registerXml = readUtf8("src/main/res/layout/activity_register.xml");
+        String settingsXml = readUtf8("src/main/res/layout/activity_settings_home.xml");
+        String accountSecurityXml = readUtf8("src/main/res/layout/activity_settings_account_security.xml");
+        String uiCopy = readUtf8("src/main/java/cn/edu/app/douyu/core/UiCopy.java");
+        String authGate = readUtf8("src/main/java/cn/edu/app/douyu/auth/AuthGate.java");
+        String sessionStore = readUtf8("src/main/java/cn/edu/app/douyu/auth/SessionStore.java");
+        String loginActivity = readUtf8("src/main/java/cn/edu/app/douyu/auth/LoginActivity.java");
+        String registerActivity = readUtf8("src/main/java/cn/edu/app/douyu/auth/RegisterActivity.java");
+        String settingsActivity = readUtf8("src/main/java/cn/edu/app/douyu/feature/profile/SettingsActivity.java");
+        String mainActivity = readUtf8("src/main/java/cn/edu/app/douyu/MainActivity.java");
+        String profileFragment = readUtf8("src/main/java/cn/edu/app/douyu/feature/profile/ProfileFragment.java");
+        String postDetailActivity = readUtf8("src/main/java/cn/edu/app/douyu/feature/community/PostDetailActivity.java");
+        String api = readUtf8("src/main/java/cn/edu/app/douyu/network/DoyuApi.java");
+        String repository = readUtf8("src/main/java/cn/edu/app/douyu/data/DoyuRepository.java");
+        String apiModuleMap = readUtf8("../../doc/development/diagrams/api-module-map.svg");
+        String realBackendSmoke = readUtf8("src/androidTest/java/cn/edu/app/douyu/RealBackendSmokeInstrumentedTest.java");
+        String commerceRealProducts = readUtf8("src/androidTest/java/cn/edu/app/douyu/CommerceRealProductsInstrumentedTest.java");
+
+        assertTrue("Logged-in Open Design index must link to the logged-out index",
+                loggedInIndex.contains("index-logged-out.html"));
+        assertTrue("Logged-in Open Design index must link login and register pages",
+                loggedInIndex.contains("login-a.html") && loggedInIndex.contains("register-a.html"));
+        assertTrue("Logged-out Open Design index must expose login/register entry points",
+                loggedOutIndex.contains("login-a.html") && loggedOutIndex.contains("register-a.html"));
+        assertTrue("Logged-out Open Design must document the protected-action login dialog",
+                loggedOutIndex.contains("需要登录")
+                        && loggedOutIndex.contains("登录后可以继续使用此功能。")
+                        && loggedOutIndex.contains("去登录 / 取消"));
+        assertTrue("Login Open Design must use the real email login endpoint",
+                loginDesign.contains("/api/v1/auth/login") && loginDesign.contains("邮箱"));
+        assertTrue("Register Open Design must use the real email register endpoint",
+                registerDesign.contains("/api/v1/auth/register")
+                        && registerDesign.contains("确认密码")
+                        && registerDesign.contains("注册并登录"));
+        assertTrue("Profile Open Design must keep the exact logged-out data copy",
+                profileDesign.contains("需要登录后才能查看此页面的数据。"));
+        assertFalse("Profile Open Design must remove the old extra logged-out explanation",
+                profileDesign.contains("当前展示登录边界，不使用本地假内容。"));
+
+        assertTrue("Manifest must register LoginActivity",
+                manifest.contains(".auth.LoginActivity"));
+        assertTrue("Manifest must register RegisterActivity",
+                manifest.contains(".auth.RegisterActivity"));
+        assertViewIdExists("activity_login.xml", loginXml, "@+id/login_email");
+        assertViewIdExists("activity_login.xml", loginXml, "@+id/login_password");
+        assertViewIdExists("activity_login.xml", loginXml, "@+id/login_submit");
+        assertViewIdExists("activity_login.xml", loginXml, "@+id/login_open_register");
+        assertViewIdExists("activity_register.xml", registerXml, "@+id/register_email");
+        assertViewIdExists("activity_register.xml", registerXml, "@+id/register_password");
+        assertViewIdExists("activity_register.xml", registerXml, "@+id/register_confirm_password");
+        assertViewIdExists("activity_register.xml", registerXml, "@+id/register_submit");
+        assertViewIdExists("activity_settings_home.xml", settingsXml, "@+id/settings_logout_action");
+        assertTrue("Settings account security copy must describe email auth, not phone auth",
+                accountSecurityXml.contains("邮箱") && !accountSecurityXml.contains("手机号"));
+
+        assertTrue("UiCopy login-required text must be exact",
+                uiCopy.contains("需要登录后才能查看此页面的数据。"));
+        assertFalse("UiCopy must not keep the removed logged-out trailing sentence",
+                uiCopy.contains("当前展示登录边界"));
+        assertTrue("AuthGate must show the required confirmation copy",
+                authGate.contains("需要登录")
+                        && authGate.contains("登录后可以继续使用此功能。")
+                        && authGate.contains("去登录")
+                        && authGate.contains("取消"));
+        assertTrue("SessionStore must share the same preference and token keys used by the API interceptor",
+                sessionStore.contains("\"doyu_session\"")
+                        && sessionStore.contains("\"accessToken\"")
+                        && sessionStore.contains("\"refreshToken\""));
+        assertTrue("LoginActivity must call the real login API and save AuthSession",
+                loginActivity.contains("repository.login(email, password)")
+                        && loginActivity.contains("new SessionStore(this).save(session)")
+                        && loginActivity.contains("Patterns.EMAIL_ADDRESS"));
+        assertTrue("RegisterActivity must call the real register API and enforce password confirmation",
+                registerActivity.contains("repository.register(email, password, confirmPassword, nickname, ageGroup)")
+                        && registerActivity.contains("!password.equals(confirmPassword)")
+                        && registerActivity.contains("new SessionStore(this).save(session)"));
+        assertTrue("SettingsActivity must confirm logout, call repository.logout, and clear SessionStore on success",
+                settingsActivity.contains("确认退出登录？")
+                        && settingsActivity.contains("repository.logout(refreshToken)")
+                        && settingsActivity.contains("store.clear()"));
+        assertTrue("SettingsActivity must refresh the bottom auth action after returning from LoginActivity",
+                settingsActivity.contains("protected void onResume()")
+                        && settingsActivity.contains("super.onResume()")
+                        && settingsActivity.contains("bindLogoutAction();"));
+        assertTrue("Upload work action must go through AuthGate",
+                mainActivity.contains("AuthGate.runOrRequestLogin")
+                        && mainActivity.contains("RETURN_ACTION_POST_CREATE"));
+        assertTrue("Profile edit action must go through AuthGate",
+                profileFragment.contains("AuthGate.runOrRequestLogin")
+                        && profileFragment.contains("RETURN_ACTION_PROFILE_EDIT"));
+        assertTrue("Post detail comment/write actions must go through AuthGate",
+                postDetailActivity.contains("AuthGate.runOrRequestLogin")
+                        && postDetailActivity.contains("RETURN_ACTION_COMMENT"));
+        assertTrue("DoyuApi must expose email register, login, and logout endpoints",
+                api.contains("@POST(\"/api/v1/auth/register\")")
+                        && api.contains("@POST(\"/api/v1/auth/login\")")
+                        && api.contains("@POST(\"/api/v1/auth/logout\")"));
+        assertFalse("DoyuApi must not expose removed SMS auth endpoints",
+                api.contains("sms-code") || api.contains("login/sms"));
+        assertTrue("DoyuRepository must expose login/register/logout methods",
+                repository.contains("AuthSession login(")
+                        && repository.contains("AuthSession register(")
+                        && repository.contains("void logout("));
+        assertTrue("API module diagram must document current email auth endpoints",
+                apiModuleMap.contains("register / login / refresh / logout"));
+        assertFalse("API module diagram must not keep removed SMS auth wording",
+                apiModuleMap.contains("sms-code"));
+        assertTrue("Real backend smoke must generate a unique email for repeatable device review",
+                realBackendSmoke.contains("UUID.randomUUID()")
+                        && realBackendSmoke.contains("\"smoke-\" + phone + \"-\""));
+        assertTrue("Commerce real-products smoke must generate a unique email for repeatable device review",
+                commerceRealProducts.contains("UUID.randomUUID()")
+                        && commerceRealProducts.contains("\"commerce-\" + phone + \"-\""));
     }
 
     @Test

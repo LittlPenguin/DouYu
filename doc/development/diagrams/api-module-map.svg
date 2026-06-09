@@ -35,7 +35,7 @@
   <g>
     <rect x="64" y="250" width="170" height="76" class="module user"/>
     <text x="149" y="280" text-anchor="middle" class="label">Auth</text>
-    <text x="149" y="302" text-anchor="middle" class="small">sms-code / login / refresh</text>
+    <text x="149" y="302" text-anchor="middle" class="small">register / login / refresh / logout</text>
     <rect x="260" y="250" width="170" height="76" class="module user"/>
     <text x="345" y="280" text-anchor="middle" class="label">User</text>
     <text x="345" y="302" text-anchor="middle" class="small">me / follow / search</text>

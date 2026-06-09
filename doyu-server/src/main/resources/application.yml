@@ -36,8 +36,6 @@ douyu:
     secret: ${DOUYU_JWT_SECRET:dev-secret-dev-secret-dev-secret-dev-secret}
     access-token-ttl: PT2H
     refresh-token-ttl: P30D
-  sms:
-    stub-code: "123456"
   admin:
     bootstrap-username: ${DOUYU_ADMIN_BOOTSTRAP_USERNAME:admin}
     bootstrap-password: ${DOUYU_ADMIN_BOOTSTRAP_PASSWORD:admin123}

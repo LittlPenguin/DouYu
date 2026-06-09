@@ -18,7 +18,7 @@
 
 1. 未登录用户可浏览公开 Feed、作品详情、话题、贴纸、商品列表和商品详情。
 2. 点赞、收藏、发布、评论、上传、AI、购物车、订单、支付、消息、我的资产需要登录。
-3. 登录请求仍传 `ageGroup=AGE_18_PLUS`。
+3. 登录请求只提交 `email` 和 `password`；注册请求提交 `email`、`password`、`confirmPassword`、`nickname`、`ageGroup`，注册成功后直接登录。
 4. Android 使用 Java `SharedPreferences` 持久化 token，启动时读取会话。
 5. 401 或 refresh 失败必须清理本地会话，并展示统一登录引导。
 
@@ -26,7 +26,7 @@
 
 - 把 401 包装成普通空态。
 - 登录失败后继续展示“已完成操作”。
-- 写成登录请求已移除 `ageGroup`。
+- 把登录请求写成仍需提交 `ageGroup`。
 - 使用本地 mock 用户补齐“我的”页面。
 
 ## 社区与作品详情

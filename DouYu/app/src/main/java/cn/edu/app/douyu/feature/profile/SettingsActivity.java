@@ -1,9 +1,15 @@
 package cn.edu.app.douyu.feature.profile;
 
 import android.content.Intent;
+import android.widget.TextView;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import cn.edu.app.douyu.R;
+import cn.edu.app.douyu.auth.LoginActivity;
+import cn.edu.app.douyu.auth.SessionStore;
 import cn.edu.app.douyu.core.IntentExtras;
+import cn.edu.app.douyu.ui.LoadState;
 import cn.edu.app.douyu.ui.XmlPageActivity;
 
 public class SettingsActivity extends XmlPageActivity {
@@ -52,6 +58,13 @@ public class SettingsActivity extends XmlPageActivity {
         if (future != null) {
             future.setOnClickListener(v -> startActivity(new Intent(this, FutureCapabilityActivity.class)));
         }
+        bindLogoutAction();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        bindLogoutAction();
     }
 
     private void bindSection(int id, String section) {
@@ -63,5 +76,62 @@ public class SettingsActivity extends XmlPageActivity {
                 startActivity(intent);
             });
         }
+    }
+
+    private void bindLogoutAction() {
+        TextView logout = findViewById(R.id.settings_logout_action);
+        if (logout == null) {
+            return;
+        }
+        SessionStore store = new SessionStore(this);
+        if (!store.isLoggedIn()) {
+            logout.setText("登录 / 注册");
+            logout.setOnClickListener(v -> startActivity(new Intent(this, LoginActivity.class)));
+            return;
+        }
+        logout.setText("退出登录");
+        logout.setOnClickListener(v -> confirmLogout(store));
+    }
+
+    private void confirmLogout(SessionStore store) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("确认退出登录？")
+                .setMessage("退出后会清理本机登录态，受保护页面回到登录引导。")
+                .setNegativeButton("取消", null)
+                .setPositiveButton("退出", (dialog, which) -> performLogout(store))
+                .show();
+    }
+
+    private void performLogout(SessionStore store) {
+        String refreshToken = store.refreshToken();
+        if (refreshToken.isEmpty()) {
+            store.clear();
+            bindLogoutAction();
+            return;
+        }
+        loadDetail(
+                repository -> {
+                    repository.logout(refreshToken);
+                    return true;
+                },
+                ignored -> {
+                    store.clear();
+                    bindLogoutAction();
+                },
+                (state, message) -> {
+                    if (state == LoadState.LOGIN_REQUIRED) {
+                        store.clear();
+                        bindLogoutAction();
+                    } else {
+                        new MaterialAlertDialogBuilder(this)
+                                .setTitle("退出失败")
+                                .setMessage(message == null || message.isEmpty()
+                                        ? "暂时无法退出，请稍后重试。"
+                                        : message)
+                                .setPositiveButton("知道了", null)
+                                .show();
+                    }
+                }
+        );
     }
 }

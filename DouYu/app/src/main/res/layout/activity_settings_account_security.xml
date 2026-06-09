@@ -25,7 +25,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="账号状态&#10;已登录展示手机号脱敏、登录方式、当前设备；未登录只展示登录按钮和基础说明；过期引导重新登录。"
+                android:text="账号状态&#10;已登录展示邮箱、登录方式、当前设备；未登录只展示登录按钮和基础说明；过期引导重新登录。"
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
@@ -45,7 +45,7 @@
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="不展示实名完成、多设备踢下线、支付安全、交易风控或生产级账号保护已完成。登录契约继续保留 ageGroup=AGE_18_PLUS。"
+                android:text="不展示实名完成、多设备踢下线、支付安全、交易风控或生产级账号保护已完成。"
                 android:textColor="@color/doyu_text_muted"
                 android:textSize="14sp" />
 
@@ -55,6 +55,7 @@
                 android:layout_marginTop="18dp"
                 android:enabled="false"
                 android:text="退出登录需要真实会话状态"
+                android:textAllCaps="false"
                 app:cornerRadius="8dp" />
         </LinearLayout>
     </ScrollView>

@@ -25,7 +25,7 @@
 | `system-architecture.svg` | Android Java/XML、Spring Boot、PostgreSQL、Redis、OSS、AI Stub、Payment Stub、Admin API 关系 | `02-architecture.md`、`04-backend-services.md` |
 | `android-navigation-map.svg` | Java Activity/Fragment 页面入口、主 Tab、二级 Activity 和 UI-only 边界 | `03-android-client.md`、`13-ui-screen-blueprints.md` |
 | `api-module-map.svg` | Auth、User、Upload、Community、Pattern、Product、Cart、Order、Payment、Message、Reward、Report、Admin 模块关系 | `05-api-contract.md` |
-| `auth-session-flow.svg` | 短信登录、`ageGroup=AGE_18_PLUS`、SharedPreferences session、401 refresh、logout/clear 流程 | `03-android-client.md`、`05-api-contract.md` |
+| `auth-session-flow.svg` | 邮箱密码注册/登录、SharedPreferences session、401 refresh、logout/clear 流程 | `03-android-client.md`、`05-api-contract.md` |
 | `upload-oss-flow.svg` | `/uploads/presign -> PUT uploadUrl -> /uploads/confirm`，以及 `local|stub|aliyun` Provider 边界 | `04-backend-services.md`、`14-frontend-backend-collaboration.md` |
 | `community-comment-flow.svg` | 评论文字/图片/@/#/贴纸、上传校验、最多 9 图、审核中和列表刷新 | `05-api-contract.md`、`13-ui-screen-blueprints.md` |
 | `commerce-order-payment-flow.svg` | 商品、购物车、订单确认、地址缺口、联调支付单、服务端状态查询 | `08-commerce-payment.md` |

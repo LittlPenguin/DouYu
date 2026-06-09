@@ -20,8 +20,6 @@ douyu:
     secret: test-secret-test-secret-test-secret-test-secret
     access-token-ttl: PT2H
     refresh-token-ttl: P30D
-  sms:
-    stub-code: "123456"
   admin:
     bootstrap-username: admin
     bootstrap-password: admin123

@@ -19,6 +19,8 @@
         android:supportsRtl="true"
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.DouYu">
+        <activity android:name=".auth.LoginActivity" android:screenOrientation="portrait" />
+        <activity android:name=".auth.RegisterActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.ai.CameraActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.ai.AiFlowActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.profile.FutureCapabilityActivity" android:screenOrientation="portrait" />

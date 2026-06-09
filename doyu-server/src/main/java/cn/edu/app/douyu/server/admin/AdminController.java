@@ -326,7 +326,7 @@ public class AdminController {
     }
 
     private User toModel(UserEntity e) {
-        return new User(e.getId(), e.getPhone(), e.getNickname(), e.getAvatarFileId(), e.getBio(),
+        return new User(e.getId(), e.getPhone(), e.getEmail(), e.getNickname(), e.getAvatarFileId(), e.getBio(),
                 e.getAgeGroup(), e.isMinor(), e.getRealNameStatus(), e.getAccountStatus(), e.getCreatedAt(), e.getUpdatedAt());
     }
 

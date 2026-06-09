@@ -13,8 +13,14 @@ public class UserEntity {
     @Column(name = "id", length = 64)
     private String id;
 
-    @Column(name = "phone", length = 64, nullable = false, unique = true)
+    @Column(name = "phone", length = 64, unique = true)
     private String phone;
+
+    @Column(name = "email", length = 160, nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "password_hash", length = 128)
+    private String passwordHash;
 
     @Column(name = "nickname", length = 80, nullable = false)
     private String nickname;
@@ -50,6 +56,7 @@ public class UserEntity {
                       Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.phone = phone;
+        this.email = defaultEmail(id, phone);
         this.nickname = nickname;
         this.avatarFileId = avatarFileId;
         this.bio = bio;
@@ -65,6 +72,10 @@ public class UserEntity {
     public void setId(String id) { this.id = id; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getNickname() { return nickname; }
     public void setNickname(String nickname) { this.nickname = nickname; }
     public String getAvatarFileId() { return avatarFileId; }
@@ -83,4 +94,9 @@ public class UserEntity {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+
+    private static String defaultEmail(String id, String phone) {
+        String source = phone == null || phone.isBlank() ? id : phone;
+        return source == null || source.isBlank() ? null : source.toLowerCase() + "@legacy.local";
+    }
 }

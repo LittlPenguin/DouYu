@@ -7,7 +7,6 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "douyu")
 public record DouyuProperties(
         Jwt jwt,
-        Sms sms,
         Admin admin,
         Storage storage,
         Oss oss
@@ -18,9 +17,6 @@ public record DouyuProperties(
             Duration accessTokenTtl,
             Duration refreshTokenTtl
     ) {
-    }
-
-    public record Sms(String stubCode) {
     }
 
     public record Admin(String bootstrapUsername, String bootstrapPassword) {

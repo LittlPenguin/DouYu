@@ -15,7 +15,10 @@ import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductCategory;
+import cn.edu.app.douyu.model.LoginRequest;
 import cn.edu.app.douyu.model.ReadReceipt;
+import cn.edu.app.douyu.model.RefreshRequest;
+import cn.edu.app.douyu.model.RegisterRequest;
 import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
@@ -170,6 +173,15 @@ public interface DoyuApi {
 
     @POST("/api/v1/uploads/confirm")
     Call<ApiResponse<FileAsset>> uploadConfirm(@Body UploadConfirmRequest request);
+
+    @POST("/api/v1/auth/register")
+    Call<ApiResponse<AuthSession>> register(@Body RegisterRequest request);
+
+    @POST("/api/v1/auth/login")
+    Call<ApiResponse<AuthSession>> login(@Body LoginRequest request);
+
+    @POST("/api/v1/auth/logout")
+    Call<ApiResponse<java.util.Map<String, Object>>> logout(@Body RefreshRequest request);
 
     @GET("/api/v1/auth/session")
     Call<ApiResponse<AuthSession>> session();

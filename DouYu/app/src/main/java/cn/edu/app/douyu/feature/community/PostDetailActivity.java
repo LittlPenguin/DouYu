@@ -1,6 +1,7 @@
 package cn.edu.app.douyu.feature.community;
 
 import android.graphics.BitmapFactory;
+import android.content.Intent;
 import android.net.Uri;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -31,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 
 import cn.edu.app.douyu.R;
+import cn.edu.app.douyu.auth.AuthGate;
+import cn.edu.app.douyu.auth.LoginActivity;
+import cn.edu.app.douyu.auth.SessionStore;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.core.SystemBarInsets;
 import cn.edu.app.douyu.core.UiCopy;
@@ -87,6 +91,7 @@ public class PostDetailActivity extends XmlPageActivity {
     private MaterialButton commentSend;
 
     private ActivityResultLauncher<String> pickCommentImage;
+    private ActivityResultLauncher<Intent> loginLauncher;
 
     @Override
     protected int layoutRes() {
@@ -103,6 +108,17 @@ public class PostDetailActivity extends XmlPageActivity {
     protected void bindViews() {
         bindViewFields();
         SystemBarInsets.applyToContentWithBottomContainers(this, this::onImeVisibilityChanged, commentBar, commentOverlayContainer);
+        loginLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK) {
+                loadCurrentUser();
+                loadPost();
+                if (result.getData() != null
+                        && AuthGate.RETURN_ACTION_COMMENT.equals(result.getData().getStringExtra(LoginActivity.EXTRA_RETURN_ACTION))) {
+                    setCommentInputEnabled(true);
+                    focusCommentInput();
+                }
+            }
+        });
         pickCommentImage = registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
             if (uri != null) {
                 addCommentImage(uri);
@@ -277,6 +293,9 @@ public class PostDetailActivity extends XmlPageActivity {
         if (currentPost == null || followPending) {
             return;
         }
+        if (!ensureLoggedIn("", null)) {
+            return;
+        }
         final String authorId = currentPost.author == null ? null : currentPost.author.userId;
         if (authorId == null || authorId.isEmpty()) {
             return;
@@ -445,6 +464,9 @@ public class PostDetailActivity extends XmlPageActivity {
         if (currentPost == null) {
             return;
         }
+        if (!ensureLoggedIn("", null)) {
+            return;
+        }
         boolean liked = Boolean.TRUE.equals(currentPost.likedByMe);
         setInteractionsEnabled(false);
         loadDetail(
@@ -465,6 +487,9 @@ public class PostDetailActivity extends XmlPageActivity {
 
     private void toggleFavorite() {
         if (currentPost == null) {
+            return;
+        }
+        if (!ensureLoggedIn("", null)) {
             return;
         }
         boolean favorited = Boolean.TRUE.equals(currentPost.favoritedByMe);
@@ -659,6 +684,9 @@ public class PostDetailActivity extends XmlPageActivity {
         if (submittingComment) {
             return;
         }
+        if (!ensureLoggedIn(AuthGate.RETURN_ACTION_COMMENT, null)) {
+            return;
+        }
         if (hasPendingUpload() || hasFailedUpload()) {
             showPageStatus("有图片未上传完成，请等待或移除后再发送。", true);
             return;
@@ -704,6 +732,9 @@ public class PostDetailActivity extends XmlPageActivity {
     }
 
     private void focusCommentInput() {
+        if (!ensureLoggedIn(AuthGate.RETURN_ACTION_COMMENT, null)) {
+            return;
+        }
         if (!commentInput.isEnabled()) {
             showPageStatus(UiCopy.LOGIN_REQUIRED, true);
             return;
@@ -854,11 +885,29 @@ public class PostDetailActivity extends XmlPageActivity {
     }
 
     private boolean ensureComposerLoggedIn() {
+        if (!ensureLoggedIn(AuthGate.RETURN_ACTION_COMMENT, null)) {
+            return false;
+        }
         if (commentInput == null || !commentInput.isEnabled()) {
             showPageStatus(UiCopy.LOGIN_REQUIRED, true);
             return false;
         }
         return true;
+    }
+
+    private boolean ensureLoggedIn(String returnAction, Runnable onLoggedIn) {
+        if (new SessionStore(this).isLoggedIn()) {
+            if (onLoggedIn != null) {
+                onLoggedIn.run();
+            }
+            return true;
+        }
+        String action = returnAction == null ? "" : returnAction;
+        return AuthGate.runOrRequestLogin(this, loginLauncher, action, () -> {
+            if (onLoggedIn != null) {
+                onLoggedIn.run();
+            }
+        });
     }
 
     // ----- 图片评论上传 -----

@@ -7,11 +7,15 @@ import android.view.Menu;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import cn.edu.app.douyu.auth.AuthGate;
+import cn.edu.app.douyu.auth.LoginActivity;
 import cn.edu.app.douyu.feature.ai.AiFragment;
 import cn.edu.app.douyu.feature.commerce.CommerceFragment;
 import cn.edu.app.douyu.feature.community.CommunityFragment;
@@ -29,12 +33,20 @@ public class MainActivity extends AppCompatActivity {
     private ImageView[] tabIcons;
     private TextView[] tabLabels;
     private View[] tabIndicators;
+    private ActivityResultLauncher<Intent> loginLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         SystemBarInsets.applyToContent(this);
+        loginLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK
+                    && result.getData() != null
+                    && AuthGate.RETURN_ACTION_POST_CREATE.equals(result.getData().getStringExtra(LoginActivity.EXTRA_RETURN_ACTION))) {
+                startActivity(new Intent(this, PostCreateActivity.class));
+            }
+        });
 
         title = findViewById(R.id.top_title);
         quickMenu = findViewById(R.id.quick_menu);
@@ -51,7 +63,8 @@ public class MainActivity extends AppCompatActivity {
         });
         findViewById(R.id.quick_post).setOnClickListener(v -> {
             hideQuickMenu();
-            startActivity(new Intent(this, PostCreateActivity.class));
+            AuthGate.runOrRequestLogin(this, loginLauncher, AuthGate.RETURN_ACTION_POST_CREATE,
+                    () -> startActivity(new Intent(this, PostCreateActivity.class)));
         });
 
         tabs = new View[]{

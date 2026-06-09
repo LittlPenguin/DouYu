@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>未登录索引 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">豆笃 Doyu / Logged-out Index</div>
+        <h1 class="title">未登录状态</h1>
+        <p class="lead">未登录用户仍可浏览公开内容；进入个人资料、上传作品、评论等受保护入口时先弹确认登录弹窗。</p>
+        <div class="chips"><span class="chip">登录入口</span><span class="chip">注册入口</span><span class="chip">受保护弹窗</span><span class="chip">Settings 差异</span></div>
+      </div>
+      <div class="side-facts">
+        <div class="fact"><b>入口</b><span><a href="login-a.html">登录</a> / <a href="register-a.html">注册</a></span></div>
+        <div class="fact"><b>确认弹窗</b><span>标题“需要登录”，正文“登录后可以继续使用此功能。”，按钮“去登录 / 取消”。</span></div>
+        <div class="fact"><b>索引区分</b><span><a href="index.html">index.html</a> 为已登录版；本页为未登录版。</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>未登录可浏览</h2>
+        <p>公开首页、作品详情只读、商城公开列表、搜索等入口继续可见；写操作不依赖后端 401 才提示。</p>
+      </div>
+      <div class="page-grid">
+        <a class="page-card" href="community-home-a.html"><h3>社区首页</h3><p>公开 Feed 可浏览。</p></a>
+        <a class="page-card" href="post-detail-comment-toolbar-a.html"><h3>作品详情</h3><p>详情与评论列表可读；评论、点赞、收藏、关注需要登录。</p></a>
+        <a class="page-card" href="profile-a.html"><h3>我的</h3><p>数据区只显示“需要登录后才能查看此页面的数据。”</p></a>
+        <a class="page-card" href="settings-home-a.html"><h3>Settings</h3><p>底部显示“登录 / 注册”；已登录时同一位置显示“退出登录”。</p></a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="state-grid">
+        <div class="state"><h3>受保护弹窗</h3><p>个人资料、上传作品、评论入口统一先弹确认登录；确认后进入登录页，取消留在当前页。</p><div class="state-bar"><span class="state-dot good">需要登录</span><span class="state-dot warn">去登录 / 取消</span></div></div>
+        <div class="state"><h3>禁止假数据</h3><p>未登录、空、错、加载状态只表达真实边界，不填本地 mock/demo 列表内容。</p><div class="state-bar"><span class="state-dot bad">禁 mock</span><span class="state-dot good">真实状态</span></div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

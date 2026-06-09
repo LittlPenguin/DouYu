@@ -37,7 +37,7 @@
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
                     android:text="开发态结构"
-                    android:textColor="#FFD9852B"
+                    android:textColor="@color/doyu_warn"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
@@ -54,10 +54,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="只展示可解释入口，未完成能力明确标注。危险操作必须二次确认，不使用轻 Toast 假成功。"
+                    android:lineSpacingExtra="2dp"
+                    android:text="只展示可解释入口。危险操作必须二次确认，不使用轻 Toast 假成功。"
                     android:textColor="@color/doyu_text_muted"
-                    android:textSize="12sp"
-                    android:lineSpacingExtra="2dp" />
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <TextView
@@ -69,12 +69,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                android:lineSpacingExtra="3dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:text="账号与安全&#10;手机号、登录设备、退出登录、注销账号"
+                android:text="账号与安全&#10;邮箱、登录设备、退出登录、注销账号"
                 android:textColor="@color/doyu_text"
-                android:textSize="15sp"
-                android:lineSpacingExtra="3dp" />
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/settings_privacy_permissions"
@@ -85,12 +85,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                android:lineSpacingExtra="3dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:text="隐私与权限&#10;相机、相册、通知、位置权限"
                 android:textColor="@color/doyu_text"
-                android:textSize="15sp"
-                android:lineSpacingExtra="3dp" />
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/settings_notifications"
@@ -101,12 +101,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                android:lineSpacingExtra="3dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:text="通知设置&#10;私信、评论、点赞收藏和系统通知分组控制"
                 android:textColor="@color/doyu_text"
-                android:textSize="15sp"
-                android:lineSpacingExtra="3dp" />
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/settings_about_compliance"
@@ -117,12 +117,12 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                android:lineSpacingExtra="3dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:text="帮助、关于与合规&#10;协议、隐私政策、SDK 清单、备案和版权投诉"
                 android:textColor="@color/doyu_text"
-                android:textSize="15sp"
-                android:lineSpacingExtra="3dp" />
+                android:textSize="15sp" />
 
             <TextView
                 android:id="@+id/settings_future_capability"
@@ -133,23 +133,37 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                android:lineSpacingExtra="3dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:text="未来能力 UI-only&#10;地图 API、真实支付 API、大模型生图 API"
                 android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/settings_logout_action"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_pill_stop"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="退出登录"
+                android:textColor="@color/doyu_danger"
                 android:textSize="15sp"
-                android:lineSpacingExtra="3dp" />
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
                 android:background="@drawable/bg_warning_band"
+                android:lineSpacingExtra="2dp"
                 android:padding="14dp"
                 android:text="合规资料入口存在不等于资料已齐。每个入口必须进入子页面、弹确认或展示禁用说明；不能只有 Toast。"
                 android:textColor="@color/doyu_text_muted"
-                android:textSize="13sp"
-                android:lineSpacingExtra="2dp" />
+                android:textSize="13sp" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

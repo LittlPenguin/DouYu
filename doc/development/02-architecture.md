@@ -38,7 +38,7 @@ Persistence
   - FileAsset metadata
 
 Providers
-  - SMS Stub
+  - Email/password auth
   - Local / Stub / Aliyun OSS Provider
   - AI Stub + backend orchestration
   - Payment Stub / callback skeleton
@@ -84,8 +84,8 @@ Design & Docs
 
 ### 登录与会话
 
-1. Android 调用 `POST /api/v1/auth/sms-code` 获取 Stub 验证码。
-2. Android 调用 `POST /api/v1/auth/login/sms`，请求仍包含 `ageGroup=AGE_18_PLUS`。
+1. Android 调用 `POST /api/v1/auth/register` 创建邮箱密码账号，注册成功后直接获得会话。
+2. Android 调用 `POST /api/v1/auth/login` 使用邮箱和密码登录。
 3. 后端返回 access token、refresh token 和用户摘要。
 4. Android 用 Java `SharedPreferences` 持久化 token。
 5. 401 或 refresh 失败时清理本地会话并展示统一登录引导。
@@ -151,7 +151,7 @@ API 契约以 `05-api-contract.md` 和后端 Controller 为准。当前公开模
 生产化前必须补齐：
 
 - 密钥管理、STS、最小权限和 CDN。
-- 短信真实 Provider、限流和风控。
+- 账号安全、密码找回、限流和风控。
 - 真实 AI Provider、熔断、限流、成本统计和内容安全。
 - 真实微信/支付宝支付、退款、对账、异常账务处理。
 - 备案、隐私政策、用户协议、SDK 清单、版权投诉和应用市场材料。

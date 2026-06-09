@@ -12,18 +12,25 @@ import cn.edu.app.douyu.server.common.entity.RefreshTokenRepository;
 import cn.edu.app.douyu.server.common.entity.RewardAccountRepository;
 import cn.edu.app.douyu.server.common.entity.UserEntity;
 import cn.edu.app.douyu.server.common.entity.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 @Service
 public class AuthService {
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+    private static final int MIN_PASSWORD_LENGTH = 8;
+    private static final int MAX_PASSWORD_LENGTH = 64;
+
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final FollowRepository followRepository;
@@ -31,11 +38,12 @@ public class AuthService {
     private final IdGenerator idGenerator;
     private final TokenService tokenService;
     private final DouyuProperties properties;
-    private final ConcurrentHashMap<String, String> smsCodes = new ConcurrentHashMap<>();
+    private final PasswordEncoder passwordEncoder;
 
     public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
                        FollowRepository followRepository, RewardAccountRepository rewardAccountRepository,
-                       IdGenerator idGenerator, TokenService tokenService, DouyuProperties properties) {
+                       IdGenerator idGenerator, TokenService tokenService, DouyuProperties properties,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.followRepository = followRepository;
@@ -43,21 +51,34 @@ public class AuthService {
         this.idGenerator = idGenerator;
         this.tokenService = tokenService;
         this.properties = properties;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    public void sendSms(String phone) {
-        smsCodes.put(phone, properties.sms().stubCode());
+    public Map<String, Object> register(AuthController.RegisterRequest request) {
+        String email = normalizeEmail(request.email());
+        validateEmail(email);
+        validatePassword(request.password());
+        if (!request.password().equals(request.confirmPassword())) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "密码和确认密码不一致");
+        }
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new BizException(ErrorCode.CONFLICT, "邮箱已注册");
+        }
+        UserEntity user = createEmailUser(email, request);
+        return tokenPayload(toModel(user));
     }
 
-    public Map<String, Object> login(AuthController.SmsLoginRequest request) {
-        String expected = smsCodes.getOrDefault(request.phone(), properties.sms().stubCode());
-        if (!expected.equals(request.code())) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, "验证码错误");
+    public Map<String, Object> login(AuthController.LoginRequest request) {
+        String email = normalizeEmail(request.email());
+        validateEmail(email);
+        UserEntity user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new BizException(ErrorCode.UNAUTHORIZED, "邮箱或密码错误"));
+        String passwordHash = user.getPasswordHash();
+        if (passwordHash == null || passwordHash.isBlank()
+                || !passwordEncoder.matches(request.password(), passwordHash)) {
+            throw new BizException(ErrorCode.UNAUTHORIZED, "邮箱或密码错误");
         }
-        UserEntity user = userRepository.findByPhone(request.phone()).orElseGet(() -> createUser(request));
-        if ("BANNED".equals(user.getAccountStatus()) || "CANCELED".equals(user.getAccountStatus())) {
-            throw new BizException(ErrorCode.FORBIDDEN, "账号状态不可登录");
-        }
+        ensureLoginAllowed(user);
         return tokenPayload(toModel(user));
     }
 
@@ -72,6 +93,7 @@ public class AuthService {
         if (user == null) {
             throw new BizException(ErrorCode.UNAUTHORIZED, "用户不存在");
         }
+        ensureLoginAllowed(user);
         return Map.of(
                 "accessToken", tokenService.accessToken(user.getId(), "USER"),
                 "refreshToken", refreshToken,
@@ -109,7 +131,7 @@ public class AuthService {
         long following = followRepository.countByUserId(user.id());
         long followers = followRepository.countByTargetUserId(user.id());
         var reward = rewardAccountRepository.findByUserId(user.id()).orElse(null);
-        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        Map<String, Object> view = new LinkedHashMap<>();
         view.put("userId", user.id());
         view.put("nickname", user.nickname() == null ? "" : user.nickname());
         view.put("avatarUrl", user.avatarFileId() == null ? "" : user.avatarFileId());
@@ -119,21 +141,51 @@ public class AuthService {
         view.put("followingCount", (int) following);
         view.put("followerCount", (int) followers);
         view.put("phone", maskPhone(user.phone()));
+        view.put("email", user.email() == null ? "" : user.email());
         view.put("ageGroup", user.ageGroup());
         view.put("realNameStatus", user.realNameStatus());
         view.put("accountStatus", user.accountStatus());
         return view;
     }
 
-    private UserEntity createUser(AuthController.SmsLoginRequest request) {
-        if (!"AGE_16_17".equals(request.ageGroup()) && !"AGE_18_PLUS".equals(request.ageGroup())) {
+    private UserEntity createEmailUser(String email, AuthController.RegisterRequest request) {
+        validateAgeGroup(request.ageGroup());
+        Instant now = Instant.now();
+        UserEntity user = new UserEntity(idGenerator.next("usr"), null,
+                request.nickname() == null || request.nickname().isBlank() ? "豆友" : request.nickname().trim(),
+                null, "", request.ageGroup(), "AGE_16_17".equals(request.ageGroup()),
+                "UNVERIFIED", "ACTIVE", now, now);
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        return userRepository.save(user);
+    }
+
+    private void ensureLoginAllowed(UserEntity user) {
+        if ("BANNED".equals(user.getAccountStatus()) || "CANCELED".equals(user.getAccountStatus())) {
+            throw new BizException(ErrorCode.FORBIDDEN, "账号状态不可登录");
+        }
+    }
+
+    private void validateAgeGroup(String ageGroup) {
+        if (!"AGE_16_17".equals(ageGroup) && !"AGE_18_PLUS".equals(ageGroup)) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "ageGroup 仅支持 AGE_16_17 或 AGE_18_PLUS");
         }
-        Instant now = Instant.now();
-        UserEntity user = new UserEntity(idGenerator.next("usr"), request.phone(),
-                request.nickname() == null || request.nickname().isBlank() ? "豆友" : request.nickname(),
-                null, "", request.ageGroup(), "AGE_16_17".equals(request.ageGroup()), "UNVERIFIED", "ACTIVE", now, now);
-        return userRepository.save(user);
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void validateEmail(String email) {
+        if (email.isBlank() || email.length() > 160 || !EMAIL_PATTERN.matcher(email).matches()) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "邮箱格式不正确");
+        }
+    }
+
+    private void validatePassword(String password) {
+        if (password == null || password.length() < MIN_PASSWORD_LENGTH || password.length() > MAX_PASSWORD_LENGTH) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "密码长度必须为 8-64 位");
+        }
     }
 
     private Map<String, Object> tokenPayload(User user) {
@@ -153,12 +205,15 @@ public class AuthService {
     }
 
     private User toModel(UserEntity entity) {
-        return new User(entity.getId(), entity.getPhone(), entity.getNickname(), entity.getAvatarFileId(),
-                entity.getBio(), entity.getAgeGroup(), entity.isMinor(), entity.getRealNameStatus(),
-                entity.getAccountStatus(), entity.getCreatedAt(), entity.getUpdatedAt());
+        return new User(entity.getId(), entity.getPhone(), entity.getEmail(), entity.getNickname(),
+                entity.getAvatarFileId(), entity.getBio(), entity.getAgeGroup(), entity.isMinor(),
+                entity.getRealNameStatus(), entity.getAccountStatus(), entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
     private String maskPhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return "";
+        }
         if (phone.length() < 7) {
             return phone;
         }

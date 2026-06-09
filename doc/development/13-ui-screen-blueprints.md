@@ -74,6 +74,10 @@ Required structure:
 
 ## Flow Screens
 
+- Login follows `login-a.html`; Android XML is `activity_login.xml`.
+- Register follows `register-a.html`; Android XML is `activity_register.xml`.
+- The logged-out Open Design board is `index-logged-out.html`; the logged-in
+  board remains `index.html`.
 - Search follows `search-a.html`; Android XML is `activity_search.xml`; global
   search remains UI-only unless backend support exists.
 - Post detail follows `post-detail-comment-toolbar-a.html`; Android XML is
@@ -112,6 +116,9 @@ Required structure:
 - Empty backend results render empty states.
 - Future features render disabled or UI-only states.
 - Pure UI-only pages must not create new API claims.
+- Logged-out Profile data copy is exactly `需要登录后才能查看此页面的数据。`
+- Logged-out protected actions show a confirmation dialog before opening Login:
+  profile edit, upload work, comments, likes, favorites, and follow.
 
 ## Acceptance
 

@@ -8,6 +8,16 @@
 </head>
 <body>
   <main class="board">
+    <section class="section">
+      <div class="section-head">
+        <h2>登录态操作</h2>
+        <p>Settings 底部承载登录态动作：已登录显示“退出登录”，点击后必须二次确认；未登录显示“登录 / 注册”。</p>
+      </div>
+      <div class="state-grid">
+        <div class="state"><h3>确认退出登录？</h3><p>退出后会清理本机登录态，受保护页面回到登录引导。</p><div class="tool-row"><span class="button ghost">取消</span><span class="button petal">退出</span></div></div>
+        <div class="state"><h3>未登录</h3><p>底部按钮为“登录 / 注册”，进入 login-a.html；不调用 logout API。</p></div>
+      </div>
+    </section>
     <section class="hero">
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / Settings 设计稿</div>
@@ -31,7 +41,7 @@
             <div class="scroll no-nav">
               <div class="hero-strip"><span class="pill warn">开发态结构</span><h3>账号与应用设置</h3><p>只展示可解释入口，未完成能力明确标注。</p></div>
               <div class="list">
-                <a class="row" href="settings-account-security-a.html"><span class="round-icon"><span class="icon lock"></span></span><div class="row-main"><div class="row-title">账号与安全</div><div class="row-sub">手机号、登录设备、退出登录、注销账号</div></div></a>
+                <a class="row" href="settings-account-security-a.html"><span class="round-icon"><span class="icon lock"></span></span><div class="row-main"><div class="row-title">账号与安全</div><div class="row-sub">邮箱、登录设备、退出登录、注销账号</div></div></a>
                 <a class="row" href="settings-privacy-permissions-a.html"><span class="round-icon"><span class="icon settings"></span></span><div class="row-main"><div class="row-title">隐私与权限</div><div class="row-sub">相机、相册、通知、位置权限</div></div></a>
                 <a class="row" href="settings-notifications-a.html"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">通知设置</div><div class="row-sub">私信、互动、系统通知</div></div></a>
                 <a class="row" href="settings-about-compliance-a.html"><span class="round-icon"><span class="icon image"></span></span><div class="row-main"><div class="row-title">帮助、关于与合规</div><div class="row-sub">协议、隐私政策、SDK 清单、备案待补</div></div><span class="pill warn">待补</span></a>

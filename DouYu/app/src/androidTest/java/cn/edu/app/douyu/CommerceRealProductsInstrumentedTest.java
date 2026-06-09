@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.feature.commerce.ProductDetailActivity;
@@ -83,14 +84,15 @@ public class CommerceRealProductsInstrumentedTest {
 
     private String login(String baseUrl) throws Exception {
         String phone = "13900002081";
-        post(apiUrl(baseUrl, "/api/v1/auth/sms-code"), new JSONObject().put("phone", phone).toString(), null);
+        String email = "commerce-" + phone + "-" + UUID.randomUUID() + "@example.com";
         String body = new JSONObject()
-                .put("phone", phone)
-                .put("code", "123456")
+                .put("email", email)
+                .put("password", "password123")
+                .put("confirmPassword", "password123")
                 .put("ageGroup", "AGE_18_PLUS")
                 .put("nickname", "商城真机验收")
                 .toString();
-        String response = post(apiUrl(baseUrl, "/api/v1/auth/login/sms"), body, null);
+        String response = post(apiUrl(baseUrl, "/api/v1/auth/register"), body, null);
         return new JSONObject(response).getJSONObject("data").getString("accessToken");
     }
 

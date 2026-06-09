@@ -63,14 +63,10 @@ class DevMessageFixtureContractTests {
     }
 
     private String login(String phone) throws Exception {
-        mockMvc.perform(post("/api/v1/auth/sms-code")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"" + phone + "\"}"))
-                .andExpect(status().isOk());
-        String response = mockMvc.perform(post("/api/v1/auth/login/sms")
+        String response = mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"phone":"%s","code":"123456","ageGroup":"AGE_18_PLUS","nickname":"QA Smoke"}
+                                {"email":"qa-%s@example.com","password":"password123","confirmPassword":"password123","ageGroup":"AGE_18_PLUS","nickname":"QA Smoke"}
                                 """.formatted(phone)))
                 .andExpect(status().isOk())
                 .andReturn()

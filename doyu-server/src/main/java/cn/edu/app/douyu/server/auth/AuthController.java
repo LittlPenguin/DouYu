@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-@Tag(name = "认证", description = "短信登录、Token 刷新、退出登录、账号注销")
+@Tag(name = "认证", description = "邮箱密码注册、登录、Token 刷新、退出登录、账号注销")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -25,25 +26,25 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @Operation(summary = "发送短信验证码", description = "向指定手机号发送验证码（Stub 模式固定返回 123456）")
+    @Operation(summary = "邮箱密码注册", description = "使用邮箱和密码注册，注册成功后直接返回登录会话")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "发送成功"),
-            @ApiResponse(responseCode = "400", description = "参数错误")
+            @ApiResponse(responseCode = "200", description = "注册成功"),
+            @ApiResponse(responseCode = "400", description = "参数错误"),
+            @ApiResponse(responseCode = "409", description = "邮箱已注册")
     })
-    @PostMapping("/sms-code")
-    Map<String, Object> sendSms(@Valid @RequestBody SmsCodeRequest request) {
-        authService.sendSms(request.phone());
-        return Map.of("sent", true, "expiresIn", 300);
+    @PostMapping("/register")
+    Map<String, Object> register(@Valid @RequestBody RegisterRequest request) {
+        return authService.register(request);
     }
 
-    @Operation(summary = "手机号验证码登录", description = "使用手机号和验证码登录，返回 accessToken 和 refreshToken")
+    @Operation(summary = "邮箱密码登录", description = "使用邮箱和密码登录，返回 accessToken 和 refreshToken")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "登录成功"),
             @ApiResponse(responseCode = "400", description = "参数错误"),
-            @ApiResponse(responseCode = "401", description = "验证码错误或已过期")
+            @ApiResponse(responseCode = "401", description = "邮箱或密码错误")
     })
-    @PostMapping("/login/sms")
-    Map<String, Object> login(@Valid @RequestBody SmsLoginRequest request) {
+    @PostMapping("/login")
+    Map<String, Object> login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
@@ -78,10 +79,16 @@ public class AuthController {
         return authService.cancelAccount(CurrentUser.userId(authentication));
     }
 
-    public record SmsCodeRequest(@NotBlank String phone) {
+    public record RegisterRequest(
+            @NotBlank String email,
+            @NotBlank @Size(min = 8, max = 64) String password,
+            @NotBlank @Size(min = 8, max = 64) String confirmPassword,
+            String nickname,
+            @NotBlank String ageGroup
+    ) {
     }
 
-    public record SmsLoginRequest(@NotBlank String phone, @NotBlank String code, @NotBlank String ageGroup, String nickname) {
+    public record LoginRequest(@NotBlank String email, @NotBlank String password) {
     }
 
     public record RefreshRequest(@NotBlank String refreshToken) {

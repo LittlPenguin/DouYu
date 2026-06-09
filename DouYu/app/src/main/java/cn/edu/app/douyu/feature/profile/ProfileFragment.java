@@ -30,6 +30,8 @@ import java.util.concurrent.Executors;
 
 import cn.edu.app.douyu.DoyuApplication;
 import cn.edu.app.douyu.R;
+import cn.edu.app.douyu.auth.AuthGate;
+import cn.edu.app.douyu.auth.LoginActivity;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.core.UiCopy;
 import cn.edu.app.douyu.data.DoyuRepository;
@@ -76,6 +78,7 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
     private boolean loggedIn = false;
 
     private ActivityResultLauncher<Intent> editLauncher;
+    private ActivityResultLauncher<Intent> loginLauncher;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -83,6 +86,17 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         editLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK) {
                 loadProfile();
+                loadAssets(activeTab);
+            }
+        });
+        loginLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == Activity.RESULT_OK) {
+                loadProfile();
+                loadAssets(activeTab);
+                if (result.getData() != null
+                        && AuthGate.RETURN_ACTION_PROFILE_EDIT.equals(result.getData().getStringExtra(LoginActivity.EXTRA_RETURN_ACTION))) {
+                    editLauncher.launch(new Intent(requireContext(), ProfileEditActivity.class));
+                }
             }
         });
     }
@@ -119,7 +133,9 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         tabs[TAB_PATTERNS].setOnClickListener(v -> selectTab(TAB_PATTERNS));
         tabs[TAB_LIKED].setOnClickListener(v -> selectTab(TAB_LIKED));
         tabs[TAB_FAVORITES].setOnClickListener(v -> selectTab(TAB_FAVORITES));
-        editButton.setOnClickListener(v -> editLauncher.launch(new Intent(requireContext(), ProfileEditActivity.class)));
+        editButton.setOnClickListener(v -> AuthGate.runOrRequestLogin(requireActivity(), loginLauncher,
+                AuthGate.RETURN_ACTION_PROFILE_EDIT,
+                () -> editLauncher.launch(new Intent(requireContext(), ProfileEditActivity.class))));
         view.findViewById(R.id.stat_liked_cell).setOnClickListener(v -> showLikesSourceDialog());
         view.findViewById(R.id.stat_posts_cell).setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), ProfilePostsActivity.class)));

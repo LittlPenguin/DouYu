@@ -10,7 +10,7 @@ public final class Models {
     private Models() {
     }
 
-    public record User(String id, String phone, String nickname, String avatarFileId, String bio,
+    public record User(String id, String phone, String email, String nickname, String avatarFileId, String bio,
                        String ageGroup, boolean isMinor, String realNameStatus, String accountStatus,
                        Instant createdAt, Instant updatedAt) {
     }

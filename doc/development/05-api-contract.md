@@ -31,11 +31,26 @@ Android DTOs are Java POJOs parsed with Gson. Field names must match backend
 JSON. Existing semantic fields such as IDs, statuses, counts, URLs, and nested
 items must remain compatible.
 
+## Auth (`/api/v1/auth`)
+
+User-facing authentication uses email + password.
+
+- `POST /api/v1/auth/register` accepts `email`, `password`,
+  `confirmPassword`, `nickname`, and `ageGroup`. Registration validates email
+  format, email uniqueness, password length, and matching confirmation. Success
+  returns the existing `AuthSession` shape and logs the user in immediately.
+- `POST /api/v1/auth/login` accepts `email` and `password`. Success returns
+  `AuthSession`; wrong credentials return 401.
+- `POST /api/v1/auth/refresh` refreshes the access token with a real
+  refreshToken.
+- `POST /api/v1/auth/logout` revokes the refreshToken.
+
+The user-side API no longer exposes SMS code login or email verification.
+
 ## Stub Provider Policy
 
 The following are explicit development boundaries:
 
-- SMS stub verification.
 - OSS local/stub URLs.
 - AI stub/provider routing.
 - Payment stub parameters.

@@ -19,7 +19,10 @@ import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductCategory;
+import cn.edu.app.douyu.model.LoginRequest;
 import cn.edu.app.douyu.model.ReadReceipt;
+import cn.edu.app.douyu.model.RefreshRequest;
+import cn.edu.app.douyu.model.RegisterRequest;
 import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
@@ -277,6 +280,18 @@ public class DoyuRepository {
 
     public AuthSession session() throws IOException {
         return body(api.session());
+    }
+
+    public AuthSession login(String email, String password) throws IOException {
+        return body(api.login(new LoginRequest(email, password)));
+    }
+
+    public AuthSession register(String email, String password, String confirmPassword, String nickname, String ageGroup) throws IOException {
+        return body(api.register(new RegisterRequest(email, password, confirmPassword, nickname, ageGroup)));
+    }
+
+    public void logout(String refreshToken) throws IOException {
+        body(api.logout(new RefreshRequest(refreshToken)));
     }
 
     public static <T> T body(Call<ApiResponse<T>> call) throws IOException {

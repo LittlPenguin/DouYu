@@ -94,7 +94,7 @@ public class UserController {
         var pageable = org.springframework.data.domain.PageRequest.of(Math.max(0, page - 1), Math.max(1, size));
         var users = keyword == null || keyword.isBlank()
                 ? userRepository.findAll(pageable)
-                : userRepository.findByPhoneContainingOrNicknameContainingIgnoreCase(keyword, keyword, pageable);
+                : userRepository.findByEmailContainingIgnoreCaseOrNicknameContainingIgnoreCase(keyword, keyword, pageable);
         List<Map<String, Object>> items = users.getContent().stream()
                 .map(user -> authService.userView(toModel(user)))
                 .toList();
@@ -269,7 +269,7 @@ public class UserController {
     }
 
     private User toModel(UserEntity entity) {
-        return new User(entity.getId(), entity.getPhone(), entity.getNickname(), entity.getAvatarFileId(),
+        return new User(entity.getId(), entity.getPhone(), entity.getEmail(), entity.getNickname(), entity.getAvatarFileId(),
                 entity.getBio(), entity.getAgeGroup(), entity.isMinor(), entity.getRealNameStatus(),
                 entity.getAccountStatus(), entity.getCreatedAt(), entity.getUpdatedAt());
     }

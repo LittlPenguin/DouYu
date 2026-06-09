@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -31,6 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class DouyuBackendContractTests {
+    private static final AtomicInteger LOGIN_COUNTER = new AtomicInteger();
+
 
     @Autowired
     MockMvc mockMvc;
@@ -91,7 +94,10 @@ class DouyuBackendContractTests {
             }
         }
 
-        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/sms-code")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/register")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/login")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/sms-code")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/login/sms")).isFalse();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/uploads/presign")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/uploads/confirm")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/patterns/jobs")).isTrue();
@@ -133,21 +139,35 @@ class DouyuBackendContractTests {
     }
 
     @Test
-    void smsLoginRefreshAndLogoutUseUnifiedResponseAndRevokeRefreshToken() throws Exception {
-        mockMvc.perform(post("/api/v1/auth/sms-code")
+    void emailRegisterLoginRefreshAndLogoutUseUnifiedResponseAndRevokeRefreshToken() throws Exception {
+        JsonNode registered = postJson("/api/v1/auth/register", """
+                {"email":" Test.User+Minor@Example.COM ","password":"password123","confirmPassword":"password123","ageGroup":"AGE_16_17","nickname":"测试用户"}
+                """);
+        String accessToken = registered.at("/data/accessToken").asText();
+        String refreshToken = registered.at("/data/refreshToken").asText();
+        org.assertj.core.api.Assertions.assertThat(registered.at("/data/user/email").asText())
+                .isEqualTo("test.user+minor@example.com");
+
+        JsonNode login = postJson("/api/v1/auth/login", """
+                {"email":"test.user+minor@example.com","password":"password123"}
+                """);
+        org.assertj.core.api.Assertions.assertThat(login.at("/data/accessToken").asText()).isNotBlank();
+
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"phone":"13800000001"}
+                                {"email":"test.user+minor@example.com","password":"password123","confirmPassword":"password123","ageGroup":"AGE_16_17"}
                                 """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code", equalTo("OK")))
-                .andExpect(jsonPath("$.traceId", notNullValue()));
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code", equalTo("CONFLICT")));
 
-        JsonNode login = postJson("/api/v1/auth/login/sms", """
-                {"phone":"13800000001","code":"123456","ageGroup":"AGE_16_17","nickname":"测试用户"}
-                """);
-        String accessToken = login.at("/data/accessToken").asText();
-        String refreshToken = login.at("/data/refreshToken").asText();
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"test.user+minor@example.com","password":"wrong-password"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")));
 
         mockMvc.perform(get("/api/v1/users/me")
                         .header("Authorization", "Bearer " + accessToken))
@@ -471,14 +491,15 @@ class DouyuBackendContractTests {
 
     @Test
     void loginAndCommunitySampleContractFieldsStayAligned() throws Exception {
-        JsonNode login = postJson("/api/v1/auth/login/sms", """
-                {"phone":"13800000016","code":"123456","ageGroup":"AGE_18_PLUS","nickname":"contract-user"}
+        JsonNode login = postJson("/api/v1/auth/register", """
+                {"email":"contract-user@example.com","password":"password123","confirmPassword":"password123","ageGroup":"AGE_18_PLUS","nickname":"contract-user"}
                 """);
         org.assertj.core.api.Assertions.assertThat(login.at("/data/accessToken").asText()).isNotBlank();
         org.assertj.core.api.Assertions.assertThat(login.at("/data/refreshToken").asText()).isNotBlank();
         org.assertj.core.api.Assertions.assertThat(login.at("/data/expiresIn").asLong()).isGreaterThan(0);
         org.assertj.core.api.Assertions.assertThat(login.at("/data/user/avatarUrl").isMissingNode()).isFalse();
         org.assertj.core.api.Assertions.assertThat(login.at("/data/user/avatarFileId").isMissingNode()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(login.at("/data/user/email").asText()).isEqualTo("contract-user@example.com");
         org.assertj.core.api.Assertions.assertThat(login.path("traceId").asText()).isNotBlank();
 
         String token = login.at("/data/accessToken").asText();
@@ -818,17 +839,17 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
 
         // Malformed JSON body → 400 INVALID_ARGUMENT
-        mockMvc.perform(post("/api/v1/auth/sms-code")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{invalid json"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
 
-        // Missing required field (blank phone) → 400 INVALID_ARGUMENT
-        mockMvc.perform(post("/api/v1/auth/sms-code")
+        // Missing required field (blank email) → 400 INVALID_ARGUMENT
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"phone":""}
+                                {"email":"","password":"password123","confirmPassword":"password123","ageGroup":"AGE_18_PLUS"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
@@ -1303,13 +1324,10 @@ class DouyuBackendContractTests {
     }
 
     private String login(String phone, String ageGroup) throws Exception {
-        mockMvc.perform(post("/api/v1/auth/sms-code")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"phone\":\"" + phone + "\"}"))
-                .andExpect(status().isOk());
-        JsonNode login = postJson("/api/v1/auth/login/sms", """
-                {"phone":"%s","code":"123456","ageGroup":"%s","nickname":"测试用户"}
-                """.formatted(phone, ageGroup));
+        String email = "user-" + phone + "-" + LOGIN_COUNTER.incrementAndGet() + "@example.com";
+        JsonNode login = postJson("/api/v1/auth/register", """
+                {"email":"%s","password":"password123","confirmPassword":"password123","ageGroup":"%s","nickname":"测试用户"}
+                """.formatted(email, ageGroup));
         return login.at("/data/accessToken").asText();
     }
 
