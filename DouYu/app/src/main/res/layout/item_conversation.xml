@@ -48,16 +48,4 @@
             android:textSize="12sp" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/conversation_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:gravity="center"
-        android:minHeight="26dp"
-        android:minWidth="44dp"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
-        android:textSize="11sp"
-        android:textStyle="bold" />
 </LinearLayout>

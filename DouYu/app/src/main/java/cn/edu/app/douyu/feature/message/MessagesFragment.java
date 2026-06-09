@@ -11,7 +11,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -33,33 +32,24 @@ import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.ui.LoadState;
 
 /**
- * Messages home: a 私信 / 通知 segmented switch over two clickable lists.
- * Private rows open the conversation detail; notification rows open the notification detail.
- * Only backend data is rendered — empty/error/login states never fall back to local fixtures.
+ * Messages home renders backend notifications first and private conversations second.
+ * Private-message send limits are intentionally kept out of this list and handled only
+ * by the conversation detail screen.
  */
 public class MessagesFragment extends Fragment {
-    private static final int TAB_PRIVATE = 0;
-    private static final int TAB_NOTIFY = 1;
-
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private ConversationAdapter conversationAdapter;
-    private NotificationAdapter notificationAdapter;
-    private TextView tabPrivate;
-    private TextView tabNotify;
+    private MessageHomeAdapter adapter;
     private ProgressBar loading;
     private RecyclerView list;
     private TextView empty;
     private View errorBox;
     private TextView error;
     private MaterialButton retry;
-    private int currentTab = TAB_PRIVATE;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_messages_home, container, false);
-        tabPrivate = view.findViewById(R.id.tab_private);
-        tabNotify = view.findViewById(R.id.tab_notify);
         loading = view.findViewById(R.id.loading);
         list = view.findViewById(R.id.summary_list);
         empty = view.findViewById(R.id.empty_text);
@@ -67,17 +57,22 @@ public class MessagesFragment extends Fragment {
         error = view.findViewById(R.id.error_text);
         retry = view.findViewById(R.id.retry_button);
 
-        conversationAdapter = new ConversationAdapter(this::openConversation);
-        notificationAdapter = new NotificationAdapter(this::openNotification);
+        adapter = new MessageHomeAdapter(new MessageHomeAdapter.Listener() {
+            @Override
+            public void onNotificationClick(NotificationMessage notification) {
+                openNotification(notification);
+            }
+
+            @Override
+            public void onConversationClick(Conversation conversation) {
+                openConversation(conversation);
+            }
+        });
         list.setLayoutManager(new LinearLayoutManager(requireContext()));
         list.setItemAnimator(null);
-        list.setAdapter(conversationAdapter);
+        list.setAdapter(adapter);
 
-        tabPrivate.setOnClickListener(v -> selectTab(TAB_PRIVATE));
-        tabNotify.setOnClickListener(v -> selectTab(TAB_NOTIFY));
         retry.setOnClickListener(v -> load());
-
-        renderTabs();
         load();
         return view;
     }
@@ -85,10 +80,7 @@ public class MessagesFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        conversationAdapter = null;
-        notificationAdapter = null;
-        tabPrivate = null;
-        tabNotify = null;
+        adapter = null;
         loading = null;
         list = null;
         empty = null;
@@ -103,79 +95,32 @@ public class MessagesFragment extends Fragment {
         executor.shutdownNow();
     }
 
-    private void selectTab(int tab) {
-        if (tab == currentTab) {
-            return;
-        }
-        currentTab = tab;
-        renderTabs();
-        if (list != null) {
-            list.setAdapter(tab == TAB_PRIVATE ? conversationAdapter : notificationAdapter);
-        }
-        load();
-    }
-
-    private void renderTabs() {
-        styleTab(tabPrivate, currentTab == TAB_PRIVATE);
-        styleTab(tabNotify, currentTab == TAB_NOTIFY);
-    }
-
-    private void styleTab(TextView tab, boolean selected) {
-        if (tab == null) {
-            return;
-        }
-        tab.setBackgroundResource(selected ? R.drawable.bg_chip_selected : R.drawable.bg_chip_plain);
-        tab.setTextColor(ContextCompat.getColor(requireContext(), selected ? R.color.white : R.color.doyu_text_muted));
-    }
-
     private void load() {
         show(LoadState.LOADING, null);
         DoyuRepository repository = repository();
-        int tab = currentTab;
         executor.execute(() -> {
             try {
-                if (tab == TAB_PRIVATE) {
-                    PageResponse<Conversation> page = repository.conversations();
-                    List<Conversation> data = page == null ? null : page.items;
-                    runOnUi(() -> renderPrivate(tab, data));
-                } else {
-                    PageResponse<NotificationMessage> page = repository.notifications();
-                    List<NotificationMessage> data = page == null ? null : page.items;
-                    runOnUi(() -> renderNotify(tab, data));
-                }
+                PageResponse<NotificationMessage> notificationPage = repository.notifications();
+                PageResponse<Conversation> conversationPage = repository.conversations();
+                List<NotificationMessage> notifications = items(notificationPage);
+                List<Conversation> conversations = items(conversationPage);
+                runOnUi(() -> render(notifications, conversations));
             } catch (Exception e) {
-                runOnUi(() -> {
-                    if (tab == currentTab) {
-                        show(LoadState.from(e), e.getMessage());
-                    }
-                });
+                runOnUi(() -> show(LoadState.from(e), e.getMessage()));
             }
         });
     }
 
-    private void renderPrivate(int tab, List<Conversation> data) {
-        if (conversationAdapter == null || tab != currentTab) {
+    private void render(List<NotificationMessage> notifications, List<Conversation> conversations) {
+        if (adapter == null) {
             return;
         }
-        if (data == null || data.isEmpty()) {
-            conversationAdapter.submit(List.of());
+        if (notifications.isEmpty() && conversations.isEmpty()) {
+            adapter.submit(List.of(), List.of());
             show(LoadState.EMPTY, null);
             return;
         }
-        conversationAdapter.submit(data);
-        show(LoadState.CONTENT, null);
-    }
-
-    private void renderNotify(int tab, List<NotificationMessage> data) {
-        if (notificationAdapter == null || tab != currentTab) {
-            return;
-        }
-        if (data == null || data.isEmpty()) {
-            notificationAdapter.submit(List.of());
-            show(LoadState.EMPTY, null);
-            return;
-        }
-        notificationAdapter.submit(data);
+        adapter.submit(notifications, conversations);
         show(LoadState.CONTENT, null);
     }
 
@@ -185,7 +130,7 @@ public class MessagesFragment extends Fragment {
         }
         Intent intent = new Intent(requireContext(), ConversationActivity.class);
         intent.putExtra(IntentExtras.CONVERSATION_ID, conversation.conversationId);
-        intent.putExtra(IntentExtras.PEER_NAME, peerName(conversation));
+        intent.putExtra(IntentExtras.PEER_NAME, ConversationAdapter.peerName(conversation));
         startActivity(intent);
     }
 
@@ -202,16 +147,6 @@ public class MessagesFragment extends Fragment {
         startActivity(intent);
     }
 
-    private static String peerName(Conversation conversation) {
-        if (conversation.peer != null && conversation.peer.nickname != null && !conversation.peer.nickname.trim().isEmpty()) {
-            return conversation.peer.nickname;
-        }
-        if (conversation.peerName != null && !conversation.peerName.trim().isEmpty()) {
-            return conversation.peerName;
-        }
-        return "对方";
-    }
-
     private void show(LoadState state, String message) {
         if (loading == null) {
             return;
@@ -222,16 +157,9 @@ public class MessagesFragment extends Fragment {
         errorBox.setVisibility(state == LoadState.ERROR || state == LoadState.LOGIN_REQUIRED ? View.VISIBLE : View.GONE);
         error.setVisibility(state == LoadState.ERROR || state == LoadState.LOGIN_REQUIRED ? View.VISIBLE : View.GONE);
         retry.setVisibility(state == LoadState.ERROR ? View.VISIBLE : View.GONE);
-        empty.setText(emptyText());
+        empty.setText(UiCopy.MESSAGES_EMPTY);
         error.setText(userFacingError(state, message));
         retry.setText(UiCopy.RETRY);
-    }
-
-    private String emptyText() {
-        if (currentTab == TAB_PRIVATE) {
-            return "还没有私信会话。空库时展示空态，不使用本地假会话。";
-        }
-        return "还没有通知。通知只展示后端返回的真实事件。";
     }
 
     private String userFacingError(LoadState state, String message) {
@@ -261,5 +189,9 @@ public class MessagesFragment extends Fragment {
                 action.run();
             }
         });
+    }
+
+    private static <T> List<T> items(PageResponse<T> page) {
+        return page == null || page.items == null ? List.of() : page.items;
     }
 }

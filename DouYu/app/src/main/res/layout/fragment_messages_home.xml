@@ -1,91 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/doyu_page"
     android:orientation="vertical">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingStart="14dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="14dp"
-        android:paddingBottom="8dp">
-
-        <TextView
-            android:id="@+id/tab_private"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_chip_selected"
-            android:gravity="center"
-            android:minHeight="30dp"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:text="私信"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tab_notify"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/bg_chip_plain"
-            android:gravity="center"
-            android:minHeight="30dp"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:text="通知"
-            android:textColor="@color/doyu_text_muted"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="14dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginEnd="14dp"
-        android:background="@drawable/bg_card"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="26dp"
-            android:background="@drawable/bg_brand_pill"
-            android:gravity="center"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:text="新消息进入私信"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/messages_hero_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="未读对话"
-            android:textColor="@color/doyu_text"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/messages_hero_desc"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="对话输入中、未互关剩余条数、禁发态只在私信里展示。"
-            android:textColor="@color/doyu_text_muted"
-            android:textSize="12sp" />
-    </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -98,6 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
+            android:paddingTop="8dp"
             android:paddingBottom="8dp"
             android:visibility="gone" />
 
