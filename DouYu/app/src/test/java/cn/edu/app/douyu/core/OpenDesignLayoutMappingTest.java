@@ -9,8 +9,12 @@ import org.w3c.dom.NodeList;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -48,6 +52,32 @@ public class OpenDesignLayoutMappingTest {
         for (LayoutMapping mapping : mappings) {
             assertTrue(mapping.openDesignPage.endsWith(".html"));
             assertTrue(mapping.layoutId > 0);
+        }
+    }
+
+    @Test
+    public void launcherIconUsesTBLogoSourceAndExpectedDensitySizes() throws Exception {
+        String manifest = readUtf8("src/main/AndroidManifest.xml");
+
+        assertTrue("Launcher icon must keep the manifest entry used by production builds",
+                manifest.contains("android:icon=\"@mipmap/tb_launcher\""));
+        assertTrue("Round launcher icon must keep the manifest entry used by production builds",
+                manifest.contains("android:roundIcon=\"@mipmap/tb_launcher_round\""));
+        assertEquals("Drawable TB logo must be copied from assets/TBLogo.png",
+                sha256(Path.of("../../assets/TBLogo.png")),
+                sha256(Path.of("src/main/res/drawable/tb_logo.png")));
+
+        LauncherDensity[] densities = new LauncherDensity[]{
+                new LauncherDensity("mipmap-mdpi", 48),
+                new LauncherDensity("mipmap-hdpi", 72),
+                new LauncherDensity("mipmap-xhdpi", 96),
+                new LauncherDensity("mipmap-xxhdpi", 144),
+                new LauncherDensity("mipmap-xxxhdpi", 192)
+        };
+
+        for (LauncherDensity density : densities) {
+            assertPngDimensions(Path.of("src/main/res", density.directory, "tb_launcher.png"), density.size);
+            assertPngDimensions(Path.of("src/main/res", density.directory, "tb_launcher_round.png"), density.size);
         }
     }
 
@@ -294,6 +324,61 @@ public class OpenDesignLayoutMappingTest {
                 repository.contains("api.uploadPut(presign.uploadUrl"));
     }
 
+    @Test
+    public void messagesHomeShowsNotificationsBeforeMessagesWithoutPrivateQuotaBadges() throws IOException {
+        String openDesign = readUtf8("../../doc/development/open-design/messages-a.html");
+        String fragmentXml = readUtf8("src/main/res/layout/fragment_messages_home.xml");
+        String conversationItemXml = readUtf8("src/main/res/layout/item_conversation.xml");
+        String messagesFragment = readUtf8("src/main/java/cn/edu/app/douyu/feature/message/MessagesFragment.java");
+        String conversationAdapter = readUtf8("src/main/java/cn/edu/app/douyu/feature/message/ConversationAdapter.java");
+        String conversationActivity = readUtf8("src/main/java/cn/edu/app/douyu/feature/message/ConversationActivity.java");
+
+        assertTrue("Open Design messages home must show notification section before messages section",
+                openDesign.indexOf("class=\"pill ok\">通知</span>") >= 0
+                        && openDesign.indexOf("class=\"pill warn\">消息</span>")
+                        > openDesign.indexOf("class=\"pill ok\">通知</span>"));
+        assertFalse("Open Design messages home must remove the private/notification tab copy",
+                openDesign.contains("私信 / 通知 Tab") || openDesign.contains("<div class=\"tabs\""));
+        assertFalse("Open Design messages home must remove the old unread-conversation hero",
+                openDesign.contains("未读对话") || openDesign.contains("对话输入中、未互关剩余条数、禁发态只在私信里展示"));
+        assertFalse("Open Design messages rows must not show private quota or send-state badges",
+                openDesign.contains(">互关<") || openDesign.contains(">1/3<") || openDesign.contains(">禁发<")
+                        || openDesign.contains("未互关剩余") || openDesign.contains("超过 3 条"));
+
+        assertFalse("Messages home XML must not keep private/notification tabs",
+                fragmentXml.contains("@+id/tab_private") || fragmentXml.contains("@+id/tab_notify"));
+        assertFalse("Messages home XML must not keep the removed hero copy ids",
+                fragmentXml.contains("@+id/messages_hero_title") || fragmentXml.contains("@+id/messages_hero_desc"));
+        assertViewIdExists("fragment_messages_home.xml", fragmentXml, "@+id/summary_list");
+        assertViewIdExists("fragment_messages_home.xml", fragmentXml, "@+id/loading");
+        assertViewIdExists("fragment_messages_home.xml", fragmentXml, "@+id/empty_text");
+        assertViewIdExists("fragment_messages_home.xml", fragmentXml, "@+id/error_box");
+        assertFalse("MessagesFragment must not keep tab state or tab rendering",
+                messagesFragment.contains("TAB_PRIVATE")
+                        || messagesFragment.contains("TAB_NOTIFY")
+                        || messagesFragment.contains("currentTab")
+                        || messagesFragment.contains("renderTabs"));
+        assertTrue("MessagesFragment must load notifications and conversations into a single home adapter",
+                messagesFragment.contains("MessageHomeAdapter")
+                        && messagesFragment.contains("repository.notifications()")
+                        && messagesFragment.contains("repository.conversations()"));
+
+        assertFalse("Message rows on home must not expose a right-side conversation status badge",
+                conversationItemXml.contains("@+id/conversation_status"));
+        assertFalse("Home conversation adapter must not calculate or render mutual-follow quota state",
+                conversationAdapter.contains("mutualFollow")
+                        || conversationAdapter.contains("remainingNonMutualMessages")
+                        || conversationAdapter.contains("canSend")
+                        || conversationAdapter.contains("bg_pill_ok")
+                        || conversationAdapter.contains("bg_pill_warn")
+                        || conversationAdapter.contains("bg_pill_stop")
+                        || conversationAdapter.contains("/3"));
+        assertTrue("Conversation detail must keep the authoritative private-message send-state fields",
+                conversationActivity.contains("mutualFollow")
+                        && conversationActivity.contains("remainingNonMutualMessages")
+                        && conversationActivity.contains("canSend"));
+    }
+
     private static void assertViewHasGoneVisibility(String layout, String xml, String id) {
         int idIndex = xml.indexOf("android:id=\"" + id + "\"");
         assertTrue(layout + " missing " + id, idIndex >= 0);
@@ -320,6 +405,28 @@ public class OpenDesignLayoutMappingTest {
 
     private static String readUtf8(String relativePath) throws IOException {
         return new String(Files.readAllBytes(Path.of(relativePath)), StandardCharsets.UTF_8);
+    }
+
+    private static String sha256(Path path) throws IOException, NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(Files.readAllBytes(path));
+        StringBuilder builder = new StringBuilder(hash.length * 2);
+        for (byte value : hash) {
+            builder.append(String.format("%02x", value & 0xff));
+        }
+        return builder.toString();
+    }
+
+    private static void assertPngDimensions(Path path, int expectedSize) throws IOException {
+        assertTrue(path + " must exist", Files.exists(path));
+        byte[] bytes = Files.readAllBytes(path);
+        assertTrue(path + " must be a readable PNG", bytes.length >= 24);
+        assertEquals(path + " width", expectedSize, pngDimension(bytes, 16));
+        assertEquals(path + " height", expectedSize, pngDimension(bytes, 20));
+    }
+
+    private static int pngDimension(byte[] bytes, int offset) {
+        return ByteBuffer.wrap(bytes, offset, 4).order(ByteOrder.BIG_ENDIAN).getInt();
     }
 
     private static Document parseXml(String xml) throws Exception {
@@ -402,6 +509,16 @@ public class OpenDesignLayoutMappingTest {
         TabStateContainers(String layout, String... goneIds) {
             this.layout = layout;
             this.goneIds = goneIds;
+        }
+    }
+
+    private static final class LauncherDensity {
+        final String directory;
+        final int size;
+
+        LauncherDensity(String directory, int size) {
+            this.directory = directory;
+            this.size = size;
         }
     }
 

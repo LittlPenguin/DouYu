@@ -53,8 +53,8 @@ Android XML: `fragment_messages_home.xml`
 
 Required structure:
 
-- Private messages and notifications sections.
-- Conversation rows with unread and mutual-follow status.
+- Notifications section above messages section.
+- Conversation rows with avatar, peer name, and last message summary only.
 - Notification rows with detail navigation based on returned list data.
 - Empty state when no messages or notifications exist.
 

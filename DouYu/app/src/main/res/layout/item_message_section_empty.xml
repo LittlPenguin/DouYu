@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/message_section_empty"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="14dp"
+    android:layout_marginTop="5dp"
+    android:layout_marginEnd="14dp"
+    android:layout_marginBottom="5dp"
+    android:background="@drawable/bg_card"
+    android:gravity="center"
+    android:minHeight="58dp"
+    android:padding="14dp"
+    android:textColor="@color/doyu_text_muted"
+    android:textSize="13sp" />
