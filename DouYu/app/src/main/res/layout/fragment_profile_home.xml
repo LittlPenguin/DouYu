@@ -81,10 +81,13 @@
         android:orientation="horizontal">
 
         <LinearLayout
+            android:id="@+id/stat_liked_cell"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/bg_stat_cell"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:minHeight="58dp"
             android:orientation="vertical"
@@ -109,11 +112,14 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/stat_posts_cell"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:background="@drawable/bg_stat_cell"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:minHeight="58dp"
             android:orientation="vertical"
@@ -138,11 +144,14 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/stat_following_cell"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:background="@drawable/bg_stat_cell"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:minHeight="58dp"
             android:orientation="vertical"
@@ -167,11 +176,14 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/stat_followers_cell"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:background="@drawable/bg_stat_cell"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:minHeight="58dp"
             android:orientation="vertical"

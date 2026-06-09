@@ -144,6 +144,15 @@ public interface DoyuApi {
     @PATCH("/api/v1/users/me")
     Call<ApiResponse<UserProfile>> updateMe(@Body UpdateProfileRequest request);
 
+    @GET("/api/v1/users/me/posts")
+    Call<ApiResponse<PageResponse<Post>>> myPosts(@Query("page") int page, @Query("size") int size);
+
+    @GET("/api/v1/users/me/following")
+    Call<ApiResponse<PageResponse<UserProfile>>> followingUsers(@Query("page") int page, @Query("size") int size);
+
+    @GET("/api/v1/users/me/followers")
+    Call<ApiResponse<PageResponse<UserProfile>>> followerUsers(@Query("page") int page, @Query("size") int size);
+
     @GET("/api/v1/users/me/liked-posts")
     Call<ApiResponse<PageResponse<Post>>> likedPosts(@Query("page") int page, @Query("size") int size);
 

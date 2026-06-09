@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>我的粉丝 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="section">
+      <div class="section-head">
+        <h2>我的粉丝</h2>
+        <p>数据源：GET /api/v1/users/me/followers。列表展示关注我的用户，按真实关注时间倒序。</p>
+      </div>
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar">
+              <a class="icon-btn" href="profile-a.html"><span class="icon back"></span></a>
+              <div class="top-title">粉丝</div>
+              <a class="icon-btn" href="search-a.html"><span class="icon search"></span></a>
+            </div>
+            <div class="scroll">
+              <div class="state"><h3>用户行</h3><p>头像、昵称、简介、关注数、粉丝数来自服务端 UserProfile。当前不新增公开主页，用户行保持展示态。</p></div>
+              <div class="list">
+                <div class="notice-row"><span class="avatar"></span><div><b>真实粉丝昵称</b><p>拼豆爱好者 · 关注 0 · 粉丝 0</p></div></div>
+                <div class="notice-row"><span class="avatar"></span><div><b>粉丝列表为空时不显示示例</b><p>空结果展示空态。</p></div></div>
+              </div>
+              <div class="state" style="margin-top:10px"><h3>登录 / 错误</h3><p>401 显示登录边界；网络或服务错误显示整体错误和重试。</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="spec-grid">
+            <div class="spec"><h3>交互</h3><ul><li>返回到我的页。</li><li>搜索按钮进入搜索页。</li><li>用户行本轮不跳转。</li></ul></div>
+            <div class="spec"><h3>数据</h3><ul><li>只渲染 /api/v1/users/me/followers。</li><li>空粉丝显示空态。</li><li>不使用本地假用户。</li></ul></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

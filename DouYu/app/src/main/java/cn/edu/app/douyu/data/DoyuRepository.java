@@ -208,6 +208,18 @@ public class DoyuRepository {
         return body(api.updateMe(new UpdateProfileRequest(nickname, avatarFileId, bio)));
     }
 
+    public PageResponse<Post> myPosts() throws IOException {
+        return body(api.myPosts(FIRST_PAGE, PAGE_SIZE));
+    }
+
+    public PageResponse<UserProfile> followingUsers() throws IOException {
+        return body(api.followingUsers(FIRST_PAGE, PAGE_SIZE));
+    }
+
+    public PageResponse<UserProfile> followerUsers() throws IOException {
+        return body(api.followerUsers(FIRST_PAGE, PAGE_SIZE));
+    }
+
     /**
      * Uploads an avatar image through the real presign -> PUT -> confirm flow and
      * returns the resulting fileId for use in {@link #updateMe(String, String, String)}.

@@ -24,6 +24,8 @@
         <activity android:name=".feature.profile.FutureCapabilityActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.profile.SettingsActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.profile.ProfileEditActivity" android:screenOrientation="portrait" />
+        <activity android:name=".feature.profile.ProfilePostsActivity" android:screenOrientation="portrait" />
+        <activity android:name=".feature.profile.ProfileUsersActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.message.NotificationDetailActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.message.ConversationActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.commerce.PaymentBoundaryActivity" android:screenOrientation="portrait" />

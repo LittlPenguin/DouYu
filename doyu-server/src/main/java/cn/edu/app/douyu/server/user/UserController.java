@@ -113,6 +113,43 @@ public class UserController {
         return postPage(postIds, userId, page, size);
     }
 
+    @Operation(summary = "我的作品")
+    @GetMapping("/me/posts")
+    PageResult<Map<String, Object>> myPosts(Authentication authentication,
+                                           @RequestParam(defaultValue = "1") int page,
+                                           @RequestParam(defaultValue = "20") int size) {
+        String userId = CurrentUser.userId(authentication);
+        List<Map<String, Object>> items = postRepository.findByAuthorIdInOrderByCreatedAtDesc(List.of(userId)).stream()
+                .filter(this::isListablePost)
+                .map(post -> communityController.postView(post, userId))
+                .toList();
+        return PageResult.of(slice(items, page, size), page, size, items.size());
+    }
+
+    @Operation(summary = "我关注的用户")
+    @GetMapping("/me/following")
+    PageResult<Map<String, Object>> followingUsers(Authentication authentication,
+                                                  @RequestParam(defaultValue = "1") int page,
+                                                  @RequestParam(defaultValue = "20") int size) {
+        String userId = CurrentUser.userId(authentication);
+        List<String> userIds = followRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(FollowEntity::getTargetUserId)
+                .toList();
+        return userPage(userIds, page, size);
+    }
+
+    @Operation(summary = "关注我的用户")
+    @GetMapping("/me/followers")
+    PageResult<Map<String, Object>> followerUsers(Authentication authentication,
+                                                 @RequestParam(defaultValue = "1") int page,
+                                                 @RequestParam(defaultValue = "20") int size) {
+        String userId = CurrentUser.userId(authentication);
+        List<String> userIds = followRepository.findByTargetUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(FollowEntity::getUserId)
+                .toList();
+        return userPage(userIds, page, size);
+    }
+
     @Operation(summary = "我评论过的作品")
     @GetMapping("/me/commented-posts")
     PageResult<Map<String, Object>> commentedPosts(Authentication authentication,
@@ -250,6 +287,17 @@ public class UserController {
                 .map(byId::get)
                 .filter(this::isListablePost)
                 .map(post -> communityController.postView(post, currentUserId))
+                .toList();
+        return PageResult.of(slice(items, page, size), page, size, items.size());
+    }
+
+    private PageResult<Map<String, Object>> userPage(List<String> userIds, int page, int size) {
+        Map<String, UserEntity> byId = userRepository.findAllById(userIds).stream()
+                .collect(java.util.stream.Collectors.toMap(UserEntity::getId, user -> user));
+        List<Map<String, Object>> items = userIds.stream()
+                .map(byId::get)
+                .filter(user -> user != null)
+                .map(user -> authService.userView(toModel(user)))
                 .toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }

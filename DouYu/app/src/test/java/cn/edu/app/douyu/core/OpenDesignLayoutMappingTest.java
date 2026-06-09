@@ -39,6 +39,9 @@ public class OpenDesignLayoutMappingTest {
                 new LayoutMapping("message-conversation-a.html", R.layout.activity_conversation),
                 new LayoutMapping("notification-detail-a.html", R.layout.activity_notification_detail),
                 new LayoutMapping("profile-edit-a.html", R.layout.activity_profile_edit),
+                new LayoutMapping("profile-posts-a.html", R.layout.activity_profile_posts),
+                new LayoutMapping("profile-following-a.html", R.layout.activity_profile_users),
+                new LayoutMapping("profile-followers-a.html", R.layout.activity_profile_users),
                 new LayoutMapping("settings-home-a.html", R.layout.activity_settings_home),
                 new LayoutMapping("settings-account-security-a.html", R.layout.activity_settings_account_security),
                 new LayoutMapping("settings-privacy-permissions-a.html", R.layout.activity_settings_privacy_permissions),
@@ -48,7 +51,7 @@ public class OpenDesignLayoutMappingTest {
                 new LayoutMapping("doyu-design-directions.html", R.layout.activity_main)
         };
 
-        assertEquals(18, mappings.length);
+        assertEquals(21, mappings.length);
         for (LayoutMapping mapping : mappings) {
             assertTrue(mapping.openDesignPage.endsWith(".html"));
             assertTrue(mapping.layoutId > 0);
@@ -377,6 +380,78 @@ public class OpenDesignLayoutMappingTest {
                 conversationActivity.contains("mutualFollow")
                         && conversationActivity.contains("remainingNonMutualMessages")
                         && conversationActivity.contains("canSend"));
+    }
+
+    @Test
+    public void profileStatsNavigateToRealListsAndLikesExplanationDialog() throws IOException {
+        String profileOpenDesign = readUtf8("../../doc/development/open-design/profile-a.html");
+        String profilePostsOpenDesign = readUtf8("../../doc/development/open-design/profile-posts-a.html");
+        String profileFollowingOpenDesign = readUtf8("../../doc/development/open-design/profile-following-a.html");
+        String profileFollowersOpenDesign = readUtf8("../../doc/development/open-design/profile-followers-a.html");
+        String profileXml = readUtf8("src/main/res/layout/fragment_profile_home.xml");
+        String postsXml = readUtf8("src/main/res/layout/activity_profile_posts.xml");
+        String usersXml = readUtf8("src/main/res/layout/activity_profile_users.xml");
+        String manifest = readUtf8("src/main/AndroidManifest.xml");
+        String fragment = readUtf8("src/main/java/cn/edu/app/douyu/feature/profile/ProfileFragment.java");
+        String postsActivity = readUtf8("src/main/java/cn/edu/app/douyu/feature/profile/ProfilePostsActivity.java");
+        String usersActivity = readUtf8("src/main/java/cn/edu/app/douyu/feature/profile/ProfileUsersActivity.java");
+        String api = readUtf8("src/main/java/cn/edu/app/douyu/network/DoyuApi.java");
+        String repository = readUtf8("src/main/java/cn/edu/app/douyu/data/DoyuRepository.java");
+        String profileEditActivity = readUtf8("src/main/java/cn/edu/app/douyu/feature/profile/ProfileEditActivity.java");
+
+        assertTrue("Profile Open Design must link posts stat to the dedicated page",
+                profileOpenDesign.contains("profile-posts-a.html"));
+        assertTrue("Profile Open Design must link following stat to the dedicated page",
+                profileOpenDesign.contains("profile-following-a.html"));
+        assertTrue("Profile Open Design must link followers stat to the dedicated page",
+                profileOpenDesign.contains("profile-followers-a.html"));
+        assertTrue("Profile Open Design must include the likes source explanation dialog",
+                profileOpenDesign.contains("获赞来自你发布作品收到的赞")
+                        && profileOpenDesign.contains("like-source-dialog"));
+        assertTrue("Profile posts design must describe the real /me/posts data source",
+                profilePostsOpenDesign.contains("/api/v1/users/me/posts"));
+        assertTrue("Profile following design must describe the real /me/following data source",
+                profileFollowingOpenDesign.contains("/api/v1/users/me/following"));
+        assertTrue("Profile followers design must describe the real /me/followers data source",
+                profileFollowersOpenDesign.contains("/api/v1/users/me/followers"));
+
+        assertViewIdExists("fragment_profile_home.xml", profileXml, "@+id/stat_liked_cell");
+        assertViewIdExists("fragment_profile_home.xml", profileXml, "@+id/stat_posts_cell");
+        assertViewIdExists("fragment_profile_home.xml", profileXml, "@+id/stat_following_cell");
+        assertViewIdExists("fragment_profile_home.xml", profileXml, "@+id/stat_followers_cell");
+        assertViewIdExists("activity_profile_posts.xml", postsXml, "@+id/profile_posts_list");
+        assertViewIdExists("activity_profile_users.xml", usersXml, "@+id/profile_users_list");
+        assertTrue("Manifest must register ProfilePostsActivity",
+                manifest.contains(".feature.profile.ProfilePostsActivity"));
+        assertTrue("Manifest must register ProfileUsersActivity",
+                manifest.contains(".feature.profile.ProfileUsersActivity"));
+
+        assertTrue("ProfileFragment must show the likes source explanation dialog",
+                fragment.contains("showLikesSourceDialog")
+                        && fragment.contains("获赞来自你发布作品收到的赞"));
+        assertTrue("ProfileFragment must navigate the posts stat into ProfilePostsActivity",
+                fragment.contains("ProfilePostsActivity"));
+        assertTrue("ProfileFragment must navigate following and followers into ProfileUsersActivity",
+                fragment.contains("ProfileUsersActivity")
+                        && fragment.contains("MODE_FOLLOWING")
+                        && fragment.contains("MODE_FOLLOWERS"));
+        assertTrue("ProfilePostsActivity must load the real current-user posts endpoint",
+                postsActivity.contains("repository.myPosts()"));
+        assertTrue("ProfileUsersActivity must load real following and followers endpoints",
+                usersActivity.contains("repository.followingUsers()")
+                        && usersActivity.contains("repository.followerUsers()"));
+        assertTrue("DoyuApi must declare the real Profile stat endpoints",
+                api.contains("@GET(\"/api/v1/users/me/posts\")")
+                        && api.contains("@GET(\"/api/v1/users/me/following\")")
+                        && api.contains("@GET(\"/api/v1/users/me/followers\")"));
+        assertTrue("DoyuRepository must expose the real Profile stat endpoint methods",
+                repository.contains("myPosts()")
+                        && repository.contains("followingUsers()")
+                        && repository.contains("followerUsers()"));
+        assertTrue("Profile edit must keep the real avatar upload and save contract",
+                profileEditActivity.contains("uploadAvatar")
+                        && profileEditActivity.contains("repository.updateMe(nickname, bio, avatarFileId)")
+                        && profileEditActivity.contains("nickname.isEmpty()"));
     }
 
     private static void assertViewHasGoneVisibility(String layout, String xml, String id) {

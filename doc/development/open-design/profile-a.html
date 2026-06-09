@@ -51,10 +51,14 @@
                 <div style="display:flex;align-items:center;gap:12px"><span class="avatar" style="width:56px;height:56px"></span><div><h3 style="margin:0">小屿</h3><p>拼豆爱好者 · 已登录</p></div><a class="pill ok" href="profile-edit-a.html" style="margin-left:auto">编辑资料</a></div>
               </div>
               <div class="stat-grid">
-                <div class="stat"><b>126</b><span>获赞</span></div>
-                <div class="stat"><b>18</b><span>作品</span></div>
-                <div class="stat"><b>23</b><span>关注</span></div>
-                <div class="stat"><b>42</b><span>粉丝</span></div>
+                <a class="stat" href="#like-source-dialog"><b>126</b><span>获赞</span></a>
+                <a class="stat" href="profile-posts-a.html"><b>18</b><span>作品</span></a>
+                <a class="stat" href="profile-following-a.html"><b>23</b><span>关注</span></a>
+                <a class="stat" href="profile-followers-a.html"><b>42</b><span>粉丝</span></a>
+              </div>
+              <div id="like-source-dialog" class="state" style="margin-top:10px">
+                <h3>获赞来源</h3>
+                <p>获赞来自你发布作品收到的赞，数据由服务端按可列表作品实时汇总。当前不展示逐条点赞来源，也不把评论互动写入该统计。</p>
               </div>
               <div class="asset-tabs"><span class="on">我的图纸</span><span>点赞作品</span><span>收藏作品</span></div>
               <div class="masonry" style="padding-top:10px">
@@ -74,7 +78,7 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>保留结构</h3><ul><li>头像、昵称、简介、编辑资料。</li><li>获赞、作品、关注、粉丝四项统计。</li><li>我的图纸、点赞作品、收藏作品放入同一个 Tab 区。</li><li>Tab 内容使用统一帖子/图纸卡片。</li></ul></div>
+            <div class="spec"><h3>保留结构</h3><ul><li>头像、昵称、简介、编辑资料。</li><li>获赞、作品、关注、粉丝四项统计。</li><li>作品、关注、粉丝进入真实列表页。</li><li>我的图纸、点赞作品、收藏作品放入同一个 Tab 区。</li><li>Tab 内容使用统一帖子/图纸卡片。</li></ul></div>
             <div class="spec"><h3>删除展示</h3><ul><li>本设计稿不展示“我的订单”。</li><li>本设计稿不展示“评论作品”。</li><li>本设计稿不展示“关注作品”。</li><li>这只是 UI 目标，不声明代码/API 删除。</li></ul></div>
             <div class="state"><h3>统计视觉</h3><p>统计区使用轻容器和清楚数字层级，不做重卡片套卡片，不用夸张装饰抢内容。</p><div class="state-bar"><span class="state-dot good">轻量</span><span class="state-dot good">可读</span></div></div>
             <div class="state"><h3>编辑资料</h3><p>“编辑资料”进入 profile-edit-a.html；Android 当前已有 profile_edit 路由，并通过现有资料接口保存昵称、头像和简介，城市/地区与兴趣标签仍按局部 UI-only 处理。</p><div class="state-bar"><span class="state-dot warn">局部 UI-only</span><span class="state-dot bad">禁空入口</span></div></div>

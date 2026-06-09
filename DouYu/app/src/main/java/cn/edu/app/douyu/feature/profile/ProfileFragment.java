@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,6 +120,13 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         tabs[TAB_LIKED].setOnClickListener(v -> selectTab(TAB_LIKED));
         tabs[TAB_FAVORITES].setOnClickListener(v -> selectTab(TAB_FAVORITES));
         editButton.setOnClickListener(v -> editLauncher.launch(new Intent(requireContext(), ProfileEditActivity.class)));
+        view.findViewById(R.id.stat_liked_cell).setOnClickListener(v -> showLikesSourceDialog());
+        view.findViewById(R.id.stat_posts_cell).setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), ProfilePostsActivity.class)));
+        view.findViewById(R.id.stat_following_cell).setOnClickListener(v ->
+                openUsers(ProfileUsersActivity.MODE_FOLLOWING));
+        view.findViewById(R.id.stat_followers_cell).setOnClickListener(v ->
+                openUsers(ProfileUsersActivity.MODE_FOLLOWERS));
         retry.setOnClickListener(v -> loadAssets(activeTab));
 
         applyTabStyle();
@@ -167,6 +175,20 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
 
     private DoyuRepository repository() {
         return ((DoyuApplication) requireActivity().getApplication()).repository();
+    }
+
+    private void showLikesSourceDialog() {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("获赞来源")
+                .setMessage("获赞来自你发布作品收到的赞，数据由服务端按可列表作品实时汇总。当前不展示逐条点赞来源，也不把评论互动写入该统计。")
+                .setPositiveButton("知道了", null)
+                .show();
+    }
+
+    private void openUsers(String mode) {
+        Intent intent = new Intent(requireContext(), ProfileUsersActivity.class);
+        intent.putExtra(ProfileUsersActivity.EXTRA_MODE, mode);
+        startActivity(intent);
     }
 
     private void loadProfile() {

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>我的作品 A 方向</title>
+  <link rel="stylesheet" href="doyu-open-design.css">
+</head>
+<body>
+  <main class="board">
+    <section class="section">
+      <div class="section-head">
+        <h2>我的作品</h2>
+        <p>数据源：GET /api/v1/users/me/posts。只展示当前用户发布且可列表的社区作品，空结果展示空态，不填本地示例。</p>
+      </div>
+      <div class="canvas">
+        <div class="phone">
+          <div class="screen">
+            <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
+            <div class="topbar">
+              <a class="icon-btn" href="profile-a.html"><span class="icon back"></span></a>
+              <div class="top-title">作品</div>
+              <a class="icon-btn" href="post-compose-a.html"><span class="icon add"></span></a>
+            </div>
+            <div class="scroll">
+              <div class="masonry" style="padding-top:10px">
+                <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb mint h-md"></div><div class="card-body"><span class="pill">作品</span><div class="mini-title">服务端返回的作品标题</div><div class="meta"><span>我发布</span><span>赞 0</span></div></div></a>
+                <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb sky h-sm"></div><div class="card-body"><span class="pill">作品</span><div class="mini-title">空库启动时这里不补假卡片</div><div class="meta"><span>审核中也可列表</span><span>赞 0</span></div></div></a>
+              </div>
+              <div class="state" style="margin-top:10px"><h3>空态</h3><p>还没有发布作品。真实接口为空时显示此状态。</p></div>
+              <div class="state" style="margin-top:10px"><h3>登录 / 错误</h3><p>401 显示登录边界；网络或服务错误显示整体错误和重试。</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="spec-grid">
+            <div class="spec"><h3>交互</h3><ul><li>返回到我的页。</li><li>点击作品进入作品详情。</li><li>发布按钮进入发帖页。</li></ul></div>
+            <div class="spec"><h3>数据</h3><ul><li>只渲染 /api/v1/users/me/posts。</li><li>不展示 AI 图纸。</li><li>不使用本地 mock 作品。</li></ul></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

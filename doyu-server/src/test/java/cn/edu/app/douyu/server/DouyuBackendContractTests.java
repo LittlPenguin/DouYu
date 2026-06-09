@@ -95,6 +95,9 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/uploads/presign")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/uploads/confirm")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/patterns/jobs")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/me/posts")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/me/following")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/me/followers")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/payments/callbacks/wechat")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/admin/auth/login")).isTrue();
         org.assertj.core.api.Assertions.assertThat(documentedApiPaths).containsAll(mappedApiPaths);
@@ -1220,6 +1223,52 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + viewerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].authorId", equalTo(authorId)));
+    }
+
+    @Test
+    void profileStatDetailEndpointsReturnRealPostsFollowingAndFollowers() throws Exception {
+        String ownerToken = login("13800000070", "AGE_18_PLUS");
+        String followedToken = login("13800000071", "AGE_18_PLUS");
+        String followerToken = login("13800000072", "AGE_18_PLUS");
+        String ownerId = getJsonWithToken("/api/v1/users/me", ownerToken).at("/data/userId").asText();
+        String followedId = getJsonWithToken("/api/v1/users/me", followedToken).at("/data/userId").asText();
+        String followerId = getJsonWithToken("/api/v1/users/me", followerToken).at("/data/userId").asText();
+
+        JsonNode created = postJsonWithToken("/api/v1/posts", ownerToken, """
+                {"title":"profile stat post","content":"profile stat source","mediaFileIds":[],"topicIds":[]}
+                """);
+        String postId = created.at("/data/postId").asText();
+        PostEntity post = postRepository.findById(postId).orElseThrow();
+        post.setStatus("VISIBLE");
+        postRepository.save(post);
+
+        mockMvc.perform(post("/api/v1/users/{userId}/follow", followedId)
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/users/{userId}/follow", ownerId)
+                        .header("Authorization", "Bearer " + followerToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/users/me/posts")
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].postId", equalTo(postId)))
+                .andExpect(jsonPath("$.data.items[0].authorId", equalTo(ownerId)));
+        mockMvc.perform(get("/api/v1/users/me/following")
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].userId", equalTo(followedId)));
+        mockMvc.perform(get("/api/v1/users/me/followers")
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].userId", equalTo(followerId)));
+
+        mockMvc.perform(get("/api/v1/users/me/posts"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/users/me/following"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/users/me/followers"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

@@ -66,7 +66,8 @@ Android XML: `fragment_profile_home.xml`
 Required structure:
 
 - User header or login prompt.
-- Stats row.
+- Stats row. `获赞` opens a source explanation dialog; `作品`, `关注`, and `粉丝`
+  navigate to dedicated real-data list screens.
 - Asset tabs for patterns, liked posts, and favorites.
 - Profile edit entry.
 - Empty asset states without mock assets.
@@ -91,6 +92,10 @@ Required structure:
   `activity_notification_detail.xml`.
 - Profile edit follows `profile-edit-a.html`; Android XML is
   `activity_profile_edit.xml`.
+- Profile posts follows `profile-posts-a.html`; Android XML is
+  `activity_profile_posts.xml`.
+- Profile following and followers follow `profile-following-a.html` and
+  `profile-followers-a.html`; Android XML is `activity_profile_users.xml`.
 - Settings follows the five `settings-*.html` files; Android XML files are
   `activity_settings_home.xml`, `activity_settings_account_security.xml`,
   `activity_settings_privacy_permissions.xml`,

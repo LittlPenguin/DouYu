@@ -104,6 +104,16 @@ The "我的" asset tabs map to real endpoints:
 - 收藏作品 → `GET /api/v1/users/me/favorite-posts` (there is no
   `/me/favorite-patterns` endpoint).
 
+The Profile stat-detail surfaces map to authenticated real endpoints:
+
+- 作品 → `GET /api/v1/users/me/posts` (the current user's listable community
+  posts; AI pattern jobs stay under 我的图纸).
+- 关注 → `GET /api/v1/users/me/following` (users followed by the current user).
+- 粉丝 → `GET /api/v1/users/me/followers` (users following the current user).
+- 获赞 → no list endpoint in this round; the Android UI shows a source
+  explanation dialog. The current `likedCount` source is the sum of
+  `likeCount` over the user's listable posts, not comment likes.
+
 ## Seed Removal Impact
 
 After seed/demo removal, API tests must create data explicitly. Contract tests

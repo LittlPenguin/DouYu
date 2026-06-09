@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface FollowRepository extends JpaRepository<FollowEntity, String> {
     Optional<FollowEntity> findByUserIdAndTargetUserId(String userId, String targetUserId);
     List<FollowEntity> findByUserId(String userId);
+    List<FollowEntity> findByUserIdOrderByCreatedAtDesc(String userId);
+    List<FollowEntity> findByTargetUserIdOrderByCreatedAtDesc(String targetUserId);
     long countByUserId(String userId);
     long countByTargetUserId(String targetUserId);
 
