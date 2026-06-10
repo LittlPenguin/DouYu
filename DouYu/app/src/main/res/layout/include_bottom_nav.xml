@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="78dp"
+    android:layout_marginStart="20dp"
+    android:layout_marginEnd="20dp"
+    android:layout_marginBottom="18dp"
+    android:background="@drawable/bg_bottom_nav"
+    android:elevation="8dp"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:padding="6dp">
+
+    <LinearLayout
+        android:id="@+id/tab_community"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:contentDescription="&#31038;&#21306;"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/nav_icon_community"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_tab_community" />
+
+        <TextView
+            android:id="@+id/nav_label_community"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="&#31038;&#21306;"
+            android:textColor="@color/doyu_text"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <View
+            android:id="@+id/nav_indicator_community"
+            android:layout_width="24dp"
+            android:layout_height="3dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_nav_indicator"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tab_commerce"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:contentDescription="&#21830;&#22478;"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/nav_icon_commerce"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_tab_commerce" />
+
+        <TextView
+            android:id="@+id/nav_label_commerce"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="&#21830;&#22478;"
+            android:textColor="@color/doyu_text"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <View
+            android:id="@+id/nav_indicator_commerce"
+            android:layout_width="24dp"
+            android:layout_height="3dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_nav_indicator"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tab_upload"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:contentDescription="&#19978;&#20256;"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/nav_icon_upload"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_tab_upload"
+            app:tint="@color/doyu_petal_deep" />
+
+        <TextView
+            android:id="@+id/nav_label_upload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="&#19978;&#20256;"
+            android:textColor="@color/doyu_text"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <View
+            android:id="@+id/nav_indicator_upload"
+            android:layout_width="24dp"
+            android:layout_height="3dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_nav_indicator"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tab_messages"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:contentDescription="&#28040;&#24687;"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/nav_icon_messages"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_tab_messages" />
+
+        <TextView
+            android:id="@+id/nav_label_messages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="&#28040;&#24687;"
+            android:textColor="@color/doyu_text"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <View
+            android:id="@+id/nav_indicator_messages"
+            android:layout_width="24dp"
+            android:layout_height="3dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_nav_indicator"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tab_profile"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:clickable="true"
+        android:contentDescription="&#25105;&#30340;"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/nav_icon_profile"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_tab_profile" />
+
+        <TextView
+            android:id="@+id/nav_label_profile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="&#25105;&#30340;"
+            android:textColor="@color/doyu_text"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <View
+            android:id="@+id/nav_indicator_profile"
+            android:layout_width="24dp"
+            android:layout_height="3dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_nav_indicator"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

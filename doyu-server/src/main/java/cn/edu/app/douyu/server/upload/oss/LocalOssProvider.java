@@ -32,24 +32,38 @@ public class LocalOssProvider implements OssProvider {
     }
 
     @Override
-    public String confirm(String fileKey) {
-        Path tempFile = storagePath.resolve("uploads").resolve("temp").resolve(fileKey);
-        Path finalFile = storagePath.resolve("uploads").resolve(fileKey);
+    public ConfirmResult confirm(String fileKey, long expectedSizeBytes) {
+        Path tempFile = safeResolve(storagePath.resolve("uploads").resolve("temp").normalize(), fileKey);
+        Path finalFile = safeResolve(storagePath.resolve("uploads").normalize(), fileKey);
         try {
-            Files.createDirectories(finalFile.getParent());
-            if (Files.exists(tempFile)) {
-                Files.move(tempFile, finalFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            } else {
-                Files.createFile(finalFile);
+            if (!Files.isRegularFile(tempFile)) {
+                throw new UploadNotCompletedException("Uploaded object is missing: " + fileKey);
             }
+            long actualSize = Files.size(tempFile);
+            if (actualSize <= 0 || actualSize != expectedSizeBytes) {
+                throw new UploadNotCompletedException("Uploaded object size mismatch: " + fileKey);
+            }
+            Files.createDirectories(finalFile.getParent());
+            Files.move(tempFile, finalFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            return new ConfirmResult(getPublicUrl(fileKey), actualSize);
         } catch (IOException e) {
             throw new IllegalStateException("确认文件失败: " + fileKey, e);
         }
-        return getPublicUrl(fileKey);
     }
 
     @Override
     public String getPublicUrl(String fileKey) {
         return baseUrl + "/uploads/" + fileKey;
+    }
+
+    private static Path safeResolve(Path root, String fileKey) {
+        if (fileKey == null || fileKey.isBlank() || fileKey.contains("\\") || fileKey.contains("..")) {
+            throw new UploadNotCompletedException("Unsafe uploaded object key: " + fileKey);
+        }
+        Path target = root.resolve(fileKey).normalize();
+        if (!target.startsWith(root)) {
+            throw new UploadNotCompletedException("Unsafe uploaded object key: " + fileKey);
+        }
+        return target;
     }
 }

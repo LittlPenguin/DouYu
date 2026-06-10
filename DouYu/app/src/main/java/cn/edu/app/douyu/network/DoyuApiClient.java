@@ -39,7 +39,7 @@ public final class DoyuApiClient {
     }
 
     public static DoyuRepository createRepository(Context context) {
-        return new DoyuRepository(create(context), createUploadClient());
+        return new DoyuRepository(create(context), createUploadClient(), BuildConfig.API_BASE_URL);
     }
 
     static OkHttpClient createUploadClient() {

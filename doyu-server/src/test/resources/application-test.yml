@@ -27,4 +27,4 @@ douyu:
     local-path: ./target/doyu-test-storage
     base-url: http://10.64.241.153:8081
   oss:
-    provider: stub
+    provider: local

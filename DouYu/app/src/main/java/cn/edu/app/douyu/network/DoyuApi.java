@@ -25,22 +25,15 @@ import cn.edu.app.douyu.model.UploadConfirmRequest;
 import cn.edu.app.douyu.model.UploadPresignRequest;
 import cn.edu.app.douyu.model.UploadPresignResponse;
 import cn.edu.app.douyu.model.UserProfile;
-import cn.edu.app.douyu.model.ConfirmUploadRequest;
 import cn.edu.app.douyu.model.FollowResult;
-import cn.edu.app.douyu.model.PresignUploadRequest;
-import cn.edu.app.douyu.model.PresignUploadResponse;
-import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
-import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
-import retrofit2.http.Url;
 
 public interface DoyuApi {
     @GET("/api/v1/posts/feed")
@@ -87,12 +80,6 @@ public interface DoyuApi {
 
     @GET("/api/v1/products/{productId}")
     Call<ApiResponse<Product>> product(@Path("productId") String productId);
-
-    @POST("/api/v1/uploads/presign")
-    Call<ApiResponse<PresignUploadResponse>> uploadPresign(@Body PresignUploadRequest request);
-
-    @POST("/api/v1/uploads/confirm")
-    Call<ApiResponse<FileAsset>> uploadConfirm(@Body ConfirmUploadRequest request);
 
     @GET("/api/v1/messages/notifications")
     Call<ApiResponse<PageResponse<NotificationMessage>>> notifications(@Query("page") int page, @Query("size") int size);
@@ -141,9 +128,6 @@ public interface DoyuApi {
 
     @POST("/api/v1/uploads/presign")
     Call<ApiResponse<UploadPresignResponse>> uploadPresign(@Body UploadPresignRequest request);
-
-    @PUT
-    Call<ResponseBody> uploadPut(@Url String url, @Body RequestBody body);
 
     @POST("/api/v1/uploads/confirm")
     Call<ApiResponse<FileAsset>> uploadConfirm(@Body UploadConfirmRequest request);

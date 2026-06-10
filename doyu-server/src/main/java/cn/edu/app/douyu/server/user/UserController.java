@@ -303,7 +303,7 @@ public class UserController {
     }
 
     private boolean isListablePost(PostEntity post) {
-        return post != null && ("VISIBLE".equals(post.getStatus()) || "REVIEWING".equals(post.getStatus()));
+        return post != null && "VISIBLE".equals(post.getStatus());
     }
 
     private <T> List<T> slice(List<T> items, int page, int size) {

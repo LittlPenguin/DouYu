@@ -32,9 +32,25 @@ public class LocalOssUploadController {
                 org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes())
                 .getRequest().getRequestURI();
         String fileKey = uri.substring("/uploads/temp/".length());
-        Path target = uploadDir.resolve("temp").resolve(fileKey);
+        Path target;
+        try {
+            target = safeResolve(uploadDir.resolve("temp").normalize(), fileKey);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
         Files.createDirectories(target.getParent());
         Files.write(target, data);
         return ResponseEntity.ok().build();
+    }
+
+    private static Path safeResolve(Path root, String fileKey) {
+        if (fileKey == null || fileKey.isBlank() || fileKey.contains("\\") || fileKey.contains("..")) {
+            throw new IllegalArgumentException("Unsafe upload key");
+        }
+        Path target = root.resolve(fileKey).normalize();
+        if (!target.startsWith(root)) {
+            throw new IllegalArgumentException("Unsafe upload key");
+        }
+        return target;
     }
 }

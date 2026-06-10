@@ -32,7 +32,7 @@ Disallowed:
 | Capability | Current scope |
 |---|---|
 | Verification code | Development fixed-code boundary for local login only; no real SMS Provider |
-| Object storage | Local / Stub / Aliyun OSS Provider retained |
+| Object storage | Local / Aliyun OSS Provider retained |
 | Upload | `/uploads/presign -> PUT uploadUrl -> /uploads/confirm` retained |
 
 Removed from current scope:

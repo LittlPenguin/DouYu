@@ -15,7 +15,7 @@
 
   <rect x="54" y="130" width="180" height="78" class="box client"/><text x="144" y="161" text-anchor="middle" class="label">Android</text><text x="144" y="184" text-anchor="middle" class="small">选择图片 / 文件</text>
   <rect x="290" y="130" width="210" height="78" class="box api"/><text x="395" y="161" text-anchor="middle" class="label">POST /uploads/presign</text><text x="395" y="184" text-anchor="middle" class="small">usage / mime / size / name</text>
-  <rect x="560" y="96" width="210" height="78" class="box oss"/><text x="665" y="127" text-anchor="middle" class="label">OSS Provider</text><text x="665" y="150" text-anchor="middle" class="small">local | stub | aliyun</text>
+  <rect x="560" y="96" width="210" height="78" class="box oss"/><text x="665" y="127" text-anchor="middle" class="label">OSS Provider</text><text x="665" y="150" text-anchor="middle" class="small">local | aliyun</text>
   <rect x="560" y="220" width="210" height="78" class="box oss"/><text x="665" y="251" text-anchor="middle" class="label">PUT uploadUrl</text><text x="665" y="274" text-anchor="middle" class="small">headers + binary</text>
   <rect x="830" y="130" width="230" height="78" class="box api"/><text x="945" y="161" text-anchor="middle" class="label">POST /uploads/confirm</text><text x="945" y="184" text-anchor="middle" class="small">fileKey -> FileAsset</text>
   <rect x="830" y="300" width="230" height="78" class="box data"/><text x="945" y="331" text-anchor="middle" class="label">FileAsset</text><text x="945" y="354" text-anchor="middle" class="small">fileId / publicUrl / audit</text>

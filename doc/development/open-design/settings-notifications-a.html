@@ -12,7 +12,7 @@
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / Settings 内页</div>
         <h1 class="title">通知设置</h1>
-        <p class="lead">通知设置按私信、互动、发布和系统通知分组。它只控制通知展示偏好，不改变后端审核或私信限制。</p>
+        <p class="lead">通知设置按私信、互动、发布和系统通知分组。它只控制通知展示偏好，不改变后端发布或私信限制。</p>
         <div class="chips"><span class="chip">私信</span><span class="chip">评论互动</span><span class="chip">发布</span><span class="chip">系统通知</span></div>
       </div>
       <div class="side-facts">
@@ -31,8 +31,8 @@
               <div class="list">
                 <div class="row"><span class="round-icon"><span class="icon message"></span></span><div class="row-main"><div class="row-title">私信提醒</div><div class="row-sub">互关与未互关会话新消息</div></div><span class="toggle"></span></div>
                 <div class="row"><span class="round-icon"><span class="icon at"></span></span><div class="row-main"><div class="row-title">@ 提及和评论</div><div class="row-sub">评论、回复、@ 你</div></div><span class="toggle"></span></div>
-                <div class="row"><span class="round-icon"><span class="icon upload"></span></span><div class="row-main"><div class="row-title">发布提醒</div><div class="row-sub">发布、审核和重试建议</div></div><span class="toggle"></span></div>
-                <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">系统通知</div><div class="row-sub">账号、安全、审核和系统提醒</div></div><span class="toggle off"></span></div>
+                <div class="row"><span class="round-icon"><span class="icon upload"></span></span><div class="row-main"><div class="row-title">发布提醒</div><div class="row-sub">发布成功、失败和重试建议</div></div><span class="toggle"></span></div>
+                <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">系统通知</div><div class="row-sub">账号、安全、帮助和系统提醒</div></div><span class="toggle off"></span></div>
               </div>
               <div class="hero-strip"><span class="pill warn">开发态保存</span><p>若偏好接口未接入，切换后只展示“该设置仍在开发中”，不写保存成功。</p></div>
             </div>
@@ -40,7 +40,7 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>通知类别</h3><ul><li>私信：新对话、新消息。</li><li>互动：评论、回复、@、点赞收藏。</li><li>发布：提交、通过、失败。</li><li>系统：账号、安全、审核、帮助。</li></ul></div>
+            <div class="spec"><h3>通知类别</h3><ul><li>私信：新对话、新消息。</li><li>互动：评论、回复、@、点赞收藏。</li><li>发布：成功、失败、重试建议。</li><li>系统：账号、安全、帮助。</li></ul></div>
             <div class="spec"><h3>保存规则</h3><ul><li>有后端接口时展示保存中/成功/失败。</li><li>无接口时禁用或标注开发态。</li><li>失败时回滚开关或保留并提示重试。</li></ul></div>
             <div class="state"><h3>私信限制不变</h3><p>关闭私信通知不解除互关限制；超过 3 条仍禁用发送。</p><div class="state-bar"><span class="state-dot warn">规则独立</span><span class="state-dot bad">禁误导</span></div></div>
             <div class="state"><h3>系统通知</h3><p>关键安全/系统通知可提示不可关闭或仅关闭推送，不删除消息页记录。</p><div class="state-bar"><span class="state-dot good">可解释</span><span class="state-dot warn">需后续实现</span></div></div>

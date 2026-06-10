@@ -12,8 +12,8 @@
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / 消息补全设计稿</div>
         <h1 class="title">通知详情：事件、对象与跳转</h1>
-        <p class="lead">通知详情只展示事件内容和关联对象，不承载聊天输入。评论审核、点赞收藏、@ 提及、发帖状态和系统通知都用一致结构表达。</p>
-        <div class="chips"><span class="chip">通知详情</span><span class="chip">无输入框</span><span class="chip">可跳转对象</span><span class="chip">审核边界</span></div>
+        <p class="lead">通知详情只展示事件内容和关联对象，不承载聊天输入。评论互动、点赞收藏、@ 提及、发帖状态和系统通知都用一致结构表达。</p>
+        <div class="chips"><span class="chip">通知详情</span><span class="chip">无输入框</span><span class="chip">可跳转对象</span><span class="chip">系统边界</span></div>
       </div>
       <div class="side-facts">
         <div class="fact"><b>点击来源</b><span>从消息页通知列表进入，返回后保持通知 Tab。</span></div>
@@ -29,7 +29,7 @@
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar"><a class="icon-btn" href="messages-a.html"><span class="icon back"></span></a><div class="top-title">通知详情</div><a class="icon-btn" href="search-a.html"><span class="icon search"></span></a></div>
             <div class="scroll no-nav">
-              <div class="hero-strip"><span class="pill warn">审核通知</span><h3>评论已提交</h3><p>你的评论已进入审核队列，审核通过后会展示在作品评论列表。</p></div>
+              <div class="hero-strip"><span class="pill ok">互动通知</span><h3>收到新评论</h3><p>你的作品有新的拼豆建议，可以前往详情查看。</p></div>
               <div class="list">
                 <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">关联作品</div><div class="row-sub">草莓小熊杯垫</div></div><span class="pill">查看</span></div>
                 <div class="row"><span class="round-icon"><span class="icon at"></span></span><div class="row-main"><div class="row-title">@ 提及</div><div class="row-sub">阿澄在评论里提到了你</div></div><span class="row-meta">12:30</span></div>
@@ -41,10 +41,10 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>通知类型</h3><ul><li>审核：发帖/评论提交、通过、拒绝。</li><li>互动：点赞、收藏、评论、@ 提及。</li><li>发布：作品发布通过或失败。</li><li>系统：账号、帮助、版本或安全提示。</li></ul></div>
+            <div class="spec"><h3>通知类型</h3><ul><li>互动：点赞、收藏、评论、@ 提及。</li><li>发布：作品发布成功或失败。</li><li>系统：账号、帮助、版本或安全提示。</li></ul></div>
             <div class="spec"><h3>详情结构</h3><ul><li>顶部返回 + 标题。</li><li>事件摘要、发生时间、关联对象卡。</li><li>可解释动作：查看作品、标为已读、重试加载。</li><li>无输入框、无私信限制状态。</li></ul></div>
             <div class="state"><h3>空/错状态</h3><p>通知不存在或加载失败时展示重试，不吞成空白，不暴露技术堆栈。</p><div class="state-bar"><span class="state-dot warn">可重试</span><span class="state-dot bad">禁空白</span></div></div>
-            <div class="state"><h3>边界说明</h3><p>发帖审核通知只说明帖子状态；评论成功不进入通知详情输入链路。</p><div class="state-bar"><span class="state-dot warn">状态清楚</span><span class="state-dot bad">禁伪装私信</span></div></div>
+            <div class="state"><h3>边界说明</h3><p>发布通知只说明帖子状态；评论成功不进入通知详情输入链路。</p><div class="state-bar"><span class="state-dot warn">状态清楚</span><span class="state-dot bad">禁伪装私信</span></div></div>
           </div>
         </div>
       </div>

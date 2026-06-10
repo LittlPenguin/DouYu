@@ -1,12 +1,15 @@
 package cn.edu.app.douyu.data;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import cn.edu.app.douyu.model.AuthSession;
 import cn.edu.app.douyu.model.ChatMessage;
 import cn.edu.app.douyu.model.Comment;
+import cn.edu.app.douyu.model.CommentMediaAsset;
 import cn.edu.app.douyu.model.CommentRequest;
 import cn.edu.app.douyu.model.Conversation;
 import cn.edu.app.douyu.model.ConversationDetail;
@@ -29,14 +32,12 @@ import cn.edu.app.douyu.model.UploadConfirmRequest;
 import cn.edu.app.douyu.model.UploadPresignRequest;
 import cn.edu.app.douyu.model.UploadPresignResponse;
 import cn.edu.app.douyu.model.UserProfile;
-import cn.edu.app.douyu.model.ConfirmUploadRequest;
 import cn.edu.app.douyu.model.FollowResult;
-import cn.edu.app.douyu.model.PresignUploadRequest;
-import cn.edu.app.douyu.model.PresignUploadResponse;
 import cn.edu.app.douyu.network.ApiException;
 import cn.edu.app.douyu.network.ApiResponse;
 import cn.edu.app.douyu.network.DoyuApi;
 import okhttp3.MediaType;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -48,6 +49,7 @@ public class DoyuRepository {
     private static final int PAGE_SIZE = 20;
     private final DoyuApi api;
     private final OkHttpClient uploadClient;
+    private final HttpUrl apiBaseUrl;
 
     public DoyuRepository(DoyuApi api) {
         this(api, new OkHttpClient.Builder()
@@ -57,12 +59,19 @@ public class DoyuRepository {
     }
 
     public DoyuRepository(DoyuApi api, OkHttpClient uploadClient) {
+        this(api, uploadClient, null);
+    }
+
+    public DoyuRepository(DoyuApi api, OkHttpClient uploadClient, String apiBaseUrl) {
         this.api = api;
         this.uploadClient = uploadClient;
+        this.apiBaseUrl = apiBaseUrl == null || apiBaseUrl.trim().isEmpty()
+                ? null
+                : HttpUrl.parse(apiBaseUrl);
     }
 
     public PageResponse<Post> feed() throws IOException {
-        return body(api.feed(FIRST_PAGE, PAGE_SIZE));
+        return normalizePostPage(body(api.feed(FIRST_PAGE, PAGE_SIZE)));
     }
 
     public PageResponse<Topic> topics() throws IOException {
@@ -70,23 +79,23 @@ public class DoyuRepository {
     }
 
     public PageResponse<Post> topicPosts(String topicId) throws IOException {
-        return body(api.topicPosts(topicId, FIRST_PAGE, PAGE_SIZE));
+        return normalizePostPage(body(api.topicPosts(topicId, FIRST_PAGE, PAGE_SIZE)));
     }
 
     public Post post(String postId) throws IOException {
-        return body(api.post(postId));
+        return normalizePost(body(api.post(postId)));
     }
 
     public Post createPost(String title, String content, java.util.List<String> mediaFileIds, java.util.List<String> topicIds) throws IOException {
-        return body(api.createPost(new PostRequest(title, content, mediaFileIds, topicIds)));
+        return normalizePost(body(api.createPost(new PostRequest(title, content, mediaFileIds, topicIds))));
     }
 
     public PageResponse<Comment> comments(String postId) throws IOException {
-        return body(api.comments(postId, FIRST_PAGE, PAGE_SIZE));
+        return normalizeCommentPage(body(api.comments(postId, FIRST_PAGE, PAGE_SIZE)));
     }
 
     public Comment createComment(String postId, CommentRequest request) throws IOException {
-        return body(api.createComment(postId, request));
+        return normalizeComment(body(api.createComment(postId, request)));
     }
 
     public PostInteraction likePost(String postId) throws IOException {
@@ -124,13 +133,9 @@ public class DoyuRepository {
         return body(api.product(productId));
     }
 
-    public PresignUploadResponse uploadPresign(String usage, String mimeType, long sizeBytes, String fileName) throws IOException {
-        return body(api.uploadPresign(new PresignUploadRequest(usage, mimeType, sizeBytes, fileName)));
-    }
-
     public void uploadPresignedBytes(String uploadUrl, byte[] bytes, String mimeType, Map<String, String> headers) throws IOException {
         Request.Builder builder = new Request.Builder()
-                .url(uploadUrl)
+                .url(resolveLoopbackUrlToApiHost(uploadUrl))
                 .put(RequestBody.create(MediaType.parse(mimeType), bytes));
         if (headers != null) {
             for (Map.Entry<String, String> header : headers.entrySet()) {
@@ -146,8 +151,31 @@ public class DoyuRepository {
         }
     }
 
-    public FileAsset uploadConfirm(String fileKey, String usage, String mimeType, long sizeBytes, Integer width, Integer height) throws IOException {
-        return body(api.uploadConfirm(new ConfirmUploadRequest(fileKey, usage, mimeType, sizeBytes, width, height)));
+    private String resolveLoopbackUrlToApiHost(String url) {
+        HttpUrl parsedUrl = HttpUrl.parse(url);
+        if (parsedUrl == null || apiBaseUrl == null) {
+            return url;
+        }
+        if (!isLoopbackHost(parsedUrl.host()) || isLoopbackHost(apiBaseUrl.host())) {
+            return url;
+        }
+        return parsedUrl.newBuilder()
+                .scheme(apiBaseUrl.scheme())
+                .host(apiBaseUrl.host())
+                .port(apiBaseUrl.port())
+                .build()
+                .toString();
+    }
+
+    private static boolean isLoopbackHost(String host) {
+        if (host == null) {
+            return false;
+        }
+        String normalized = host.trim().toLowerCase(java.util.Locale.ROOT);
+        return "localhost".equals(normalized)
+                || "127.0.0.1".equals(normalized)
+                || "::1".equals(normalized)
+                || "0:0:0:0:0:0:0:1".equals(normalized);
     }
 
     public PageResponse<NotificationMessage> notifications() throws IOException {
@@ -183,7 +211,7 @@ public class DoyuRepository {
     }
 
     public PageResponse<Post> myPosts() throws IOException {
-        return body(api.myPosts(FIRST_PAGE, PAGE_SIZE));
+        return normalizePostPage(body(api.myPosts(FIRST_PAGE, PAGE_SIZE)));
     }
 
     public PageResponse<UserProfile> followingUsers() throws IOException {
@@ -210,7 +238,15 @@ public class DoyuRepository {
         return uploadImage("POST_IMAGE", bytes, mimeType, fileName, width, height);
     }
 
+    public FileAsset uploadPostImageAsset(byte[] bytes, String mimeType, String fileName, Integer width, Integer height) throws IOException {
+        return uploadImageAsset("POST_IMAGE", bytes, mimeType, fileName, width, height);
+    }
+
     private String uploadImage(String usage, byte[] bytes, String mimeType, String fileName, Integer width, Integer height) throws IOException {
+        return uploadImageAsset(usage, bytes, mimeType, fileName, width, height).fileId;
+    }
+
+    private FileAsset uploadImageAsset(String usage, byte[] bytes, String mimeType, String fileName, Integer width, Integer height) throws IOException {
         UploadPresignResponse presign = body(api.uploadPresign(
                 new UploadPresignRequest(usage, mimeType, bytes.length, fileName)));
         if (presign == null || presign.uploadUrl == null || presign.fileKey == null) {
@@ -222,7 +258,62 @@ public class DoyuRepository {
         if (asset == null || asset.fileId == null) {
             throw new ApiException("图片确认失败");
         }
-        return asset.fileId;
+        asset.publicUrl = normalizeImageUrl(asset.publicUrl);
+        return asset;
+    }
+
+    private PageResponse<Post> normalizePostPage(PageResponse<Post> page) {
+        if (page == null || page.items == null) {
+            return page;
+        }
+        for (Post post : page.items) {
+            normalizePost(post);
+        }
+        return page;
+    }
+
+    private Post normalizePost(Post post) {
+        if (post == null) {
+            return null;
+        }
+        post.coverImageUrl = normalizeImageUrl(post.coverImageUrl);
+        if (post.imageUrls != null) {
+            List<String> normalized = new ArrayList<>(post.imageUrls.size());
+            for (String url : post.imageUrls) {
+                normalized.add(normalizeImageUrl(url));
+            }
+            post.imageUrls = normalized;
+        }
+        return post;
+    }
+
+    private PageResponse<Comment> normalizeCommentPage(PageResponse<Comment> page) {
+        if (page == null || page.items == null) {
+            return page;
+        }
+        for (Comment comment : page.items) {
+            normalizeComment(comment);
+        }
+        return page;
+    }
+
+    private Comment normalizeComment(Comment comment) {
+        if (comment == null || comment.mediaAssets == null) {
+            return comment;
+        }
+        for (CommentMediaAsset asset : comment.mediaAssets) {
+            if (asset != null) {
+                asset.publicUrl = normalizeImageUrl(asset.publicUrl);
+            }
+        }
+        return comment;
+    }
+
+    private String normalizeImageUrl(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return url;
+        }
+        return resolveLoopbackUrlToApiHost(url.trim());
     }
 
     public PageResponse<UserProfile> searchUsers(String keyword) throws IOException {
@@ -238,11 +329,11 @@ public class DoyuRepository {
     }
 
     public PageResponse<Post> likedPosts() throws IOException {
-        return body(api.likedPosts(FIRST_PAGE, PAGE_SIZE));
+        return normalizePostPage(body(api.likedPosts(FIRST_PAGE, PAGE_SIZE)));
     }
 
     public PageResponse<Post> favoritePosts() throws IOException {
-        return body(api.favoritePosts(FIRST_PAGE, PAGE_SIZE));
+        return normalizePostPage(body(api.favoritePosts(FIRST_PAGE, PAGE_SIZE)));
     }
 
     public AuthSession session() throws IOException {

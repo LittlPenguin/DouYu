@@ -4,8 +4,7 @@ import java.util.Map;
 
 /**
  * 对象存储抽象接口。
- * 当前实现：StubOssProvider（测试/联调用）。
- * 后续实现：MinioOssProvider（本地开发）、AliyunOssProvider（生产）。
+ * 当前实现：LocalOssProvider（本地开发/测试）、AliyunOssProvider（生产）。
  */
 public interface OssProvider {
 
@@ -25,7 +24,7 @@ public interface OssProvider {
      * @param fileKey 文件存储 Key
      * @return 文件的公开访问 URL（如果可用），否则返回 null
      */
-    String confirm(String fileKey);
+    ConfirmResult confirm(String fileKey, long expectedSizeBytes);
 
     /**
      * 获取文件的公开访问 URL。
@@ -36,4 +35,12 @@ public interface OssProvider {
     String getPublicUrl(String fileKey);
 
     record PresignResult(String uploadUrl, Map<String, String> headers) {}
+
+    record ConfirmResult(String publicUrl, long sizeBytes) {}
+
+    class UploadNotCompletedException extends RuntimeException {
+        public UploadNotCompletedException(String message) {
+            super(message);
+        }
+    }
 }

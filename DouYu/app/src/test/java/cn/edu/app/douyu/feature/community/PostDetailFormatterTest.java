@@ -68,7 +68,7 @@ public class PostDetailFormatterTest {
         assertEquals("作品 · 2026-06-07", PostDetailFormatter.authorMeta(post));
 
         Post missingDate = new Post();
-        missingDate.status = "REVIEWING";
+        missingDate.status = "VISIBLE";
         assertEquals("作品详情", PostDetailFormatter.authorMeta(missingDate));
     }
 

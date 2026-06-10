@@ -30,7 +30,7 @@ Retained community post creation uses the existing backend endpoint:
 - Request body: `title`, `content`, `mediaFileIds`, `topicIds`.
 - `content` is required by the backend; Android also requires a non-empty title before enabling publish.
 - `mediaFileIds` must come from the retained OSS upload flow; Android must not submit fake file ids.
-- Successful creation returns a `Post` with backend status, currently `REVIEWING`.
+- Successful creation returns a `Post` with backend status `VISIBLE`; new posts are public immediately after a successful upload-backed publish.
 - A newly created post is not guaranteed to appear in public feed immediately.
 
 Other retained community reads and interactions include feed, topics, topic posts, post detail, comments, likes and favorites. Removed AI/pattern endpoints are not part of this contract.

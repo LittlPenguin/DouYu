@@ -706,7 +706,7 @@ public class PostDetailActivity extends XmlPageActivity {
                     submittingComment = false;
                     commentInput.setText("");
                     commentSend.setText("发送");
-                    clearComposerAttachments();
+                    clearCommentInputAttachments();
                     collapseCommentInput();
                     updateSendEnabled();
                     if (currentPost != null) {
@@ -817,14 +817,14 @@ public class PostDetailActivity extends XmlPageActivity {
     // ----- @ 用户选择 / # 话题选择 -----
 
     private void openMentionPicker() {
-        if (!ensureComposerLoggedIn()) {
+        if (!ensureCommentInputLoggedIn()) {
             return;
         }
         new PickerSheet(this, PickerSheet.Mode.USER, item -> selectMention(item.id, item.title)).show();
     }
 
     private void openTopicPicker() {
-        if (!ensureComposerLoggedIn()) {
+        if (!ensureCommentInputLoggedIn()) {
             return;
         }
         new PickerSheet(this, PickerSheet.Mode.TOPIC, item -> selectTopic(item.id, item.title)).show();
@@ -881,7 +881,7 @@ public class PostDetailActivity extends XmlPageActivity {
         return chip;
     }
 
-    private boolean ensureComposerLoggedIn() {
+    private boolean ensureCommentInputLoggedIn() {
         if (!ensureLoggedIn(AuthGate.RETURN_ACTION_COMMENT, null)) {
             return false;
         }
@@ -910,7 +910,7 @@ public class PostDetailActivity extends XmlPageActivity {
     // ----- 图片评论上传 -----
 
     private void pickCommentImage() {
-        if (!ensureComposerLoggedIn()) {
+        if (!ensureCommentInputLoggedIn()) {
             return;
         }
         if (pendingMedia.size() >= MAX_COMMENT_IMAGES) {
@@ -1036,7 +1036,7 @@ public class PostDetailActivity extends XmlPageActivity {
         toolImage.setAlpha(atLimit ? 0.4f : 1f);
     }
 
-    private void clearComposerAttachments() {
+    private void clearCommentInputAttachments() {
         pendingMedia.clear();
         selectedMentions.clear();
         selectedTopics.clear();
@@ -1119,7 +1119,7 @@ public class PostDetailActivity extends XmlPageActivity {
     // real upload/comment/follow network calls. -----
 
     @VisibleForTesting
-    public void testOpenComposer() {
+    public void testOpenCommentInput() {
         focusCommentInput();
     }
 

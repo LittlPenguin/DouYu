@@ -19,7 +19,7 @@ OSS-backed image storage is retained.
 - `POST /api/v1/uploads/presign`
 - `PUT uploadUrl`
 - `POST /api/v1/uploads/confirm`
-- Local / Stub / Aliyun OSS Provider configuration.
+- Local / Aliyun OSS Provider configuration.
 
 Android uses backend-signed upload URLs and never stores OSS credentials.
 

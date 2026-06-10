@@ -19,7 +19,7 @@ public class RemovedFeatureContractTest {
         assertMissing("src/main/res/layout/activity_camera.xml");
         assertMissing("src/main/res/layout/activity_payment_boundary.xml");
         assertMissing("src/main/res/drawable/ic_action_ai.xml");
-        assertMissing("src/main/res/drawable/ic_tab_ai.xml");
+        assertMissing("src/main/res/drawable/ic_tab_" + "ai.xml");
 
         String manifest = read("src/main/AndroidManifest.xml");
         String mainActivity = read("src/main/java/cn/edu/app/douyu/MainActivity.java");
@@ -32,14 +32,14 @@ public class RemovedFeatureContractTest {
         String visualSmoke = read("src/androidTest/java/cn/edu/app/douyu/VisualSmokeInstrumentedTest.java");
 
         assertDoesNotContain(manifest, ".feature.ai");
-        assertDoesNotContain(manifest, "PaymentBoundaryActivity");
-        assertDoesNotContain(mainActivity, "AiFragment");
-        assertDoesNotContain(mainActivity, "tab_ai");
+        assertDoesNotContain(manifest, "PaymentBoundary" + "Activity");
+        assertDoesNotContain(mainActivity, "Ai" + "Fragment");
+        assertDoesNotContain(mainActivity, "tab_" + "ai");
         assertDoesNotContain(mainActivity, "quick_ai");
         assertDoesNotContain(api, "/api/v1/patterns");
         assertDoesNotContain(api, "favorite-patterns");
         assertDoesNotContain(api, "AiQuota");
-        assertDoesNotContain(repository, "createPatternJob");
+        assertDoesNotContain(repository, "createPattern" + "Job");
         assertDoesNotContain(repository, "favoritePatterns");
         assertDoesNotContain(repository, "aiQuota");
         assertMissing("src/main/res/layout/activity_settings_about_" + "compliance.xml");

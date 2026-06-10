@@ -26,7 +26,7 @@ SpellBean currently uses an Android Java/XML client, Spring Boot backend, Postgr
 
 | Provider | Scope |
 |---|---|
-| OSS Provider | Local / Stub / Aliyun OSS retained for object images and upload flow |
+| OSS Provider | Local / Aliyun OSS retained for object images and upload flow |
 | Verification code | Fixed development code retained for local login; no real SMS Provider |
 
 Removed from current runtime architecture:

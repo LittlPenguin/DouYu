@@ -8,6 +8,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Configuration;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class OssProviderConfigTest {
@@ -28,13 +31,20 @@ class OssProviderConfigTest {
     }
 
     @Test
-    void stubProviderCanBeSelectedForTests() {
+    void stubProviderCannotBeSelectedAsRuntimeProvider() {
         contextRunner
                 .withPropertyValues("douyu.oss.provider=stub")
                 .run(context -> {
-                    assertThat(context).hasSingleBean(OssProvider.class);
-                    assertThat(context.getBean(OssProvider.class)).isInstanceOf(StubOssProvider.class);
+                    assertThat(context).doesNotHaveBean(OssProvider.class);
                 });
+    }
+
+    @Test
+    void qaEmptyProfileDoesNotDefaultToStubProvider() throws Exception {
+        String yaml = Files.readString(Path.of("src/main/resources/application-qa-empty.yml"));
+
+        assertThat(yaml).doesNotContain("DOUYU_OSS_PROVIDER:stub");
+        assertThat(yaml).contains("DOUYU_OSS_PROVIDER:local");
     }
 
     @Test

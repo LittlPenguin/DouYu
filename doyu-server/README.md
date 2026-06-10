@@ -97,12 +97,12 @@ mvn test
 - `/api/v1/admin/**` 使用后台登录返回的 admin token。
 - user token 不能访问后台接口，admin token 不作为普通用户 token 联调。
 
-## 保留的开发 Stub / Provider
+## 保留的开发 Provider / Boundary
 
 | 能力 | 当前用途 | 边界 |
 |---|---|---|
 | 验证码 | 固定验证码 `123456`，用于本地登录联调 | 不发送真实短信，不接真实 SMS Provider |
-| OSS / 对象存储 | `local`、`stub`、`aliyun` Provider 配置和上传链路 | OSS 保留；Android 不保存密钥，上传由后端签发 URL |
+| OSS / 对象存储 | `local`、`aliyun` Provider 配置和上传链路 | OSS 保留；Android 不保存密钥，上传由后端签发 URL |
 | 后台测试账号 | `admin / admin123` | 仅 `dev/test` 使用 |
 
 ## QA empty database profile

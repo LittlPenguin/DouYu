@@ -27,14 +27,18 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import cn.edu.app.douyu.core.IntentExtras;
+import cn.edu.app.douyu.data.DoyuRepository;
 import cn.edu.app.douyu.feature.commerce.ProductDetailActivity;
+import cn.edu.app.douyu.feature.community.PostCreateActivity;
 import cn.edu.app.douyu.feature.community.PostDetailActivity;
 import cn.edu.app.douyu.feature.message.ConversationActivity;
 import cn.edu.app.douyu.feature.message.NotificationDetailActivity;
+import cn.edu.app.douyu.network.DoyuApiClient;
 
 @RunWith(AndroidJUnit4.class)
 public class RealBackendSmokeInstrumentedTest {
@@ -87,7 +91,7 @@ public class RealBackendSmokeInstrumentedTest {
     }
 
     @Test
-    public void captureRealBackendPostDetailComposer() throws Exception {
+    public void captureRealBackendPostDetailCommentInput() throws Exception {
         File outputDir = prepareOutputDir();
         String baseUrl = BuildConfig.API_BASE_URL;
         sendProgress("login-main-start");
@@ -106,8 +110,45 @@ public class RealBackendSmokeInstrumentedTest {
         String topicId = resolveTopicId(baseUrl, token);
         sendProgress("resolve-topic-done");
         sendProgress("capture-editor-flow-start");
-        capturePostDetailComposerFlow(outputDir, postId, mentionUserId, topicId);
+        capturePostDetailCommentInputFlow(outputDir, postId, mentionUserId, topicId);
         sendProgress("capture-editor-flow-done");
+    }
+
+    @Test
+    public void realBackendPostImageUploadReturnsFileId() throws Exception {
+        String baseUrl = BuildConfig.API_BASE_URL;
+        String token = login(baseUrl, "13900001998", "AGE_18_PLUS");
+        persistToken(token);
+
+        DoyuRepository repository = DoyuApiClient.createRepository(targetContext);
+        byte[] bytes = pngBytes(120, 120);
+        String fileId = repository.uploadPostImage(bytes, "image/png", "instrumented-upload.png", 120, 120);
+
+        assertNotNull(fileId);
+        assertTrue("fileId should come from backend", fileId.startsWith("file_"));
+    }
+
+    @Test
+    public void realBackendPostCreateImageUploadCompletes() throws Exception {
+        String baseUrl = BuildConfig.API_BASE_URL;
+        String token = login(baseUrl, "13900001997", "AGE_18_PLUS");
+        persistToken(token);
+        Uri imageUri = fileProviderImageUri();
+
+        Intent intent = new Intent(targetContext, PostCreateActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try (ActivityScenario<PostCreateActivity> scenario = ActivityScenario.launch(intent)) {
+            waitForScreen();
+            scenario.onActivity(activity -> {
+                activity.testAddImage(imageUri);
+                assertEquals(1, activity.testPendingMediaCount());
+            });
+            waitForPostCreateUpload(scenario);
+            scenario.onActivity(activity -> {
+                assertEquals(1, activity.testDoneMediaCount());
+                assertEquals(0, activity.testFailedMediaCount());
+            });
+        }
     }
 
     private String currentUserId(String baseUrl, String token) throws Exception {
@@ -341,7 +382,7 @@ public class RealBackendSmokeInstrumentedTest {
         }
     }
 
-    private void capturePostDetailComposerFlow(File outputDir, String postId, String mentionUserId, String topicId)
+    private void capturePostDetailCommentInputFlow(File outputDir, String postId, String mentionUserId, String topicId)
             throws Exception {
         String baseUrl = BuildConfig.API_BASE_URL;
         String token = login(baseUrl, "13900001999", "AGE_18_PLUS");
@@ -355,7 +396,7 @@ public class RealBackendSmokeInstrumentedTest {
             waitForScreen();
 
             // Open the real comment editor overlay.
-            scenario.onActivity(PostDetailActivity::testOpenComposer);
+            scenario.onActivity(PostDetailActivity::testOpenCommentInput);
             waitForScreen();
 
             // Empty editor: send must be disabled.
@@ -374,7 +415,7 @@ public class RealBackendSmokeInstrumentedTest {
             });
             takeScreenshot(outputDir, "post_detail_editor_after_blank_tap");
 
-            scenario.onActivity(PostDetailActivity::testOpenComposer);
+            scenario.onActivity(PostDetailActivity::testOpenCommentInput);
             waitForScreen();
             scenario.onActivity(activity -> assertEquals(false, activity.testIsSendEnabled()));
 
@@ -415,7 +456,7 @@ public class RealBackendSmokeInstrumentedTest {
 
         // Verify backend echo: new comment carries media, mention, and topic.
         int afterCount = commentCount(baseUrl, token, postId);
-        assertTrue("Composer submit must add a comment", afterCount > beforeCount);
+        assertTrue("Comment input submit must add a comment", afterCount > beforeCount);
         JSONObject newest = newestComment(baseUrl, token, postId);
         assertTrue("Comment must echo uploaded image",
                 newest.getJSONArray("mediaAssets").length() >= 1);
@@ -487,6 +528,26 @@ public class RealBackendSmokeInstrumentedTest {
         throw new IllegalStateException("Comment image upload did not finish in time");
     }
 
+    private void waitForPostCreateUpload(ActivityScenario<PostCreateActivity> scenario) throws InterruptedException {
+        for (int i = 0; i < 40; i++) {
+            final boolean[] finished = new boolean[1];
+            final boolean[] failed = new boolean[1];
+            scenario.onActivity(activity -> {
+                finished[0] = activity.testDoneMediaCount() >= 1;
+                failed[0] = activity.testFailedMediaCount() >= 1;
+            });
+            if (finished[0]) {
+                return;
+            }
+            if (failed[0]) {
+                throw new IllegalStateException("Post create image upload failed");
+            }
+            Thread.sleep(1000L);
+            instrumentation.waitForIdleSync();
+        }
+        throw new IllegalStateException("Post create image upload did not finish in time");
+    }
+
     private Uri fileProviderImageUri() throws Exception {
         File cacheDir = targetContext.getCacheDir();
         File image = new File(cacheDir, "smoke-comment.png");
@@ -499,6 +560,17 @@ public class RealBackendSmokeInstrumentedTest {
         }
         return androidx.core.content.FileProvider.getUriForFile(
                 targetContext, targetContext.getPackageName() + ".fileprovider", image);
+    }
+
+    private byte[] pngBytes(int width, int height) throws IOException {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        bitmap.eraseColor(0xFFEFA8B8);
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream));
+            return stream.toByteArray();
+        } finally {
+            bitmap.recycle();
+        }
     }
 
     private int commentCount(String baseUrl, String token, String postId) throws Exception {

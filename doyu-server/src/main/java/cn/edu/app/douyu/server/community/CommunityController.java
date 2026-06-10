@@ -105,7 +105,7 @@ public class CommunityController {
         return PageResult.of(slice(views, page, size), page, size, views.size());
     }
 
-    @Operation(summary = "发布帖子", description = "发布新帖子，进入审核状态")
+    @Operation(summary = "发布帖子", description = "发布新帖子，直接公开可见")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "发布成功"),
             @ApiResponse(responseCode = "400", description = "参数错误"),
@@ -117,7 +117,7 @@ public class CommunityController {
         Instant now = Instant.now();
         PostEntity post = new PostEntity(idGenerator.next("post"), userId, request.title(), request.content(),
                 joinList(request.mediaFileIds()), joinList(request.topicIds()),
-                "REVIEWING", 0, 0, 0, false, now, now);
+                "VISIBLE", 0, 0, 0, false, now, now);
         applyCoverFromMedia(post);
         postRepository.save(post);
         return postView(post, userId);
@@ -154,7 +154,7 @@ public class CommunityController {
         if (request.mediaFileIds() != null) {
             applyCoverFromMedia(post);
         }
-        post.setStatus("REVIEWING");
+        post.setStatus("VISIBLE");
         postRepository.save(post);
         return postView(post, userId);
     }
@@ -519,7 +519,7 @@ public class CommunityController {
             view.put("mimeType", "");
             view.put("width", null);
             view.put("height", null);
-            view.put("auditStatus", "NEED_MANUAL_REVIEW");
+            view.put("auditStatus", "UNAVAILABLE");
             return view;
         }
         view.put("publicUrl", file.getPublicUrl() == null ? "" : file.getPublicUrl());

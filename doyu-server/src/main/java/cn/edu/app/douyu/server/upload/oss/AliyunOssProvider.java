@@ -3,6 +3,9 @@ package cn.edu.app.douyu.server.upload.oss;
 import com.aliyun.sdk.service.oss2.OSSClient;
 import com.aliyun.sdk.service.oss2.PresignOptions;
 import com.aliyun.sdk.service.oss2.credentials.StaticCredentialsProvider;
+import com.aliyun.sdk.service.oss2.exceptions.ServiceException;
+import com.aliyun.sdk.service.oss2.models.HeadObjectRequest;
+import com.aliyun.sdk.service.oss2.models.HeadObjectResult;
 import com.aliyun.sdk.service.oss2.models.PutObjectRequest;
 
 import java.net.URLEncoder;
@@ -52,8 +55,24 @@ public class AliyunOssProvider implements OssProvider, AutoCloseable {
     }
 
     @Override
-    public String confirm(String fileKey) {
-        return getPublicUrl(fileKey);
+    public ConfirmResult confirm(String fileKey, long expectedSizeBytes) {
+        HeadObjectRequest request = HeadObjectRequest.newBuilder()
+                .bucket(bucket)
+                .key(fileKey)
+                .build();
+        try {
+            HeadObjectResult result = client.headObject(request);
+            long actualSize = result.contentLength() == null ? -1L : result.contentLength();
+            if (actualSize <= 0 || actualSize != expectedSizeBytes) {
+                throw new UploadNotCompletedException("Uploaded object size mismatch: " + fileKey);
+            }
+            return new ConfirmResult(getPublicUrl(fileKey), actualSize);
+        } catch (ServiceException e) {
+            if (e.statusCode() == 404) {
+                throw new UploadNotCompletedException("Uploaded object is missing: " + fileKey);
+            }
+            throw e;
+        }
     }
 
     @Override

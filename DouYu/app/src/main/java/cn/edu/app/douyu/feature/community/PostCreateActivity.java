@@ -19,6 +19,7 @@ import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
@@ -38,6 +39,7 @@ import cn.edu.app.douyu.auth.AuthGate;
 import cn.edu.app.douyu.auth.LoginActivity;
 import cn.edu.app.douyu.auth.SessionStore;
 import cn.edu.app.douyu.core.IntentExtras;
+import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.Topic;
@@ -179,11 +181,57 @@ public class PostCreateActivity extends XmlPageActivity {
         findViewById(R.id.post_view_profile).setOnClickListener(v -> {
             openMainSection(IntentExtras.SECTION_PROFILE);
         });
-        findViewById(R.id.post_nav_community).setOnClickListener(v -> openMainSection(IntentExtras.SECTION_COMMUNITY));
-        findViewById(R.id.post_nav_commerce).setOnClickListener(v -> openMainSection(IntentExtras.SECTION_COMMERCE));
-        findViewById(R.id.post_nav_upload).setOnClickListener(v -> showStatus("当前正在上传帖子。", false));
-        findViewById(R.id.post_nav_messages).setOnClickListener(v -> openMainSection(IntentExtras.SECTION_MESSAGES));
-        findViewById(R.id.post_nav_profile).setOnClickListener(v -> openMainSection(IntentExtras.SECTION_PROFILE));
+        findViewById(R.id.tab_community).setOnClickListener(v -> openMainSection(IntentExtras.SECTION_COMMUNITY));
+        findViewById(R.id.tab_commerce).setOnClickListener(v -> openMainSection(IntentExtras.SECTION_COMMERCE));
+        findViewById(R.id.tab_upload).setOnClickListener(v -> showStatus("当前正在上传帖子。", false));
+        findViewById(R.id.tab_messages).setOnClickListener(v -> openMainSection(IntentExtras.SECTION_MESSAGES));
+        findViewById(R.id.tab_profile).setOnClickListener(v -> openMainSection(IntentExtras.SECTION_PROFILE));
+        selectUploadNav();
+    }
+
+    private void selectUploadNav() {
+        int active = ContextCompat.getColor(this, R.color.doyu_petal_deep);
+        int inactive = ContextCompat.getColor(this, R.color.doyu_text);
+        int[] tabIds = {
+                R.id.tab_community,
+                R.id.tab_commerce,
+                R.id.tab_upload,
+                R.id.tab_messages,
+                R.id.tab_profile
+        };
+        int[] iconIds = {
+                R.id.nav_icon_community,
+                R.id.nav_icon_commerce,
+                R.id.nav_icon_upload,
+                R.id.nav_icon_messages,
+                R.id.nav_icon_profile
+        };
+        int[] labelIds = {
+                R.id.nav_label_community,
+                R.id.nav_label_commerce,
+                R.id.nav_label_upload,
+                R.id.nav_label_messages,
+                R.id.nav_label_profile
+        };
+        int[] indicatorIds = {
+                R.id.nav_indicator_community,
+                R.id.nav_indicator_commerce,
+                R.id.nav_indicator_upload,
+                R.id.nav_indicator_messages,
+                R.id.nav_indicator_profile
+        };
+        for (int i = 0; i < tabIds.length; i++) {
+            boolean selected = tabIds[i] == R.id.tab_upload;
+            View tab = findViewById(tabIds[i]);
+            ImageView icon = findViewById(iconIds[i]);
+            TextView label = findViewById(labelIds[i]);
+            View indicator = findViewById(indicatorIds[i]);
+            tab.setBackgroundResource(selected ? R.drawable.bg_nav_item_selected : 0);
+            tab.setSelected(selected);
+            icon.setColorFilter(selected ? active : inactive);
+            label.setTextColor(selected ? active : inactive);
+            indicator.setVisibility(selected ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void openMainSection(String section) {
@@ -316,16 +364,18 @@ public class PostCreateActivity extends XmlPageActivity {
     private void startUpload(PendingMedia media) {
         media.state = MediaState.UPLOADING;
         media.fileId = null;
+        media.publicUrl = null;
         renderImages();
         updatePublishState();
         loadDetail(
                 repository -> {
                     ImageBytes data = readImage(media.uri);
-                    return repository.uploadPostImage(data.bytes, data.mimeType, data.fileName, data.width, data.height);
+                    return repository.uploadPostImageAsset(data.bytes, data.mimeType, data.fileName, data.width, data.height);
                 },
-                fileId -> {
+                (FileAsset asset) -> {
                     media.state = MediaState.DONE;
-                    media.fileId = fileId;
+                    media.fileId = asset.fileId;
+                    media.publicUrl = asset.publicUrl;
                     showStatus("图片上传完成。", false);
                     renderImages();
                     updatePublishState();
@@ -368,7 +418,13 @@ public class PostCreateActivity extends XmlPageActivity {
         image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         image.setBackgroundResource(media.state == MediaState.FAILED ? R.drawable.bg_upload_tile_error : R.drawable.bg_upload_tile);
         image.setContentDescription("上传图片");
-        Glide.with(image).load(media.uri).placeholder(R.drawable.bg_upload_tile).into(image);
+        String publicUrl = media.publicUrl == null ? "" : media.publicUrl.trim();
+        Object previewSource = publicUrl.isEmpty() ? media.uri : publicUrl;
+        Glide.with(image)
+                .load(previewSource)
+                .placeholder(R.drawable.bg_upload_tile)
+                .error(R.drawable.bg_upload_tile)
+                .into(image);
         if (media.state == MediaState.FAILED) {
             image.setOnClickListener(v -> startUpload(media));
         } else if (media.state == MediaState.UPLOADING) {
@@ -485,7 +541,7 @@ public class PostCreateActivity extends XmlPageActivity {
         }
         publishing = true;
         updatePublishState();
-        showStatus("正在发布，发布成功后将进入审核中。", false);
+        showStatus("正在发布，发布成功后会出现在社区。", false);
         List<String> mediaFileIds = doneMediaFileIds();
         List<String> topicIds = new ArrayList<>(selectedTopics.keySet());
         loadDetail(
@@ -506,8 +562,7 @@ public class PostCreateActivity extends XmlPageActivity {
     private void renderPublished(Post post) {
         publishing = false;
         published = true;
-        String status = post == null || post.status == null ? "REVIEWING" : post.status;
-        showStatus("帖子已提交审核，当前状态：" + status + "。审核通过后会出现在公开 Feed。", false);
+        showStatus("帖子发布成功，已同步到社区。", false);
         successActions.setVisibility(View.VISIBLE);
         renderLoginBoundary();
         renderImages();
@@ -520,7 +575,7 @@ public class PostCreateActivity extends XmlPageActivity {
         }
         String title = titleInput.getText().toString().trim();
         String content = bodyInput.getText().toString().trim();
-        previewTitle.setText(title.isEmpty() ? "审核前预览" : title);
+        previewTitle.setText(title.isEmpty() ? "发布前预览" : title);
         previewBody.setText(content.isEmpty() ? "输入标题、正文、图片和话题后在此预览。" : content);
         previewMeta.setText(doneMediaFileIds().size() + " 张已上传图片 · " + selectedTopics.size() + " 个话题");
     }
@@ -539,8 +594,8 @@ public class PostCreateActivity extends XmlPageActivity {
         pickImage.setAlpha(pickImage.isEnabled() ? 1f : 0.48f);
         captureImage.setAlpha(captureImage.isEnabled() ? 1f : 0.48f);
         if (published) {
-            publishButton.setText("已提交审核");
-            topPublishButton.setText("审核中");
+            publishButton.setText("已发布");
+            topPublishButton.setText("完成");
         } else if (publishing) {
             publishButton.setText("发布中");
             topPublishButton.setText("发布中");
@@ -633,12 +688,45 @@ public class PostCreateActivity extends XmlPageActivity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
+    @VisibleForTesting
+    public void testAddImage(Uri uri) {
+        addImage(uri);
+    }
+
+    @VisibleForTesting
+    public int testPendingMediaCount() {
+        return pendingMedia.size();
+    }
+
+    @VisibleForTesting
+    public int testDoneMediaCount() {
+        int count = 0;
+        for (PendingMedia media : pendingMedia) {
+            if (media.state == MediaState.DONE && media.fileId != null) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    @VisibleForTesting
+    public int testFailedMediaCount() {
+        int count = 0;
+        for (PendingMedia media : pendingMedia) {
+            if (media.state == MediaState.FAILED) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private enum MediaState {UPLOADING, DONE, FAILED}
 
     private static final class PendingMedia {
         final Uri uri;
         MediaState state = MediaState.UPLOADING;
         String fileId;
+        String publicUrl;
 
         PendingMedia(Uri uri) {
             this.uri = uri;

@@ -18,9 +18,6 @@ final class NotificationTypes {
 
     static String heroLabel(String type) {
         String key = upper(type);
-        if (contains(key, "AUDIT", "REVIEW")) {
-            return "审核通知";
-        }
         if (contains(key, "SYSTEM", "SECURITY")) {
             return "系统通知";
         }
@@ -32,9 +29,6 @@ final class NotificationTypes {
 
     static int heroPillBg(String type) {
         String key = upper(type);
-        if (contains(key, "AUDIT", "REVIEW")) {
-            return R.drawable.bg_pill_warn;
-        }
         if (contains(key, "LIKE", "FAVORITE", "COLLECT", "COMMENT", "AT", "MENTION")) {
             return R.drawable.bg_pill_ok;
         }
@@ -43,9 +37,6 @@ final class NotificationTypes {
 
     static int heroPillColor(String type) {
         String key = upper(type);
-        if (contains(key, "AUDIT", "REVIEW")) {
-            return R.color.doyu_warn;
-        }
         if (contains(key, "LIKE", "FAVORITE", "COLLECT", "COMMENT", "AT", "MENTION")) {
             return R.color.doyu_mint_deep;
         }

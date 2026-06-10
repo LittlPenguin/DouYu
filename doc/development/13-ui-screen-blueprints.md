@@ -68,7 +68,7 @@ Required structure:
 - Register follows `register-a.html`; Android XML is `activity_register.xml`.
 - Search follows `search-a.html`; Android XML is `activity_search.xml`; global search remains UI-only unless backend support exists.
 - Post detail follows `post-detail-comment-toolbar-a.html`; Android XML is `activity_post_detail.xml`.
-- Post compose follows `post-compose-a.html`; Android XML is `activity_post_create.xml`. Required states include logged-out gate, title/body validation, topic loading or empty state, image picker, CameraX capture, OSS upload, failed upload retry/delete, 9 image limit, preview, publish disabled states, and backend `REVIEWING` success.
+- Post compose follows `post-compose-a.html`; Android XML is `activity_post_create.xml`. Required states include logged-out gate, title/body validation, topic loading or empty state, image picker, CameraX capture, OSS upload, failed upload retry/delete, 9 image limit, preview, publish disabled states, and backend `VISIBLE` publish success.
 - Conversation follows `message-conversation-a.html`; Android XML is `activity_conversation.xml`.
 - Notification detail follows `notification-detail-a.html`; Android XML is `activity_notification_detail.xml`.
 - Profile edit follows `profile-edit-a.html`; Android XML is `activity_profile_edit.xml`.

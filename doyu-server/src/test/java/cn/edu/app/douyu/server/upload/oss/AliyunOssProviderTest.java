@@ -17,9 +17,9 @@ class AliyunOssProviderTest {
                 "https://img.example.com/douyu"
         );
 
-        OssProvider.PresignResult result = provider.presign("stub/post_image/file_1/test.png", "image/png", 900);
+        OssProvider.PresignResult result = provider.presign("assets/post_image/file_1/test.png", "image/png", 900);
 
-        assertThat(result.uploadUrl()).contains("stub/post_image/file_1/test.png");
+        assertThat(result.uploadUrl()).contains("assets/post_image/file_1/test.png");
         assertThat(result.uploadUrl()).contains("x-oss-signature");
         assertThat(result.headers()).containsEntry("Content-Type", "image/png");
 
@@ -37,8 +37,8 @@ class AliyunOssProviderTest {
                 "https://img.example.com/douyu/"
         );
 
-        assertThat(provider.confirm("stub/post_image/file 1/test image.png"))
-                .isEqualTo("https://img.example.com/douyu/stub/post_image/file%201/test%20image.png");
+        assertThat(provider.getPublicUrl("assets/post_image/file 1/test image.png"))
+                .isEqualTo("https://img.example.com/douyu/assets/post_image/file%201/test%20image.png");
 
         provider.destroy();
     }

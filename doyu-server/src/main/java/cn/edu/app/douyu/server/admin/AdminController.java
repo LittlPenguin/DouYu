@@ -171,38 +171,6 @@ public class AdminController {
         return reportView(report);
     }
 
-    @Operation(summary = "Audit post")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "404", description = "Post not found") })
-    @PostMapping("/posts/{postId}/audit")
-    Map<String, Object> auditPost(Authentication authentication, @PathVariable String postId, @Valid @RequestBody AuditRequest request) {
-        String adminId = CurrentUser.adminId(authentication);
-        PostEntity post = postRepository.findById(postId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Post not found"));
-        String beforeState = post.getStatus();
-        Instant now = Instant.now();
-        post.setStatus(request.approved() ? "VISIBLE" : "REJECTED");
-        post.setUpdatedAt(now);
-        postRepository.save(post);
-        writeLog(adminId, "AUDIT_POST", "POST", postId, beforeState, post.getStatus(), request.reason(), now);
-        return mapOf("postId", postId, "status", post.getStatus());
-    }
-
-    @Operation(summary = "Audit comment")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "404", description = "Comment not found") })
-    @PostMapping("/comments/{commentId}/audit")
-    Map<String, Object> auditComment(Authentication authentication, @PathVariable String commentId, @Valid @RequestBody AuditRequest request) {
-        String adminId = CurrentUser.adminId(authentication);
-        CommentEntity comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Comment not found"));
-        String beforeState = comment.getStatus();
-        Instant now = Instant.now();
-        comment.setStatus(request.approved() ? "PUBLISHED" : "REJECTED");
-        comment.setUpdatedAt(now);
-        commentRepository.save(comment);
-        writeLog(adminId, "AUDIT_COMMENT", "COMMENT", commentId, beforeState, comment.getStatus(), request.reason(), now);
-        return mapOf("commentId", commentId, "status", comment.getStatus());
-    }
-
     @Operation(summary = "Audit product")
     @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "404", description = "Product not found") })
     @PostMapping("/products/{productId}/audit")

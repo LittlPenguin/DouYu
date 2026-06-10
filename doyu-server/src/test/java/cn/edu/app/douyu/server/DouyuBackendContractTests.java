@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -115,6 +116,7 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(presignData.hasNonNull("uploadUrl")).isTrue();
         org.assertj.core.api.Assertions.assertThat(presignData.hasNonNull("headers")).isTrue();
         org.assertj.core.api.Assertions.assertThat(presignData.hasNonNull("expiresIn")).isTrue();
+        putLocalUpload(presignData, 2048);
 
         JsonNode confirmed = postJsonWithToken("/api/v1/uploads/confirm", token, """
                 {"fileKey":"%s","usage":"POST_IMAGE","mimeType":"image/png","sizeBytes":2048,"width":120,"height":120}
@@ -189,21 +191,23 @@ class DouyuBackendContractTests {
     }
 
     @Test
-    void uploadPresignAndConfirmCreateFileAssetAndModerationRecord() throws Exception {
+    void uploadPresignAndConfirmCreateImmediatelyUsableFileAsset() throws Exception {
         String token = login("13800000002", "AGE_18_PLUS");
         JsonNode presign = postJsonWithToken("/api/v1/uploads/presign", token, """
                 {"usage":"POST_IMAGE","mimeType":"image/png","sizeBytes":2048,"fileName":"input.png"}
                 """);
+        putLocalUpload(presign.path("data"), 2048);
 
         mockMvc.perform(post("/api/v1/uploads/confirm")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"fileKey":"%s","usage":"POST_IMAGE","mimeType":"image/png","sizeBytes":2048,"width":120,"height":120}
-                                """.formatted(presign.at("/data/fileKey").asText())))
+                """.formatted(presign.at("/data/fileKey").asText())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.fileId", notNullValue()))
-                .andExpect(jsonPath("$.data.auditStatus", equalTo("NEED_MANUAL_REVIEW")));
+                .andExpect(jsonPath("$.data.auditStatus", equalTo("PASS")))
+                .andExpect(jsonPath("$.data.publicUrl", notNullValue()));
     }
 
     @Test
@@ -329,9 +333,19 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.postId", equalTo(postId)))
-                .andExpect(jsonPath("$.data.status", equalTo("REVIEWING")))
+                .andExpect(jsonPath("$.data.status", equalTo("VISIBLE")))
                 .andExpect(jsonPath("$.data.createdAt", notNullValue()))
                 .andExpect(jsonPath("$.data.author.userId", notNullValue()));
+
+        String feedContent = mockMvc.perform(get("/api/v1/posts/feed")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode feedItems = objectMapper.readTree(feedContent).at("/data/items");
+        org.assertj.core.api.Assertions.assertThat(feedItems)
+                .anySatisfy(item -> org.assertj.core.api.Assertions.assertThat(item.path("postId").asText()).isEqualTo(postId));
 
         mockMvc.perform(post("/api/v1/posts/{postId}/like", postId)
                         .header("Authorization", "Bearer " + token))
@@ -373,7 +387,7 @@ class DouyuBackendContractTests {
     }
 
     @Test
-    void approvedCommunityPostAppearsInFeedWithTopicNamesAndCoverDimensions() throws Exception {
+    void publishedCommunityPostAppearsInFeedWithTopicNamesAndCoverDimensions() throws Exception {
         String token = login("13800000061", "AGE_18_PLUS");
         String topicId = ensureTopic("fixture-topic-cover-dimensions", "cover dimensions");
         String fileId = confirmedFile(token, "POST_IMAGE", 480, 720);
@@ -382,24 +396,12 @@ class DouyuBackendContractTests {
                 {"title":"ratio cover post","content":"post with real cover dimensions","mediaFileIds":["%s"],"topicIds":["%s"]}
                 """.formatted(fileId, topicId));
         String postId = created.at("/data/postId").asText();
-
-        JsonNode adminLogin = postJson("/api/v1/admin/auth/login", """
-                {"username":"admin","password":"admin123"}
-                """);
-        String adminToken = adminLogin.at("/data/accessToken").asText();
-        mockMvc.perform(post("/api/v1/admin/posts/{postId}/audit", postId)
-                        .header("Authorization", "Bearer " + adminToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"approved":true,"reason":"fixture approved"}
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status", equalTo("VISIBLE")));
+        org.assertj.core.api.Assertions.assertThat(created.at("/data/status").asText()).isEqualTo("VISIBLE");
 
         mockMvc.perform(get("/api/v1/posts/{postId}", postId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status", equalTo("VISIBLE")))
-                .andExpect(jsonPath("$.data.coverImageUrl", org.hamcrest.Matchers.containsString("/stub/post_image/")))
+                .andExpect(jsonPath("$.data.coverImageUrl", org.hamcrest.Matchers.containsString("/uploads/assets/post_image/")))
                 .andExpect(jsonPath("$.data.coverWidth", equalTo(480)))
                 .andExpect(jsonPath("$.data.coverHeight", equalTo(720)))
                 .andExpect(jsonPath("$.data.topicNames[0]", equalTo("cover dimensions")));
@@ -435,7 +437,7 @@ class DouyuBackendContractTests {
                 """);
         JsonNode post = created.path("data");
         org.assertj.core.api.Assertions.assertThat(post.path("postId").asText()).startsWith("post_");
-        org.assertj.core.api.Assertions.assertThat(post.path("status").asText()).isEqualTo("REVIEWING");
+        org.assertj.core.api.Assertions.assertThat(post.path("status").asText()).isEqualTo("VISIBLE");
         org.assertj.core.api.Assertions.assertThat(post.path("mediaFileIds").isArray()).isTrue();
         org.assertj.core.api.Assertions.assertThat(post.path("topicIds").isArray()).isTrue();
         org.assertj.core.api.Assertions.assertThat(post.path("author").has("avatarUrl")).isTrue();
@@ -968,7 +970,7 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.data.content", equalTo("")))
                 .andExpect(jsonPath("$.data.mediaFileIds[0]", equalTo(imageFileId)))
                 .andExpect(jsonPath("$.data.mediaAssets[0].fileId", equalTo(imageFileId)))
-                .andExpect(jsonPath("$.data.mediaAssets[0].publicUrl", org.hamcrest.Matchers.containsString("/stub/post_image/")));
+                .andExpect(jsonPath("$.data.mediaAssets[0].publicUrl", org.hamcrest.Matchers.containsString("/uploads/assets/post_image/")));
 
         mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token)
@@ -1266,10 +1268,18 @@ class DouyuBackendContractTests {
         JsonNode presign = postJsonWithToken("/api/v1/uploads/presign", token, """
                 {"usage":"%s","mimeType":"image/png","sizeBytes":1024,"fileName":"file.png"}
                 """.formatted(usage));
+        putLocalUpload(presign.path("data"), 1024);
         JsonNode confirmed = postJsonWithToken("/api/v1/uploads/confirm", token, """
                 {"fileKey":"%s","usage":"%s","mimeType":"image/png","sizeBytes":1024,"width":%d,"height":%d}
                 """.formatted(presign.at("/data/fileKey").asText(), usage, width, height));
         return confirmed.at("/data/fileId").asText();
+    }
+
+    private void putLocalUpload(JsonNode presignData, int sizeBytes) throws Exception {
+        mockMvc.perform(put("/uploads/temp/" + presignData.path("fileKey").asText())
+                        .contentType("image/png")
+                        .content(new byte[sizeBytes]))
+                .andExpect(status().isOk());
     }
 
     private JsonNode postJson(String path, String body) throws Exception {

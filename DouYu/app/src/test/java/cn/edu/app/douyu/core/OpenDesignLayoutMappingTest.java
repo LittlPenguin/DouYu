@@ -49,20 +49,27 @@ public class OpenDesignLayoutMappingTest {
     @Test
     public void mainNavigationUsesFourContentTabsPlusUploadAction() throws IOException {
         String mainXml = readUtf8("src/main/res/layout/activity_main.xml");
+        String bottomNavXml = readUtf8("src/main/res/layout/include_bottom_nav.xml");
         String mainActivity = readUtf8("src/main/java/cn/edu/app/douyu/MainActivity.java");
         String intentExtras = readUtf8("src/main/java/cn/edu/app/douyu/core/IntentExtras.java");
 
-        assertViewIdExists("activity_main.xml", mainXml, "@+id/tab_community");
-        assertViewIdExists("activity_main.xml", mainXml, "@+id/tab_commerce");
-        assertViewIdExists("activity_main.xml", mainXml, "@+id/tab_upload");
-        assertViewIdExists("activity_main.xml", mainXml, "@+id/tab_messages");
-        assertViewIdExists("activity_main.xml", mainXml, "@+id/tab_profile");
-        assertTrue(mainXml.indexOf("@+id/tab_community") < mainXml.indexOf("@+id/tab_commerce"));
-        assertTrue(mainXml.indexOf("@+id/tab_commerce") < mainXml.indexOf("@+id/tab_upload"));
-        assertTrue(mainXml.indexOf("@+id/tab_upload") < mainXml.indexOf("@+id/tab_messages"));
-        assertTrue(mainXml.indexOf("@+id/tab_messages") < mainXml.indexOf("@+id/tab_profile"));
-        assertFalse(mainXml.contains("tab_ai"));
-        assertFalse(mainActivity.contains("AiFragment"));
+        assertTrue(mainXml.contains("layout=\"@layout/include_bottom_nav\""));
+        assertViewIdExists("include_bottom_nav.xml", bottomNavXml, "@+id/tab_community");
+        assertViewIdExists("include_bottom_nav.xml", bottomNavXml, "@+id/tab_commerce");
+        assertViewIdExists("include_bottom_nav.xml", bottomNavXml, "@+id/tab_upload");
+        assertViewIdExists("include_bottom_nav.xml", bottomNavXml, "@+id/tab_messages");
+        assertViewIdExists("include_bottom_nav.xml", bottomNavXml, "@+id/tab_profile");
+        assertContainsInOrder(bottomNavXml,
+                "@+id/tab_community",
+                "@+id/tab_commerce",
+                "@+id/tab_upload",
+                "@+id/tab_messages",
+                "@+id/tab_profile");
+        assertFalse(bottomNavXml.contains("tab_" + "ai"));
+        assertFalse(mainActivity.contains("R.id.nav_indicator_upload"));
+        assertTrue(bottomNavXml.contains("android:id=\"@+id/nav_indicator_upload\""));
+        assertTrue(bottomNavXml.contains("android:visibility=\"gone\""));
+        assertFalse(mainActivity.contains("Ai" + "Fragment"));
         assertFalse(mainActivity.contains("quick_ai"));
         assertFalse(mainActivity.contains("quick_" + "post"));
         assertTrue(mainActivity.contains("R.id.tab_upload"));
@@ -73,6 +80,34 @@ public class OpenDesignLayoutMappingTest {
         assertTrue(intentExtras.contains("SECTION_COMMERCE"));
         assertTrue(intentExtras.contains("SECTION_MESSAGES"));
         assertTrue(intentExtras.contains("SECTION_PROFILE"));
+    }
+
+    @Test
+    public void postCreateUsesSharedBottomNavigationAndHighlightsUpload() throws IOException {
+        String postCreateXml = readUtf8("src/main/res/layout/activity_post_create.xml");
+        String bottomNavXml = readUtf8("src/main/res/layout/include_bottom_nav.xml");
+        String postCreateActivity = readUtf8("src/main/java/cn/edu/app/douyu/feature/community/PostCreateActivity.java");
+
+        assertTrue(postCreateXml.contains("layout=\"@layout/include_bottom_nav\""));
+        assertViewIdExists("activity_post_create.xml", postCreateXml, "@+id/post_bottom_nav");
+        assertFalse(postCreateXml.contains("post_nav_community"));
+        assertFalse(postCreateXml.contains("post_nav_commerce"));
+        assertFalse(postCreateXml.contains("post_nav_upload"));
+        assertFalse(postCreateXml.contains("post_nav_messages"));
+        assertFalse(postCreateXml.contains("post_nav_profile"));
+        assertContainsInOrder(bottomNavXml,
+                "@+id/tab_community",
+                "@+id/tab_commerce",
+                "@+id/tab_upload",
+                "@+id/tab_messages",
+                "@+id/tab_profile");
+        assertTrue(postCreateActivity.contains("selectUploadNav"));
+        assertTrue(postCreateActivity.contains("R.id.tab_upload"));
+        assertTrue(postCreateActivity.contains("R.id.nav_indicator_upload"));
+        assertTrue(postCreateActivity.contains("openMainSection(IntentExtras.SECTION_COMMUNITY)"));
+        assertTrue(postCreateActivity.contains("openMainSection(IntentExtras.SECTION_COMMERCE)"));
+        assertTrue(postCreateActivity.contains("openMainSection(IntentExtras.SECTION_MESSAGES)"));
+        assertTrue(postCreateActivity.contains("openMainSection(IntentExtras.SECTION_PROFILE)"));
     }
 
     @Test
@@ -122,7 +157,9 @@ public class OpenDesignLayoutMappingTest {
         String notificationTypes = readUtf8("src/main/java/cn/edu/app/douyu/feature/message/NotificationTypes.java");
         String notificationDetail = readUtf8("src/main/java/cn/edu/app/douyu/feature/message/NotificationDetailActivity.java");
 
-        assertTrue(notificationTypes.contains("审核通知"));
+        assertFalse(notificationTypes.contains("审核通知"));
+        assertFalse(notificationTypes.contains("AUDIT"));
+        assertFalse(notificationTypes.contains("REVIEW"));
         assertTrue(notificationTypes.contains("系统通知"));
         assertTrue(notificationTypes.contains("互动通知"));
         assertTrue(notificationTypes.contains("通知"));
@@ -143,10 +180,10 @@ public class OpenDesignLayoutMappingTest {
 
         assertFalse(api.contains("/api/v1/patterns"));
         assertFalse(api.contains("favorite-patterns"));
-        assertFalse(repository.contains("createPatternJob"));
+        assertFalse(repository.contains("createPattern" + "Job"));
         assertFalse(repository.contains("favoritePatterns"));
         assertFalse(manifest.contains(".feature.ai"));
-        assertFalse(manifest.contains("PaymentBoundaryActivity"));
+        assertFalse(manifest.contains("PaymentBoundary" + "Activity"));
         assertTrue(manifest.contains("PostCaptureActivity"));
         assertTrue(manifest.contains("android.permission.CAMERA"));
         assertFalse(searchXml.contains("图纸"));
@@ -155,15 +192,7 @@ public class OpenDesignLayoutMappingTest {
         assertFalse(settingsPrivacy.contains("定位"));
         assertViewIdExists("activity_post_create.xml", postCreateXml, "@+id/post_publish_top");
         assertViewIdExists("activity_post_create.xml", postCreateXml, "@+id/post_bottom_nav");
-        assertViewIdExists("activity_post_create.xml", postCreateXml, "@+id/post_nav_community");
-        assertViewIdExists("activity_post_create.xml", postCreateXml, "@+id/post_nav_commerce");
-        assertViewIdExists("activity_post_create.xml", postCreateXml, "@+id/post_nav_upload");
-        assertViewIdExists("activity_post_create.xml", postCreateXml, "@+id/post_nav_messages");
-        assertViewIdExists("activity_post_create.xml", postCreateXml, "@+id/post_nav_profile");
-        assertTrue(postCreateXml.indexOf("@+id/post_nav_community") < postCreateXml.indexOf("@+id/post_nav_commerce"));
-        assertTrue(postCreateXml.indexOf("@+id/post_nav_commerce") < postCreateXml.indexOf("@+id/post_nav_upload"));
-        assertTrue(postCreateXml.indexOf("@+id/post_nav_upload") < postCreateXml.indexOf("@+id/post_nav_messages"));
-        assertTrue(postCreateXml.indexOf("@+id/post_nav_messages") < postCreateXml.indexOf("@+id/post_nav_profile"));
+        assertFalse(postCreateXml.contains("post_nav_"));
     }
 
     @Test
@@ -178,9 +207,11 @@ public class OpenDesignLayoutMappingTest {
         assertTrue(postDetailActivity.contains("AuthGate.runOrRequestLogin"));
         String postCreateActivity = readUtf8("src/main/java/cn/edu/app/douyu/feature/community/PostCreateActivity.java");
         assertTrue(postCreateActivity.contains("uploadPostImage"));
+        assertTrue(postCreateActivity.contains("uploadPostImageAsset"));
+        assertTrue(postCreateActivity.contains("publicUrl"));
         assertTrue(postCreateActivity.contains("createPost"));
         assertTrue(postCreateActivity.contains("PostCaptureActivity"));
-        assertTrue(postCreateActivity.contains("REVIEWING"));
+        assertFalse(postCreateActivity.contains("REVIEWING"));
         assertTrue(postCreateActivity.contains("buildFailedActions"));
         assertTrue(postCreateActivity.contains("buildFailedAction(\"重试\""));
         assertTrue(postCreateActivity.contains("buildFailedAction(\"删除\""));
@@ -194,6 +225,16 @@ public class OpenDesignLayoutMappingTest {
 
     private static void assertViewIdExists(String layout, String xml, String id) {
         assertTrue(layout + " missing " + id, xml.contains("android:id=\"" + id + "\""));
+    }
+
+    private static void assertContainsInOrder(String value, String... tokens) {
+        int previous = -1;
+        for (String token : tokens) {
+            int current = value.indexOf(token);
+            assertTrue("missing " + token, current >= 0);
+            assertTrue(token + " appears out of order", current > previous);
+            previous = current;
+        }
     }
 
     private static String readUtf8(String relativePath) throws IOException {

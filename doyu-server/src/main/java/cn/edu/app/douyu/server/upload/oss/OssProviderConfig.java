@@ -17,12 +17,6 @@ public class OssProviderConfig {
         return new LocalOssProvider(localPath, baseUrl);
     }
 
-    @Bean
-    @ConditionalOnProperty(prefix = "douyu.oss", name = "provider", havingValue = "stub")
-    OssProvider stubOssProvider() {
-        return new StubOssProvider();
-    }
-
     @Bean(destroyMethod = "destroy")
     @ConditionalOnProperty(prefix = "douyu.oss", name = "provider", havingValue = "aliyun")
     OssProvider aliyunOssProvider(DouyuProperties properties) {

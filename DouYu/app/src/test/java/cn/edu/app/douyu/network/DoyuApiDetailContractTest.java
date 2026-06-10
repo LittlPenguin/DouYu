@@ -16,10 +16,10 @@ import cn.edu.app.douyu.model.PostRequest;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductCategory;
 import cn.edu.app.douyu.model.Topic;
-import cn.edu.app.douyu.model.ConfirmUploadRequest;
 import cn.edu.app.douyu.model.FileAsset;
-import cn.edu.app.douyu.model.PresignUploadRequest;
-import cn.edu.app.douyu.model.PresignUploadResponse;
+import cn.edu.app.douyu.model.UploadConfirmRequest;
+import cn.edu.app.douyu.model.UploadPresignRequest;
+import cn.edu.app.douyu.model.UploadPresignResponse;
 import retrofit2.Call;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
@@ -40,13 +40,15 @@ public class DoyuApiDetailContractTest {
 
     @Test
     public void uploadEndpointsUseExistingBackendEndpoints() throws Exception {
-        Method presign = DoyuApi.class.getMethod("uploadPresign", PresignUploadRequest.class);
-        Method confirm = DoyuApi.class.getMethod("uploadConfirm", ConfirmUploadRequest.class);
+        Method presign = DoyuApi.class.getMethod("uploadPresign", UploadPresignRequest.class);
+        Method confirm = DoyuApi.class.getMethod("uploadConfirm", UploadConfirmRequest.class);
 
         assertEquals("/api/v1/uploads/presign", presign.getAnnotation(POST.class).value());
-        assertCallDataType(presign, PresignUploadResponse.class);
+        assertCallDataType(presign, UploadPresignResponse.class);
         assertEquals("/api/v1/uploads/confirm", confirm.getAnnotation(POST.class).value());
         assertCallDataType(confirm, FileAsset.class);
+        assertEquals(1, countDeclaredMethods("uploadPresign"));
+        assertEquals(1, countDeclaredMethods("uploadConfirm"));
     }
 
     @Test
@@ -116,6 +118,16 @@ public class DoyuApiDetailContractTest {
         ParameterizedType apiResponseType = (ParameterizedType) callType.getActualTypeArguments()[0];
         assertEquals(ApiResponse.class, apiResponseType.getRawType());
         assertEquals(expectedDataType, apiResponseType.getActualTypeArguments()[0]);
+    }
+
+    private static int countDeclaredMethods(String name) {
+        int count = 0;
+        for (Method method : DoyuApi.class.getDeclaredMethods()) {
+            if (name.equals(method.getName())) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static void assertPageItemType(Method method, Class<?> expectedItemType) {
