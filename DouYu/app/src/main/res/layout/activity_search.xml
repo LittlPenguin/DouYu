@@ -45,7 +45,7 @@
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:singleLine="true"
-                    android:text="搜索作品、图纸、商品、用户、话题"
+                    android:text="搜索作品、商品、用户、话题"
                     android:textColor="@color/doyu_text_muted"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -105,7 +105,7 @@
                         android:gravity="center"
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp"
-                        android:text="图纸"
+                        android:text="商品"
                         android:textColor="@color/doyu_text_muted"
                         android:textSize="12sp"
                         android:textStyle="bold" />

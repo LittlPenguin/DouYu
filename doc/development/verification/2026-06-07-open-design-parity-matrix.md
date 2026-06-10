@@ -26,7 +26,7 @@ This matrix records Java/XML screen coverage against the 18 Open Design HTML ref
 | --- | --- | --- | --- | --- |
 | `community-home-a.html` | `MainActivity` + `CommunityFragment` / `fragment_community_home.xml` | `main_community.png`, `main_quick_menu.png` | Covered | Top add/title/search shell, quick menu, chips, state card, error boundary, and bottom brand nav are visible. Empty/error state replaces deleted mock content. |
 | `commerce-home-a.html` | `MainActivity` + `CommerceFragment` / `fragment_commerce_home.xml` | `main_commerce.png` | Covered | Category chips, commerce hero/state card, error boundary, and bottom nav visible. Runtime products come from API only. |
-| `ai-home-a.html` | `MainActivity` + `AiFragment` / `fragment_ai_home.xml` | `main_ai.png` | Covered | Upload/photo/history/UI-only tabs, AI state card, backend failure boundary, and AI bottom nav visible. |
+
 | `messages-a.html` | `MainActivity` + `MessagesFragment` / `fragment_messages_home.xml` | `main_messages.png` | Covered | Private/notification/system tabs, state card, error boundary, and bottom nav visible. No local fake conversations. |
 | `profile-a.html` | `MainActivity` + `ProfileFragment` / `fragment_profile_home.xml` | `main_profile.png` | Covered | Profile tabs, asset state card, error boundary, and bottom nav visible. Profile assets are not locally faked. |
 | `search-a.html` | `SearchActivity` / `activity_search.xml` | `search.png` | Covered | Search input, scope chips, UI-only state, empty result boundary, and visible disabled boundary CTA match design intent without fake results. |
@@ -39,15 +39,15 @@ This matrix records Java/XML screen coverage against the 18 Open Design HTML ref
 | `settings-account-security-a.html` | `SettingsActivity` section / `activity_settings_account_security.xml` | `settings_account_security.png` | Covered | Account state, dangerous operation confirmation boundary, and incomplete auth/payment/security warnings visible. |
 | `settings-privacy-permissions-a.html` | `SettingsActivity` section / `activity_settings_privacy_permissions.xml` | `settings_privacy_permissions.png` | Covered | Minimum authorization, permission status, and privacy switches visible. |
 | `settings-notifications-a.html` | `SettingsActivity` section / `activity_settings_notifications.xml` | `settings_notifications.png` | Covered | Notification grouping, persistence rule, and private limit boundary visible. |
-| `settings-about-compliance-a.html` | `SettingsActivity` section / `activity_settings_about_compliance.xml` | `settings_about_compliance.png` | Covered | About/dev status, production pending material, and prohibited claims visible. |
-| `future-capability-ui-a.html` | `FutureCapabilityActivity` / `activity_future_capability.xml` | `future_capability.png` | Covered | Map, real payment, and model generation API boundaries visible as UI-only. |
+
+
 | `doyu-design-directions.html` | Global design system applied across Java/XML screens | all screenshots, especially `main_community.png`, `main_quick_menu.png`, `settings_home.png` | Covered | Brand colors, rounded card language, chip system, top bars, bottom nav, and explicit state boundaries are consistently applied. |
 
 ## Known Accepted Differences
 
 - Android screenshots include the physical device status bar and gesture navigation bar; Open Design HTML uses an embedded mock phone frame.
 - Empty/error states appear in place of populated example cards when backend data is unavailable, by design, because runtime mock/seed filling is prohibited.
-- UI-only provider boundaries are visible for search, payment, map/location, full compliance documents, and production AI/payment providers; this is the documented functional boundary, not a parity failure.
+- UI-only provider boundaries are visible for search, AI, payment, map/location and full compliance documents; this is the documented functional boundary, not a parity failure.
 - Camera preview content is environment-dependent; `camera.png` verifies the
   CameraX preview/capture boundary.
 

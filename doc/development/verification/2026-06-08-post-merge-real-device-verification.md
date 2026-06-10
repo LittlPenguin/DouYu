@@ -1,4 +1,4 @@
-# 2026-06-08 Post-Merge Real Device Verification
+﻿# 2026-06-08 Post-Merge Real Device Verification
 
 ## Scope
 
@@ -59,7 +59,7 @@ Spring Boot logs:
 | --- | --- |
 | Visual screenshots | `doc/development/verification/android-java-xml-screenshots/2026-06-08-post-merge/visual-smoke`, 22 PNG files pulled. |
 | Visual contact sheet | `doc/development/verification/android-java-xml-screenshots/2026-06-08-post-merge/visual-smoke-contact-sheet.png`, `1068x6240`, 22 files. |
-| Real-backend screenshots | `doc/development/verification/android-java-xml-screenshots/2026-06-08-post-merge/real-backend-smoke`, 5 PNG files pulled: `real_post_detail.png`, `real_product_detail.png`, `real_ai_flow.png`, `real_conversation.png`, `real_notification_detail.png`. |
+| Real-backend screenshots | `doc/development/verification/android-java-xml-screenshots/2026-06-08-post-merge/real-backend-smoke`, 5 PNG files pulled: `real_post_detail.png`, `real_product_detail.png`, `real_conversation.png`, `real_notification_detail.png`. |
 | Real-backend contact sheet | `doc/development/verification/android-java-xml-screenshots/2026-06-08-post-merge/real-backend-smoke-contact-sheet.png`, `1068x1560`, 5 files. |
 
 ## Open Design Parity Matrix
@@ -68,7 +68,7 @@ Spring Boot logs:
 | --- | --- | --- | --- | --- |
 | `community-home-a.html` | `MainActivity` + `CommunityFragment` | `main_community.png` | Covered | Real dev community content renders in a two-column image grid. |
 | `commerce-home-a.html` | `MainActivity` + `CommerceFragment` | `main_commerce.png` | Covered after PMV-003 | Public list shows empty state when only draft/reviewing products exist. |
-| `ai-home-a.html` | `MainActivity` + `AiFragment` | `main_ai.png` | Covered | Upload/photo/history surfaces and boundary state visible. |
+
 | `messages-a.html` | `MainActivity` + `MessagesFragment` | `main_messages.png` | Covered after PMV-004 | Fixture peer copy is readable Chinese. |
 | `profile-a.html` | `MainActivity` + `ProfileFragment` | `main_profile.png` | Covered after PMV-004 | Logged-in smoke user is readable Chinese. |
 | `search-a.html` | `SearchActivity` | `search.png` | Covered | Search boundary and empty state visible. |
@@ -81,8 +81,8 @@ Spring Boot logs:
 | `settings-account-security-a.html` | `SettingsActivity` section | `settings_account_security.png` | Covered | Security boundary visible. |
 | `settings-privacy-permissions-a.html` | `SettingsActivity` section | `settings_privacy_permissions.png` | Covered | Permission/privacy boundaries visible. |
 | `settings-notifications-a.html` | `SettingsActivity` section | `settings_notifications.png` | Covered | Notification options visible. |
-| `settings-about-compliance-a.html` | `SettingsActivity` section | `settings_about_compliance.png` | Covered | Compliance/future production boundaries visible. |
-| `future-capability-ui-a.html` | `FutureCapabilityActivity` | `future_capability.png` | Covered | Map, payment, and provider boundaries visible as UI-only. |
+
+
 | `doyu-design-directions.html` | Global Java/XML UI system | Visual contact sheet | Covered visually | Brand colors, card language, chips, top bars, bottom nav, and boundary states are consistently visible. |
 
 ## Deviations And Repairs

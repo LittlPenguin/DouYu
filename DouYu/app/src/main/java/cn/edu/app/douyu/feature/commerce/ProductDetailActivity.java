@@ -1,6 +1,5 @@
 package cn.edu.app.douyu.feature.commerce;
 
-import android.content.Intent;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
@@ -21,30 +20,29 @@ public class ProductDetailActivity extends XmlPageActivity {
 
     @Override
     protected String title() {
-        return "商品详情";
+        return "Product detail";
     }
 
     @Override
     protected void bindViews() {
         String productId = extra(IntentExtras.PRODUCT_ID);
         if (productId.isEmpty()) {
-            setText(R.id.product_detail_id, "缺少 productId，无法请求商品详情。");
-        } else {
-            setText(R.id.product_title, "正在加载商品");
-            setText(R.id.product_detail_id, "正在加载商品详情：" + productId);
-            loadDetail(
-                    repository -> repository.product(productId),
-                    this::renderProduct,
-                    (state, message) -> setText(R.id.product_detail_id, message)
-            );
+            setText(R.id.product_detail_id, "Missing productId; product detail cannot be loaded.");
+            return;
         }
-        findViewById(R.id.product_payment_boundary).setOnClickListener(v -> startActivity(new Intent(this, PaymentBoundaryActivity.class)));
+        setText(R.id.product_title, "Loading product");
+        setText(R.id.product_detail_id, "Loading product detail: " + productId);
+        loadDetail(
+                repository -> repository.product(productId),
+                this::renderProduct,
+                (state, message) -> setText(R.id.product_detail_id, message)
+        );
     }
 
     private void renderProduct(Product product) {
         if (product == null) {
-            setText(R.id.product_title, "商品不可用");
-            setText(R.id.product_detail_id, "商品不存在或已下架。");
+            setText(R.id.product_title, "Product unavailable");
+            setText(R.id.product_detail_id, "The product does not exist or is offline.");
             return;
         }
 
@@ -62,16 +60,16 @@ public class ProductDetailActivity extends XmlPageActivity {
                     .into(image);
         }
 
-        setText(R.id.product_title, first(product.title, product.name, "未命名商品"));
+        setText(R.id.product_title, first(product.title, product.name, "Untitled product"));
         setText(R.id.product_price, MoneyFormatter.centsToYuan(firstPrice(product)));
         setText(R.id.product_detail_id,
-                "商品 ID：" + valueOrFallback(product.productId, "未知") + "\n"
-                        + "分类：" + first(product.categoryName, product.type, product.productType, "未分类") + "\n"
-                        + "库存：" + stockSummary(product) + "\n"
-                        + "状态：" + valueOrFallback(product.status, "未知") + "\n"
-                        + "审核：" + valueOrFallback(product.auditStatus, "暂无") + "\n"
-                        + "规格：" + skuSummary(product) + "\n"
-                        + "说明：" + valueOrFallback(product.description, "暂无商品说明"));
+                "Product ID: " + valueOrFallback(product.productId, "unknown") + "\n"
+                        + "Category: " + first(product.categoryName, product.type, product.productType, "uncategorized") + "\n"
+                        + "Stock: " + stockSummary(product) + "\n"
+                        + "Status: " + valueOrFallback(product.status, "unknown") + "\n"
+                        + "Audit: " + valueOrFallback(product.auditStatus, "none") + "\n"
+                        + "SKU: " + skuSummary(product) + "\n"
+                        + "Description: " + valueOrFallback(product.description, "No product description"));
         setText(R.id.product_trade_boundary, tradeBoundary(product));
     }
 
@@ -90,7 +88,7 @@ public class ProductDetailActivity extends XmlPageActivity {
             return String.valueOf(Math.max(0, product.stock));
         }
         if (product.skus == null || product.skus.isEmpty()) {
-            return "暂无库存";
+            return "no stock";
         }
         int total = 0;
         for (ProductSku sku : product.skus) {
@@ -101,17 +99,17 @@ public class ProductDetailActivity extends XmlPageActivity {
 
     private static String skuSummary(Product product) {
         if (product.skus == null || product.skus.isEmpty()) {
-            return "暂无规格";
+            return "no SKU";
         }
         StringBuilder builder = new StringBuilder();
         for (ProductSku sku : product.skus) {
             if (builder.length() > 0) {
-                builder.append("；");
+                builder.append("; ");
             }
-            builder.append(valueOrFallback(sku.specName, "默认规格"))
+            builder.append(valueOrFallback(sku.specName, "default"))
                     .append(" ")
                     .append(MoneyFormatter.centsToYuan(sku.priceCent))
-                    .append(" 库存 ")
+                    .append(" stock ")
                     .append(sku.stock == null ? 0 : sku.stock);
         }
         return builder.toString();
@@ -120,15 +118,15 @@ public class ProductDetailActivity extends XmlPageActivity {
     private static String tradeBoundary(Product product) {
         String type = first(product.type, product.productType, "");
         if ("SELF_OPERATED".equals(type)) {
-            return "自营商品可进入购物和支付联调边界；真实收货地址、正式支付渠道和订单闭环仍以服务端能力为准。";
+            return "Self-operated products show real price, stock, and address requirements. Order records depend on backend data.";
         }
         if ("PLAYER_SECOND_HAND".equals(type)) {
-            return "玩家二手商品只展示信息和直连边界，不进入标准购物车。";
+            return "Player second-hand products are display and direct-contact only; they do not enter the standard cart.";
         }
         if ("PLAYER_CUSTOM_SERVICE".equals(type)) {
-            return "玩家定制服务只展示咨询边界，不伪造成标准下单或支付成功。";
+            return "Player custom services are inquiry-only and do not create standard orders.";
         }
-        return "交易能力按商品类型展示边界，不使用假订单或假支付结果。";
+        return "Commerce boundaries follow product type and never use fake order results.";
     }
 
     private static String first(String first, String second, String fallback) {

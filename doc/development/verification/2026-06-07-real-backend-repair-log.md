@@ -1,4 +1,4 @@
-# 2026-06-07 Real Backend Repair Log
+﻿# 2026-06-07 Real Backend Repair Log
 
 > Status: Historical finding log. The `RB-001` through `RB-005` items listed as
 > open in this run were later closed or reclassified in
@@ -131,17 +131,17 @@ Result: 22 PNG screenshots pulled, all `1200x2664`.
 | ---------------------------------- | -------------------------------------------- |
 | `main_community.png`               | Community tab with real backend response     |
 | `main_commerce.png`                | Commerce tab with real backend response      |
-| `main_ai.png`                      | AI tab with authenticated API boundary       |
+| `main_messages.png`                | Messages tab boundary       |
 | `main_messages.png`                | Messages tab with authenticated API boundary |
 | `main_profile.png`                 | Profile tab with authenticated API boundary  |
 | `main_quick_menu.png`              | Global quick menu                            |
 | `search.png`                       | Search UI-only boundary                      |
 | `post_create.png`                  | Post compose UI boundary                     |
 | `post_detail.png`                  | Post detail entered by test extra            |
-| `ai_flow.png`                      | AI flow entered by test extras               |
+| `post_create.png`                  | Post compose flow               |
 | `camera.png`                       | CameraX visual boundary                      |
 | `product_detail.png`               | Product detail entered by test extra         |
-| `payment_boundary.png`             | Payment boundary                             |
+| `product_detail.png`               | Product/detail boundary                             |
 | `conversation.png`                 | Conversation entered by test extra           |
 | `notification_detail.png`          | Notification detail entered by test extras   |
 | `profile_edit.png`                 | Profile edit boundary                        |
@@ -150,7 +150,7 @@ Result: 22 PNG screenshots pulled, all `1200x2664`.
 | `settings_privacy_permissions.png` | Settings privacy/permissions                 |
 | `settings_notifications.png`       | Settings notifications                       |
 | `settings_about_compliance.png`    | Settings about/compliance                    |
-| `future_capability.png`            | Future capability boundary                   |
+| `settings_home.png`                | Settings home                   |
 
 ## Differences To Fix
 
@@ -159,8 +159,8 @@ Result: 22 PNG screenshots pulled, all `1200x2664`.
 | RB-001 | High     | API summary; `main_community.png`; `main_quick_menu.png`                                              | `doc/development/current-status.md` and `18-unfinished-and-blockers.md` state runtime seed/demo content was removed. `10-testing-acceptance.md` requires empty feed state after seed/demo removal. Open Design permits real content only when it is real, not startup demo filler. | The persistent dev database returned 4 feed items and the response body matched `post_seed`. The Community UI rendered those old seeded posts instead of an empty state.                                                                                           | Add a non-destructive local QA cleanup or clean-database verification path for persisted seed rows. Re-run real-backend smoke against a clean database and record whether Community shows the empty feed state. Do not restore runtime seeders. | Open   |
 | RB-002 | High     | API summary; `main_commerce.png`                                                                      | `13-ui-screen-blueprints.md` requires product grid from backend data and empty product state without mock products. `10-testing-acceptance.md` requires empty product list state after runtime seed/demo removal.                                                                  | The persistent dev database returned 6 product items and the response body matched `prod_`. The Commerce UI rendered old seeded products instead of the empty product state.                                                                                       | Add a clean-database verification path or explicit QA fixture separation for products. Re-run with no persisted seeded products and confirm the Commerce empty state.                                                                           | Open   |
 | RB-003 | Medium   | API summary; `main_community.png`; `main_commerce.png`                                                | Seed/demo cleanup scope included posts, products, topics, stickers, system demo users, static seed images, and `/seed/**` exposure.                                                                                                                                                | Topics returned 6 items and sticker packs returned 1 item. The simple string scan did not match `seedTopic` or `seedPost`, but the counts are suspicious in a database expected to be empty after cleanup.                                                         | Inspect the local dev database data source and decide whether these are legitimate user-created rows or old seed residue. Document the decision before claiming empty-data parity for topics/stickers.                                          | Open   |
-| RB-004 | Medium   | `main_ai.png`, `main_messages.png`, `main_profile.png`                                                | `13-ui-screen-blueprints.md` and Open Design require empty states, login prompts, or explicit development boundaries. `10-testing-acceptance.md` specifically expects AI history, Messages, and Profile asset empty states to be visible after seed/demo removal.                  | The unauthenticated tabs displayed generic error cards with `HTTP 401` and a retry action. This is technically clear but not the designed login/empty boundary.                                                                                                    | Map HTTP 401 in Java repositories/UI state to an unauthenticated state, with copy and actions matching AI, Messages, Profile, and Settings designs. Keep network failures as retryable errors.                                                  | Open   |
-| RB-005 | Medium   | `post_detail.png`, `product_detail.png`, `conversation.png`, `notification_detail.png`, `ai_flow.png` | Real-backend validation should distinguish real API-backed screens from UI/test-fixture entry screens.                                                                                                                                                                             | Several secondary screenshots were entered with `VisualSmokeInstrumentedTest` extras such as `post_visual_check`, `product_visual_check`, `conv_visual_check`, `notif_visual_check`, and `job_visual_check`. They prove layout rendering, not full real-data flow. | Extend a later instrumentation suite to create or select explicit QA fixtures through API, then open secondary screens with real returned IDs. Keep this smoke suite for visual layout coverage.                                                | Open   |
+| RB-004 | Medium   | `main_messages.png`, `main_profile.png`                                                | `13-ui-screen-blueprints.md` and Open Design require empty states, login prompts, or explicit development boundaries. `10-testing-acceptance.md` specifically expects AI history, Messages, and Profile asset empty states to be visible after seed/demo removal.                  | The unauthenticated tabs displayed generic error cards with `HTTP 401` and a retry action. This is technically clear but not the designed login/empty boundary.                                                                                                    | Map HTTP 401 in Java repositories/UI state to an unauthenticated state, with copy and actions matching AI, Messages, Profile, and Settings designs. Keep network failures as retryable errors.                                                  | Open   |
+| RB-005 | Medium   | `post_detail.png`, `product_detail.png`, `conversation.png`, `notification_detail.png` | Real-backend validation should distinguish real API-backed screens from UI/test-fixture entry screens.                                                                                                                                                                             | Several secondary screenshots were entered with `VisualSmokeInstrumentedTest` extras such as `post_visual_check`, `product_visual_check`, `conv_visual_check`, `notif_visual_check`, and `job_visual_check`. They prove layout rendering, not full real-data flow. | Extend a later instrumentation suite to create or select explicit QA fixtures through API, then open secondary screens with real returned IDs. Keep this smoke suite for visual layout coverage.                                                | Open   |
 
 ## Accepted Differences
 
@@ -168,7 +168,7 @@ Result: 22 PNG screenshots pulled, all `1200x2664`.
   navigation bar; Open Design HTML uses a browser mock phone frame.
 - Camera preview content is environment-dependent and only verifies CameraX
   screen framing and controls.
-- Stub provider boundaries for SMS, OSS/local storage, AI, and payment remain
+- OSS/local storage remains; AI/payment are removed from current scope
   development integration boundaries and are not production capability claims.
 
 ## Shutdown Evidence

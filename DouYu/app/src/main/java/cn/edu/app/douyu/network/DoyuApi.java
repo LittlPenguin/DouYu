@@ -9,10 +9,9 @@ import cn.edu.app.douyu.model.ConversationDetail;
 import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.NotificationMessage;
 import cn.edu.app.douyu.model.PageResponse;
-import cn.edu.app.douyu.model.PatternAsset;
-import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
+import cn.edu.app.douyu.model.PostRequest;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductCategory;
 import cn.edu.app.douyu.model.LoginRequest;
@@ -26,11 +25,7 @@ import cn.edu.app.douyu.model.UploadConfirmRequest;
 import cn.edu.app.douyu.model.UploadPresignRequest;
 import cn.edu.app.douyu.model.UploadPresignResponse;
 import cn.edu.app.douyu.model.UserProfile;
-import cn.edu.app.douyu.model.AiQuota;
 import cn.edu.app.douyu.model.ConfirmUploadRequest;
-import cn.edu.app.douyu.model.CreatePatternJobRequest;
-import cn.edu.app.douyu.model.FavoriteResult;
-import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.FollowResult;
 import cn.edu.app.douyu.model.PresignUploadRequest;
 import cn.edu.app.douyu.model.PresignUploadResponse;
@@ -59,6 +54,9 @@ public interface DoyuApi {
 
     @GET("/api/v1/posts/{postId}")
     Call<ApiResponse<Post>> post(@Path("postId") String postId);
+
+    @POST("/api/v1/posts")
+    Call<ApiResponse<Post>> createPost(@Body PostRequest request);
 
     @GET("/api/v1/posts/{postId}/comments")
     Call<ApiResponse<PageResponse<Comment>>> comments(@Path("postId") String postId, @Query("page") int page, @Query("size") int size);
@@ -90,32 +88,11 @@ public interface DoyuApi {
     @GET("/api/v1/products/{productId}")
     Call<ApiResponse<Product>> product(@Path("productId") String productId);
 
-    @GET("/api/v1/patterns/jobs")
-    Call<ApiResponse<PageResponse<PatternJob>>> patternJobs(@Query("page") int page, @Query("size") int size);
-
-    @GET("/api/v1/patterns/jobs/{jobId}")
-    Call<ApiResponse<PatternJob>> patternJob(@Path("jobId") String jobId);
-
-    @GET("/api/v1/patterns/{patternId}")
-    Call<ApiResponse<PatternAsset>> pattern(@Path("patternId") String patternId);
-
     @POST("/api/v1/uploads/presign")
     Call<ApiResponse<PresignUploadResponse>> uploadPresign(@Body PresignUploadRequest request);
 
     @POST("/api/v1/uploads/confirm")
     Call<ApiResponse<FileAsset>> uploadConfirm(@Body ConfirmUploadRequest request);
-
-    @POST("/api/v1/patterns/jobs")
-    Call<ApiResponse<PatternJob>> createPatternJob(@Body CreatePatternJobRequest request);
-
-    @POST("/api/v1/patterns/jobs/{jobId}/cancel")
-    Call<ApiResponse<PatternJob>> cancelPatternJob(@Path("jobId") String jobId);
-
-    @POST("/api/v1/patterns/{patternId}/favorite")
-    Call<ApiResponse<FavoriteResult>> favoritePattern(@Path("patternId") String patternId);
-
-    @GET("/api/v1/patterns/quota")
-    Call<ApiResponse<AiQuota>> aiQuota();
 
     @GET("/api/v1/messages/notifications")
     Call<ApiResponse<PageResponse<NotificationMessage>>> notifications(@Query("page") int page, @Query("size") int size);
@@ -161,9 +138,6 @@ public interface DoyuApi {
 
     @GET("/api/v1/users/me/favorite-posts")
     Call<ApiResponse<PageResponse<Post>>> favoritePosts(@Query("page") int page, @Query("size") int size);
-
-    @GET("/api/v1/users/me/favorite-patterns")
-    Call<ApiResponse<PageResponse<PatternAsset>>> favoritePatterns(@Query("page") int page, @Query("size") int size);
 
     @POST("/api/v1/uploads/presign")
     Call<ApiResponse<UploadPresignResponse>> uploadPresign(@Body UploadPresignRequest request);

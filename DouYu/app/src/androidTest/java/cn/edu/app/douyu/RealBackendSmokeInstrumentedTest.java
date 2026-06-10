@@ -31,7 +31,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import cn.edu.app.douyu.core.IntentExtras;
-import cn.edu.app.douyu.feature.ai.AiFlowActivity;
 import cn.edu.app.douyu.feature.commerce.ProductDetailActivity;
 import cn.edu.app.douyu.feature.community.PostDetailActivity;
 import cn.edu.app.douyu.feature.message.ConversationActivity;
@@ -54,10 +53,6 @@ public class RealBackendSmokeInstrumentedTest {
             postId = createPost(baseUrl, token);
         }
         String productId = createProduct(baseUrl, token);
-        PatternJobFixture patternFixture = createPatternJob(baseUrl, token);
-        String jobData = patternFixture.jobResponse;
-        String jobId = new JSONObject(jobData).getJSONObject("data").getString("jobId");
-        String patternId = waitForPattern(baseUrl, token, jobId);
         String fixture = createMessageFixture(baseUrl, token);
         String conversationId = new JSONObject(fixture).getJSONObject("data").getString("conversationId");
         String notificationId = new JSONObject(fixture).getJSONObject("data").getString("notificationId");
@@ -68,10 +63,6 @@ public class RealBackendSmokeInstrumentedTest {
         capturePostDetailCommentFlow(outputDir, postId);
         captureActivity(outputDir, "real_product_detail", new Intent(targetContext, ProductDetailActivity.class)
                 .putExtra(IntentExtras.PRODUCT_ID, productId));
-        captureActivity(outputDir, "real_ai_flow", new Intent(targetContext, AiFlowActivity.class)
-                .putExtra(IntentExtras.UPLOADED_FILE_ID, patternFixture.fileId)
-                .putExtra(IntentExtras.JOB_ID, jobId)
-                .putExtra(IntentExtras.PATTERN_ID, patternId));
         captureActivity(outputDir, "real_conversation", new Intent(targetContext, ConversationActivity.class)
                 .putExtra(IntentExtras.CONVERSATION_ID, conversationId));
         captureActivity(outputDir, "real_notification_detail", new Intent(targetContext, NotificationDetailActivity.class)
@@ -162,8 +153,7 @@ public class RealBackendSmokeInstrumentedTest {
                 .put("title", "真机验收作品")
                 .put("content", "真实后端作品详情内容")
                 .put("mediaFileIds", new org.json.JSONArray())
-                .put("topicIds", new org.json.JSONArray())
-                .put("linkedPatternId", JSONObject.NULL);
+                .put("topicIds", new org.json.JSONArray());
         String response = post(apiUrl(baseUrl, "/api/v1/posts"), body.toString(), token);
         return new JSONObject(response).getJSONObject("data").getString("postId");
     }
@@ -199,49 +189,6 @@ public class RealBackendSmokeInstrumentedTest {
                 .put("topicIds", new org.json.JSONArray())
                 .put("stickerIds", new org.json.JSONArray());
         post(apiUrl(baseUrl, "/api/v1/posts/" + postId + "/comments"), body.toString(), token);
-    }
-
-    private PatternJobFixture createPatternJob(String baseUrl, String token) throws Exception {
-        String fileId = uploadAndConfirm(baseUrl, token);
-        JSONObject body = new JSONObject()
-                .put("inputFileId", fileId)
-                .put("beadSize", "MM_2_6")
-                .put("targetSize", "16x16")
-                .put("difficulty", "BEGINNER")
-                .put("paletteId", "default")
-                .put("style", "CUTE");
-        return new PatternJobFixture(fileId, post(apiUrl(baseUrl, "/api/v1/patterns/jobs"), body.toString(), token));
-    }
-
-    private String waitForPattern(String baseUrl, String token, String jobId) throws Exception {
-        for (int i = 0; i < 60; i++) {
-            JSONObject response = getJson(apiUrl(baseUrl, "/api/v1/patterns/jobs/" + jobId), token);
-            JSONObject data = response.getJSONObject("data");
-            if (data.has("patternId") && !data.isNull("patternId")) {
-                return data.getString("patternId");
-            }
-            Thread.sleep(1000L);
-        }
-        throw new IllegalStateException("Pattern job did not finish in time");
-    }
-
-    private String uploadAndConfirm(String baseUrl, String token) throws Exception {
-        JSONObject presignRequest = new JSONObject()
-                .put("usage", "AI_INPUT")
-                .put("mimeType", "image/png")
-                .put("sizeBytes", 1024)
-                .put("fileName", "qa-smoke.png");
-        JSONObject presign = postJson(apiUrl(baseUrl, "/api/v1/uploads/presign"), presignRequest.toString(), token);
-        String fileKey = presign.getJSONObject("data").getString("fileKey");
-        JSONObject confirmRequest = new JSONObject()
-                .put("fileKey", fileKey)
-                .put("usage", "AI_INPUT")
-                .put("mimeType", "image/png")
-                .put("sizeBytes", 1024)
-                .put("width", 120)
-                .put("height", 120);
-        JSONObject confirmed = postJson(apiUrl(baseUrl, "/api/v1/uploads/confirm"), confirmRequest.toString(), token);
-        return confirmed.getJSONObject("data").getString("fileId");
     }
 
     private String createMessageFixture(String baseUrl, String token) throws Exception {
@@ -593,13 +540,4 @@ public class RealBackendSmokeInstrumentedTest {
         }
     }
 
-    private static final class PatternJobFixture {
-        final String fileId;
-        final String jobResponse;
-
-        PatternJobFixture(String fileId, String jobResponse) {
-            this.fileId = fileId;
-            this.jobResponse = jobResponse;
-        }
-    }
 }

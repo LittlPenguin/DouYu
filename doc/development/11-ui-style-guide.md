@@ -2,9 +2,7 @@
 
 ## Authority
 
-The UI authority is the Open Design HTML set in
-`doc/development/open-design/`. Android Java/XML screens must follow those files
-for structure, copy, hierarchy, states, and interaction.
+The UI authority is the retained Open Design HTML set in `doc/development/open-design/`. Android Java/XML screens must follow those files for structure, copy, hierarchy, states, and interaction.
 
 ## Visual Direction
 
@@ -17,11 +15,10 @@ for structure, copy, hierarchy, states, and interaction.
 
 ## App Shell
 
-- Five bottom tabs: `社区 / 商城 / AI / 消息 / 我的`.
+- Current bottom tabs: `社区 / 商城 / 消息 / 我的`. A publish action may appear as a top action or shell shortcut.
 - Bottom navigation uses icon + label for every item.
 - Main tabs show bottom navigation.
-- Detail and flow screens hide bottom navigation unless the Open Design screen
-  explicitly shows it.
+- Detail and flow screens hide bottom navigation unless the Open Design screen explicitly shows it.
 - Top bar actions must have real navigation, disabled state, or UI-only copy.
 
 ## Screen States
@@ -44,17 +41,15 @@ The empty state is the required replacement for deleted mock/seed content.
 - Buttons and tabs must not overflow.
 - RecyclerView items must keep stable dimensions and not resize surrounding UI.
 - Cards are for repeated items or framed tools, not for every page section.
-- Text must be left aligned for content and commerce descriptions unless the
-  Open Design file shows another structure.
+- Text must be left aligned for content and commerce descriptions unless the Open Design file shows another structure.
 
 ## Component Rules
 
-- Use Material Components for buttons, text fields, chips, tabs, and bottom
-  navigation.
+- Use Material Components for buttons, text fields, chips, tabs, and bottom navigation.
 - Use RecyclerView for feeds, product grids, messages, comments, and assets.
 - Use Glide for network images and placeholders.
-- Use CameraX PreviewView for camera screens.
-- Use disabled controls and explanatory copy for unavailable future features.
+- Use CameraX PreviewView for retained camera capture screens.
+- Use disabled controls and explanatory copy for unavailable retained features.
 
 ## Screen Mapping
 
@@ -63,10 +58,12 @@ The empty state is the required replacement for deleted mock/seed content.
 - Post compose: `post-compose-a.html`
 - Search: `search-a.html`
 - Commerce home: `commerce-home-a.html`
-- AI home and flow: `ai-home-a.html`
 - Messages and conversation: `messages-a.html`, `message-conversation-a.html`
+- Notification detail: `notification-detail-a.html`
 - Profile and edit: `profile-a.html`, `profile-edit-a.html`
-- Settings: `settings-*.html`
+- Profile lists: `profile-posts-a.html`, `profile-following-a.html`, `profile-followers-a.html`
+- Settings: `settings-home-a.html`, `settings-account-security-a.html`, `settings-privacy-permissions-a.html`, `settings-notifications-a.html`
+- Login/register: `login-a.html`, `register-a.html`
 
 ## Prohibited UI Behavior
 
@@ -74,5 +71,4 @@ The empty state is the required replacement for deleted mock/seed content.
 - Clickable controls with no result.
 - Runtime demo cards or fake lists.
 - Static seed images as live content.
-- Claims of real payment, real AI provider, production compliance, or map
-  support when the backend capability is not implemented.
+- Claims of real payment, real AI provider, production compliance, map/location support or real SMS provider.

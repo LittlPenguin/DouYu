@@ -12,8 +12,6 @@ public class IntentExtrasTest {
         assertEquals("conversationId", IntentExtras.CONVERSATION_ID);
         assertEquals("notificationId", IntentExtras.NOTIFICATION_ID);
         assertEquals("uploadedFileId", IntentExtras.UPLOADED_FILE_ID);
-        assertEquals("jobId", IntentExtras.JOB_ID);
-        assertEquals("patternId", IntentExtras.PATTERN_ID);
         assertEquals("returnTo", IntentExtras.RETURN_TO);
     }
 }

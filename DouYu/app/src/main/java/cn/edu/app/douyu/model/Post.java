@@ -14,7 +14,6 @@ public class Post {
     public Integer likeCount;
     public Integer favoriteCount;
     public Integer commentCount;
-    public String linkedPatternId;
     public String createdAt;
     public Boolean likedByMe;
     public Boolean favoritedByMe;

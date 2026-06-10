@@ -1,18 +1,24 @@
 # Stage Development Roadmap
 
-> Status: Historical stage plan for the Java/XML rewrite. Use
+> Status: Historical completed stage plan for the Java/XML implementation. Use
 > `current-status.md`, `10-testing-acceptance.md`, and the latest files under
 > `doc/development/verification/` for current gates and evidence.
 
-## Stage 9: Java/XML Android Rewrite
+## Historical Stage 9: Java/XML Android Implementation
 
-This stage replaces the Kotlin + Compose Android client with Java +
-Activity/Fragment + XML.
+This completed stage established the current Java + Activity/Fragment + XML
+Android client architecture. It is retained as historical context, not as an
+open implementation requirement.
+
+The original Stage 9 text mentioned a fifth AI tab and payment skeletons. Those
+items are historical only and were superseded by the 2026-06-09 cleanup scope:
+current maintenance keeps four tabs, upload/OSS integration, address management,
+and no payment runtime surface.
 
 ## Order
 
 1. Documentation and rules.
-2. Android build migration.
+2. Android build setup.
 3. Java core layer.
 4. Main shell and tab fragments.
 5. Flow Activities.
@@ -22,12 +28,13 @@ Activity/Fragment + XML.
 ## Stage 9.1 Documentation
 
 - Create `AGENTS.md`.
-- Rewrite development docs for Java/XML migration.
+- Update development docs for Java/XML architecture.
 - Record Open Design authority, seed deletion policy, and test gates.
 
 ## Stage 9.2 Android Build
 
-- Remove Kotlin and Compose plugins/dependencies.
+- Remove Kotlin and Compose plugins/dependencies from Android production/test
+  source support.
 - Add traditional Java Android dependencies.
 - Preserve API base URL and debug network configuration.
 
@@ -37,11 +44,11 @@ Activity/Fragment + XML.
 - Retrofit + Gson API client.
 - Java repositories using real backend APIs.
 - SharedPreferences session persistence.
-- Upload and payment integration skeletons.
+- Upload and OSS integration boundaries.
 
 ## Stage 9.4 Java/XML UI
 
-- Main Activity and five Fragment tabs.
+- Main Activity and four retained Fragment tabs.
 - Secondary Activities for core flows.
 - XML layouts for every Open Design screen.
 - RecyclerView adapters for feeds, products, messages, comments, assets.

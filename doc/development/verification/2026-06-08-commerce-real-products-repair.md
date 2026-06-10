@@ -1,4 +1,4 @@
-# 2026-06-08 Commerce Real Products Repair
+﻿# 2026-06-08 Commerce Real Products Repair
 
 ## Scope
 
@@ -27,7 +27,7 @@ verification data, not runtime seed content.
 | Item | Status | Evidence |
 | --- | --- | --- |
 | Open Design commerce update | Closed | `doc/development/open-design/commerce-home-a.html` no longer contains the fixed rules card. |
-| Commerce docs update | Closed | `doc/development/08-commerce-payment.md` records API-backed categories and masonry product cards. |
+| Commerce docs update | Closed | `doc/development/08-commerce-orders-address.md` records API-backed categories and masonry product cards. |
 | Backend product dimensions | Closed | Flyway `V9__product_image_dimensions_category_name.sql`; `mvn test` passed. |
 | Product category API | Closed | `GET /api/v1/product-categories` returns visible category counts. |
 | Dev-only product import API | Closed | `PUT /api/v1/dev/commerce/products`, `@Profile("dev")`, login required. |

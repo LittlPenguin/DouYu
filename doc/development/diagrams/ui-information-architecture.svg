@@ -2,71 +2,66 @@
   <defs>
     <style>
       text{font-family:'Noto Sans SC','Microsoft YaHei',Arial,sans-serif}
-      .bg{fill:#FFFBF7}.title{fill:#2F2528;font-size:24px;font-weight:800}.note{fill:#7A6B70;font-size:13px}
-      .tab{fill:#FFFFFF;stroke:#F48FA4;stroke-width:1.8;rx:18}.section{fill:#FFF0F3;stroke:#E0CDD0;stroke-width:1.2;rx:12}.ui{fill:#D6E8FF;stroke:#7AADE0;stroke-width:1.2;rx:12}.dev{fill:#FFE8DD;stroke:#FF8F75;stroke-width:1.2;rx:12}.mint{fill:#D4F0E0;stroke:#7DB89A;stroke-width:1.2;rx:12}
-      .label{fill:#2F2528;font-size:14px;font-weight:800}.small{fill:#5F5257;font-size:11.5px}.tiny{fill:#7A6B70;font-size:10px}
-      .line{stroke:#CDB9BE;stroke-width:1.4;fill:none}
+      .bg{fill:#FFFBF7}
+      .title{fill:#2F2528;font-size:24px;font-weight:800}
+      .note{fill:#7A6B70;font-size:13px}
+      .tab{fill:#FFFFFF;stroke:#F48FA4;stroke-width:1.8;rx:18}
+      .section{fill:#FFF0F3;stroke:#E0CDD0;stroke-width:1.2;rx:12}
+      .ui{fill:#D6E8FF;stroke:#7AADE0;stroke-width:1.2;rx:12}
+      .mint{fill:#D4F0E0;stroke:#7DB89A;stroke-width:1.2;rx:12}
+      .label{fill:#2F2528;font-size:14px;font-weight:800}
+      .small{fill:#5F5257;font-size:11.5px}
+      .tiny{fill:#7A6B70;font-size:10px}
     </style>
   </defs>
   <rect width="1180" height="760" class="bg"/>
-  <text x="40" y="46" class="title">豆屿 UI 信息架构</text>
-  <text x="40" y="70" class="note">五个主 Tab 统一顶部栏与底部 Logo 导航；黄色/蓝色节点为 UI-only 或后续落地目标</text>
+  <text x="40" y="46" class="title">SpellBean UI Information Architecture</text>
+  <text x="40" y="70" class="note">Current retained first-level areas. Bottom navigation has Community, Commerce, Messages, and Profile.</text>
 
   <g>
-    <rect x="46" y="122" width="196" height="560" class="tab"/>
-    <text x="144" y="154" text-anchor="middle" class="label">社区</text>
-    <text x="144" y="176" text-anchor="middle" class="tiny">新增 icon - 社区 - 搜索</text>
-    <rect x="70" y="214" width="148" height="46" class="section"/><text x="144" y="242" text-anchor="middle" class="small">双列瀑布流</text>
-    <rect x="70" y="278" width="148" height="46" class="section"/><text x="144" y="306" text-anchor="middle" class="small">作品卡片</text>
-    <rect x="70" y="342" width="148" height="54" class="mint"/><text x="144" y="365" text-anchor="middle" class="small">作品详情</text><text x="144" y="383" text-anchor="middle" class="tiny">图片 -> 内容 -> 评论</text>
-    <rect x="70" y="414" width="148" height="54" class="mint"/><text x="144" y="437" text-anchor="middle" class="small">悬浮评论栏</text><text x="144" y="455" text-anchor="middle" class="tiny">图 / @ / # / 贴纸</text>
-    <rect x="70" y="486" width="148" height="46" class="ui"/><text x="144" y="514" text-anchor="middle" class="small">Search UI-only</text>
-    <rect x="70" y="550" width="148" height="46" class="ui"/><text x="144" y="578" text-anchor="middle" class="small">上传帖子目标</text>
+    <rect x="60" y="122" width="230" height="560" class="tab"/>
+    <text x="175" y="154" text-anchor="middle" class="label">Community</text>
+    <text x="175" y="176" text-anchor="middle" class="tiny">add post - community - search</text>
+    <rect x="92" y="214" width="166" height="46" class="section"/><text x="175" y="242" text-anchor="middle" class="small">two-column feed</text>
+    <rect x="92" y="278" width="166" height="46" class="section"/><text x="175" y="306" text-anchor="middle" class="small">post cards</text>
+    <rect x="92" y="342" width="166" height="54" class="mint"/><text x="175" y="365" text-anchor="middle" class="small">post detail</text><text x="175" y="383" text-anchor="middle" class="tiny">media / content / comments</text>
+    <rect x="92" y="414" width="166" height="54" class="mint"/><text x="175" y="437" text-anchor="middle" class="small">comment composer</text><text x="175" y="455" text-anchor="middle" class="tiny">text and OSS media</text>
+    <rect x="92" y="486" width="166" height="46" class="ui"/><text x="175" y="514" text-anchor="middle" class="small">search boundary</text>
+    <rect x="92" y="550" width="166" height="46" class="ui"/><text x="175" y="578" text-anchor="middle" class="small">post upload boundary</text>
   </g>
 
   <g>
-    <rect x="270" y="122" width="196" height="560" class="tab"/>
-    <text x="368" y="154" text-anchor="middle" class="label">商城</text>
-    <text x="368" y="176" text-anchor="middle" class="tiny">新增 icon - 商城 - 搜索</text>
-    <rect x="294" y="214" width="148" height="46" class="section"/><text x="368" y="242" text-anchor="middle" class="small">分类 / 推荐</text>
-    <rect x="294" y="278" width="148" height="46" class="section"/><text x="368" y="306" text-anchor="middle" class="small">商品卡</text>
-    <rect x="294" y="342" width="148" height="46" class="mint"/><text x="368" y="370" text-anchor="middle" class="small">购物车</text>
-    <rect x="294" y="406" width="148" height="54" class="dev"/><text x="368" y="429" text-anchor="middle" class="small">订单确认</text><text x="368" y="447" text-anchor="middle" class="tiny">地址缺口</text>
-    <rect x="294" y="478" width="148" height="54" class="dev"/><text x="368" y="501" text-anchor="middle" class="small">联调支付</text><text x="368" y="519" text-anchor="middle" class="tiny">非真实支付</text>
+    <rect x="330" y="122" width="230" height="560" class="tab"/>
+    <text x="445" y="154" text-anchor="middle" class="label">Commerce</text>
+    <text x="445" y="176" text-anchor="middle" class="tiny">products - cart - orders</text>
+    <rect x="362" y="214" width="166" height="46" class="section"/><text x="445" y="242" text-anchor="middle" class="small">categories / product list</text>
+    <rect x="362" y="278" width="166" height="46" class="section"/><text x="445" y="306" text-anchor="middle" class="small">product cards</text>
+    <rect x="362" y="342" width="166" height="46" class="mint"/><text x="445" y="370" text-anchor="middle" class="small">cart</text>
+    <rect x="362" y="406" width="166" height="54" class="mint"/><text x="445" y="429" text-anchor="middle" class="small">order confirm</text><text x="445" y="447" text-anchor="middle" class="tiny">address snapshot</text>
+    <rect x="362" y="478" width="166" height="54" class="mint"/><text x="445" y="501" text-anchor="middle" class="small">address management</text><text x="445" y="519" text-anchor="middle" class="tiny">manual address fields</text>
   </g>
 
   <g>
-    <rect x="494" y="122" width="196" height="560" class="tab"/>
-    <text x="592" y="154" text-anchor="middle" class="label">AI</text>
-    <text x="592" y="176" text-anchor="middle" class="tiny">新增 icon - AI 创作 - 搜索</text>
-    <rect x="518" y="214" width="148" height="46" class="section"/><text x="592" y="242" text-anchor="middle" class="small">创作入口</text>
-    <rect x="518" y="278" width="148" height="46" class="mint"/><text x="592" y="306" text-anchor="middle" class="small">任务卡</text>
-    <rect x="518" y="342" width="148" height="46" class="mint"/><text x="592" y="370" text-anchor="middle" class="small">历史记录</text>
-    <rect x="518" y="406" width="148" height="54" class="dev"/><text x="592" y="429" text-anchor="middle" class="small">开发态结果</text><text x="592" y="447" text-anchor="middle" class="tiny">真实 Provider 未接</text>
-    <rect x="518" y="478" width="148" height="54" class="ui"/><text x="592" y="501" text-anchor="middle" class="small">未来生图</text><text x="592" y="519" text-anchor="middle" class="tiny">UI-only</text>
+    <rect x="600" y="122" width="230" height="560" class="tab"/>
+    <text x="715" y="154" text-anchor="middle" class="label">Messages</text>
+    <text x="715" y="176" text-anchor="middle" class="tiny">notifications - conversations</text>
+    <rect x="632" y="214" width="166" height="46" class="section"/><text x="715" y="242" text-anchor="middle" class="small">private messages</text>
+    <rect x="632" y="278" width="166" height="46" class="section"/><text x="715" y="306" text-anchor="middle" class="small">notifications</text>
+    <rect x="632" y="342" width="166" height="54" class="mint"/><text x="715" y="365" text-anchor="middle" class="small">conversation detail</text><text x="715" y="383" text-anchor="middle" class="tiny">mutual-follow rules</text>
+    <rect x="632" y="414" width="166" height="54" class="ui"/><text x="715" y="437" text-anchor="middle" class="small">notification detail</text><text x="715" y="455" text-anchor="middle" class="tiny">read-only event view</text>
   </g>
 
   <g>
-    <rect x="718" y="122" width="196" height="560" class="tab"/>
-    <text x="816" y="154" text-anchor="middle" class="label">消息</text>
-    <text x="816" y="176" text-anchor="middle" class="tiny">新增 icon - 消息 - 搜索</text>
-    <rect x="742" y="214" width="148" height="46" class="section"/><text x="816" y="242" text-anchor="middle" class="small">私信 Tab</text>
-    <rect x="742" y="278" width="148" height="46" class="section"/><text x="816" y="306" text-anchor="middle" class="small">通知 Tab</text>
-    <rect x="742" y="342" width="148" height="54" class="mint"/><text x="816" y="365" text-anchor="middle" class="small">对话详情</text><text x="816" y="383" text-anchor="middle" class="tiny">互关 / 3 条限制</text>
-    <rect x="742" y="414" width="148" height="54" class="ui"/><text x="816" y="437" text-anchor="middle" class="small">通知详情</text><text x="816" y="455" text-anchor="middle" class="tiny">UI-only 目标</text>
-  </g>
-
-  <g>
-    <rect x="942" y="122" width="196" height="560" class="tab"/>
-    <text x="1040" y="154" text-anchor="middle" class="label">我的</text>
-    <text x="1040" y="176" text-anchor="middle" class="tiny">新增 icon - 我的 - 搜索</text>
-    <rect x="966" y="214" width="148" height="54" class="section"/><text x="1040" y="237" text-anchor="middle" class="small">资料区</text><text x="1040" y="255" text-anchor="middle" class="tiny">编辑资料入口</text>
-    <rect x="966" y="286" width="148" height="54" class="section"/><text x="1040" y="309" text-anchor="middle" class="small">获赞 / 作品</text><text x="1040" y="327" text-anchor="middle" class="tiny">关注 / 粉丝</text>
-    <rect x="966" y="358" width="148" height="54" class="mint"/><text x="1040" y="381" text-anchor="middle" class="small">三资产 Tab</text><text x="1040" y="399" text-anchor="middle" class="tiny">图纸 / 点赞 / 收藏</text>
-    <rect x="966" y="430" width="148" height="54" class="ui"/><text x="1040" y="453" text-anchor="middle" class="small">Profile Edit</text><text x="1040" y="471" text-anchor="middle" class="tiny">UI-only / 待接</text>
-    <rect x="966" y="502" width="148" height="54" class="ui"/><text x="1040" y="525" text-anchor="middle" class="small">Settings 子页</text><text x="1040" y="543" text-anchor="middle" class="tiny">合规待补</text>
+    <rect x="870" y="122" width="230" height="560" class="tab"/>
+    <text x="985" y="154" text-anchor="middle" class="label">Profile</text>
+    <text x="985" y="176" text-anchor="middle" class="tiny">profile - settings - uploads</text>
+    <rect x="902" y="214" width="166" height="54" class="section"/><text x="985" y="237" text-anchor="middle" class="small">profile header</text><text x="985" y="255" text-anchor="middle" class="tiny">edit profile entry</text>
+    <rect x="902" y="286" width="166" height="54" class="section"/><text x="985" y="309" text-anchor="middle" class="small">stats</text><text x="985" y="327" text-anchor="middle" class="tiny">likes / posts / follows</text>
+    <rect x="902" y="358" width="166" height="54" class="mint"/><text x="985" y="381" text-anchor="middle" class="small">asset tabs</text><text x="985" y="399" text-anchor="middle" class="tiny">liked / favorite posts</text>
+    <rect x="902" y="430" width="166" height="54" class="ui"/><text x="985" y="453" text-anchor="middle" class="small">profile edit</text><text x="985" y="471" text-anchor="middle" class="tiny">avatar OSS upload</text>
+    <rect x="902" y="502" width="166" height="54" class="ui"/><text x="985" y="525" text-anchor="middle" class="small">settings child pages</text><text x="985" y="543" text-anchor="middle" class="tiny">account / privacy / about</text>
   </g>
 
   <rect x="280" y="704" width="620" height="34" rx="17" fill="#FFFFFF" stroke="#E0CDD0"/>
-  <text x="590" y="726" text-anchor="middle" class="small">底部 Logo 导航：社区 / 商城 / AI / 消息 / 我的</text>
+  <text x="590" y="726" text-anchor="middle" class="small">Bottom navigation: Community / Commerce / Messages / Profile</text>
 </svg>

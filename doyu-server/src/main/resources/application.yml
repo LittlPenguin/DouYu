@@ -48,10 +48,3 @@ douyu:
       access-key-id: ${DOUYU_ALIYUN_OSS_ACCESS_KEY_ID:}
       access-key-secret: ${DOUYU_ALIYUN_OSS_ACCESS_KEY_SECRET:}
       public-base-url: ${DOUYU_ALIYUN_OSS_PUBLIC_BASE_URL:}
-  ai:
-    provider:
-      name: ${DOUYU_AI_PROVIDER:stub}
-      vision-model: ${DOUYU_AI_VISION_MODEL:stub-vision-v1}
-      prepare-model: ${DOUYU_AI_PREPARE_MODEL:stub-prepare-v1}
-      timeout-ms: ${DOUYU_AI_TIMEOUT_MS:30000}
-      prepare-enabled: ${DOUYU_AI_PREPARE_ENABLED:false}

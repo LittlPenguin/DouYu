@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="@color/doyu_text_muted" android:pathData="M5,7h14l-1,12H6zM8,7a4,4 0,0 1,8 0h-2a2,2 0,0 0,-4 0z" />
+    <path android:fillColor="@color/doyu_text" android:pathData="M5,7h14l-1,12H6zM7.2,9l0.7,8h8.2l0.7,-8z" />
+    <path android:fillColor="@color/doyu_text" android:pathData="M8,7a4,4 0,0 1,8 0h-2a2,2 0,0 0,-4 0z" />
 </vector>

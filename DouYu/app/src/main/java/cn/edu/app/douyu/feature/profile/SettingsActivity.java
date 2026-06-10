@@ -16,7 +16,7 @@ public class SettingsActivity extends XmlPageActivity {
     private static final String ACCOUNT_SECURITY = "account_security";
     private static final String PRIVACY_PERMISSIONS = "privacy_permissions";
     private static final String NOTIFICATIONS = "notifications";
-    private static final String ABOUT_COMPLIANCE = "about_compliance";
+    private static final String HELP_ABOUT = "help_about";
 
     @Override
     protected int layoutRes() {
@@ -27,8 +27,8 @@ public class SettingsActivity extends XmlPageActivity {
             return R.layout.activity_settings_privacy_permissions;
         } else if (NOTIFICATIONS.equals(section)) {
             return R.layout.activity_settings_notifications;
-        } else if (ABOUT_COMPLIANCE.equals(section)) {
-            return R.layout.activity_settings_about_compliance;
+        } else if (HELP_ABOUT.equals(section)) {
+            return R.layout.activity_settings_help_about;
         }
         return R.layout.activity_settings_home;
     }
@@ -42,8 +42,8 @@ public class SettingsActivity extends XmlPageActivity {
             return "隐私与权限";
         } else if (NOTIFICATIONS.equals(section)) {
             return "通知设置";
-        } else if (ABOUT_COMPLIANCE.equals(section)) {
-            return "关于与合规";
+        } else if (HELP_ABOUT.equals(section)) {
+            return "帮助与关于";
         }
         return "设置";
     }
@@ -53,11 +53,7 @@ public class SettingsActivity extends XmlPageActivity {
         bindSection(R.id.settings_account_security, ACCOUNT_SECURITY);
         bindSection(R.id.settings_privacy_permissions, PRIVACY_PERMISSIONS);
         bindSection(R.id.settings_notifications, NOTIFICATIONS);
-        bindSection(R.id.settings_about_compliance, ABOUT_COMPLIANCE);
-        android.view.View future = findViewById(R.id.settings_future_capability);
-        if (future != null) {
-            future.setOnClickListener(v -> startActivity(new Intent(this, FutureCapabilityActivity.class)));
-        }
+        bindSection(R.id.settings_help_about, HELP_ABOUT);
         bindLogoutAction();
     }
 

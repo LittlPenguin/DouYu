@@ -1,4 +1,4 @@
-# 2026-06-07 Repair Stage Verification
+﻿# 2026-06-07 Repair Stage Verification
 
 ## Scope
 
@@ -418,8 +418,8 @@ Result:
 | `RB-001` | Closed | `qa-empty` feed returned 200 with empty `items` and `total=0`; `main_community.png` shows the repair-stage empty-state boundary on the real device. | None for this repair stage. |
 | `RB-002` | Closed | `qa-empty` products returned 200 with empty `items` and `total=0`; `main_commerce.png` shows the repair-stage empty-state boundary on the real device. | None for this repair stage. |
 | `RB-003` | Closed for clean-backend API behavior; dev residue remains diagnostic-only | `qa-empty` topics and sticker packs returned 200 with empty `items` and `total=0`. Dev persistent data was not cleared. | If needed, run the read-only dev residue diagnostic and classify existing local rows. |
-| `RB-004` | Closed | `ApiExceptionStatusTest` passed; `main_ai.png`, `main_messages.png`, and `main_profile.png` show boundary states without raw `HTTP 401`. | None for this repair stage. |
-| `RB-005` | Closed for supported real-ID flows | `RealBackendSmokeInstrumentedTest` returned `OK (1 test)` and captured `real_post_detail.png`, `real_product_detail.png`, `real_ai_flow.png`, `real_conversation.png`, and `real_notification_detail.png` using backend-returned IDs. | Public production endpoints for complete notification-detail creation and provider integrations remain future scope. |
+| `RB-004` | Closed | `ApiExceptionStatusTest` passed; `main_messages.png`, and `main_profile.png` show boundary states without raw `HTTP 401`. | None for this repair stage. |
+| `RB-005` | Closed for supported real-ID flows | `RealBackendSmokeInstrumentedTest` returned `OK (1 test)` and captured `real_post_detail.png`, `real_product_detail.png`, `real_conversation.png`, and `real_notification_detail.png` using backend-returned IDs. | Public production endpoints for complete notification-detail creation and provider integrations remain future scope. |
 
 ## UI Parity Status
 
@@ -433,7 +433,7 @@ available again. The latest repair-stage evidence is under:
 | --- | --- | --- |
 | `community-home-a.html` | Covered by `main_community.png` and `main_quick_menu.png`; API empty list verified | `boundary` |
 | `commerce-home-a.html` | Covered by `main_commerce.png`; API empty list verified | `boundary` |
-| `ai-home-a.html` | Covered by `main_ai.png`; no raw `HTTP 401`; history boundary visible | `boundary` |
+
 | `messages-a.html` | Covered by `main_messages.png`; no raw `HTTP 401`; message boundary visible | `boundary` |
 | `profile-a.html` | Covered by `main_profile.png`; no raw `HTTP 401`; asset boundary visible | `boundary` |
 | `search-a.html` | Covered by `search.png` | `boundary`, `UI-only` |
@@ -446,8 +446,8 @@ available again. The latest repair-stage evidence is under:
 | `settings-account-security-a.html` | Covered by `settings_account_security.png` | `boundary` |
 | `settings-privacy-permissions-a.html` | Covered by `settings_privacy_permissions.png` | `boundary` |
 | `settings-notifications-a.html` | Covered by `settings_notifications.png` | `boundary` |
-| `settings-about-compliance-a.html` | Covered by `settings_about_compliance.png` | `boundary`, `UI-only` |
-| `future-capability-ui-a.html` | Covered by `future_capability.png` | `UI-only` |
+
+
 | `doyu-design-directions.html` | Covered across the full repair-stage screenshot set and contact sheets | `design-system` |
 
 ## Remaining Deviations
@@ -461,7 +461,7 @@ No new repair-stage UI deviation was found in the contact-sheet review for the
   when the clean backend has no runtime data.
 - Camera preview content is environment-dependent; `camera.png` verifies the
   CameraX preview/capture boundary, not image quality.
-- Production SMS, payment, AI provider, map/location, object storage hardening,
+- Production SMS, AI provider, payment, map/location,
   compliance documents, and player marketplace completion remain out of scope.
 
 ## Final Post-Update Verification

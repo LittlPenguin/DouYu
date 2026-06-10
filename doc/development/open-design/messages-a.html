@@ -12,7 +12,7 @@
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / A 方向页面级设计稿</div>
         <h1 class="title">消息页：通知优先，消息随后</h1>
-        <p class="lead">消息首页按用户处理顺序组织内容。通知列表放在上方，帮助用户先看到评论、任务和系统事件；消息列表放在下方，进入真实私信会话。首页只承担入口和摘要，不展示会话发送规则。</p>
+        <p class="lead">消息首页按用户处理顺序组织内容。通知列表放在上方，帮助用户先看到评论、审核和系统事件；消息列表放在下方，进入真实私信会话。首页只承担入口和摘要，不展示会话发送规则。</p>
         <div class="chips">
           <span class="chip">通知在上</span>
           <span class="chip">消息在下</span>
@@ -21,9 +21,9 @@
         </div>
       </div>
       <div class="side-facts">
-        <div class="fact"><b>点击去向</b><span>通知行进入 `notification-detail-a.html`；消息行进入 `message-conversation-a.html`。</span></div>
+        <div class="fact"><b>点击去向</b><span>通知行进入 notification-detail-a.html；消息行进入 message-conversation-a.html。</span></div>
         <div class="fact"><b>首页边界</b><span>首页只显示后端返回的通知摘要和消息摘要；不使用本地示例内容补齐列表。</span></div>
-        <div class="fact"><b>详情边界</b><span>发送、输入、失败重试和不可发送提示都在消息详情页处理。</span></div>
+        <div class="fact"><b>上传入口</b><span>底部“上传”位于商城和消息之间，点击后走登录门禁进入发帖页。</span></div>
       </div>
     </section>
 
@@ -37,25 +37,20 @@
           <div class="screen">
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar">
-              <a class="icon-btn" href="post-compose-a.html"><span class="icon add"></span></a>
+              <a class="icon-btn" href="settings-home-a.html"><span class="icon settings"></span></a>
               <div class="top-title">消息</div>
               <a class="icon-btn" href="search-a.html"><span class="icon search"></span></a>
-              <div class="quick-menu">
-                <a class="quick-item" href="settings-home-a.html"><span class="icon settings"></span><span>Setting</span></a>
-                <a class="quick-item" href="ai-home-a.html"><span class="icon ai"></span><span>AI 创作</span></a>
-                <a class="quick-item" href="post-compose-a.html"><span class="icon upload"></span><span>上传帖子</span></a>
-              </div>
             </div>
             <div class="scroll">
               <div class="chips-row"><span class="pill ok">通知</span></div>
               <div class="list" style="padding-top:0">
                 <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">评论进入审核</div><div class="row-sub">你的评论已提交，审核通过后展示</div></div><span class="row-meta">刚刚</span></a>
-                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon ai"></span></span><div class="row-main"><div class="row-title">图纸生成完成</div><div class="row-sub">薄荷小岛挂件已保存到我的图纸</div></div><span class="row-meta">12:30</span></a>
+                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon compose"></span></span><div class="row-main"><div class="row-title">作品审核通过</div><div class="row-sub">草莓小熊杯垫已展示到作品列表</div></div><span class="row-meta">12:30</span></a>
                 <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon at"></span></span><div class="row-main"><div class="row-title">@ 提及</div><div class="row-sub">阿澄在评论里提到了你</div></div><span class="row-meta">昨天</span></a>
               </div>
               <div class="chips-row tight" style="padding-left:14px;padding-right:14px"><span class="pill warn">消息</span></div>
               <div class="list" style="padding-top:0">
-                <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">阿澄</div><div class="row-sub">晚上一起拼图纸吗</div></div></a>
+                <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">阿澄</div><div class="row-sub">晚上一起拼杯垫吗</div></div></a>
                 <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">知知</div><div class="row-sub">对方刚发来新消息</div></div></a>
                 <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">小岛摊主</div><div class="row-sub">这套珠盒明天补货</div></div></a>
               </div>
@@ -63,7 +58,7 @@
             <div class="bottom-nav">
               <a class="nav-item" href="community-home-a.html"><span class="nav-logo community"></span><span>社区</span></a>
               <a class="nav-item" href="commerce-home-a.html"><span class="nav-logo shop"></span><span>商城</span></a>
-              <a class="nav-item" href="ai-home-a.html"><span class="nav-logo ai"></span><span>AI</span></a>
+              <a class="nav-item" href="post-compose-a.html"><span class="nav-logo compose"></span><span>上传</span></a>
               <a class="nav-item on" href="messages-a.html"><span class="nav-logo message"></span><span>消息</span></a>
               <a class="nav-item" href="profile-a.html"><span class="nav-logo profile"></span><span>我的</span></a>
             </div>

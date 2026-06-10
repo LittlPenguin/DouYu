@@ -2,21 +2,23 @@ package cn.edu.app.douyu;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.view.Menu;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import cn.edu.app.douyu.auth.AuthGate;
 import cn.edu.app.douyu.auth.LoginActivity;
-import cn.edu.app.douyu.feature.ai.AiFragment;
+import cn.edu.app.douyu.core.IntentExtras;
+import cn.edu.app.douyu.core.SystemBarInsets;
 import cn.edu.app.douyu.feature.commerce.CommerceFragment;
 import cn.edu.app.douyu.feature.community.CommunityFragment;
 import cn.edu.app.douyu.feature.community.PostCreateActivity;
@@ -24,15 +26,14 @@ import cn.edu.app.douyu.feature.community.SearchActivity;
 import cn.edu.app.douyu.feature.message.MessagesFragment;
 import cn.edu.app.douyu.feature.profile.ProfileFragment;
 import cn.edu.app.douyu.feature.profile.SettingsActivity;
-import cn.edu.app.douyu.core.SystemBarInsets;
 
 public class MainActivity extends AppCompatActivity {
     private TextView title;
-    private View quickMenu;
     private View[] tabs;
     private ImageView[] tabIcons;
     private TextView[] tabLabels;
     private View[] tabIndicators;
+    private ImageButton settingsButton;
     private ActivityResultLauncher<Intent> loginLauncher;
 
     @Override
@@ -49,20 +50,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         title = findViewById(R.id.top_title);
-        quickMenu = findViewById(R.id.quick_menu);
+        settingsButton = findViewById(R.id.action_settings);
         findViewById(R.id.action_search).setOnClickListener(v -> startActivity(new Intent(this, SearchActivity.class)));
-        findViewById(R.id.action_create).setOnClickListener(v -> toggleQuickMenu());
-        findViewById(R.id.fragment_container).setOnClickListener(v -> hideQuickMenu());
-        findViewById(R.id.quick_settings).setOnClickListener(v -> {
-            hideQuickMenu();
-            startActivity(new Intent(this, SettingsActivity.class));
-        });
-        findViewById(R.id.quick_ai).setOnClickListener(v -> {
-            hideQuickMenu();
-            openTab(2);
-        });
-        findViewById(R.id.quick_post).setOnClickListener(v -> {
-            hideQuickMenu();
+        settingsButton.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        findViewById(R.id.tab_upload).setOnClickListener(v -> {
             AuthGate.runOrRequestLogin(this, loginLauncher, AuthGate.RETURN_ACTION_POST_CREATE,
                     () -> startActivity(new Intent(this, PostCreateActivity.class)));
         });
@@ -70,28 +61,24 @@ public class MainActivity extends AppCompatActivity {
         tabs = new View[]{
                 findViewById(R.id.tab_community),
                 findViewById(R.id.tab_commerce),
-                findViewById(R.id.tab_ai),
                 findViewById(R.id.tab_messages),
                 findViewById(R.id.tab_profile)
         };
         tabIcons = new ImageView[]{
                 findViewById(R.id.nav_icon_community),
                 findViewById(R.id.nav_icon_commerce),
-                findViewById(R.id.nav_icon_ai),
                 findViewById(R.id.nav_icon_messages),
                 findViewById(R.id.nav_icon_profile)
         };
         tabLabels = new TextView[]{
                 findViewById(R.id.nav_label_community),
                 findViewById(R.id.nav_label_commerce),
-                findViewById(R.id.nav_label_ai),
                 findViewById(R.id.nav_label_messages),
                 findViewById(R.id.nav_label_profile)
         };
         tabIndicators = new View[]{
                 findViewById(R.id.nav_indicator_community),
                 findViewById(R.id.nav_indicator_commerce),
-                findViewById(R.id.nav_indicator_ai),
                 findViewById(R.id.nav_indicator_messages),
                 findViewById(R.id.nav_indicator_profile)
         };
@@ -99,21 +86,31 @@ public class MainActivity extends AppCompatActivity {
         tabs[1].setOnClickListener(v -> openTab(1));
         tabs[2].setOnClickListener(v -> openTab(2));
         tabs[3].setOnClickListener(v -> openTab(3));
-        tabs[4].setOnClickListener(v -> openTab(4));
         if (savedInstanceState == null) {
-            openTab(0);
+            openTab(initialTab());
         }
     }
 
+    private int initialTab() {
+        String section = getIntent().getStringExtra(IntentExtras.SECTION);
+        if (IntentExtras.SECTION_COMMERCE.equals(section)) {
+            return 1;
+        }
+        if (IntentExtras.SECTION_MESSAGES.equals(section)) {
+            return 2;
+        }
+        if (IntentExtras.SECTION_PROFILE.equals(section)) {
+            return 3;
+        }
+        return 0;
+    }
+
     private void openTab(int index) {
-        hideQuickMenu();
         if (index == 0) {
             open("社区", new CommunityFragment());
         } else if (index == 1) {
             open("商城", new CommerceFragment());
         } else if (index == 2) {
-            open("AI 创作", new AiFragment());
-        } else if (index == 3) {
             open("消息", new MessagesFragment());
         } else {
             open("我的", new ProfileFragment());
@@ -140,16 +137,6 @@ public class MainActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .commit();
-    }
-
-    private void toggleQuickMenu() {
-        quickMenu.setVisibility(quickMenu.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
-    }
-
-    private void hideQuickMenu() {
-        if (quickMenu != null) {
-            quickMenu.setVisibility(View.GONE);
-        }
     }
 
     @Override

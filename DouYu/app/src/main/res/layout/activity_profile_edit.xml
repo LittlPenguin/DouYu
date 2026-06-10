@@ -309,7 +309,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="UI-only，不接地图定位"
+                        android:text="UI-only，不保存到后端"
                         android:textColor="@color/doyu_text_muted"
                         android:textSize="12sp" />
                 </LinearLayout>

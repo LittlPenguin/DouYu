@@ -1,48 +1,41 @@
-# Backend Services
+# 04. Backend Services
 
-## Current Backend Role
+## Scope
 
-The backend keeps the existing `/api/v1` contract while Android is rewritten in
-Java/XML.
+The backend remains a Spring Boot service exposing `/api/v1` APIs for retained Android flows:
 
-## Runtime Seed Policy
+- Auth and session.
+- User/profile/follow.
+- Upload and OSS-backed object image storage.
+- Community posts, comments, topics and stickers.
+- Commerce products, cart, orders and address management.
+- Messages and notifications.
+- Admin/report/reward where retained.
 
-Runtime seed/demo content must be removed in this stage:
+## Upload / OSS
 
-- No startup demo posts.
-- No startup demo products/SKUs.
-- No startup demo topics or stickers.
-- No system demo user used for feed or commerce filler.
-- No committed `static/seed/**` images used as live content.
-- No public `/seed/**` static exposure.
+OSS-backed image storage is retained.
 
-Tests that require data must create explicit fixtures in test code or test
-resources.
+- `POST /api/v1/uploads/presign`
+- `PUT uploadUrl`
+- `POST /api/v1/uploads/confirm`
+- Local / Stub / Aliyun OSS Provider configuration.
 
-## Providers Kept
+Android uses backend-signed upload URLs and never stores OSS credentials.
 
-Keep these as development/integration providers:
+## Removed Backend Surfaces
 
-- SMS stub.
-- OSS local/stub/aliyun provider switch.
-- AI provider abstraction and stub routing.
-- Payment stub/integration skeleton.
+The current scope does not include:
 
-They are not static content filler and should remain labeled as non-production
-unless replaced by real providers.
+- AI/pattern generation controllers, providers, usage/cost controls, content safety or large model integration.
+- Payment controllers, channel SDK/API, refunds, reconciliation or production callback handling.
+- Map/location providers.
+- Real SMS Provider.
+- Production rate limiting and production risk-control plumbing.
+- Full compliance document endpoints/pages.
 
-## Empty Database Behavior
+## Seed / Demo Policy
 
-An empty development database must not break APIs. List endpoints should return
-empty pages/lists and enough metadata for Android to render empty states.
-
-## Verification
-
-Run:
-
-```powershell
-cd doyu-server
-mvn test
-```
-
-Production source must not contain runtime seed initialization after this stage.
+- Runtime seed/demo content must not be reintroduced.
+- Tests may create explicit fixtures.
+- Empty API results are valid and should be preserved for Android empty-state verification.

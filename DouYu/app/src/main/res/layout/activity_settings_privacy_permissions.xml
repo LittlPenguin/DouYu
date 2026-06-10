@@ -25,7 +25,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="最小授权&#10;上传作品、AI 拍照、通知提醒和未来定位各自独立说明，只在真实动作触发时请求权限。"
+                android:text="Minimum permissions&#10;Post image upload and notification reminders are explained separately and requested only when a real action needs them."
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
@@ -35,7 +35,7 @@
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="权限状态&#10;已允许展示用途和关闭路径；询问态在真实动作触发；拒绝态说明影响并提供去系统设置。"
+                android:text="Permission states&#10;Allowed, denied, and retry states must render real system results instead of local fallback content."
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
@@ -45,7 +45,7 @@
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="隐私开关&#10;允许被推荐、允许陌生人私信前三条、允许作品被收藏；未接后端时标注开发态。"
+                android:text="Preference switches&#10;Recommendation visibility, message access, and collection settings remain development boundaries until backend settings exist."
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
@@ -54,7 +54,8 @@
                 android:layout_height="54dp"
                 android:layout_marginTop="18dp"
                 android:enabled="false"
-                android:text="位置能力 UI-only，未接地图 API"
+                android:text="Settings save requires backend support"
+                android:textAllCaps="false"
                 app:cornerRadius="8dp" />
         </LinearLayout>
     </ScrollView>

@@ -1,4 +1,4 @@
-# Login/Register Email Auth Verification
+﻿# Login/Register Email Auth Verification
 
 Date: 2026-06-09
 
@@ -109,7 +109,7 @@ Notes:
 Commands:
 
 ```powershell
-rg -n "auth/sms-code|auth/login/sms|短信验证码|短信注册|邮箱验证码|登录请求仍传" doc/development/open-design doc/development/00-project-handoff.md doc/development/01-tech-stack.md doc/development/02-architecture.md doc/development/05-api-contract.md doc/development/09-security-compliance.md doc/development/12-feature-and-flow-map.md doc/development/13-ui-screen-blueprints.md doc/development/diagrams -S
+rg -n "auth/sms-code|auth/login/sms|短信验证码|短信注册|邮箱验证码|登录请求仍传" doc/development/open-design doc/development/00-project-handoff.md doc/development/01-tech-stack.md doc/development/02-architecture.md doc/development/05-api-contract.md doc/development/10-testing-acceptance.md doc/development/12-feature-and-flow-map.md doc/development/13-ui-screen-blueprints.md doc/development/diagrams -S
 
 rg -n "Sms|sms|auth/sms-code|auth/login/sms|短信验证码|短信注册|邮箱验证码" doyu-server/src/main/java DouYu/app/src/main -S
 ```

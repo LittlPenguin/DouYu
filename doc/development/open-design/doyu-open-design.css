@@ -339,7 +339,7 @@ a {
 .icon.bell::before,
 .icon.lock::before,
 .icon.upload::before,
-.icon.ai::before,
+.icon.compose::before,
 .icon.map::before,
 .icon.pay::before,
 .icon.heart::before,
@@ -542,7 +542,7 @@ a {
   transform: rotate(45deg);
 }
 
-.icon.ai::before {
+.icon.compose::before {
   inset: 1px;
   clip-path: polygon(50% 0, 61% 34%, 98% 34%, 68% 55%, 80% 98%, 50% 72%, 20% 98%, 32% 55%, 2% 34%, 39% 34%);
   background: currentColor;
@@ -806,7 +806,7 @@ a {
   border-radius: 10px 10px 0 0;
 }
 
-.nav-logo.ai::before {
+.nav-logo.compose::before {
   inset: 1px;
   border: 0;
   clip-path: polygon(50% 0, 61% 34%, 98% 34%, 68% 55%, 80% 98%, 50% 72%, 20% 98%, 32% 55%, 2% 34%, 39% 34%);

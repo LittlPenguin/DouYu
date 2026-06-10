@@ -12,53 +12,48 @@
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / A 方向页面级设计稿</div>
         <h1 class="title">社区首页：瀑布流内容发现</h1>
-        <p class="lead">社区首页改为双列瀑布流，图片按比例形成不规则竖向排列，但卡片图片高度必须设置上限，避免长图撑爆首屏。顶部和底部使用全局主页面框架。</p>
+        <p class="lead">社区首页改为双列瀑布流，图片按比例形成不规则竖向排列，但卡片图片高度必须设置上限，避免长图撑爆首屏。顶部保留设置与搜索，发布入口统一放在底部导航“上传”。</p>
         <div class="chips">
-          <span class="chip">新增 icon - 页面标题 - 搜索 icon</span>
+          <span class="chip">设置 - 页面标题 - 搜索</span>
           <span class="chip">双列 masonry</span>
           <span class="chip">图片 120-260dp</span>
-          <span class="chip">底部 Logo 导航</span>
+          <span class="chip">上传底部 action</span>
         </div>
       </div>
       <div class="side-facts">
         <div class="fact"><b>本页重点</b><span>类似小红书的内容密度，但保留豆屿暖白、Petal/Mint/Sky/Coral 品牌语气。</span></div>
-        <div class="fact"><b>开发边界</b><span>该瀑布流是 UI 目标，不代表当前 Android 列表布局已实现。</span></div>
-        <div class="fact"><b>交互入口</b><span>左上新增菜单固定进入 Setting、AI 创作、上传帖子；发布动作不能空点击。</span></div>
+        <div class="fact"><b>开发边界</b><span>运行态列表必须来自后端 Feed；空结果显示空态，不用本地假帖子填充。</span></div>
+        <div class="fact"><b>上传入口</b><span>底部导航顺序为社区、商城、上传、消息、我的；上传进入 post-compose-a.html。</span></div>
       </div>
     </section>
 
     <section class="section">
       <div class="section-head">
         <h2>首屏蓝图</h2>
-        <p>主页面统一顶栏、快捷新增菜单、频道 Tab、瀑布流内容卡和底部品牌 Logo 导航。</p>
+        <p>主页面统一顶栏、频道 Tab、瀑布流内容卡和底部品牌 Logo 导航；“上传”是 action，不替换当前内容 Fragment。</p>
       </div>
       <div class="canvas">
         <div class="phone">
           <div class="screen">
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar">
-              <a class="icon-btn" href="post-compose-a.html"><span class="icon add"></span></a>
+              <a class="icon-btn" href="settings-home-a.html"><span class="icon settings"></span></a>
               <div class="top-title">社区</div>
               <a class="icon-btn" href="search-a.html"><span class="icon search"></span></a>
-              <div class="quick-menu">
-                <a class="quick-item" href="settings-home-a.html"><span class="icon settings"></span><span>Setting</span></a>
-                <a class="quick-item" href="ai-home-a.html"><span class="icon ai"></span><span>AI 创作</span></a>
-                <a class="quick-item" href="post-compose-a.html"><span class="icon upload"></span><span>上传帖子</span></a>
-              </div>
             </div>
             <div class="scroll">
-              <div class="tabs"><span class="tab on">推荐</span><span class="tab">关注</span><span class="tab">教程</span><span class="tab">图纸</span><span class="tab">新手</span></div>
+              <div class="tabs"><span class="tab on">推荐</span><span class="tab">关注</span><span class="tab">教程</span><span class="tab">话题</span><span class="tab">新手</span></div>
               <div class="masonry">
                 <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb h-md"></div><div class="card-body"><div class="mini-title">草莓小熊杯垫</div><div class="meta"><span>小屿</span><span>126</span></div></div></a>
                 <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb sky h-tall"></div><div class="card-body"><div class="mini-title">海盐薄荷色卡</div><div class="meta"><span>阿澄</span><span>88</span></div></div></a>
-                <div class="post-card"><div class="thumb coral h-sm"></div><div class="card-body"><div class="mini-title">像素花束教程</div><div class="meta"><span>知知</span><span>34</span></div></div></div>
-                <div class="post-card"><div class="thumb mint h-cap"></div><div class="card-body"><div class="mini-title">长图上限裁切示例</div><div class="meta"><span>豆芽</span><span>12</span></div></div></div>
+                <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb coral h-sm"></div><div class="card-body"><div class="mini-title">像素花束教程</div><div class="meta"><span>知知</span><span>34</span></div></div></a>
+                <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb mint h-cap"></div><div class="card-body"><div class="mini-title">长图上限裁切示例</div><div class="meta"><span>豆芽</span><span>12</span></div></div></a>
               </div>
             </div>
             <div class="bottom-nav">
               <a class="nav-item on" href="community-home-a.html"><span class="nav-logo community"></span><span>社区</span></a>
               <a class="nav-item" href="commerce-home-a.html"><span class="nav-logo shop"></span><span>商城</span></a>
-              <a class="nav-item" href="ai-home-a.html"><span class="nav-logo ai"></span><span>AI</span></a>
+              <a class="nav-item" href="post-compose-a.html"><span class="nav-logo compose"></span><span>上传</span></a>
               <a class="nav-item" href="messages-a.html"><span class="nav-logo message"></span><span>消息</span></a>
               <a class="nav-item" href="profile-a.html"><span class="nav-logo profile"></span><span>我的</span></a>
             </div>
@@ -67,9 +62,9 @@
         <div class="stack">
           <div class="spec-grid">
             <div class="spec"><h3>瀑布流规则</h3><ul><li>双列 masonry，卡片按图片比例错落排列。</li><li>卡片图片视觉高度建议 120-260dp；超出上限裁切，不撑高页面。</li><li>标题最多两行，作者和互动数据固定底部层级。</li><li>图片加载失败显示中性错误或重试状态，不展示宣传文案。</li></ul></div>
-            <div class="spec"><h3>顶部框架</h3><ul><li>主页面顶栏固定为新增 icon、页面标题、搜索 icon。</li><li>新增菜单固定三项：Setting、AI 创作、上传帖子。</li><li>菜单浮层不遮挡系统状态栏，点击外部关闭。</li><li>搜索进入搜索页或搜索开发态，不允许空点击。</li></ul></div>
+            <div class="spec"><h3>顶部框架</h3><ul><li>主页面顶栏固定为设置 icon、页面标题、搜索 icon。</li><li>设置进入 settings-home-a.html。</li><li>搜索进入 search-a.html；无后端全局搜索时必须展示 UI-only 边界。</li><li>发帖不再从顶部新增菜单进入，统一由底部上传 action 触发。</li></ul></div>
             <div class="state"><h3>状态覆盖</h3><p>加载、空态、失败、未登录、关注频道需登录、审核中和图片失败都必须有明确布局。</p><div class="state-bar"><span class="state-dot good">可演示</span><span class="state-dot warn">实现待落地</span></div></div>
-            <div class="state"><h3>底部导航</h3><p>所有主 Tab 使用同一套品牌 Logo 图标；不能只显示文字、空框或 emoji。</p><div class="state-bar"><span class="state-dot good">Logo 导航</span><span class="state-dot bad">禁 emoji</span></div></div>
+            <div class="state"><h3>底部导航</h3><p>所有主页面使用同一套品牌 Logo 图标；上传位于商城右边、消息左边，并作为全屏发帖 action。</p><div class="state-bar"><span class="state-dot good">五项显示</span><span class="state-dot bad">禁空入口</span></div></div>
           </div>
         </div>
       </div>

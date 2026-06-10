@@ -8,10 +8,6 @@ import cn.edu.app.douyu.server.common.entity.PostRepository;
 import cn.edu.app.douyu.server.common.entity.ProductRepository;
 import cn.edu.app.douyu.server.common.entity.StickerPackRepository;
 import cn.edu.app.douyu.server.common.entity.TopicRepository;
-import cn.edu.app.douyu.server.pattern.ai.AiVisionProviderRouter;
-import cn.edu.app.douyu.server.pattern.ai.StubAiVisionProvider;
-import cn.edu.app.douyu.server.payment.PaymentCallbackVerifier;
-import cn.edu.app.douyu.server.payment.StubPaymentCallbackVerifier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -79,12 +75,6 @@ class QaEmptyBackendContractTests {
     @Autowired
     Map<String, ApplicationRunner> applicationRunners;
 
-    @Autowired
-    PaymentCallbackVerifier paymentCallbackVerifier;
-
-    @Autowired
-    AiVisionProviderRouter aiVisionProviderRouter;
-
     @Test
     void qaEmptyProfileIsExplicitlyMarkedAsIsolatedEmptyRuntime() {
         org.assertj.core.api.Assertions.assertThat(Arrays.asList(environment.getActiveProfiles()))
@@ -131,14 +121,6 @@ class QaEmptyBackendContractTests {
                         .doesNotContain("DataInitializer")
                         .doesNotContain("Seed")
                         .doesNotContain("Demo"));
-    }
-
-    @Test
-    void qaEmptyKeepsStubProviderBoundaries() {
-        org.assertj.core.api.Assertions.assertThat(paymentCallbackVerifier)
-                .isInstanceOf(StubPaymentCallbackVerifier.class);
-        org.assertj.core.api.Assertions.assertThat(aiVisionProviderRouter.getProviderNames())
-                .contains(StubAiVisionProvider.class.getSimpleName());
     }
 
     @Test

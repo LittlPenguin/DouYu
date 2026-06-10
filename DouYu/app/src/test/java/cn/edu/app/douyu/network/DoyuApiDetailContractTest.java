@@ -10,16 +10,13 @@ import cn.edu.app.douyu.model.ConversationDetail;
 import cn.edu.app.douyu.model.Comment;
 import cn.edu.app.douyu.model.CommentRequest;
 import cn.edu.app.douyu.model.PageResponse;
-import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.model.Post;
+import cn.edu.app.douyu.model.PostRequest;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductCategory;
 import cn.edu.app.douyu.model.Topic;
-import cn.edu.app.douyu.model.AiQuota;
 import cn.edu.app.douyu.model.ConfirmUploadRequest;
-import cn.edu.app.douyu.model.CreatePatternJobRequest;
-import cn.edu.app.douyu.model.FavoriteResult;
 import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.PresignUploadRequest;
 import cn.edu.app.douyu.model.PresignUploadResponse;
@@ -42,34 +39,14 @@ public class DoyuApiDetailContractTest {
     }
 
     @Test
-    public void patternJobDetailUsesJobEndpoint() throws Exception {
-        Method method = DoyuApi.class.getMethod("patternJob", String.class);
-
-        assertEquals("/api/v1/patterns/jobs/{jobId}", method.getAnnotation(GET.class).value());
-        assertCallDataType(method, PatternJob.class);
-    }
-
-    @Test
-    public void aiUploadAndPatternActionsUseExistingBackendEndpoints() throws Exception {
+    public void uploadEndpointsUseExistingBackendEndpoints() throws Exception {
         Method presign = DoyuApi.class.getMethod("uploadPresign", PresignUploadRequest.class);
         Method confirm = DoyuApi.class.getMethod("uploadConfirm", ConfirmUploadRequest.class);
-        Method createJob = DoyuApi.class.getMethod("createPatternJob", CreatePatternJobRequest.class);
-        Method cancelJob = DoyuApi.class.getMethod("cancelPatternJob", String.class);
-        Method favorite = DoyuApi.class.getMethod("favoritePattern", String.class);
-        Method quota = DoyuApi.class.getMethod("aiQuota");
 
         assertEquals("/api/v1/uploads/presign", presign.getAnnotation(POST.class).value());
         assertCallDataType(presign, PresignUploadResponse.class);
         assertEquals("/api/v1/uploads/confirm", confirm.getAnnotation(POST.class).value());
         assertCallDataType(confirm, FileAsset.class);
-        assertEquals("/api/v1/patterns/jobs", createJob.getAnnotation(POST.class).value());
-        assertCallDataType(createJob, PatternJob.class);
-        assertEquals("/api/v1/patterns/jobs/{jobId}/cancel", cancelJob.getAnnotation(POST.class).value());
-        assertCallDataType(cancelJob, PatternJob.class);
-        assertEquals("/api/v1/patterns/{patternId}/favorite", favorite.getAnnotation(POST.class).value());
-        assertCallDataType(favorite, FavoriteResult.class);
-        assertEquals("/api/v1/patterns/quota", quota.getAnnotation(GET.class).value());
-        assertCallDataType(quota, AiQuota.class);
     }
 
     @Test
@@ -104,6 +81,14 @@ public class DoyuApiDetailContractTest {
         assertPageItemType(comments, Comment.class);
         assertEquals("/api/v1/posts/{postId}/comments", createComment.getAnnotation(POST.class).value());
         assertCallDataType(createComment, Comment.class);
+    }
+
+    @Test
+    public void createPostUsesBackendReviewingPostEndpoint() throws Exception {
+        Method createPost = DoyuApi.class.getMethod("createPost", PostRequest.class);
+
+        assertEquals("/api/v1/posts", createPost.getAnnotation(POST.class).value());
+        assertCallDataType(createPost, Post.class);
     }
 
     @Test

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/post_capture_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="&#21457;&#24086;&#25293;&#29031;&#39044;&#35272;" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="96dp"
+        android:layout_gravity="top"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp">
+
+        <TextView
+            android:id="@+id/post_capture_close"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_icon_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="&#8592;"
+            android:textColor="@color/doyu_text"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/post_capture_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:text="&#27491;&#22312;&#21551;&#21160;&#30456;&#26426;"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/post_capture_button"
+        android:layout_width="74dp"
+        android:layout_height="74dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="34dp"
+        android:background="@drawable/bg_pill_ok"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="&#25293;&#29031;"
+        android:textColor="@color/doyu_mint_deep"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+</FrameLayout>

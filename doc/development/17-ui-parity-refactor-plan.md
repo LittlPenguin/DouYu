@@ -1,41 +1,47 @@
 # Java/XML UI Parity Plan
 
-> Status: Historical plan for the Java/XML parity pass. The latest retained
-> parity evidence is recorded in
+> Status: Historical completed plan for the Java/XML parity pass.
+> This record was normalized after the 2026-06-09 cleanup. It no longer lists
+> removed feature pages as parity targets. The retained parity evidence is in
 > `doc/development/verification/2026-06-07-open-design-parity-matrix.md` and
 > `doc/development/verification/2026-06-07-repair-stage-verification.md`.
 
-## Goal
+## Current Goal
 
-Rebuild Android UI in Java/XML and match Open Design screens 1:1 for structure,
-copy, state handling, and interaction.
+Record how retained Android UI screens are matched to Open Design screens for
+structure, copy, state handling, and interaction.
 
 ## Authority
 
-Open Design HTML files in `doc/development/open-design/` are authoritative.
-Existing Kotlin/Compose UI is implementation history only.
+Open Design HTML files in `doc/development/open-design/` are authoritative for
+retained screens only. Deleted feature pages and deleted screenshots are not
+current UI requirements.
 
 ## Parity Rules
 
-- Main screens must match their Open Design first-screen structure.
-- Flow screens must match the referenced Open Design page.
+- Main screens must match their retained Open Design first-screen structure.
 - Empty data must render empty states, not fake content.
 - UI-only capability must be disabled or explicitly marked.
-- Bottom navigation labels are `社区 / 商城 / AI / 消息 / 我的`.
-- No emoji icons, no fake success, no empty clicks.
+- Bottom navigation labels are `Community / Commerce / Messages / Profile`.
+- No fake success, no empty clicks, and no local mock content.
+- OSS-backed uploads and address management remain in the parity scope.
 
-## Page Groups
+## Retained Page Groups
 
-1. App shell and main tabs.
-2. Community and post flows.
-3. AI image and pattern flow.
-4. Commerce and payment boundary flow.
-5. Messages and notification flow.
-6. Profile, profile edit, and Settings.
+1. App shell and four main tabs.
+2. Community, post detail, post creation, comments, and search boundary.
+3. Commerce product browsing, cart, order confirmation, and address management.
+4. Messages, conversations, notifications, and notification detail boundary.
+5. Profile, profile edit, and settings pages.
+
+## Removed From This Plan
+
+Deleted feature surfaces named in the 2026-06-09 cleanup plan are no longer
+parity targets.
 
 ## QA Evidence
 
-For every page group, record:
+For every retained page group, record:
 
 - HTML reference file.
 - Android screen name.
@@ -43,21 +49,18 @@ For every page group, record:
 - Known visual differences.
 - Blockers if not covered.
 
-## Completion Gate
+## Historical Completion Gate
 
-This plan is complete only when Java/XML screens have replaced Compose screens
-and the parity table in `10-testing-acceptance.md` is updated with evidence or
-explicit non-coverage.
+Current parity claims must use the latest verification records and must not
+depend on deleted feature screenshots or previous removed-page targets.
 
 ## Repair Stage Result
 
 The 2026-06-07 real-backend smoke found follow-up gaps recorded in
 `doc/development/verification/2026-06-07-real-backend-repair-log.md`.
-The repair-stage execution plan is preserved as historical context in
-`doc/development/verification/2026-06-07-repair-stage-plan.md`.
 
 `RB-001` through `RB-005` were later closed or reclassified with evidence in
 `doc/development/verification/2026-06-07-repair-stage-verification.md`. The
-latest parity matrix records the retained repair-stage screenshots, real API
-detail evidence, accepted device/mock-frame differences, and remaining
-production-provider exclusions.
+latest parity matrix records retained repair-stage screenshots, real API detail
+evidence, accepted device/mock-frame differences, and remaining unverified
+device coverage.

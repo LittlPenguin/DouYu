@@ -418,9 +418,6 @@ public class PostDetailActivity extends XmlPageActivity {
         for (String chip : chips) {
             addChip(chip, R.drawable.bg_chip_plain, R.color.doyu_text_muted);
         }
-        if (post.linkedPatternId != null && !post.linkedPatternId.isEmpty()) {
-            addChip("关联图纸", R.drawable.bg_pill_ok, R.color.doyu_mint);
-        }
         topicChips.setVisibility(topicChips.getChildCount() == 0 ? View.GONE : View.VISIBLE);
     }
 

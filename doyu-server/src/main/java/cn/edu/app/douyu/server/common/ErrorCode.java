@@ -9,12 +9,9 @@ public enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN),
     NOT_FOUND(HttpStatus.NOT_FOUND),
     CONFLICT(HttpStatus.CONFLICT),
-    RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS),
     AUDIT_REJECTED(HttpStatus.CONFLICT),
-    PAYMENT_FAILED(HttpStatus.CONFLICT),
     INVENTORY_NOT_ENOUGH(HttpStatus.CONFLICT),
     NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED(HttpStatus.CONFLICT),
-    AI_TASK_FAILED(HttpStatus.CONFLICT),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final HttpStatus status;

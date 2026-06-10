@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -17,7 +17,7 @@
       </div>
       <div class="side-facts">
         <div class="fact"><b>登录方式</b><span>用户侧只使用邮箱 + 密码注册登录；注册成功后直接登录。</span></div>
-        <div class="fact"><b>边界</b><span>不设计复杂风控、实名、多设备管理完成态或找回密码流程。</span></div>
+        <div class="fact"><b>边界</b><span>不设计实名、多设备管理完成态或找回密码流程。</span></div>
       </div>
     </section>
     <section class="section">
@@ -41,7 +41,7 @@
           <div class="spec-grid">
             <div class="spec"><h3>账号状态</h3><ul><li>已登录：展示邮箱、登录方式、当前设备。</li><li>未登录：只展示登录按钮和基础说明。</li><li>过期：引导重新登录，不能吞成空白。</li></ul></div>
             <div class="spec"><h3>危险操作</h3><ul><li>退出登录：二次确认，调用 logout，成功后清理本地 token。</li><li>注销账号：说明影响，要求确认。</li><li>失败时保留当前状态并提示重试。</li></ul></div>
-            <div class="state"><h3>不做</h3><p>不展示实名完成、多设备踢下线、支付安全、交易风控或生产级账号保护已完成。</p><div class="state-bar"><span class="state-dot warn">后续任务</span><span class="state-dot bad">禁伪完成</span></div></div>
+            <div class="state"><h3>不做</h3><p>不展示实名完成、多设备踢下线、交易保护或账号保护已完成。</p><div class="state-bar"><span class="state-dot warn">后续任务</span><span class="state-dot bad">禁伪完成</span></div></div>
             <div class="state"><h3>登录契约</h3><p>用户侧登录唯一入口为邮箱 + 密码；手机号只作为历史兼容字段保留。</p><div class="state-bar"><span class="state-dot good">邮箱密码</span></div></div>
           </div>
         </div>

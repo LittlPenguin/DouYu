@@ -97,7 +97,7 @@ public class OrderController {
         order.setBuyerId(userId);
         order.setSellerType("SELF_OPERATED");
         order.setOrderType("SELF_OPERATED");
-        order.setStatus("WAITING_PAYMENT");
+        order.setStatus("CREATED");
         order.setTotalAmountCent(total);
         order.setPayableAmountCent(total);
         order.setAddressSnapshot("{\"addressId\":\"" + request.addressId() + "\"}");
@@ -172,7 +172,7 @@ public class OrderController {
         if (!order.getBuyerId().equals(userId)) {
             throw new BizException(ErrorCode.FORBIDDEN, "无权取消该订单");
         }
-        if (!"WAITING_PAYMENT".equals(order.getStatus()) && !"CREATED".equals(order.getStatus())) {
+        if (!"CREATED".equals(order.getStatus())) {
             throw new BizException(ErrorCode.CONFLICT, "当前订单状态不可取消");
         }
         order.setStatus("CANCELED");

@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -12,7 +12,7 @@
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / 我的页补全设计稿</div>
         <h1 class="title">编辑资料：轻量资料维护</h1>
-        <p class="lead">编辑资料页用于补齐“我的”页的编辑入口，覆盖头像、昵称、简介、兴趣标签和城市/地区资料设计。Android 当前已用现有 PATCH /api/v1/users/me 保存昵称、头像文件和简介；城市/地区、兴趣标签、地图定位、实名和生产合规仍是 UI-only 或待补能力。</p>
+        <p class="lead">编辑资料页用于补齐“我的”页的编辑入口，覆盖头像、昵称、简介、兴趣标签和城市/地区资料设计。Android 当前已用现有 PATCH /api/v1/users/me 保存昵称、头像文件和简介；城市/地区、兴趣标签和实名仍是 UI-only 或待补能力。</p>
         <div class="chips">
           <span class="chip">头像编辑</span>
           <span class="chip">昵称 / 简介</span>
@@ -22,7 +22,7 @@
       </div>
       <div class="side-facts">
         <div class="fact"><b>入口</b><span>从我的页个人资料区“编辑资料”进入；返回后保持我的页资产 Tab 状态。</span></div>
-        <div class="fact"><b>边界</b><span>Android 已有 profile_edit 路由和现有资料保存接口；不接地图 API，不写成实名资料或生产合规已完成。</span></div>
+        <div class="fact"><b>边界</b><span>Android 已有 profile_edit 路由和现有资料保存接口；不写成实名资料已完成。</span></div>
         <div class="fact"><b>保存规则</b><span>昵称为空禁用保存；头像上传失败保留旧头像并提供重试。</span></div>
       </div>
     </section>
@@ -50,7 +50,7 @@
                 <div class="compose-field body-field">喜欢做杯垫、挂件和像素花束。最近在收集薄荷色系。</div>
                 <div class="list" style="padding:0">
                   <div class="row"><span class="round-icon"><span class="icon at"></span></span><div class="row-main"><div class="row-title">年龄段</div><div class="row-sub">16+ 用户展示，不做实名</div></div><span class="pill">16+</span></div>
-                  <div class="row"><span class="round-icon"><span class="icon map"></span></span><div class="row-main"><div class="row-title">城市 / 地区</div><div class="row-sub">杭州 · UI-only，不接地图定位</div></div><span class="pill warn">可选</span></div>
+                  <div class="row"><span class="round-icon"><span class="icon map"></span></span><div class="row-main"><div class="row-title">城市 / 地区</div><div class="row-sub">杭州 · 手动填写展示</div></div><span class="pill warn">可选</span></div>
                 </div>
                 <div class="chips-row" style="padding:0"><span class="pill ok">杯垫</span><span class="pill ok">色卡</span><span class="pill">挂件</span><span class="pill">新手教程</span></div>
               </div>
@@ -64,11 +64,11 @@
             <div class="mini-screen"><div class="mini-head">昵称为空</div><div class="mini-body"><div class="compose-field title-field" style="color:var(--muted)">请输入昵称</div><div class="warning-band" style="margin-top:12px">昵称不能为空</div><span class="button disabled" style="width:100%;margin-top:12px">保存</span></div></div>
             <div class="mini-screen"><div class="mini-head">保存失败</div><div class="mini-body"><div class="warning-band">保存失败，请重试</div><div class="compose-field body-field" style="margin-top:12px">草稿保留在本页，不返回我的页。</div><div class="tool-row"><span class="button ghost">重试</span><a class="button ghost" href="profile-a.html">取消</a></div></div></div>
             <div class="mini-screen"><div class="mini-head">保存成功</div><div class="mini-body"><div class="warning-band">资料已保存，返回我的页刷新展示</div><a class="button ghost" href="profile-a.html" style="width:100%;margin-top:12px">返回我的</a></div></div>
-            <div class="mini-screen"><div class="mini-head">城市 UI-only</div><div class="mini-body"><div class="warning-band">城市/地区只做资料展示，不请求真实定位</div><div class="chips-row" style="padding-left:0"><span class="pill">杭州</span><span class="pill">上海</span><span class="pill">手动填写</span></div></div></div>
+            <div class="mini-screen"><div class="mini-head">城市资料</div><div class="mini-body"><div class="warning-band">城市/地区只做手动资料展示</div><div class="chips-row" style="padding-left:0"><span class="pill">杭州</span><span class="pill">上海</span><span class="pill">手动填写</span></div></div></div>
           </div>
           <div class="spec-grid" style="margin-top:14px">
             <div class="spec"><h3>字段结构</h3><ul><li>头像、昵称、简介、年龄段、城市/地区、兴趣标签。</li><li>昵称为空禁用保存。</li><li>头像失败保留旧头像，给重试入口。</li><li>保存失败保留草稿。</li></ul></div>
-            <div class="state"><h3>不可宣称</h3><p>不得把城市/地区、兴趣标签、地图定位、实名资料或生产合规写成已完成；保存失败必须保留草稿并允许重试。</p><div class="state-bar"><span class="state-dot warn">局部 UI-only</span><span class="state-dot bad">禁假成功</span></div></div>
+            <div class="state"><h3>不可宣称</h3><p>不得把城市/地区、兴趣标签或实名资料写成已完成；保存失败必须保留草稿并允许重试。</p><div class="state-bar"><span class="state-dot warn">局部 UI-only</span><span class="state-dot bad">禁假成功</span></div></div>
           </div>
         </div>
       </div>

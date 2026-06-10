@@ -1,4 +1,4 @@
-# 2026-06-07 Java/XML Verification
+﻿# 2026-06-07 Java/XML Verification
 
 ## Scope
 
@@ -176,7 +176,7 @@ Current retained screen evidence:
 
 The historical run proved the Java/XML screens rendered on hardware after those
 XML edits, including CameraX preview, quick menu, five main tabs, search, post
-compose/detail, commerce/payment, message, profile edit, Settings sections, and
+compose/detail, commerce/address, message, profile edit, Settings sections, and
 future capability boundary. Current screen-level Open Design parity for all 18
 HTML references is recorded separately in
 `doc/development/verification/2026-06-07-open-design-parity-matrix.md`.

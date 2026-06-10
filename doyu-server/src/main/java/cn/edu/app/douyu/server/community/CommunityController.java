@@ -116,7 +116,7 @@ public class CommunityController {
         String userId = CurrentUser.userId(authentication);
         Instant now = Instant.now();
         PostEntity post = new PostEntity(idGenerator.next("post"), userId, request.title(), request.content(),
-                joinList(request.mediaFileIds()), joinList(request.topicIds()), request.linkedPatternId(),
+                joinList(request.mediaFileIds()), joinList(request.topicIds()),
                 "REVIEWING", 0, 0, 0, false, now, now);
         applyCoverFromMedia(post);
         postRepository.save(post);
@@ -151,7 +151,6 @@ public class CommunityController {
         if (request.content() != null) post.setContent(request.content());
         if (request.mediaFileIds() != null) post.setMediaFileIds(joinList(request.mediaFileIds()));
         if (request.topicIds() != null) post.setTopicIds(joinList(request.topicIds()));
-        if (request.linkedPatternId() != null) post.setLinkedPatternId(request.linkedPatternId());
         if (request.mediaFileIds() != null) {
             applyCoverFromMedia(post);
         }
@@ -417,7 +416,6 @@ public class CommunityController {
                 .map(topicId -> topicRepository.findById(topicId).map(TopicEntity::getName).orElse(""))
                 .filter(name -> !name.isBlank())
                 .toList());
-        view.put("linkedPatternId", post.getLinkedPatternId());
         view.put("status", post.getStatus());
         view.put("likeCount", post.getLikeCount());
         view.put("favoriteCount", post.getFavoriteCount());
@@ -671,7 +669,7 @@ public class CommunityController {
     }
 
     public record PostRequest(String title, @NotBlank String content,
-                              List<String> mediaFileIds, List<String> topicIds, String linkedPatternId) {
+                              List<String> mediaFileIds, List<String> topicIds) {
     }
 
     private record CoverAsset(String url, Integer width, Integer height) {

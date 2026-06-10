@@ -168,7 +168,7 @@
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="查看作品、查看图纸等对象跳转，待后端返回关联对象后接入（当前为 UI-only 边界，不放无目标的假入口）。"
+                android:text="查看作品等对象跳转，待后端返回关联对象后接入（当前为 UI-only 边界，不放无目标的假入口）。"
                 android:textColor="@color/doyu_text_muted"
                 android:textSize="12sp" />
         </LinearLayout>

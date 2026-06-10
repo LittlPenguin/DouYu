@@ -35,24 +35,16 @@ import cn.edu.app.douyu.auth.LoginActivity;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.core.UiCopy;
 import cn.edu.app.douyu.data.DoyuRepository;
-import cn.edu.app.douyu.feature.ai.AiFlowActivity;
 import cn.edu.app.douyu.feature.community.PostDetailActivity;
 import cn.edu.app.douyu.model.PageResponse;
-import cn.edu.app.douyu.model.PatternAsset;
-import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.UserProfile;
 import cn.edu.app.douyu.ui.LoadState;
 
-/**
- * "我的" page. Restores profile-a.html: hero, the 获赞/作品/关注/粉丝 stat grid and
- * the 我的图纸 / 点赞作品 / 收藏作品 asset tabs. Every value comes from the backend;
- * empty, login and error states are rendered instead of any local mock content.
- */
 public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Listener {
-    private static final int TAB_PATTERNS = 0;
-    private static final int TAB_LIKED = 1;
-    private static final int TAB_FAVORITES = 2;
+    private static final int TAB_LIKED = 0;
+    private static final int TAB_FAVORITES = 1;
+    private static final int FIRST_ASSET_TAB = TAB_LIKED;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -65,7 +57,6 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
     private TextView statFollowing;
     private TextView statFollowers;
     private TextView[] tabs;
-
     private RecyclerView list;
     private ProgressBar loading;
     private TextView empty;
@@ -73,10 +64,8 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
     private TextView errorText;
     private MaterialButton retry;
     private ProfileAssetAdapter adapter;
-
-    private int activeTab = TAB_PATTERNS;
-    private boolean loggedIn = false;
-
+    private int activeTab = FIRST_ASSET_TAB;
+    private boolean loggedIn;
     private ActivityResultLauncher<Intent> editLauncher;
     private ActivityResultLauncher<Intent> loginLauncher;
 
@@ -114,23 +103,19 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         statFollowing = view.findViewById(R.id.stat_following);
         statFollowers = view.findViewById(R.id.stat_followers);
         tabs = new TextView[]{
-                view.findViewById(R.id.tab_my_patterns),
                 view.findViewById(R.id.tab_liked),
                 view.findViewById(R.id.tab_favorites)
         };
-
         list = view.findViewById(R.id.asset_list);
         loading = view.findViewById(R.id.asset_loading);
         empty = view.findViewById(R.id.asset_empty);
         errorBox = view.findViewById(R.id.asset_error_box);
         errorText = view.findViewById(R.id.asset_error_text);
         retry = view.findViewById(R.id.asset_retry);
-
         adapter = new ProfileAssetAdapter(this);
         list.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
         list.setAdapter(adapter);
 
-        tabs[TAB_PATTERNS].setOnClickListener(v -> selectTab(TAB_PATTERNS));
         tabs[TAB_LIKED].setOnClickListener(v -> selectTab(TAB_LIKED));
         tabs[TAB_FAVORITES].setOnClickListener(v -> selectTab(TAB_FAVORITES));
         editButton.setOnClickListener(v -> AuthGate.runOrRequestLogin(requireActivity(), loginLauncher,
@@ -139,10 +124,8 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         view.findViewById(R.id.stat_liked_cell).setOnClickListener(v -> showLikesSourceDialog());
         view.findViewById(R.id.stat_posts_cell).setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), ProfilePostsActivity.class)));
-        view.findViewById(R.id.stat_following_cell).setOnClickListener(v ->
-                openUsers(ProfileUsersActivity.MODE_FOLLOWING));
-        view.findViewById(R.id.stat_followers_cell).setOnClickListener(v ->
-                openUsers(ProfileUsersActivity.MODE_FOLLOWERS));
+        view.findViewById(R.id.stat_following_cell).setOnClickListener(v -> openUsers(ProfileUsersActivity.MODE_FOLLOWING));
+        view.findViewById(R.id.stat_followers_cell).setOnClickListener(v -> openUsers(ProfileUsersActivity.MODE_FOLLOWERS));
         retry.setOnClickListener(v -> loadAssets(activeTab));
 
         applyTabStyle();
@@ -168,6 +151,16 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
     public void onDestroy() {
         super.onDestroy();
         executor.shutdownNow();
+    }
+
+    @Override
+    public void onCardClick(AssetCard card) {
+        if (card == null || card.targetId == null || !AssetCard.TYPE_POST.equals(card.type)) {
+            return;
+        }
+        Intent intent = new Intent(requireContext(), PostDetailActivity.class);
+        intent.putExtra(IntentExtras.POST_ID, card.targetId);
+        startActivity(intent);
     }
 
     private void selectTab(int index) {
@@ -196,7 +189,7 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
     private void showLikesSourceDialog() {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("获赞来源")
-                .setMessage("获赞来自你发布作品收到的赞，数据由服务端按可列表作品实时汇总。当前不展示逐条点赞来源，也不把评论互动写入该统计。")
+                .setMessage("获赞来自你发布作品收到的点赞，数据由服务端按真实互动汇总。本页不合成本地互动记录。")
                 .setPositiveButton("知道了", null)
                 .show();
     }
@@ -225,8 +218,8 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
             return;
         }
         loggedIn = true;
-        nickname.setText(safe(me.nickname, "豆友"));
-        String bio = me.bio == null || me.bio.isEmpty() ? "拼豆爱好者" : me.bio;
+        nickname.setText(safe(me.nickname, "用户"));
+        String bio = me.bio == null || me.bio.isEmpty() ? "豆屿用户" : me.bio;
         subtitle.setText(bio + " · 已登录");
         statLiked.setText(String.valueOf(count(me.likedCount)));
         statPosts.setText(String.valueOf(count(me.postCount)));
@@ -247,7 +240,8 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         loggedIn = false;
         nickname.setText("未登录");
         subtitle.setText(state == LoadState.LOGIN_REQUIRED
-                ? "登录后查看资料与资产" : "暂时无法加载资料，可在资产区重试");
+                ? "登录后可查看个人资料和作品资产"
+                : "暂时无法加载个人资料，可在资产区域重试。");
         statLiked.setText("0");
         statPosts.setText("0");
         statFollowing.setText("0");
@@ -277,10 +271,9 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
                 LoadState state = LoadState.from(e);
                 String message = e.getMessage();
                 runOnUi(() -> {
-                    if (tab != activeTab) {
-                        return;
+                    if (tab == activeTab) {
+                        showState(state, message);
                     }
-                    showState(state, message);
                 });
             }
         });
@@ -288,70 +281,21 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
 
     private List<AssetCard> loadCards(DoyuRepository repository, int tab) throws Exception {
         List<AssetCard> cards = new ArrayList<>();
-        if (tab == TAB_PATTERNS) {
-            PageResponse<PatternJob> page = repository.patternJobs();
-            if (page != null && page.items != null) {
-                for (PatternJob job : page.items) {
-                    cards.add(patternCard(job));
-                }
-            }
-        } else if (tab == TAB_LIKED) {
-            PageResponse<Post> page = repository.likedPosts();
-            if (page != null && page.items != null) {
-                for (Post post : page.items) {
-                    cards.add(postCard(post, "帖子"));
-                }
-            }
-        } else {
-            PageResponse<Post> page = repository.favoritePosts();
-            if (page != null && page.items != null) {
-                for (Post post : page.items) {
-                    cards.add(postCard(post, "收藏"));
-                }
+        PageResponse<Post> page = tab == TAB_LIKED ? repository.likedPosts() : repository.favoritePosts();
+        String label = tab == TAB_LIKED ? "点赞" : "收藏";
+        if (page != null && page.items != null) {
+            for (Post post : page.items) {
+                cards.add(postCard(post, label));
             }
         }
         return cards;
     }
 
-    private AssetCard patternCard(PatternJob job) {
-        PatternAsset asset = job.patternAsset;
-        String image = asset != null && asset.previewImageUrl != null ? asset.previewImageUrl : job.sourceImageUrl;
-        String title = asset != null && asset.title != null && !asset.title.isEmpty()
-                ? asset.title : safe(job.inputName, "拼豆图纸");
-        String metaLeft;
-        String metaRight;
-        if (asset != null && asset.widthCells != null && asset.heightCells != null) {
-            metaLeft = safe(asset.paletteName, "图纸");
-            metaRight = asset.widthCells + "×" + asset.heightCells;
-        } else {
-            metaLeft = statusLabel(job.status);
-            metaRight = safe(job.paletteName, "");
-        }
-        return new AssetCard(image, "图纸", true, title, metaLeft, metaRight,
-                AssetCard.TYPE_PATTERN, job.jobId);
-    }
-
     private AssetCard postCard(Post post, String label) {
-        String author = post.author != null ? safe(post.author.nickname, "豆友") : "豆友";
-        String likes = "赞 " + count(post.likeCount);
-        return new AssetCard(post.coverImageUrl, label, false, safe(post.title, "无标题"),
+        String author = post.author != null ? safe(post.author.nickname, "用户") : "用户";
+        String likes = count(post.likeCount) + " 赞";
+        return new AssetCard(post.coverImageUrl, label, false, safe(post.title, "未命名作品"),
                 author, likes, AssetCard.TYPE_POST, post.postId);
-    }
-
-    @Override
-    public void onCardClick(AssetCard card) {
-        if (card == null || card.targetId == null) {
-            return;
-        }
-        if (AssetCard.TYPE_POST.equals(card.type)) {
-            Intent intent = new Intent(requireContext(), PostDetailActivity.class);
-            intent.putExtra(IntentExtras.POST_ID, card.targetId);
-            startActivity(intent);
-        } else {
-            Intent intent = new Intent(requireContext(), AiFlowActivity.class);
-            intent.putExtra(IntentExtras.JOB_ID, card.targetId);
-            startActivity(intent);
-        }
     }
 
     private void showState(LoadState state, String message) {
@@ -372,13 +316,7 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         if (!loggedIn) {
             return UiCopy.PROFILE_EMPTY;
         }
-        if (tab == TAB_PATTERNS) {
-            return "还没有图纸。AI 创作生成的图纸会显示在这里。";
-        }
-        if (tab == TAB_LIKED) {
-            return "还没有点赞的作品。";
-        }
-        return "还没有收藏的作品。";
+        return tab == TAB_LIKED ? "暂无点赞作品。" : "暂无收藏作品。";
     }
 
     private static String userFacingError(LoadState state, String message) {
@@ -386,25 +324,12 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
             return UiCopy.LOGIN_REQUIRED;
         }
         if (message == null || message.isEmpty()) {
-            return UiCopy.ERROR_PREFIX + "服务暂不可用，请稍后重试。";
+            return UiCopy.ERROR_PREFIX + "服务暂时不可用，请稍后重试。";
         }
         if (message.contains("connect") || message.contains("timeout") || message.contains("Unable to resolve host")) {
             return UiCopy.ERROR_PREFIX + "暂时无法连接服务。页面保留真实错误态，不使用本地假内容。";
         }
         return UiCopy.ERROR_PREFIX + message;
-    }
-
-    private String statusLabel(String status) {
-        if ("SUCCEEDED".equals(status)) {
-            return "已完成";
-        }
-        if ("FAILED".equals(status)) {
-            return "失败";
-        }
-        if ("CANCELED".equals(status)) {
-            return "已取消";
-        }
-        return "生成中";
     }
 
     private void runOnUi(Runnable runnable) {

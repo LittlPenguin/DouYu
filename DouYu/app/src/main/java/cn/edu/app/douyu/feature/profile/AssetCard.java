@@ -1,12 +1,7 @@
 package cn.edu.app.douyu.feature.profile;
 
-/**
- * Lightweight view model for one card in the "我的" asset tabs. Each card maps a
- * real backend item (a pattern job or a post) to the design's thumb + label +
- * title + meta layout. No card is ever synthesised from local mock data.
- */
+/** Lightweight view model for one card backed by a real backend post. */
 public class AssetCard {
-    public static final String TYPE_PATTERN = "pattern";
     public static final String TYPE_POST = "post";
 
     public final String imageUrl;

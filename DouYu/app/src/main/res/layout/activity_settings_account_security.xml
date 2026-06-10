@@ -25,7 +25,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="账号状态&#10;已登录展示邮箱、登录方式、当前设备；未登录只展示登录按钮和基础说明；过期引导重新登录。"
+                android:text="Account state&#10;Signed-in users see email login state and the current local session. Signed-out users see the login action."
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
@@ -35,7 +35,7 @@
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="危险操作&#10;退出登录需要二次确认并清理本地 token；注销账号说明影响并要求确认；失败时保留当前状态并提示重试。"
+                android:text="Session actions&#10;Logout requires confirmation and clears local tokens only after the backend request succeeds or the session is already invalid."
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
@@ -45,7 +45,7 @@
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
                 android:padding="16dp"
-                android:text="不展示实名完成、多设备踢下线、支付安全、交易风控或生产级账号保护已完成。"
+                android:text="Unavailable items are hidden instead of being described as completed production services."
                 android:textColor="@color/doyu_text_muted"
                 android:textSize="14sp" />
 
@@ -54,7 +54,7 @@
                 android:layout_height="54dp"
                 android:layout_marginTop="18dp"
                 android:enabled="false"
-                android:text="退出登录需要真实会话状态"
+                android:text="Logout requires a real session"
                 android:textAllCaps="false"
                 app:cornerRadius="8dp" />
         </LinearLayout>

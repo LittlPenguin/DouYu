@@ -2,9 +2,14 @@
 
 ## Purpose
 
-This file maps the Open Design screens to the Java/XML Android rewrite.
+This file maps retained Open Design screens to the current Java/XML Android client.
 
-## Main Tabs
+## Main Navigation
+
+Bottom navigation order is `社区 / 商城 / 上传 / 消息 / 我的`.
+
+- `社区`, `商城`, `消息`, and `我的` are content tabs backed by Fragment screens.
+- `上传` is an action item. It opens `PostCreateActivity` after the login gate and must not replace the current Fragment.
 
 ### Community
 
@@ -14,10 +19,10 @@ Android XML: `fragment_community_home.xml`
 Required structure:
 
 - Main top bar.
-- Channel row: recommended/following/tutorial/pattern/beginner equivalents.
+- Channel row.
 - Two-column content grid or masonry-style RecyclerView.
 - Empty feed state when backend returns no posts.
-- Bottom navigation.
+- Bottom navigation with upload action between commerce and messages.
 
 ### Commerce
 
@@ -27,24 +32,10 @@ Android XML: `fragment_commerce_home.xml`
 Required structure:
 
 - Search or filter entry.
-- Backend-driven category chips with a default `精选` tab.
-- Two-column masonry product grid from backend data; image height follows the
-  returned cover dimensions.
+- Backend-driven category chips with a default featured tab.
+- Two-column masonry product grid from backend data; image height follows returned cover dimensions.
 - Empty product state without mock products.
-- No fixed `商城规则说明` module on the runtime screen.
-
-### AI
-
-Reference: `open-design/ai-home-a.html`
-Android XML: `fragment_ai_home.xml`
-
-Required structure:
-
-- Creation entry.
-- Album upload and camera entry.
-- Current task/history entry.
-- Development boundary for real visual provider and model generation.
-- Result actions disabled when backend capability is not implemented.
+- Order/address boundary copy without payment success claims.
 
 ### Messages
 
@@ -66,9 +57,8 @@ Android XML: `fragment_profile_home.xml`
 Required structure:
 
 - User header or login prompt.
-- Stats row. `获赞` opens a source explanation dialog; `作品`, `关注`, and `粉丝`
-  navigate to dedicated real-data list screens.
-- Asset tabs for patterns, liked posts, and favorites.
+- Stats row. `获赞` opens a source explanation dialog; `作品`, `关注`, and `粉丝` navigate to dedicated real-data list screens.
+- Asset tabs for posts, liked posts, and favorites.
 - Profile edit entry.
 - Empty asset states without mock assets.
 
@@ -76,53 +66,30 @@ Required structure:
 
 - Login follows `login-a.html`; Android XML is `activity_login.xml`.
 - Register follows `register-a.html`; Android XML is `activity_register.xml`.
-- The logged-out Open Design board is `index-logged-out.html`; the logged-in
-  board remains `index.html`.
-- Search follows `search-a.html`; Android XML is `activity_search.xml`; global
-  search remains UI-only unless backend support exists.
-- Post detail follows `post-detail-comment-toolbar-a.html`; Android XML is
-  `activity_post_detail.xml`. Required runtime structure is image-first
-  carousel, content card, real comments, a bottom static comment entry with
-  like/comment/favorite actions, and a separate bottom real-input overlay that
-  appears above the IME keyboard after the static entry is triggered. The real
-  input overlay is not part of the scrolling comment section. Author metadata must be readable
-  UI copy such as `作品 · yyyy-MM-dd`, not raw backend status or full ISO
-  timestamps.
-- Post compose follows `post-compose-a.html`; Android XML is
-  `activity_post_create.xml`.
-- Conversation follows `message-conversation-a.html`; Android XML is
-  `activity_conversation.xml`.
-- Notification detail follows `notification-detail-a.html`; Android XML is
-  `activity_notification_detail.xml`.
-- Profile edit follows `profile-edit-a.html`; Android XML is
-  `activity_profile_edit.xml`.
-- Profile posts follows `profile-posts-a.html`; Android XML is
-  `activity_profile_posts.xml`.
-- Profile following and followers follow `profile-following-a.html` and
-  `profile-followers-a.html`; Android XML is `activity_profile_users.xml`.
-- Settings follows the five `settings-*.html` files; Android XML files are
-  `activity_settings_home.xml`, `activity_settings_account_security.xml`,
-  `activity_settings_privacy_permissions.xml`,
-  `activity_settings_notifications.xml`, and
-  `activity_settings_about_compliance.xml`.
-- Future capability follows `future-capability-ui-a.html`; Android XML is
-  `activity_future_capability.xml`.
-- `doyu-design-directions.html` records the selected visual direction and is
-  not a runtime Android screen.
+- Search follows `search-a.html`; Android XML is `activity_search.xml`; global search remains UI-only unless backend support exists.
+- Post detail follows `post-detail-comment-toolbar-a.html`; Android XML is `activity_post_detail.xml`.
+- Post compose follows `post-compose-a.html`; Android XML is `activity_post_create.xml`. Required states include logged-out gate, title/body validation, topic loading or empty state, image picker, CameraX capture, OSS upload, failed upload retry/delete, 9 image limit, preview, publish disabled states, and backend `REVIEWING` success.
+- Conversation follows `message-conversation-a.html`; Android XML is `activity_conversation.xml`.
+- Notification detail follows `notification-detail-a.html`; Android XML is `activity_notification_detail.xml`.
+- Profile edit follows `profile-edit-a.html`; Android XML is `activity_profile_edit.xml`.
+- Profile posts follows `profile-posts-a.html`; Android XML is `activity_profile_posts.xml`.
+- Profile following and followers follow `profile-following-a.html` and `profile-followers-a.html`; Android XML is `activity_profile_users.xml`.
+- Settings follows retained settings files: `settings-home-a.html`, `settings-account-security-a.html`, `settings-privacy-permissions-a.html`, and `settings-notifications-a.html`.
+- `doyu-design-directions.html` records the selected visual direction and is not a runtime Android screen.
 
 ## Data and State Rules
 
 - Lists render backend data only.
 - Empty backend results render empty states.
-- Future features render disabled or UI-only states.
+- Unavailable retained flows render disabled or UI-only states.
 - Pure UI-only pages must not create new API claims.
-- Logged-out Profile data copy is exactly `需要登录后才能查看此页面的数据。`
-- Logged-out protected actions show a confirmation dialog before opening Login:
-  profile edit, upload work, comments, likes, favorites, and follow.
+- Logged-out protected actions show a confirmation dialog before opening Login: profile edit, upload work, comments, likes, favorites, follow, cart and order actions.
+- Address management remains in scope. Manual address fields must remain available even though map/location is removed.
+- OSS-backed image storage and upload presign/confirm remain in scope.
 
 ## Acceptance
 
-Each screen passes when the Java/XML implementation:
+Each retained screen passes when the Java/XML implementation:
 
 - Uses the Open Design structure.
 - Has loading, empty, error, and disabled states where applicable.
@@ -130,25 +97,6 @@ Each screen passes when the Java/XML implementation:
 - Does not expose empty clicks.
 - Has screenshot evidence or is recorded as not covered.
 
-## Current Real-Device Evidence
+## Evidence Rules
 
-The Java/XML visual smoke test captures these screenshot names on the attached
-real device:
-
-- Main tabs: `main_community.png`, `main_commerce.png`, `main_ai.png`,
-  `main_messages.png`, `main_profile.png`.
-- Global shell: `main_quick_menu.png`.
-- Community/search/post: `search.png`, `post_create.png`, `post_detail.png`.
-- AI: `ai_flow.png`, `camera.png`.
-- Commerce: `product_detail.png`, `payment_boundary.png`.
-- Message: `conversation.png`, `notification_detail.png`.
-- Profile/Settings: `profile_edit.png`, `settings_home.png`,
-  `settings_account_security.png`, `settings_privacy_permissions.png`,
-  `settings_notifications.png`, `settings_about_compliance.png`,
-  `future_capability.png`.
-
-Evidence directory:
-`doc/development/verification/android-java-xml-screenshots/repair-stage/visual-smoke`.
-
-After any XML or drawable change, rerun the visual smoke suite and replace the
-evidence screenshots before making final 1:1 parity claims.
+Screenshot evidence must not reference AI/payment/future capability pages as current coverage. Historical evidence records may mention older screenshots only as past artifacts, but current parity matrices must use retained screen names.

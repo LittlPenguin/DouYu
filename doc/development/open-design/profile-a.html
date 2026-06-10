@@ -11,50 +11,46 @@
     <section class="section">
       <div class="section-head">
         <h2>未登录状态</h2>
-        <p>需要登录后才能查看此页面的数据。</p>
+        <p>需要登录后才能查看此页面的数据。未登录时不显示本地假内容。</p>
       </div>
       <div class="state-grid">
-        <div class="state"><h3>个人资料</h3><p>未登录点击“编辑资料”先弹确认登录，再进入 login-a.html；登录成功后进入 profile-edit-a.html。</p></div>
-        <div class="state"><h3>受保护数据</h3><p>获赞、作品、关注、粉丝和资产列表不使用本地假内容，只显示登录边界。</p></div>
+        <div class="state"><h3>个人资料</h3><p>点击“编辑资料”先进入登录边界，登录成功后再进入 profile-edit-a.html。</p></div>
+        <div class="state"><h3>受保护数据</h3><p>获赞、作品、关注、粉丝、点赞作品和收藏作品都来自后端。</p></div>
       </div>
     </section>
+
     <section class="hero">
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / A 方向页面级设计稿</div>
         <h1 class="title">我的页：轻量资产中心</h1>
-        <p class="lead">我的页优化统计区，最新顺序为“获赞 / 作品 / 关注 / 粉丝”；删除“我的订单 / 评论作品 / 关注作品”设计入口，将“我的图纸 / 点赞作品 / 收藏作品”合并到同一 Tab 中，Tab 内容展示帖子或图纸卡。</p>
+        <p class="lead">我的页保留资料、统计、点赞作品和收藏作品。头像上传继续走 OSS-backed 上传链路；空结果展示空态，不填本地样例卡。</p>
         <div class="chips">
           <span class="chip">获赞 / 作品 / 关注 / 粉丝</span>
-          <span class="chip">三资产 Tab</span>
-          <span class="chip">删除订单入口展示</span>
-          <span class="chip">Settings 从新增菜单进入</span>
+          <span class="chip">点赞作品</span>
+          <span class="chip">收藏作品</span>
+          <span class="chip">OSS 头像上传</span>
         </div>
       </div>
       <div class="side-facts">
-        <div class="fact"><b>解释</b><span>`do.md` 中第二个 messages 小节按内容解释为我的页调整。</span></div>
-        <div class="fact"><b>仅设计调整</b><span>不声明现有 Android 代码已删除订单、评论作品或关注作品页面。</span></div>
-        <div class="fact"><b>合规边界</b><span>设置和合规入口不包装成生产合规已完成。</span></div>
+        <div class="fact"><b>当前范围</b><span>只表达 Profile、Profile Edit、Liked Posts 和 Favorite Posts。</span></div>
+        <div class="fact"><b>导航边界</b><span>底部主导航显示社区、商城、上传、消息、我的；上传是发帖 action。</span></div>
+        <div class="fact"><b>帮助边界</b><span>设置和帮助入口不包装成完整上线材料已完成。</span></div>
       </div>
     </section>
 
     <section class="section">
       <div class="section-head">
         <h2>首屏蓝图</h2>
-        <p>更轻的个人资料头部、统计组件和同一 Tab 里的三类资产内容。</p>
+        <p>更轻的个人资料头部、统计组件和两个真实帖子资产列表。</p>
       </div>
       <div class="canvas">
         <div class="phone">
           <div class="screen">
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar">
-              <a class="icon-btn" href="post-compose-a.html"><span class="icon add"></span></a>
+              <a class="icon-btn" href="settings-home-a.html"><span class="icon settings"></span></a>
               <div class="top-title">我的</div>
               <a class="icon-btn" href="search-a.html"><span class="icon search"></span></a>
-              <div class="quick-menu">
-                <a class="quick-item" href="settings-home-a.html"><span class="icon settings"></span><span>Setting</span></a>
-                <a class="quick-item" href="ai-home-a.html"><span class="icon ai"></span><span>AI 创作</span></a>
-                <a class="quick-item" href="post-compose-a.html"><span class="icon upload"></span><span>上传帖子</span></a>
-              </div>
             </div>
             <div class="scroll">
               <div class="hero-strip">
@@ -68,19 +64,18 @@
               </div>
               <div id="like-source-dialog" class="state" style="margin-top:10px">
                 <h3>获赞来源</h3>
-                <p>获赞来自你发布作品收到的赞，数据由服务端按可列表作品实时汇总。当前不展示逐条点赞来源，也不把评论互动写入该统计。</p>
+                <p>获赞来自你发布作品收到的赞，数据由服务端按可列表作品实时汇总。</p>
               </div>
-              <div class="asset-tabs"><span class="on">我的图纸</span><span>点赞作品</span><span>收藏作品</span></div>
+              <div class="asset-tabs"><span class="on">点赞作品</span><span>收藏作品</span></div>
               <div class="masonry" style="padding-top:10px">
-                <a class="post-card" href="ai-home-a.html"><div class="thumb mint h-md"></div><div class="card-body"><span class="pill ok">图纸</span><div class="mini-title">薄荷小岛挂件</div><div class="meta"><span>48 色</span><span>28x28</span></div></div></a>
-                <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb sky h-sm"></div><div class="card-body"><span class="pill">帖子</span><div class="mini-title">点赞的海盐配色</div><div class="meta"><span>阿澄</span><span>88</span></div></div></a>
+                <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb sky h-sm"></div><div class="card-body"><span class="pill">点赞</span><div class="mini-title">点赞的海盐配色</div><div class="meta"><span>阿澄</span><span>88</span></div></div></a>
                 <a class="post-card" href="post-detail-comment-toolbar-a.html"><div class="thumb coral h-tall"></div><div class="card-body"><span class="pill">收藏</span><div class="mini-title">草莓小熊教程</div><div class="meta"><span>小屿</span><span>126</span></div></div></a>
               </div>
             </div>
             <div class="bottom-nav">
               <a class="nav-item" href="community-home-a.html"><span class="nav-logo community"></span><span>社区</span></a>
               <a class="nav-item" href="commerce-home-a.html"><span class="nav-logo shop"></span><span>商城</span></a>
-              <a class="nav-item" href="ai-home-a.html"><span class="nav-logo ai"></span><span>AI</span></a>
+              <a class="nav-item" href="post-compose-a.html"><span class="nav-logo compose"></span><span>上传</span></a>
               <a class="nav-item" href="messages-a.html"><span class="nav-logo message"></span><span>消息</span></a>
               <a class="nav-item on" href="profile-a.html"><span class="nav-logo profile"></span><span>我的</span></a>
             </div>
@@ -88,10 +83,10 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>保留结构</h3><ul><li>头像、昵称、简介、编辑资料。</li><li>获赞、作品、关注、粉丝四项统计。</li><li>作品、关注、粉丝进入真实列表页。</li><li>我的图纸、点赞作品、收藏作品放入同一个 Tab 区。</li><li>Tab 内容使用统一帖子/图纸卡片。</li></ul></div>
-            <div class="spec"><h3>删除展示</h3><ul><li>本设计稿不展示“我的订单”。</li><li>本设计稿不展示“评论作品”。</li><li>本设计稿不展示“关注作品”。</li><li>这只是 UI 目标，不声明代码/API 删除。</li></ul></div>
-            <div class="state"><h3>统计视觉</h3><p>统计区使用轻容器和清楚数字层级，不做重卡片套卡片，不用夸张装饰抢内容。</p><div class="state-bar"><span class="state-dot good">轻量</span><span class="state-dot good">可读</span></div></div>
-            <div class="state"><h3>编辑资料</h3><p>“编辑资料”进入 profile-edit-a.html；Android 当前已有 profile_edit 路由，并通过现有资料接口保存昵称、头像和简介，城市/地区与兴趣标签仍按局部 UI-only 处理。</p><div class="state-bar"><span class="state-dot warn">局部 UI-only</span><span class="state-dot bad">禁空入口</span></div></div>
+            <div class="spec"><h3>保留结构</h3><ul><li>头像、昵称、简介、编辑资料。</li><li>获赞、作品、关注、粉丝四项统计。</li><li>作品、关注、粉丝进入真实列表页。</li><li>点赞作品、收藏作品放入同一个 Tab 区。</li><li>Tab 内容使用统一帖子卡片。</li></ul></div>
+            <div class="spec"><h3>删除展示</h3><ul><li>本设计稿不展示“我的订单”。</li><li>本设计稿不展示“评论作品”。</li><li>本设计稿不展示“关注作品”。</li><li>本设计稿不展示已删除资产类型。</li></ul></div>
+            <div class="state"><h3>统计视觉</h3><p>统计区使用轻容器和清楚数字层级，不做重卡片套卡片。</p><div class="state-bar"><span class="state-dot good">轻量</span><span class="state-dot good">可读</span></div></div>
+            <div class="state"><h3>编辑资料</h3><p>“编辑资料”进入 profile-edit-a.html；头像上传走 OSS-backed 上传链路，城市/地区仅手动展示边界。</p><div class="state-bar"><span class="state-dot warn">局部 UI-only</span><span class="state-dot bad">禁空入口</span></div></div>
           </div>
         </div>
       </div>

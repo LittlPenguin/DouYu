@@ -2,7 +2,6 @@ package cn.edu.app.douyu.server.common;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,24 +26,13 @@ public final class Models {
     }
 
     public record Post(String id, String authorId, String title, String content,
-                       List<String> mediaFileIds, List<String> topicIds, String linkedPatternId,
+                       List<String> mediaFileIds, List<String> topicIds,
                        String status, int likeCount, int favoriteCount, int commentCount,
                        boolean pinned, Instant createdAt) {
     }
 
     public record Comment(String id, String postId, String authorId, String parentId, String content,
                           String status, Instant createdAt) {
-    }
-
-    public record PatternJob(String id, String userId, String inputFileId, String beadSize, String targetSize,
-                             String difficulty, String paletteId, String style, String status,
-                             String failureReason, String patternId, boolean retryable, boolean quotaRefunded,
-                             Instant createdAt, Instant updatedAt) {
-    }
-
-    public record PatternAsset(String id, String jobId, String ownerId, String previewFileId, String gridFileId,
-                               String colorMapFileId, String pdfFileId, String beadSize, int widthCells,
-                               int heightCells, int totalBeads, Map<String, Object> materials, String status) {
     }
 
     public record Product(String id, String type, String sellerId, String title, String description,
@@ -67,13 +55,6 @@ public final class Models {
     }
 
     public record OrderItem(String id, String orderId, String skuId, String productId, int quantity, int priceCent) {
-    }
-
-    public record Payment(String id, String orderId, String channel, String status, int amountCent,
-                          String channelTradeNo, Instant paidAt) {
-    }
-
-    public record Refund(String id, String orderId, String paymentId, int amountCent, String reason, String status) {
     }
 
     public record Notification(String id, String userId, String type, String title, String content, Instant readAt,
@@ -99,15 +80,5 @@ public final class Models {
 
     public record AdminOperationLog(String id, String adminId, String action, String targetType, String targetId,
                                     String beforeState, String afterState, String reason, Instant createdAt) {
-    }
-
-    public static Map<String, Object> materials(int totalBeads) {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("totalBeads", totalBeads);
-        data.put("colors", java.util.List.of(
-                Map.of("colorCode", "R01", "displayName", "Red", "beadCount", 128, "skuId", ""),
-                Map.of("colorCode", "W01", "displayName", "White", "beadCount", 128, "skuId", "")
-        ));
-        return data;
     }
 }

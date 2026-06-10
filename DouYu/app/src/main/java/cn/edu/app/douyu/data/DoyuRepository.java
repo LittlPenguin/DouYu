@@ -13,10 +13,9 @@ import cn.edu.app.douyu.model.ConversationDetail;
 import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.NotificationMessage;
 import cn.edu.app.douyu.model.PageResponse;
-import cn.edu.app.douyu.model.PatternAsset;
-import cn.edu.app.douyu.model.PatternJob;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
+import cn.edu.app.douyu.model.PostRequest;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductCategory;
 import cn.edu.app.douyu.model.LoginRequest;
@@ -30,11 +29,7 @@ import cn.edu.app.douyu.model.UploadConfirmRequest;
 import cn.edu.app.douyu.model.UploadPresignRequest;
 import cn.edu.app.douyu.model.UploadPresignResponse;
 import cn.edu.app.douyu.model.UserProfile;
-import cn.edu.app.douyu.model.AiQuota;
 import cn.edu.app.douyu.model.ConfirmUploadRequest;
-import cn.edu.app.douyu.model.CreatePatternJobRequest;
-import cn.edu.app.douyu.model.FavoriteResult;
-import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.FollowResult;
 import cn.edu.app.douyu.model.PresignUploadRequest;
 import cn.edu.app.douyu.model.PresignUploadResponse;
@@ -82,6 +77,10 @@ public class DoyuRepository {
         return body(api.post(postId));
     }
 
+    public Post createPost(String title, String content, java.util.List<String> mediaFileIds, java.util.List<String> topicIds) throws IOException {
+        return body(api.createPost(new PostRequest(title, content, mediaFileIds, topicIds)));
+    }
+
     public PageResponse<Comment> comments(String postId) throws IOException {
         return body(api.comments(postId, FIRST_PAGE, PAGE_SIZE));
     }
@@ -125,18 +124,6 @@ public class DoyuRepository {
         return body(api.product(productId));
     }
 
-    public PageResponse<PatternJob> patternJobs() throws IOException {
-        return body(api.patternJobs(FIRST_PAGE, PAGE_SIZE));
-    }
-
-    public PatternJob patternJob(String jobId) throws IOException {
-        return body(api.patternJob(jobId));
-    }
-
-    public PatternAsset pattern(String patternId) throws IOException {
-        return body(api.pattern(patternId));
-    }
-
     public PresignUploadResponse uploadPresign(String usage, String mimeType, long sizeBytes, String fileName) throws IOException {
         return body(api.uploadPresign(new PresignUploadRequest(usage, mimeType, sizeBytes, fileName)));
     }
@@ -161,22 +148,6 @@ public class DoyuRepository {
 
     public FileAsset uploadConfirm(String fileKey, String usage, String mimeType, long sizeBytes, Integer width, Integer height) throws IOException {
         return body(api.uploadConfirm(new ConfirmUploadRequest(fileKey, usage, mimeType, sizeBytes, width, height)));
-    }
-
-    public PatternJob createPatternJob(String inputFileId, String beadSize, String targetSize, String difficulty, String paletteId, String style) throws IOException {
-        return body(api.createPatternJob(new CreatePatternJobRequest(inputFileId, beadSize, targetSize, difficulty, paletteId, style)));
-    }
-
-    public PatternJob cancelPatternJob(String jobId) throws IOException {
-        return body(api.cancelPatternJob(jobId));
-    }
-
-    public FavoriteResult favoritePattern(String patternId) throws IOException {
-        return body(api.favoritePattern(patternId));
-    }
-
-    public AiQuota aiQuota() throws IOException {
-        return body(api.aiQuota());
     }
 
     public PageResponse<NotificationMessage> notifications() throws IOException {
@@ -272,10 +243,6 @@ public class DoyuRepository {
 
     public PageResponse<Post> favoritePosts() throws IOException {
         return body(api.favoritePosts(FIRST_PAGE, PAGE_SIZE));
-    }
-
-    public PageResponse<PatternAsset> favoritePatterns() throws IOException {
-        return body(api.favoritePatterns(FIRST_PAGE, PAGE_SIZE));
     }
 
     public AuthSession session() throws IOException {

@@ -41,7 +41,6 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh",
                                 "/api/v1/admin/auth/login",
-                                "/api/v1/payments/callbacks/**",
                                 "/api/v1/posts/feed",
                                 "/api/v1/posts/following",
                                 "/api/v1/topics",

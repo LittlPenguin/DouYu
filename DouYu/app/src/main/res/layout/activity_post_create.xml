@@ -6,9 +6,57 @@
     android:background="@color/doyu_page"
     android:orientation="vertical">
 
-    <include layout="@layout/include_page_toolbar" />
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:background="@color/doyu_surface"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <ImageButton
+            android:id="@+id/back_button"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_gravity="start|center_vertical"
+            android:background="@drawable/bg_icon_button"
+            android:contentDescription="返回"
+            android:padding="8dp"
+            android:src="@drawable/ic_action_back" />
+
+        <TextView
+            android:id="@+id/page_title"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="70dp"
+            android:layout_marginEnd="70dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:singleLine="true"
+            android:text="上传帖子"
+            android:textColor="@color/doyu_text"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/post_publish_top"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_gravity="end|center_vertical"
+            android:background="@drawable/bg_pill_ok"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:minWidth="54dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:text="发布"
+            android:textColor="@color/doyu_mint_deep"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </FrameLayout>
 
     <ScrollView
+        android:id="@+id/post_create_scroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -21,71 +69,50 @@
             android:paddingStart="14dp"
             android:paddingTop="12dp"
             android:paddingEnd="14dp"
-            android:paddingBottom="28dp">
+            android:paddingBottom="18dp">
 
             <TextView
+                android:id="@+id/post_login_band"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_warning_band"
+                android:padding="14dp"
+                android:text="&#30331;&#24405;&#21518;&#21487;&#19978;&#20256;&#24086;&#23376;"
+                android:textColor="@color/doyu_text_muted"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/post_title_input"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
                 android:background="@drawable/bg_input_line"
-                android:gravity="center_vertical"
+                android:hint="&#26631;&#39064;"
+                android:inputType="textCapSentences"
+                android:maxLength="80"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:text="标题或正文不能为空"
-                android:textColor="@color/doyu_text_muted"
+                android:singleLine="true"
+                android:textColor="@color/doyu_text"
+                android:textColorHint="@color/doyu_text_muted"
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
-            <TextView
+            <EditText
+                android:id="@+id/post_body_input"
                 android:layout_width="match_parent"
-                android:layout_height="118dp"
+                android:layout_height="132dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_input_line"
                 android:gravity="top"
+                android:hint="&#35760;&#24405;&#20320;&#30340;&#25340;&#35910;&#36807;&#31243;&#12289;&#37197;&#33394;&#21644;&#32463;&#39564;"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLength="2000"
                 android:padding="16dp"
-                android:text="正文、话题、关联图纸和审核前预览按 Open Design 展示；未接入能力必须标明 UI-only。"
-                android:textColor="@color/doyu_text_muted"
+                android:textColor="@color/doyu_text"
+                android:textColorHint="@color/doyu_text_muted"
                 android:textSize="14sp"
                 android:lineSpacingExtra="3dp" />
-
-            <GridLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:columnCount="3"
-                android:rowCount="1"
-                android:useDefaultMargins="true">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="100dp"
-                    android:layout_columnWeight="1"
-                    android:background="@drawable/bg_upload_tile"
-                    android:gravity="center"
-                    android:text="图片"
-                    android:textColor="@color/doyu_text_muted"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="100dp"
-                    android:layout_columnWeight="1"
-                    android:background="@drawable/bg_upload_tile"
-                    android:gravity="center"
-                    android:text="重试"
-                    android:textColor="@color/doyu_text_muted"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="100dp"
-                    android:layout_columnWeight="1"
-                    android:background="@drawable/bg_upload_tile"
-                    android:gravity="center"
-                    android:text="+"
-                    android:textColor="@color/doyu_text_muted"
-                    android:textSize="28sp"
-                    android:textStyle="bold" />
-            </GridLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -93,46 +120,72 @@
                 android:layout_marginTop="12dp"
                 android:orientation="horizontal">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="28dp"
-                    android:background="@drawable/bg_chip_plain"
-                    android:gravity="center"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:text="# 话题"
-                    android:textColor="@color/doyu_text_muted"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/post_pick_image"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="&#36873;&#25321;&#22270;&#29255;"
+                    android:textAllCaps="false"
+                    android:textColor="@color/doyu_petal_deep"
+                    app:strokeColor="@color/doyu_open_line" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="28dp"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/post_capture_image"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
                     android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_chip_plain"
-                    android:gravity="center"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:text="关联图纸"
-                    android:textColor="@color/doyu_text_muted"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="28dp"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_pill_warn"
-                    android:gravity="center"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:text="0/9"
-                    android:textColor="#FFD9852B"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:layout_weight="1"
+                    android:text="&#25293;&#29031;"
+                    android:textAllCaps="false"
+                    android:textColor="@color/doyu_petal_deep"
+                    app:strokeColor="@color/doyu_open_line" />
             </LinearLayout>
 
+            <GridLayout
+                android:id="@+id/post_image_grid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:columnCount="3"
+                android:useDefaultMargins="true" />
+
+            <TextView
+                android:id="@+id/post_image_count"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_pill_warn"
+                android:gravity="center"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="0/9"
+                android:textColor="@color/doyu_warn"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/post_topic_state"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="&#27491;&#22312;&#21152;&#36733;&#35805;&#39064;"
+                android:textColor="@color/doyu_text_muted"
+                android:textSize="12sp" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/post_topic_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="8dp"
+                app:singleSelection="false" />
+
             <LinearLayout
+                android:id="@+id/post_preview_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
@@ -147,52 +200,283 @@
                     android:gravity="center"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
-                    android:text="预览"
-                    android:textColor="#FF237D65"
+                    android:text="&#39044;&#35272;"
+                    android:textColor="@color/doyu_mint_deep"
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/post_preview_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="审核前预览"
+                    android:text="&#23457;&#26680;&#21069;&#39044;&#35272;"
                     android:textColor="@color/doyu_text"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/post_preview_body"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="图片、正文、话题和关联图纸按帖子详情结构预览；发布前必须由真实接口返回成功。当前无用户输入，不展示假帖子。"
+                    android:text="&#36755;&#20837;&#26631;&#39064;&#12289;&#27491;&#25991;&#12289;&#22270;&#29255;&#21644;&#35805;&#39064;&#21518;&#22312;&#27492;&#39044;&#35272;&#12290;"
                     android:textColor="@color/doyu_text_muted"
-                    android:textSize="12sp" />
+                    android:textSize="12sp"
+                    android:lineSpacingExtra="2dp" />
+
+                <TextView
+                    android:id="@+id/post_preview_meta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="0 &#24352;&#22270;&#29255; · 0 &#20010;&#35805;&#39064;"
+                    android:textColor="@color/doyu_text_muted"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <TextView
+                android:id="@+id/post_status_band"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/bg_warning_band"
                 android:padding="14dp"
-                android:text="上传中禁用发布；失败保留缩略图并提供重试或删除；发布成功后展示审核中，不写成作品已立即公开。"
+                android:text="&#19978;&#20256;&#20013;&#31105;&#29992;&#21457;&#24067;&#65307;&#22833;&#36133;&#20445;&#30041;&#32553;&#30053;&#22270;&#24182;&#25552;&#20379;&#37325;&#35797;&#25110;&#21024;&#38500;&#12290;"
                 android:textColor="@color/doyu_text_muted"
                 android:textSize="13sp"
                 android:lineSpacingExtra="2dp" />
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/post_publish_button"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_height="52dp"
                 android:layout_marginTop="16dp"
-                android:background="@drawable/bg_pill_stop"
-                android:gravity="center"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:text="当前为 UI-only 边界，等待发布接口闭环"
-                android:textColor="#FFB84D3F"
+                android:text="&#21457;&#24067;"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
                 android:textSize="14sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                app:backgroundTint="@color/doyu_petal_deep"
+                app:cornerRadius="18dp" />
+
+            <LinearLayout
+                android:id="@+id/post_success_actions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/post_back_community"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:text="&#36820;&#22238;&#31038;&#21306;"
+                    android:textAllCaps="false"
+                    android:textColor="@color/doyu_text_muted"
+                    app:strokeColor="@color/doyu_open_line" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/post_view_profile"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:text="&#26597;&#30475;&#25105;&#30340;"
+                    android:textAllCaps="false"
+                    android:textColor="@color/doyu_text_muted"
+                    app:strokeColor="@color/doyu_open_line" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/post_bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="78dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="18dp"
+        android:background="@drawable/bg_bottom_nav"
+        android:elevation="8dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="6dp">
+
+        <LinearLayout
+            android:id="@+id/post_nav_community"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:contentDescription="社区"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_tab_community"
+                app:tint="@color/doyu_text" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="社区"
+                android:textColor="@color/doyu_text"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="3dp"
+                android:layout_marginTop="4dp"
+                android:visibility="invisible" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/post_nav_commerce"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:contentDescription="商城"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_tab_commerce"
+                app:tint="@color/doyu_text" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="商城"
+                android:textColor="@color/doyu_text"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="3dp"
+                android:layout_marginTop="4dp"
+                android:visibility="invisible" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/post_nav_upload"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/bg_nav_item_selected"
+            android:clickable="true"
+            android:contentDescription="上传"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_tab_upload"
+                app:tint="@color/doyu_petal_deep" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="上传"
+                android:textColor="@color/doyu_petal_deep"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="3dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_nav_indicator" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/post_nav_messages"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:contentDescription="消息"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_tab_messages"
+                app:tint="@color/doyu_text" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="消息"
+                android:textColor="@color/doyu_text"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="3dp"
+                android:layout_marginTop="4dp"
+                android:visibility="invisible" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/post_nav_profile"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:contentDescription="我的"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_tab_profile"
+                app:tint="@color/doyu_text" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="我的"
+                android:textColor="@color/doyu_text"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="3dp"
+                android:layout_marginTop="4dp"
+                android:visibility="invisible" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

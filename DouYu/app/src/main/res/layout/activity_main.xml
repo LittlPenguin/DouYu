@@ -16,15 +16,15 @@
             android:background="@drawable/bg_toolbar">
 
             <ImageButton
-                android:id="@+id/action_create"
+                android:id="@+id/action_settings"
                 android:layout_width="34dp"
                 android:layout_height="34dp"
                 android:layout_gravity="start|center_vertical"
                 android:layout_marginStart="12dp"
                 android:background="@drawable/bg_icon_button"
-                android:contentDescription="新增菜单"
+                android:contentDescription="&#35774;&#32622;"
                 android:padding="8dp"
-                android:src="@drawable/ic_action_add" />
+                android:src="@drawable/ic_action_settings" />
 
             <TextView
                 android:id="@+id/top_title"
@@ -46,7 +46,7 @@
                 android:layout_gravity="end|center_vertical"
                 android:layout_marginEnd="12dp"
                 android:background="@drawable/bg_icon_button"
-                android:contentDescription="搜索"
+                android:contentDescription="&#25628;&#32034;"
                 android:padding="8dp"
                 android:src="@drawable/ic_action_search" />
         </FrameLayout>
@@ -65,10 +65,10 @@
             android:layout_marginEnd="20dp"
             android:layout_marginBottom="18dp"
             android:background="@drawable/bg_bottom_nav"
+            android:elevation="8dp"
             android:gravity="center"
             android:orientation="horizontal"
-            android:padding="6dp"
-            android:elevation="8dp">
+            android:padding="6dp">
 
             <LinearLayout
                 android:id="@+id/tab_community"
@@ -76,7 +76,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:clickable="true"
-                android:contentDescription="社区"
+                android:contentDescription="&#31038;&#21306;"
                 android:focusable="true"
                 android:gravity="center"
                 android:orientation="vertical">
@@ -93,7 +93,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="社区"
+                    android:text="&#31038;&#21306;"
                     android:textColor="@color/doyu_text"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -113,7 +113,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:clickable="true"
-                android:contentDescription="商城"
+                android:contentDescription="&#21830;&#22478;"
                 android:focusable="true"
                 android:gravity="center"
                 android:orientation="vertical">
@@ -130,7 +130,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="商城"
+                    android:text="&#21830;&#22478;"
                     android:textColor="@color/doyu_text"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -145,35 +145,38 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/tab_ai"
+                android:id="@+id/tab_upload"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:clickable="true"
-                android:contentDescription="AI"
+                android:contentDescription="&#19978;&#20256;"
                 android:focusable="true"
                 android:gravity="center"
                 android:orientation="vertical">
 
                 <ImageView
-                    android:id="@+id/nav_icon_ai"
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
+                    android:id="@+id/nav_icon_upload"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:background="@drawable/bg_nav_item_selected"
                     android:contentDescription="@null"
-                    android:src="@drawable/ic_tab_ai" />
+                    android:padding="4dp"
+                    android:src="@drawable/ic_tab_upload"
+                    app:tint="@color/doyu_petal_deep" />
 
                 <TextView
-                    android:id="@+id/nav_label_ai"
+                    android:id="@+id/nav_label_upload"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="AI"
+                    android:text="&#19978;&#20256;"
                     android:textColor="@color/doyu_text"
                     android:textSize="11sp"
                     android:textStyle="bold" />
 
                 <View
-                    android:id="@+id/nav_indicator_ai"
+                    android:id="@+id/nav_indicator_upload"
                     android:layout_width="24dp"
                     android:layout_height="3dp"
                     android:layout_marginTop="4dp"
@@ -187,7 +190,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:clickable="true"
-                android:contentDescription="消息"
+                android:contentDescription="&#28040;&#24687;"
                 android:focusable="true"
                 android:gravity="center"
                 android:orientation="vertical">
@@ -204,7 +207,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="消息"
+                    android:text="&#28040;&#24687;"
                     android:textColor="@color/doyu_text"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -224,7 +227,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:clickable="true"
-                android:contentDescription="我的"
+                android:contentDescription="&#25105;&#30340;"
                 android:focusable="true"
                 android:gravity="center"
                 android:orientation="vertical">
@@ -241,7 +244,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="我的"
+                    android:text="&#25105;&#30340;"
                     android:textColor="@color/doyu_text"
                     android:textSize="11sp"
                     android:textStyle="bold" />
@@ -254,106 +257,6 @@
                     android:background="@drawable/bg_nav_indicator"
                     android:visibility="gone" />
             </LinearLayout>
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/quick_menu"
-        android:layout_width="154dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|start"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="52dp"
-        android:background="@drawable/bg_quick_menu"
-        android:elevation="16dp"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:id="@+id/quick_settings"
-            android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_action_settings"
-                app:tint="@color/doyu_text_muted" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="Setting"
-                android:textColor="@color/doyu_text_muted"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/quick_ai"
-            android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_action_ai"
-                app:tint="@color/doyu_text_muted" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="AI 创作"
-                android:textColor="@color/doyu_text_muted"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/quick_post"
-            android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_action_upload"
-                app:tint="@color/doyu_text_muted" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="上传帖子"
-                android:textColor="@color/doyu_text_muted"
-                android:textSize="12sp"
-                android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

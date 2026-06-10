@@ -4,10 +4,6 @@ import java.util.Locale;
 
 import cn.edu.app.douyu.R;
 
-/**
- * Maps backend notification {@code type} strings to icons, hero pill labels and styles.
- * Categories follow the open-design notification taxonomy: 审核 / 互动 / 任务 / 系统.
- */
 final class NotificationTypes {
     private NotificationTypes() {
     }
@@ -17,9 +13,6 @@ final class NotificationTypes {
         if (contains(key, "AT", "MENTION")) {
             return R.drawable.ic_notify_at;
         }
-        if (contains(key, "PATTERN", "AI", "JOB", "TASK")) {
-            return R.drawable.ic_action_ai;
-        }
         return R.drawable.ic_notify_bell;
     }
 
@@ -28,11 +21,8 @@ final class NotificationTypes {
         if (contains(key, "AUDIT", "REVIEW")) {
             return "审核通知";
         }
-        if (contains(key, "SYSTEM", "COMPLIANCE", "SECURITY")) {
+        if (contains(key, "SYSTEM", "SECURITY")) {
             return "系统通知";
-        }
-        if (contains(key, "PATTERN", "AI", "JOB", "TASK")) {
-            return "任务通知";
         }
         if (contains(key, "LIKE", "FAVORITE", "COLLECT", "COMMENT", "AT", "MENTION")) {
             return "互动通知";
@@ -45,7 +35,7 @@ final class NotificationTypes {
         if (contains(key, "AUDIT", "REVIEW")) {
             return R.drawable.bg_pill_warn;
         }
-        if (contains(key, "PATTERN", "AI", "JOB", "TASK", "LIKE", "FAVORITE", "COLLECT", "COMMENT", "AT", "MENTION")) {
+        if (contains(key, "LIKE", "FAVORITE", "COLLECT", "COMMENT", "AT", "MENTION")) {
             return R.drawable.bg_pill_ok;
         }
         return R.drawable.bg_chip_plain;
@@ -56,13 +46,12 @@ final class NotificationTypes {
         if (contains(key, "AUDIT", "REVIEW")) {
             return R.color.doyu_warn;
         }
-        if (contains(key, "PATTERN", "AI", "JOB", "TASK", "LIKE", "FAVORITE", "COLLECT", "COMMENT", "AT", "MENTION")) {
+        if (contains(key, "LIKE", "FAVORITE", "COLLECT", "COMMENT", "AT", "MENTION")) {
             return R.color.doyu_mint_deep;
         }
         return R.color.doyu_text_muted;
     }
 
-    /** Renders an ISO-8601 instant (e.g. 2026-06-07T12:30:00Z) as HH:mm, or empty when absent. */
     static String shortTime(String iso) {
         if (iso == null || iso.length() < 16 || iso.charAt(10) != 'T') {
             return "";

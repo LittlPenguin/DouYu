@@ -1,4 +1,4 @@
-<svg viewBox="0 0 1180 740" xmlns="http://www.w3.org/2000/svg">
+﻿<svg viewBox="0 0 1180 740" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
       <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.6"/>
@@ -25,7 +25,7 @@
   <rect width="1180" height="740" fill="#0f172a"/>
   <rect width="1180" height="740" fill="url(#grid)"/>
   <text x="34" y="42" class="title">API 模块地图</text>
-  <text x="34" y="64" class="note">以当前 Controller 与 Android Retrofit 为源；Search、地图、真实支付、大模型生图不新增公共契约</text>
+  <text x="34" y="64" class="note">以当前 Controller 与 Android Retrofit 为源；Search 不新增公共契约；已移除能力不再作为模块</text>
 
   <rect x="462" y="96" width="256" height="112" class="module core"/>
   <text x="590" y="132" text-anchor="middle" class="label">/api/v1</text>
@@ -52,20 +52,20 @@
 
   <g>
     <rect x="64" y="404" width="170" height="76" class="module commerce"/>
-    <text x="149" y="434" text-anchor="middle" class="label">Pattern</text>
-    <text x="149" y="456" text-anchor="middle" class="small">jobs / pattern / quota</text>
+    <text x="149" y="434" text-anchor="middle" class="label">Product</text>
+    <text x="149" y="456" text-anchor="middle" class="small">products / player publish</text>
     <rect x="260" y="404" width="170" height="76" class="module commerce"/>
-    <text x="345" y="434" text-anchor="middle" class="label">Product</text>
-    <text x="345" y="456" text-anchor="middle" class="small">products / player publish</text>
+    <text x="345" y="434" text-anchor="middle" class="label">Cart</text>
+    <text x="345" y="456" text-anchor="middle" class="small">cart items</text>
     <rect x="456" y="404" width="170" height="76" class="module commerce"/>
-    <text x="541" y="434" text-anchor="middle" class="label">Cart</text>
-    <text x="541" y="456" text-anchor="middle" class="small">cart items</text>
+    <text x="541" y="434" text-anchor="middle" class="label">Order</text>
+    <text x="541" y="456" text-anchor="middle" class="small">orders + idempotency</text>
     <rect x="652" y="404" width="170" height="76" class="module commerce"/>
-    <text x="737" y="434" text-anchor="middle" class="label">Order</text>
-    <text x="737" y="456" text-anchor="middle" class="small">orders + idempotency</text>
+    <text x="737" y="434" text-anchor="middle" class="label">Address</text>
+    <text x="737" y="456" text-anchor="middle" class="small">addresses / order address</text>
     <rect x="848" y="404" width="170" height="76" class="module commerce"/>
-    <text x="933" y="434" text-anchor="middle" class="label">Payment</text>
-    <text x="933" y="456" text-anchor="middle" class="small">payments / callbacks / refunds</text>
+    <text x="933" y="434" text-anchor="middle" class="label">Search</text>
+    <text x="933" y="456" text-anchor="middle" class="small">client boundary / backend lists</text>
   </g>
 
   <g>
@@ -82,7 +82,7 @@
 
   <rect x="848" y="558" width="240" height="76" class="module warn"/>
   <text x="968" y="588" text-anchor="middle" class="label">禁止误导为已接入</text>
-  <text x="968" y="610" text-anchor="middle" class="small">地图 / 真实支付 / 生图 / 全局搜索</text>
+  <text x="968" y="610" text-anchor="middle" class="small">已移除能力不作为当前接口；搜索为 UI 边界</text>
 
   <path d="M590 208 L149 250" class="line"/>
   <path d="M590 208 L345 250" class="line"/>

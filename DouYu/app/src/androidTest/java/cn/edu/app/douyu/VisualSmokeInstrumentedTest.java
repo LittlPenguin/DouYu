@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -20,19 +19,14 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import cn.edu.app.douyu.core.IntentExtras;
-import cn.edu.app.douyu.feature.ai.AiFlowActivity;
-import cn.edu.app.douyu.feature.ai.CameraActivity;
-import cn.edu.app.douyu.feature.commerce.PaymentBoundaryActivity;
 import cn.edu.app.douyu.feature.commerce.ProductDetailActivity;
 import cn.edu.app.douyu.feature.community.PostCreateActivity;
 import cn.edu.app.douyu.feature.community.PostDetailActivity;
 import cn.edu.app.douyu.feature.community.SearchActivity;
 import cn.edu.app.douyu.feature.message.ConversationActivity;
 import cn.edu.app.douyu.feature.message.NotificationDetailActivity;
-import cn.edu.app.douyu.feature.profile.FutureCapabilityActivity;
 import cn.edu.app.douyu.feature.profile.ProfileEditActivity;
 import cn.edu.app.douyu.feature.profile.SettingsActivity;
 
@@ -49,15 +43,8 @@ public class VisualSmokeInstrumentedTest {
         captureActivity(outputDir, "post_create", new Intent(targetContext, PostCreateActivity.class));
         captureActivity(outputDir, "post_detail", new Intent(targetContext, PostDetailActivity.class)
                 .putExtra(IntentExtras.POST_ID, "post_visual_check"));
-        captureActivity(outputDir, "ai_flow", new Intent(targetContext, AiFlowActivity.class)
-                .putExtra(IntentExtras.UPLOADED_FILE_ID, "upload_visual_check")
-                .putExtra(IntentExtras.JOB_ID, "job_visual_check")
-                .putExtra(IntentExtras.PATTERN_ID, "pattern_visual_check"));
-        grantCameraPermission();
-        captureActivity(outputDir, "camera", new Intent(targetContext, CameraActivity.class));
         captureActivity(outputDir, "product_detail", new Intent(targetContext, ProductDetailActivity.class)
                 .putExtra(IntentExtras.PRODUCT_ID, "product_visual_check"));
-        captureActivity(outputDir, "payment_boundary", new Intent(targetContext, PaymentBoundaryActivity.class));
         captureActivity(outputDir, "conversation", new Intent(targetContext, ConversationActivity.class)
                 .putExtra(IntentExtras.CONVERSATION_ID, "conv_visual_check"));
         captureActivity(outputDir, "notification_detail", new Intent(targetContext, NotificationDetailActivity.class)
@@ -72,20 +59,16 @@ public class VisualSmokeInstrumentedTest {
                 .putExtra(IntentExtras.SECTION, "privacy_permissions"));
         captureActivity(outputDir, "settings_notifications", new Intent(targetContext, SettingsActivity.class)
                 .putExtra(IntentExtras.SECTION, "notifications"));
-        captureActivity(outputDir, "settings_about_compliance", new Intent(targetContext, SettingsActivity.class)
-                .putExtra(IntentExtras.SECTION, "about_compliance"));
-        captureActivity(outputDir, "future_capability", new Intent(targetContext, FutureCapabilityActivity.class));
+        captureActivity(outputDir, "settings_help_about", new Intent(targetContext, SettingsActivity.class)
+                .putExtra(IntentExtras.SECTION, "help_about"));
     }
 
     private void captureMainTabs(File outputDir) throws Exception {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             waitForNetworkBoundary();
             takeScreenshot(outputDir, "main_community");
-            scenario.onActivity(activity -> activity.findViewById(R.id.action_create).performClick());
-            waitForScreen();
-            takeScreenshot(outputDir, "main_quick_menu");
             captureTab(scenario, outputDir, "main_commerce", R.id.tab_commerce);
-            captureTab(scenario, outputDir, "main_ai", R.id.tab_ai);
+            takeScreenshot(outputDir, "main_upload_action_visible");
             captureTab(scenario, outputDir, "main_messages", R.id.tab_messages);
             captureTab(scenario, outputDir, "main_profile", R.id.tab_profile);
         }
@@ -144,16 +127,6 @@ public class VisualSmokeInstrumentedTest {
         instrumentation.waitForIdleSync();
         Thread.sleep(2500L);
         instrumentation.waitForIdleSync();
-    }
-
-    private void grantCameraPermission() throws IOException {
-        try (ParcelFileDescriptor descriptor = instrumentation.getUiAutomation()
-                .executeShellCommand("pm grant cn.edu.app.douyu android.permission.CAMERA");
-             InputStream stream = new ParcelFileDescriptor.AutoCloseInputStream(descriptor)) {
-            while (stream.read() != -1) {
-                // Drain command output so the shell command completes before launching CameraActivity.
-            }
-        }
     }
 
     private void waitForNetworkBoundary() throws InterruptedException {

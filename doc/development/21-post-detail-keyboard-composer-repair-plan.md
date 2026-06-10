@@ -56,7 +56,7 @@ git status --short --branch
 git diff --check
 rg --files DouYu/app/src | rg "\.kt$"
 rg -n "compose|Composable|Navigation Compose|kotlinx|MockData|coil\.compose|paging\.compose" DouYu/app
-rg -n "浣滄|浣滎|浣滂|浣滃|璇勮|鍙戦|鐐硅|鏀惰|姝ｅ湪|HTTP 401|�" DouYu/app/src/main DouYu/app/src/test DouYu/app/src/androidTest
+# scan for common mojibake fragments and Unicode replacement characters in DouYu/app/src
 
 cd /d/Studio/SpellBean/DouYu
 ./gradlew.bat :app:testDebugUnitTest --tests cn.edu.app.douyu.core.OpenDesignLayoutMappingTest --console=plain

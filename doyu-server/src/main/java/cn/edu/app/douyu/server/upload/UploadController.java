@@ -28,7 +28,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/v1/uploads")
 public class UploadController {
-    private static final Set<String> USAGES = Set.of("AVATAR", "POST_IMAGE", "POST_VIDEO", "AI_INPUT", "PATTERN_OUTPUT", "PRODUCT_IMAGE", "TRADE_IMAGE");
+    private static final Set<String> USAGES = Set.of("AVATAR", "POST_IMAGE", "POST_VIDEO", "PRODUCT_IMAGE", "TRADE_IMAGE");
     private static final long PRESIGN_EXPIRES_SECONDS = 900;
 
     private final FileAssetRepository fileAssetRepository;

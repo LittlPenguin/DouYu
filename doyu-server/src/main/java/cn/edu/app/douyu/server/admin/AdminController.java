@@ -7,7 +7,20 @@ import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
 import cn.edu.app.douyu.server.common.Models.User;
 import cn.edu.app.douyu.server.common.PageResult;
-import cn.edu.app.douyu.server.common.entity.*;
+import cn.edu.app.douyu.server.common.entity.AdminOperationLogEntity;
+import cn.edu.app.douyu.server.common.entity.AdminOperationLogRepository;
+import cn.edu.app.douyu.server.common.entity.CommentEntity;
+import cn.edu.app.douyu.server.common.entity.CommentRepository;
+import cn.edu.app.douyu.server.common.entity.OrderEntity;
+import cn.edu.app.douyu.server.common.entity.OrderRepository;
+import cn.edu.app.douyu.server.common.entity.PostEntity;
+import cn.edu.app.douyu.server.common.entity.PostRepository;
+import cn.edu.app.douyu.server.common.entity.ProductEntity;
+import cn.edu.app.douyu.server.common.entity.ProductRepository;
+import cn.edu.app.douyu.server.common.entity.ReportEntity;
+import cn.edu.app.douyu.server.common.entity.ReportRepository;
+import cn.edu.app.douyu.server.common.entity.UserEntity;
+import cn.edu.app.douyu.server.common.entity.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -32,7 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "管理后台", description = "后台用户/内容/商品/订单/支付/AI任务/举报/运营日志管理")
+@Tag(name = "Admin", description = "Admin users, content, products, orders, reports, and operation logs")
 @RestController
 @RequestMapping("/api/v1/admin")
 public class AdminController {
@@ -41,141 +54,114 @@ public class AdminController {
     private final CommentRepository commentRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
-    private final PaymentRepository paymentRepository;
-    private final PatternJobRepository patternJobRepository;
     private final ReportRepository reportRepository;
     private final AdminOperationLogRepository adminLogRepository;
     private final AuthService authService;
     private final IdGenerator idGenerator;
 
     public AdminController(UserRepository userRepository, PostRepository postRepository, CommentRepository commentRepository,
-                           ProductRepository productRepository, OrderRepository orderRepository, PaymentRepository paymentRepository,
-                           PatternJobRepository patternJobRepository, ReportRepository reportRepository,
+                           ProductRepository productRepository, OrderRepository orderRepository, ReportRepository reportRepository,
                            AdminOperationLogRepository adminLogRepository, AuthService authService, IdGenerator idGenerator) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
-        this.paymentRepository = paymentRepository;
-        this.patternJobRepository = patternJobRepository;
         this.reportRepository = reportRepository;
         this.adminLogRepository = adminLogRepository;
         this.authService = authService;
         this.idGenerator = idGenerator;
     }
 
-    @Operation(summary = "用户列表")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
+    @Operation(summary = "User list")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "403", description = "Admin required") })
     @GetMapping("/users")
     PageResult<Map<String, Object>> users(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String keyword) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<UserEntity> result;
-        if (keyword != null && !keyword.isBlank()) {
-            result = userRepository.findByNicknameContainingIgnoreCase(keyword, pageable);
-        } else {
-            result = userRepository.findAll(pageable);
-        }
+        Page<UserEntity> result = keyword != null && !keyword.isBlank()
+                ? userRepository.findByNicknameContainingIgnoreCase(keyword, pageable)
+                : userRepository.findAll(pageable);
         List<Map<String, Object>> items = result.getContent().stream()
-                .map(e -> toModel(e)).map(authService::userView).toList();
+                .map(this::toModel)
+                .map(authService::userView)
+                .toList();
         return PageResult.of(items, page, size, result.getTotalElements());
     }
 
-    @Operation(summary = "帖子列表")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
+    @Operation(summary = "Post list")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "403", description = "Admin required") })
     @GetMapping("/posts")
     PageResult<Map<String, Object>> posts(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String keyword) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<PostEntity> result;
-        if (keyword != null && !keyword.isBlank()) {
-            result = postRepository.findByContentContainingIgnoreCase(keyword, pageable);
-        } else {
-            result = postRepository.findAll(pageable);
-        }
+        Page<PostEntity> result = keyword != null && !keyword.isBlank()
+                ? postRepository.findByContentContainingIgnoreCase(keyword, pageable)
+                : postRepository.findAll(pageable);
         List<Map<String, Object>> items = result.getContent().stream()
-                .map(p -> mapOf("postId", p.getId(), "status", p.getStatus(), "content", p.getContent())).toList();
+                .map(p -> mapOf("postId", p.getId(), "status", p.getStatus(), "content", p.getContent()))
+                .toList();
         return PageResult.of(items, page, size, result.getTotalElements());
     }
 
-    @Operation(summary = "评论列表")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
+    @Operation(summary = "Comment list")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "403", description = "Admin required") })
     @GetMapping("/comments")
     PageResult<Map<String, Object>> comments(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<CommentEntity> result = commentRepository.findAll(pageable);
         List<Map<String, Object>> items = result.getContent().stream()
-                .map(c -> mapOf("commentId", c.getId(), "status", c.getStatus(), "content", c.getContent())).toList();
+                .map(c -> mapOf("commentId", c.getId(), "status", c.getStatus(), "content", c.getContent()))
+                .toList();
         return PageResult.of(items, page, size, result.getTotalElements());
     }
 
-    @Operation(summary = "商品列表")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
+    @Operation(summary = "Product list")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "403", description = "Admin required") })
     @GetMapping("/products")
     PageResult<Map<String, Object>> products(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<ProductEntity> result = productRepository.findAll(pageable);
         List<Map<String, Object>> items = result.getContent().stream()
-                .map(p -> mapOf("productId", p.getId(), "type", p.getType(), "title", p.getTitle(), "status", p.getStatus())).toList();
+                .map(p -> mapOf("productId", p.getId(), "type", p.getType(), "title", p.getTitle(), "status", p.getStatus()))
+                .toList();
         return PageResult.of(items, page, size, result.getTotalElements());
     }
 
-    @Operation(summary = "订单列表")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
+    @Operation(summary = "Order list")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "403", description = "Admin required") })
     @GetMapping("/orders")
     PageResult<Map<String, Object>> orders(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<OrderEntity> result = orderRepository.findAll(pageable);
         List<Map<String, Object>> items = result.getContent().stream()
-                .map(o -> mapOf("orderId", o.getId(), "buyerId", o.getBuyerId(), "status", o.getStatus(), "payableAmountCent", o.getPayableAmountCent())).toList();
+                .map(o -> mapOf("orderId", o.getId(), "buyerId", o.getBuyerId(), "status", o.getStatus(),
+                        "payableAmountCent", o.getPayableAmountCent()))
+                .toList();
         return PageResult.of(items, page, size, result.getTotalElements());
     }
 
-    @Operation(summary = "支付记录列表")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
-    @GetMapping("/payments")
-    PageResult<Map<String, Object>> payments(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<PaymentEntity> result = paymentRepository.findAll(pageable);
-        List<Map<String, Object>> items = result.getContent().stream()
-                .map(p -> mapOf("paymentId", p.getId(), "orderId", p.getOrderId(), "status", p.getStatus(), "amountCent", p.getAmountCent())).toList();
-        return PageResult.of(items, page, size, result.getTotalElements());
-    }
-
-    @Operation(summary = "AI 任务列表")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
-    @GetMapping("/patterns/jobs")
-    PageResult<Map<String, Object>> patternJobs(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<PatternJobEntity> result = patternJobRepository.findAll(pageable);
-        List<Map<String, Object>> items = result.getContent().stream()
-                .map(j -> mapOf("jobId", j.getId(), "userId", j.getUserId(), "status", j.getStatus())).toList();
-        return PageResult.of(items, page, size, result.getTotalElements());
-    }
-
-    @Operation(summary = "举报列表")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
+    @Operation(summary = "Report list")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "403", description = "Admin required") })
     @GetMapping("/reports")
     PageResult<Map<String, Object>> reports(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<ReportEntity> result = reportRepository.findAll(pageable);
-        List<Map<String, Object>> items = result.getContent().stream()
-                .map(this::reportView).toList();
+        List<Map<String, Object>> items = result.getContent().stream().map(this::reportView).toList();
         return PageResult.of(items, page, size, result.getTotalElements());
     }
 
-    @Operation(summary = "处理举报")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "处理成功"), @ApiResponse(responseCode = "404", description = "举报不存在") })
+    @Operation(summary = "Process report")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "404", description = "Report not found") })
     @PostMapping("/reports/{reportId}/process")
     Map<String, Object> processReport(Authentication authentication, @PathVariable String reportId, @Valid @RequestBody ProcessRequest request) {
         String adminId = CurrentUser.adminId(authentication);
         ReportEntity report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "举报不存在"));
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Report not found"));
         String beforeState = report.getStatus();
         Instant now = Instant.now();
         report.setStatus(request.status());
@@ -185,13 +171,13 @@ public class AdminController {
         return reportView(report);
     }
 
-    @Operation(summary = "审核帖子")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "审核成功"), @ApiResponse(responseCode = "404", description = "帖子不存在") })
+    @Operation(summary = "Audit post")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "404", description = "Post not found") })
     @PostMapping("/posts/{postId}/audit")
     Map<String, Object> auditPost(Authentication authentication, @PathVariable String postId, @Valid @RequestBody AuditRequest request) {
         String adminId = CurrentUser.adminId(authentication);
         PostEntity post = postRepository.findById(postId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "帖子不存在"));
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Post not found"));
         String beforeState = post.getStatus();
         Instant now = Instant.now();
         post.setStatus(request.approved() ? "VISIBLE" : "REJECTED");
@@ -201,13 +187,13 @@ public class AdminController {
         return mapOf("postId", postId, "status", post.getStatus());
     }
 
-    @Operation(summary = "审核评论")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "审核成功"), @ApiResponse(responseCode = "404", description = "评论不存在") })
+    @Operation(summary = "Audit comment")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "404", description = "Comment not found") })
     @PostMapping("/comments/{commentId}/audit")
     Map<String, Object> auditComment(Authentication authentication, @PathVariable String commentId, @Valid @RequestBody AuditRequest request) {
         String adminId = CurrentUser.adminId(authentication);
         CommentEntity comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "评论不存在"));
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Comment not found"));
         String beforeState = comment.getStatus();
         Instant now = Instant.now();
         comment.setStatus(request.approved() ? "PUBLISHED" : "REJECTED");
@@ -217,13 +203,13 @@ public class AdminController {
         return mapOf("commentId", commentId, "status", comment.getStatus());
     }
 
-    @Operation(summary = "审核商品")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "审核成功"), @ApiResponse(responseCode = "404", description = "商品不存在") })
+    @Operation(summary = "Audit product")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "404", description = "Product not found") })
     @PostMapping("/products/{productId}/audit")
     Map<String, Object> auditProduct(Authentication authentication, @PathVariable String productId, @Valid @RequestBody AuditRequest request) {
         String adminId = CurrentUser.adminId(authentication);
         ProductEntity product = productRepository.findById(productId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "商品不存在"));
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Product not found"));
         String beforeState = product.getAuditStatus();
         Instant now = Instant.now();
         product.setAuditStatus(request.approved() ? "PASS" : "REJECTED");
@@ -236,13 +222,13 @@ public class AdminController {
         return mapOf("productId", productId, "auditStatus", product.getAuditStatus(), "status", product.getStatus());
     }
 
-    @Operation(summary = "管理用户状态")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "操作成功"), @ApiResponse(responseCode = "404", description = "用户不存在") })
+    @Operation(summary = "Manage user status")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "404", description = "User not found") })
     @PostMapping("/users/{userId}/status")
     Map<String, Object> manageUser(Authentication authentication, @PathVariable String userId, @Valid @RequestBody UserStatusRequest request) {
         String adminId = CurrentUser.adminId(authentication);
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "User not found"));
         String beforeState = user.getAccountStatus();
         Instant now = Instant.now();
         user.setAccountStatus(request.status());
@@ -252,44 +238,8 @@ public class AdminController {
         return mapOf("userId", userId, "accountStatus", user.getAccountStatus());
     }
 
-    @Operation(summary = "重试 AI 任务")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "重试成功"), @ApiResponse(responseCode = "404", description = "任务不存在"), @ApiResponse(responseCode = "409", description = "任务状态不允许重试") })
-    @PostMapping("/patterns/jobs/{jobId}/retry")
-    Map<String, Object> retryPatternJob(Authentication authentication, @PathVariable String jobId) {
-        String adminId = CurrentUser.adminId(authentication);
-        PatternJobEntity job = patternJobRepository.findById(jobId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "AI 任务不存在"));
-        if (!"FAILED".equals(job.getStatus()) && !"CANCELED".equals(job.getStatus())) {
-            throw new BizException(ErrorCode.CONFLICT, "仅失败或已取消的任务可重试");
-        }
-        String beforeState = job.getStatus();
-        Instant now = Instant.now();
-        job.setStatus("PENDING");
-        job.setFailureReason(null);
-        job.setUpdatedAt(now);
-        patternJobRepository.save(job);
-        writeLog(adminId, "RETRY_PATTERN_JOB", "PATTERN_JOB", jobId, beforeState, "PENDING", null, now);
-        return mapOf("jobId", jobId, "status", "PENDING");
-    }
-
-    @Operation(summary = "取消 AI 任务")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "取消成功"), @ApiResponse(responseCode = "404", description = "任务不存在") })
-    @PostMapping("/patterns/jobs/{jobId}/cancel")
-    Map<String, Object> cancelPatternJob(Authentication authentication, @PathVariable String jobId) {
-        String adminId = CurrentUser.adminId(authentication);
-        PatternJobEntity job = patternJobRepository.findById(jobId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "AI 任务不存在"));
-        String beforeState = job.getStatus();
-        Instant now = Instant.now();
-        job.setStatus("CANCELED");
-        job.setUpdatedAt(now);
-        patternJobRepository.save(job);
-        writeLog(adminId, "CANCEL_PATTERN_JOB", "PATTERN_JOB", jobId, beforeState, "CANCELED", null, now);
-        return mapOf("jobId", jobId, "status", "CANCELED");
-    }
-
-    @Operation(summary = "运营日志列表")
-    @ApiResponses({ @ApiResponse(responseCode = "200", description = "成功"), @ApiResponse(responseCode = "403", description = "需要管理员权限") })
+    @Operation(summary = "Operation log list")
+    @ApiResponses({ @ApiResponse(responseCode = "200", description = "OK"), @ApiResponse(responseCode = "403", description = "Admin required") })
     @GetMapping("/operation-logs")
     PageResult<Map<String, Object>> logs(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "createdAt"));

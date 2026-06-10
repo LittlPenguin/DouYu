@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -21,14 +21,14 @@
     <section class="hero">
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / Settings 设计稿</div>
-        <h1 class="title">Settings 首页：必要入口，不包装合规完成</h1>
-        <p class="lead">Settings 从主页面新增菜单进入，覆盖账号安全、隐私权限、通知、帮助关于、退出登录和账号注销。生产合规材料只展示待补入口，不写成已完成。</p>
-        <div class="chips"><span class="chip">账号与安全</span><span class="chip">隐私与权限</span><span class="chip">通知设置</span><span class="chip">关于与合规</span></div>
+        <h1 class="title">Settings 首页：必要入口</h1>
+        <p class="lead">Settings 从主页面新增菜单进入，覆盖账号安全、隐私权限、通知、帮助关于、退出登录和账号注销。帮助与关于只保留普通说明入口。</p>
+        <div class="chips"><span class="chip">账号与安全</span><span class="chip">隐私与权限</span><span class="chip">通知设置</span><span class="chip">帮助与关于</span></div>
       </div>
       <div class="side-facts">
         <div class="fact"><b>入口来源</b><span>所有主页面左上新增菜单都可进入 Setting。</span></div>
         <div class="fact"><b>危险操作</b><span>退出登录、注销账号必须二次确认；不使用轻 Toast 假成功。</span></div>
-        <div class="fact"><b>合规边界</b><span>隐私政策、用户协议、SDK 清单、备案、版权投诉标为生产前待补。</span></div>
+        <div class="fact"><b>帮助边界</b><span>帮助与关于只保留普通说明入口，不承诺额外材料已完成。</span></div>
       </div>
     </section>
 
@@ -42,9 +42,9 @@
               <div class="hero-strip"><span class="pill warn">开发态结构</span><h3>账号与应用设置</h3><p>只展示可解释入口，未完成能力明确标注。</p></div>
               <div class="list">
                 <a class="row" href="settings-account-security-a.html"><span class="round-icon"><span class="icon lock"></span></span><div class="row-main"><div class="row-title">账号与安全</div><div class="row-sub">邮箱、登录设备、退出登录、注销账号</div></div></a>
-                <a class="row" href="settings-privacy-permissions-a.html"><span class="round-icon"><span class="icon settings"></span></span><div class="row-main"><div class="row-title">隐私与权限</div><div class="row-sub">相机、相册、通知、位置权限</div></div></a>
+                <a class="row" href="settings-privacy-permissions-a.html"><span class="round-icon"><span class="icon settings"></span></span><div class="row-main"><div class="row-title">隐私与权限</div><div class="row-sub">相机、相册、通知、地区资料</div></div></a>
                 <a class="row" href="settings-notifications-a.html"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">通知设置</div><div class="row-sub">私信、互动、系统通知</div></div></a>
-                <a class="row" href="settings-about-compliance-a.html"><span class="round-icon"><span class="icon image"></span></span><div class="row-main"><div class="row-title">帮助、关于与合规</div><div class="row-sub">协议、隐私政策、SDK 清单、备案待补</div></div><span class="pill warn">待补</span></a>
+                <a class="row" href="settings-home-a.html"><span class="round-icon"><span class="icon image"></span></span><div class="row-main"><div class="row-title">帮助与关于</div><div class="row-sub">帮助、版本与反馈入口</div></div><span class="pill warn">待补</span></a>
               </div>
               <div class="hero-strip"><span class="pill stop">危险操作</span><p>退出登录和账号注销必须二次确认，注销前说明数据影响。</p><div class="tool-row"><span class="button ghost">退出登录</span><span class="button ghost">注销账号</span></div></div>
             </div>
@@ -52,9 +52,9 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>页面组</h3><ul><li>Settings 首页。</li><li>账号与安全。</li><li>隐私与权限。</li><li>通知设置。</li><li>关于与合规。</li></ul></div>
+            <div class="spec"><h3>页面组</h3><ul><li>Settings 首页。</li><li>账号与安全。</li><li>隐私与权限。</li><li>通知设置。</li><li>帮助与关于。</li></ul></div>
             <div class="spec"><h3>状态规则</h3><ul><li>未登录时只展示登录、隐私、关于和帮助。</li><li>权限缺失显示去系统设置或说明。</li><li>网络失败提供重试，不吞成空白。</li><li>危险操作需要确认弹层。</li></ul></div>
-            <div class="state"><h3>不可误导</h3><p>合规资料入口存在不等于资料已齐；页面必须显示“待补/生产前必须补齐”。</p><div class="state-bar"><span class="state-dot warn">待补</span><span class="state-dot bad">禁完成态</span></div></div>
+            <div class="state"><h3>不可误导</h3><p>帮助入口只代表普通帮助与关于；未接入的入口保持待补或禁用。</p><div class="state-bar"><span class="state-dot warn">待补</span><span class="state-dot bad">禁完成态</span></div></div>
             <div class="state"><h3>无空点击</h3><p>每个入口都必须进入子页面、弹确认或展示禁用说明；不能只有 Toast。</p><div class="state-bar"><span class="state-dot bad">禁空入口</span><span class="state-dot good">可解释</span></div></div>
           </div>
         </div>

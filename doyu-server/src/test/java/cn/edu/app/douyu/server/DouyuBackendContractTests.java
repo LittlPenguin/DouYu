@@ -66,7 +66,7 @@ class DouyuBackendContractTests {
     StickerRepository stickerRepository;
 
     @Test
-    void openApiDocsExposeApiV1EndpointsAndUploadPatternContractFields() throws Exception {
+    void openApiDocsExposeApiV1EndpointsAndUploadContractFields() throws Exception {
         mockMvc.perform(get("/swagger-ui/index.html"))
                 .andExpect(status().isOk());
 
@@ -74,7 +74,7 @@ class DouyuBackendContractTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.openapi", notNullValue()))
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth", notNullValue()))
-                .andExpect(jsonPath("$.info.description", org.hamcrest.Matchers.containsString("Stub Provider")))
+                .andExpect(jsonPath("$.info.description", org.hamcrest.Matchers.containsString("OSS upload integration")))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -100,17 +100,15 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/login/sms")).isFalse();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/uploads/presign")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/uploads/confirm")).isTrue();
-        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/patterns/jobs")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/me/posts")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/me/following")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/me/followers")).isTrue();
-        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/payments/callbacks/wechat")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/admin/auth/login")).isTrue();
         org.assertj.core.api.Assertions.assertThat(documentedApiPaths).containsAll(mappedApiPaths);
 
         String token = login("13800000000", "AGE_18_PLUS");
         JsonNode presign = postJsonWithToken("/api/v1/uploads/presign", token, """
-                {"usage":"AI_INPUT","mimeType":"image/png","sizeBytes":2048,"fileName":"input.png"}
+                {"usage":"POST_IMAGE","mimeType":"image/png","sizeBytes":2048,"fileName":"input.png"}
                 """);
         JsonNode presignData = presign.path("data");
         org.assertj.core.api.Assertions.assertThat(presignData.hasNonNull("fileKey")).isTrue();
@@ -119,7 +117,7 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(presignData.hasNonNull("expiresIn")).isTrue();
 
         JsonNode confirmed = postJsonWithToken("/api/v1/uploads/confirm", token, """
-                {"fileKey":"%s","usage":"AI_INPUT","mimeType":"image/png","sizeBytes":2048,"width":120,"height":120}
+                {"fileKey":"%s","usage":"POST_IMAGE","mimeType":"image/png","sizeBytes":2048,"width":120,"height":120}
                 """.formatted(presignData.path("fileKey").asText()));
         JsonNode confirmData = confirmed.path("data");
         org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("fileId")).isTrue();
@@ -132,16 +130,12 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(confirmData.hasNonNull("auditStatus")).isTrue();
         org.assertj.core.api.Assertions.assertThat(confirmData.path("fileKey").asText()).isEqualTo(confirmData.path("storageKey").asText());
 
-        JsonNode created = postJsonWithToken("/api/v1/patterns/jobs", token, """
-                {"inputFileId":"%s","beadSize":"MM_2_6","targetSize":"16x16","difficulty":"BEGINNER","paletteId":"default","style":"CUTE"}
-                """.formatted(confirmData.path("fileId").asText()));
-        org.assertj.core.api.Assertions.assertThat(created.at("/data/inputFileId").asText()).isEqualTo(confirmData.path("fileId").asText());
     }
 
     @Test
     void emailRegisterLoginRefreshAndLogoutUseUnifiedResponseAndRevokeRefreshToken() throws Exception {
         JsonNode registered = postJson("/api/v1/auth/register", """
-                {"email":" Test.User+Minor@Example.COM ","password":"password123","confirmPassword":"password123","ageGroup":"AGE_16_17","nickname":"测试用户"}
+                {"email":" Test.User+Minor@Example.COM ","password":"password123","confirmPassword":"password123","ageGroup":"AGE_16_17","nickname":"娴嬭瘯鐢ㄦ埛"}
                 """);
         String accessToken = registered.at("/data/accessToken").asText();
         String refreshToken = registered.at("/data/refreshToken").asText();
@@ -198,14 +192,14 @@ class DouyuBackendContractTests {
     void uploadPresignAndConfirmCreateFileAssetAndModerationRecord() throws Exception {
         String token = login("13800000002", "AGE_18_PLUS");
         JsonNode presign = postJsonWithToken("/api/v1/uploads/presign", token, """
-                {"usage":"AI_INPUT","mimeType":"image/png","sizeBytes":2048,"fileName":"input.png"}
+                {"usage":"POST_IMAGE","mimeType":"image/png","sizeBytes":2048,"fileName":"input.png"}
                 """);
 
         mockMvc.perform(post("/api/v1/uploads/confirm")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"fileKey":"%s","usage":"AI_INPUT","mimeType":"image/png","sizeBytes":2048,"width":120,"height":120}
+                                {"fileKey":"%s","usage":"POST_IMAGE","mimeType":"image/png","sizeBytes":2048,"width":120,"height":120}
                                 """.formatted(presign.at("/data/fileKey").asText())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.fileId", notNullValue()))
@@ -213,36 +207,7 @@ class DouyuBackendContractTests {
     }
 
     @Test
-    void patternJobMovesFromPendingToSucceededAndCreatesPatternAsset() throws Exception {
-        String token = login("13800000003", "AGE_18_PLUS");
-        String fileId = confirmedFile(token, "AI_INPUT");
-
-        JsonNode created = postJsonWithToken("/api/v1/patterns/jobs", token, """
-                {"inputFileId":"%s","beadSize":"MM_2_6","targetSize":"16x16","difficulty":"BEGINNER","paletteId":"default","style":"CUTE"}
-                """.formatted(fileId));
-        String jobId = created.at("/data/jobId").asText();
-
-        // Poll for async completion
-        String status = "PENDING";
-        for (int i = 0; i < 50; i++) {
-            JsonNode polled = getJsonWithToken("/api/v1/patterns/jobs/" + jobId, token);
-            status = polled.at("/data/status").asText();
-            if ("SUCCEEDED".equals(status) || "FAILED".equals(status)) break;
-            Thread.sleep(100);
-        }
-        org.assertj.core.api.Assertions.assertThat(status).isEqualTo("SUCCEEDED");
-
-        mockMvc.perform(get("/api/v1/patterns/jobs/{jobId}", jobId)
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status", equalTo("SUCCEEDED")))
-                .andExpect(jsonPath("$.data.patternId", notNullValue()))
-                .andExpect(jsonPath("$.data.progress", equalTo(1.0)))
-                .andExpect(jsonPath("$.data.patternAsset.materials.totalBeads", equalTo(256)));
-    }
-
-    @Test
-    void orderPaymentAndRefundAreIdempotentAndGuardInventoryAndRefundAmount() throws Exception {
+    void orderCreationIsIdempotentAndGuardsInventoryAndCancelState() throws Exception {
         String token = login("13800000004", "AGE_18_PLUS");
         String skuId = ensureSelfOperatedSku("fixture-product-order-red", "fixture-sku-order-red",
                 "https://fixture.local/assets/order-red.png", 100);
@@ -260,10 +225,14 @@ class DouyuBackendContractTests {
         String orderId = first.at("/data/orderId").asText();
 
         org.assertj.core.api.Assertions.assertThat(second.at("/data/orderId").asText()).isEqualTo(orderId);
-        org.assertj.core.api.Assertions.assertThat(first.at("/data/addressSnapshot").isObject()).isTrue();
-        org.assertj.core.api.Assertions.assertThat(first.at("/data/status").asText()).isEqualTo("WAITING_PAYMENT");
+        org.assertj.core.api.Assertions.assertThat(first.at("/data/addressSnapshot/addressId").asText()).isEqualTo("addr_test_1");
+        org.assertj.core.api.Assertions.assertThat(first.at("/data/status").asText()).isEqualTo("CREATED");
 
-        // Add another cart item with huge quantity for inventory test
+        mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", orderId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status", equalTo("CANCELED")));
+
         JsonNode cartAdd2 = postJsonWithToken("/api/v1/cart/items", token, """
                 {"skuId":"%s","quantity":999999}
                 """.formatted(skuId));
@@ -278,49 +247,7 @@ class DouyuBackendContractTests {
                                 """.formatted(cartItemId2)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code", equalTo("INVENTORY_NOT_ENOUGH")));
-
-        JsonNode payment = postJsonWithIdempotency("/api/v1/payments", token, "pay-key-1", """
-                {"orderId":"%s","channel":"WECHAT_APP"}
-                """.formatted(orderId));
-        String paymentId = payment.at("/data/paymentId").asText();
-        org.assertj.core.api.Assertions.assertThat(payment.at("/data/orderId").asText()).isEqualTo(orderId);
-        org.assertj.core.api.Assertions.assertThat(payment.at("/data/status").asText()).isEqualTo("CREATED");
-        org.assertj.core.api.Assertions.assertThat(payment.at("/data/amountCent").asInt()).isEqualTo(first.at("/data/payableAmountCent").asInt());
-
-        mockMvc.perform(get("/api/v1/payments/{paymentId}", paymentId)
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.paymentId", equalTo(paymentId)))
-                .andExpect(jsonPath("$.data.status", equalTo("CREATED")))
-                .andExpect(jsonPath("$.data.amountCent", equalTo(first.at("/data/payableAmountCent").asInt())));
-
-        mockMvc.perform(post("/api/v1/payments/callbacks/wechat")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"paymentId":"%s","channelTradeNo":"wx_trade_001","paid":true}
-                                """.formatted(paymentId)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status", equalTo("SUCCEEDED")));
-
-        mockMvc.perform(post("/api/v1/payments/callbacks/wechat")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"paymentId":"%s","channelTradeNo":"wx_trade_001","paid":true}
-                                """.formatted(paymentId)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status", equalTo("SUCCEEDED")));
-
-        mockMvc.perform(post("/api/v1/refunds")
-                        .header("Authorization", "Bearer " + token)
-                        .header("Idempotency-Key", "refund-key-1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"orderId":"%s","paymentId":"%s","amountCent":999999,"reason":"测试超额退款"}
-                                """.formatted(orderId, paymentId)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code", equalTo("CONFLICT")));
     }
-
     @Test
     void playerProductCannotEnterStandardCartOrOrder() throws Exception {
         String token = login("13800000022", "AGE_18_PLUS");
@@ -369,7 +296,7 @@ class DouyuBackendContractTests {
         String adminToken = adminLogin.at("/data/accessToken").asText();
 
         JsonNode report = postJsonWithToken("/api/v1/reports", userToken, """
-                {"targetType":"POST","targetId":"post_missing","reason":"SPAM","description":"测试举报"}
+                {"targetType":"POST","targetId":"post_missing","reason":"SPAM","description":"test report"}
                 """);
         String reportId = report.at("/data/reportId").asText();
 
@@ -377,7 +304,7 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"status":"RESOLVED","reason":"已处理"}
+                                {"status":"RESOLVED","reason":"processed"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status", equalTo("RESOLVED")));
@@ -393,7 +320,7 @@ class DouyuBackendContractTests {
         String token = login("13800000010", "AGE_18_PLUS");
 
         JsonNode created = postJsonWithToken("/api/v1/posts", token, """
-                {"title":"测试帖子","content":"拼豆社区测试内容"}
+                {"title":"test post","content":"community test content"}
                 """);
         String postId = created.at("/data/postId").asText();
         org.assertj.core.api.Assertions.assertThat(postId).isNotEmpty();
@@ -417,7 +344,7 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.data.favorited", equalTo(true)));
 
         JsonNode comment = postJsonWithPath("/api/v1/posts/{postId}/comments", token, """
-                {"content":"好可爱的拼豆！"}
+                {"content":"nice bead post"}
                 """, postId);
         String commentId = comment.at("/data/commentId").asText();
         org.assertj.core.api.Assertions.assertThat(commentId).isNotEmpty();
@@ -824,7 +751,7 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"usage":"AI_INPUT","mimeType":"image/png","sizeBytes":999999999,"fileName":"huge.png"}
+                                {"usage":"POST_IMAGE","mimeType":"image/png","sizeBytes":999999999,"fileName":"huge.png"}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
@@ -838,14 +765,14 @@ class DouyuBackendContractTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
 
-        // Malformed JSON body → 400 INVALID_ARGUMENT
+        // Malformed JSON body 鈫?400 INVALID_ARGUMENT
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{invalid json"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
 
-        // Missing required field (blank email) → 400 INVALID_ARGUMENT
+        // Missing required field (blank email) 鈫?400 INVALID_ARGUMENT
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -854,13 +781,13 @@ class DouyuBackendContractTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
 
-        // Nonexistent order → 404 NOT_FOUND
+        // Nonexistent order 鈫?404 NOT_FOUND
         mockMvc.perform(get("/api/v1/orders/nonexistent_order")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
 
-        // Nonexistent comment → 404 NOT_FOUND
+        // Nonexistent comment 鈫?404 NOT_FOUND
         mockMvc.perform(delete("/api/v1/comments/nonexistent_comment")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
@@ -1020,7 +947,7 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/messages/conversations")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/{userId}/follow")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/reports")).isTrue();
-        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/refunds")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/refunds")).isFalse();
     }
 
     @Test
@@ -1047,10 +974,10 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"content":"图文评论","mediaFileIds":["%s"]}
+                                {"content":"鍥炬枃璇勮","mediaFileIds":["%s"]}
                                 """.formatted(imageFileId)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content", equalTo("图文评论")))
+                .andExpect(jsonPath("$.data.content", equalTo("鍥炬枃璇勮")))
                 .andExpect(jsonPath("$.data.mediaAssets[0].mimeType", equalTo("image/png")));
 
         mockMvc.perform(get("/api/v1/posts/{postId}/comments", postId)
@@ -1071,7 +998,7 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"content":"太多图片","mediaFileIds":["1","2","3","4","5","6","7","8","9","10"]}
+                                {"content":"澶鍥剧墖","mediaFileIds":["1","2","3","4","5","6","7","8","9","10"]}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
@@ -1081,18 +1008,18 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"content":"不能使用别人的图","mediaFileIds":["%s"]}
+                                {"content":"涓嶈兘浣跨敤鍒汉鐨勫浘","mediaFileIds":["%s"]}
                                 """.formatted(otherImageFileId)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")));
 
-        String aiFileId = confirmedFile(token, "AI_INPUT");
+        String productImageFileId = confirmedFile(token, "PRODUCT_IMAGE");
         mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"content":"用途不对","mediaFileIds":["%s"]}
-                                """.formatted(aiFileId)))
+                                {"content":"鐢ㄩ€斾笉瀵?,"mediaFileIds":["%s"]}
+                                """.formatted(productImageFileId)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
     }
@@ -1307,7 +1234,7 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + minorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"type":"PLAYER_CUSTOM_SERVICE","title":"接头像定制","description":"测试","sku":{"specName":"默认","priceCent":5000,"stock":1}}
+                                {"type":"PLAYER_CUSTOM_SERVICE","title":"minor product","description":"test","sku":{"specName":"default","priceCent":5000,"stock":1}}
                                 """))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")));
@@ -1317,7 +1244,7 @@ class DouyuBackendContractTests {
                         .header("Authorization", "Bearer " + adultToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"type":"PLAYER_SECOND_HAND","title":"二手豆子","description":"测试","sku":{"specName":"默认","priceCent":1000,"stock":1}}
+                                {"type":"PLAYER_SECOND_HAND","title":"unverified product","description":"test","sku":{"specName":"default","priceCent":1000,"stock":1}}
                                 """))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")));
@@ -1326,7 +1253,7 @@ class DouyuBackendContractTests {
     private String login(String phone, String ageGroup) throws Exception {
         String email = "user-" + phone + "-" + LOGIN_COUNTER.incrementAndGet() + "@example.com";
         JsonNode login = postJson("/api/v1/auth/register", """
-                {"email":"%s","password":"password123","confirmPassword":"password123","ageGroup":"%s","nickname":"测试用户"}
+                {"email":"%s","password":"password123","confirmPassword":"password123","ageGroup":"%s","nickname":"娴嬭瘯鐢ㄦ埛"}
                 """.formatted(email, ageGroup));
         return login.at("/data/accessToken").asText();
     }
@@ -1438,7 +1365,6 @@ class DouyuBackendContractTests {
         post.setMediaFileIds(null);
         post.setCoverImageUrl(coverImageUrl);
         post.setTopicIds(topicId);
-        post.setLinkedPatternId(null);
         post.setStatus("VISIBLE");
         post.setLikeCount(0);
         post.setFavoriteCount(0);

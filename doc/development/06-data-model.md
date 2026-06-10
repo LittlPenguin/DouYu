@@ -2,16 +2,17 @@
 
 ## Android Model Target
 
-Android models are Java POJOs. Kotlin data classes are removed from Android.
+Android models are Java POJOs. Kotlin data classes are not used in Android
+production or test source.
 
 ## Backend Model Target
 
-Backend entity structure remains Java/Spring based. This stage removes runtime
-demo content, not the domain tables.
+Backend entity structure remains Java/Spring based. Runtime demo content must
+not be restored; domain tables remain part of the real data model.
 
 ## Empty Data Meaning
 
-An empty posts/products/messages/patterns/assets result is normal after seed
+An empty posts/products/messages/assets result is normal after seed
 removal. Empty does not mean the client should create sample rows.
 
 ## Seed/Demo Removal

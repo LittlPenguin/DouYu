@@ -37,9 +37,6 @@ public class PostEntity {
     @Column(name = "topic_ids", length = 1000)
     private String topicIds;
 
-    @Column(name = "linked_pattern_id", length = 64)
-    private String linkedPatternId;
-
     @Column(name = "status", length = 32, nullable = false)
     private String status;
 
@@ -64,7 +61,7 @@ public class PostEntity {
     public PostEntity() {}
 
     public PostEntity(String id, String authorId, String title, String content,
-                      String mediaFileIds, String topicIds, String linkedPatternId,
+                      String mediaFileIds, String topicIds,
                       String status, int likeCount, int favoriteCount, int commentCount,
                       boolean pinned, Instant createdAt, Instant updatedAt) {
         this.id = id;
@@ -73,7 +70,6 @@ public class PostEntity {
         this.content = content;
         this.mediaFileIds = mediaFileIds;
         this.topicIds = topicIds;
-        this.linkedPatternId = linkedPatternId;
         this.status = status;
         this.likeCount = likeCount;
         this.favoriteCount = favoriteCount;
@@ -101,8 +97,6 @@ public class PostEntity {
     public void setCoverHeight(Integer coverHeight) { this.coverHeight = coverHeight; }
     public String getTopicIds() { return topicIds; }
     public void setTopicIds(String topicIds) { this.topicIds = topicIds; }
-    public String getLinkedPatternId() { return linkedPatternId; }
-    public void setLinkedPatternId(String linkedPatternId) { this.linkedPatternId = linkedPatternId; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public int getLikeCount() { return likeCount; }

@@ -1,26 +1,28 @@
 <svg viewBox="0 0 760 760" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <style>
-      text{font-family:'Noto Sans SC','Microsoft YaHei',Arial,sans-serif}.bg{fill:#FFFBF7}.phone{fill:#fff;stroke:#E0CDD0;stroke-width:2;rx:32}.bar{fill:#FFF0F3;stroke:#E0CDD0;rx:16}.petal{fill:#F48FA4}.mint{fill:#D4F0E0;stroke:#7DB89A;rx:14}.sky{fill:#D6E8FF;stroke:#7AADE0;rx:14}.coral{fill:#FFE8DD;stroke:#FF8F75;rx:14}.card{fill:#fff;stroke:#E0CDD0;rx:16}.label{fill:#2F2528;font-size:16px;font-weight:800}.small{fill:#5F5257;font-size:12px}.tiny{fill:#7A6B70;font-size:10px}
+      text{font-family:'Noto Sans SC','Microsoft YaHei',Arial,sans-serif}
+      .bg{fill:#FFFBF7}.phone{fill:#fff;stroke:#E0CDD0;stroke-width:2;rx:32}.bar{fill:#FFF0F3;stroke:#E0CDD0;rx:16}
+      .petal{fill:#F48FA4}.mint{fill:#D4F0E0;stroke:#7DB89A;rx:14}.sky{fill:#D6E8FF;stroke:#7AADE0;rx:14}.coral{fill:#FFE8DD;stroke:#FF8F75;rx:14}.card{fill:#fff;stroke:#E0CDD0;rx:16}
+      .label{fill:#2F2528;font-size:16px;font-weight:800}.small{fill:#5F5257;font-size:12px}.tiny{fill:#7A6B70;font-size:10px}
     </style>
   </defs>
   <rect width="760" height="760" class="bg"/>
-  <text x="38" y="48" class="label">商城首页线框</text>
-  <text x="38" y="70" class="small">交易页面克制可信；玩家商品不进入标准购物车</text>
+  <text x="38" y="48" class="label">Commerce Home Wireframe</text>
+  <text x="38" y="70" class="small">Retained commerce scope: product browsing, cart, order confirmation, and address management.</text>
   <rect x="220" y="100" width="320" height="620" class="phone"/>
-  <rect x="244" y="128" width="272" height="48" class="bar"/><circle cx="270" cy="152" r="13" class="petal"/><text x="380" y="158" text-anchor="middle" class="label">商城</text><circle cx="490" cy="152" r="13" fill="#9EC9F5"/>
-  <rect x="244" y="194" width="272" height="72" class="coral"/><text x="380" y="226" text-anchor="middle" class="small">自营精选 / 联调 Banner</text><text x="380" y="248" text-anchor="middle" class="tiny">不可空点击</text>
-  <rect x="244" y="286" width="62" height="28" rx="14" fill="#FFE0E6"/><text x="275" y="305" text-anchor="middle" class="tiny">推荐</text>
-  <rect x="316" y="286" width="62" height="28" rx="14" fill="#fff" stroke="#E0CDD0"/><text x="347" y="305" text-anchor="middle" class="tiny">豆包</text>
-  <rect x="388" y="286" width="62" height="28" rx="14" fill="#fff" stroke="#E0CDD0"/><text x="419" y="305" text-anchor="middle" class="tiny">工具</text>
-  <rect x="244" y="340" width="126" height="150" class="card"/><rect x="254" y="350" width="106" height="74" class="mint"/><text x="254" y="446" class="tiny">自营 5mm 彩豆</text><text x="254" y="468" class="tiny">¥29.9 · 库存</text>
-  <rect x="390" y="340" width="126" height="150" class="card"/><rect x="400" y="350" width="106" height="74" class="sky"/><text x="400" y="446" class="tiny">玩家二手套装</text><text x="400" y="468" class="tiny">禁用加购</text>
-  <rect x="244" y="512" width="126" height="150" class="card"/><rect x="254" y="522" width="106" height="74" class="coral"/><text x="254" y="618" class="tiny">自营模板板</text><text x="254" y="640" class="tiny">¥18.0 · 售罄态</text>
-  <rect x="390" y="512" width="126" height="150" class="card"/><rect x="400" y="522" width="106" height="74" fill="#FFE0E6" rx="14"/><text x="400" y="618" class="tiny">定制服务</text><text x="400" y="640" class="tiny">咨询边界</text>
+  <rect x="244" y="128" width="272" height="48" class="bar"/><circle cx="270" cy="152" r="13" class="petal"/><text x="380" y="158" text-anchor="middle" class="label">Commerce</text><circle cx="490" cy="152" r="13" fill="#9EC9F5"/>
+  <rect x="244" y="194" width="272" height="72" class="coral"/><text x="380" y="226" text-anchor="middle" class="small">Real product categories</text><text x="380" y="248" text-anchor="middle" class="tiny">No fake order state</text>
+  <rect x="244" y="286" width="62" height="28" rx="14" fill="#FFE0E6"/><text x="275" y="305" text-anchor="middle" class="tiny">All</text>
+  <rect x="316" y="286" width="62" height="28" rx="14" fill="#fff" stroke="#E0CDD0"/><text x="347" y="305" text-anchor="middle" class="tiny">Beads</text>
+  <rect x="388" y="286" width="62" height="28" rx="14" fill="#fff" stroke="#E0CDD0"/><text x="419" y="305" text-anchor="middle" class="tiny">Tools</text>
+  <rect x="244" y="340" width="126" height="150" class="card"/><rect x="254" y="350" width="106" height="74" class="mint"/><text x="254" y="446" class="tiny">OSS image</text><text x="254" y="468" class="tiny">price / stock</text>
+  <rect x="390" y="340" width="126" height="150" class="card"/><rect x="400" y="350" width="106" height="74" class="sky"/><text x="400" y="446" class="tiny">player product</text><text x="400" y="468" class="tiny">direct contact boundary</text>
+  <rect x="244" y="512" width="126" height="150" class="card"/><rect x="254" y="522" width="106" height="74" class="coral"/><text x="254" y="618" class="tiny">template board</text><text x="254" y="640" class="tiny">sold out state</text>
+  <rect x="390" y="512" width="126" height="150" class="card"/><rect x="400" y="522" width="106" height="74" fill="#FFE0E6" rx="14"/><text x="400" y="618" class="tiny">custom service</text><text x="400" y="640" class="tiny">consult boundary</text>
   <rect x="242" y="674" width="276" height="40" rx="20" fill="#FFFAF7" stroke="#E0CDD0"/>
-  <circle cx="274" cy="690" r="4" fill="#7A6B70"/><text x="274" y="704" text-anchor="middle" class="tiny">社区</text>
-  <rect x="302" y="680" width="48" height="28" rx="14" fill="#FFE0E6"/><circle cx="326" cy="690" r="4" class="petal"/><text x="326" y="704" text-anchor="middle" class="tiny">商城</text><rect x="314" y="709" width="24" height="3" rx="2" class="petal"/>
-  <circle cx="380" cy="690" r="4" fill="#7A6B70"/><text x="380" y="704" text-anchor="middle" class="tiny">AI</text>
-  <circle cx="434" cy="690" r="4" fill="#7A6B70"/><text x="434" y="704" text-anchor="middle" class="tiny">消息</text>
-  <circle cx="486" cy="690" r="4" fill="#7A6B70"/><text x="486" y="704" text-anchor="middle" class="tiny">我的</text>
+  <circle cx="274" cy="690" r="4" fill="#7A6B70"/><text x="274" y="704" text-anchor="middle" class="tiny">Community</text>
+  <rect x="310" y="680" width="54" height="28" rx="14" fill="#FFE0E6"/><circle cx="337" cy="690" r="4" class="petal"/><text x="337" y="704" text-anchor="middle" class="tiny">Commerce</text><rect x="325" y="709" width="24" height="3" rx="2" class="petal"/>
+  <circle cx="418" cy="690" r="4" fill="#7A6B70"/><text x="418" y="704" text-anchor="middle" class="tiny">Messages</text>
+  <circle cx="488" cy="690" r="4" fill="#7A6B70"/><text x="488" y="704" text-anchor="middle" class="tiny">Profile</text>
 </svg>
