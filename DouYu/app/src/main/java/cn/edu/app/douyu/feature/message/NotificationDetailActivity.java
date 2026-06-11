@@ -12,13 +12,10 @@ import com.google.android.material.button.MaterialButton;
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.ui.XmlPageActivity;
-
 /**
- * Notification detail: event type, title, summary and related object — no chat input,
- * no private-message quota state. The only action is the real "mark all read" call.
- * Object jumps (view post / view pattern) stay a labelled UI-only boundary until the
- * backend returns linked objects; no dead fake entries are shown.
+ * 通知详情页：展示单条通知内容并支持从通知列表进入。
  */
+
 public class NotificationDetailActivity extends XmlPageActivity {
     private MaterialButton markRead;
 
@@ -46,9 +43,9 @@ public class NotificationDetailActivity extends XmlPageActivity {
 
         String notificationId = extra(IntentExtras.NOTIFICATION_ID);
         if (notificationId.isEmpty()) {
-            stylePill(pill, "通知边界", R.drawable.bg_chip_plain, R.color.doyu_text_muted);
+            stylePill(pill, "通知", R.drawable.bg_chip_plain, R.color.doyu_text_muted);
             title.setText("缺少通知");
-            body.setText("请从通知列表进入详情页。通知详情不使用本地 fixture 内容。");
+            body.setText("请从通知列表进入详情页。");
             eventCard.setVisibility(View.GONE);
             markRead.setVisibility(View.GONE);
             return;
@@ -60,11 +57,11 @@ public class NotificationDetailActivity extends XmlPageActivity {
         String createdAt = extra(IntentExtras.CREATED_AT);
 
         stylePill(pill, NotificationTypes.heroLabel(type), NotificationTypes.heroPillBg(type), NotificationTypes.heroPillColor(type));
-        title.setText(valueOrFallback(notificationTitle, "通知事件"));
+        title.setText(valueOrFallback(notificationTitle, "通知"));
         body.setText(valueOrFallback(notificationBody, "这条通知没有正文。"));
 
         eventIcon.setImageResource(NotificationTypes.iconRes(type));
-        eventTitle.setText(valueOrFallback(notificationTitle, "通知事件"));
+        eventTitle.setText("通知类型");
         eventSub.setText(NotificationTypes.heroLabel(type));
         eventTime.setText(NotificationTypes.shortTime(createdAt));
 
@@ -73,7 +70,7 @@ public class NotificationDetailActivity extends XmlPageActivity {
 
     private void markAllRead() {
         markRead.setEnabled(false);
-        markRead.setText("标记中…");
+        markRead.setText("标记中...");
         loadDetail(
                 repository -> repository.markNotificationsRead(),
                 receipt -> {

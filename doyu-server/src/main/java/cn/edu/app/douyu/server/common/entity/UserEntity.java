@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * User 实体：映射 `users` 表，保存用户账号、资料和设置。
+ */
 @Entity
 @Table(name = "users")
 public class UserEntity {
@@ -49,14 +52,8 @@ public class UserEntity {
     @Column(name = "allow_recommendation", nullable = false)
     private boolean allowRecommendation = true;
 
-    @Column(name = "allow_stranger_messages", nullable = false)
-    private boolean allowStrangerMessages = true;
-
     @Column(name = "allow_favorites", nullable = false)
     private boolean allowFavorites = true;
-
-    @Column(name = "notify_messages", nullable = false)
-    private boolean notifyMessages = true;
 
     @Column(name = "notify_interactions", nullable = false)
     private boolean notifyInteractions = true;
@@ -119,12 +116,8 @@ public class UserEntity {
     public void setAccountStatus(String accountStatus) { this.accountStatus = accountStatus; }
     public boolean isAllowRecommendation() { return allowRecommendation; }
     public void setAllowRecommendation(boolean allowRecommendation) { this.allowRecommendation = allowRecommendation; }
-    public boolean isAllowStrangerMessages() { return allowStrangerMessages; }
-    public void setAllowStrangerMessages(boolean allowStrangerMessages) { this.allowStrangerMessages = allowStrangerMessages; }
     public boolean isAllowFavorites() { return allowFavorites; }
     public void setAllowFavorites(boolean allowFavorites) { this.allowFavorites = allowFavorites; }
-    public boolean isNotifyMessages() { return notifyMessages; }
-    public void setNotifyMessages(boolean notifyMessages) { this.notifyMessages = notifyMessages; }
     public boolean isNotifyInteractions() { return notifyInteractions; }
     public void setNotifyInteractions(boolean notifyInteractions) { this.notifyInteractions = notifyInteractions; }
     public boolean isNotifyPublish() { return notifyPublish; }

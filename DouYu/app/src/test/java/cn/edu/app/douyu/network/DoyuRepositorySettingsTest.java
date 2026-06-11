@@ -22,17 +22,15 @@ public class DoyuRepositorySettingsTest {
         UserSettings current = repository.userSettings();
         UpdateUserSettingsRequest request = new UpdateUserSettingsRequest();
         request.allowRecommendation = false;
-        request.notifyMessages = false;
+        request.notifySystem = false;
         UserSettings updated = repository.updateUserSettings(request);
-        repository.cancelAccount();
 
         assertTrue(current.allowRecommendation);
-        assertTrue(current.notifyMessages);
+        assertTrue(current.notifySystem);
         assertFalse(updated.allowRecommendation);
-        assertFalse(updated.notifyMessages);
+        assertFalse(updated.notifySystem);
         assertEquals(Boolean.FALSE, state.updateRequest.allowRecommendation);
-        assertEquals(Boolean.FALSE, state.updateRequest.notifyMessages);
-        assertTrue(state.cancelCalled);
+        assertEquals(Boolean.FALSE, state.updateRequest.notifySystem);
     }
 
     private static DoyuApi fakeApi(SettingsApiState state) {
@@ -51,12 +49,8 @@ public class DoyuRepositorySettingsTest {
                         state.updateRequest = (UpdateUserSettingsRequest) args[0];
                         UserSettings settings = new UserSettings();
                         settings.allowRecommendation = !Boolean.FALSE.equals(state.updateRequest.allowRecommendation);
-                        settings.notifyMessages = !Boolean.FALSE.equals(state.updateRequest.notifyMessages);
+                        settings.notifySystem = !Boolean.FALSE.equals(state.updateRequest.notifySystem);
                         return new SingleResponseCall<>(Response.success(ok(settings)));
-                    }
-                    if ("cancelAccount".equals(method.getName())) {
-                        state.cancelCalled = true;
-                        return new SingleResponseCall<>(Response.success(ok(java.util.Map.of("accountStatus", "CANCELING"))));
                     }
                     throw new AssertionError("Unexpected API call: " + method);
                 });
@@ -71,6 +65,5 @@ public class DoyuRepositorySettingsTest {
 
     private static final class SettingsApiState {
         UpdateUserSettingsRequest updateRequest;
-        boolean cancelCalled;
     }
 }

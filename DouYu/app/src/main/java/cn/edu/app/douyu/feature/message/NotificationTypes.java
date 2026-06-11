@@ -3,6 +3,9 @@ package cn.edu.app.douyu.feature.message;
 import java.util.Locale;
 
 import cn.edu.app.douyu.R;
+/**
+ * 通知类型工具：集中定义系统、互动、发布等通知类型展示规则。
+ */
 
 final class NotificationTypes {
     private NotificationTypes() {

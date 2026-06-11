@@ -29,6 +29,9 @@ import cn.edu.app.douyu.DoyuApplication;
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.UiCopy;
 import cn.edu.app.douyu.data.DoyuRepository;
+/**
+ * 列表页基类：封装 XML 列表页常用的加载、空态和错误态。
+ */
 
 public abstract class BaseListFragment extends Fragment {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();

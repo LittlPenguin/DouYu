@@ -19,6 +19,9 @@ import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.ui.LoadState;
 import cn.edu.app.douyu.ui.XmlPageActivity;
+/**
+ * 个人作品列表页：展示用户发布、点赞或收藏的帖子列表。
+ */
 
 public class ProfilePostsActivity extends XmlPageActivity implements ProfileAssetAdapter.Listener {
     private RecyclerView list;

@@ -14,6 +14,10 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * 阿里云 OSS 实现：根据配置生成预签名上传地址并映射公开访问 URL。
+ */
+
 public class AliyunOssProvider implements OssProvider, AutoCloseable {
     private final String bucket;
     private final String publicBaseUrl;

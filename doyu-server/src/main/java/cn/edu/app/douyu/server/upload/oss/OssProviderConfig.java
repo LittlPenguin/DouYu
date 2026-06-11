@@ -5,6 +5,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * OSS Provider 配置：根据环境选择本地存储或阿里云 OSS 实现。
+ */
 @Configuration
 public class OssProviderConfig {
 

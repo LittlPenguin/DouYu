@@ -16,6 +16,9 @@ import java.util.List;
 
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.model.UserProfile;
+/**
+ * 关注/粉丝列表适配器：渲染用户关系列表项。
+ */
 
 public class ProfileUserAdapter extends RecyclerView.Adapter<ProfileUserAdapter.Holder> {
     private final List<UserProfile> items = new ArrayList<>();

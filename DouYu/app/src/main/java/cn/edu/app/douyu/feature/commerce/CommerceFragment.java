@@ -35,6 +35,9 @@ import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductCategory;
 import cn.edu.app.douyu.ui.LoadState;
+/**
+ * 商城首页 Tab：加载商品分类和商品瀑布流，进入商品详情或购物车。
+ */
 
 public class CommerceFragment extends Fragment {
     private static final String FEATURED_ID = "";

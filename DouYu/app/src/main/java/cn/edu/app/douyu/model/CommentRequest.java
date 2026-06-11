@@ -1,6 +1,9 @@
 package cn.edu.app.douyu.model;
 
 import java.util.List;
+/**
+ * 评论请求 DTO：承载发评论时的正文、父评论和媒体文件。
+ */
 
 public class CommentRequest {
     public final String content;

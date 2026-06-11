@@ -14,20 +14,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.edu.app.douyu.R;
-import cn.edu.app.douyu.model.Conversation;
 import cn.edu.app.douyu.model.NotificationMessage;
+/**
+ * 消息首页适配器：渲染通知分组和通知入口，不承载私信会话。
+ */
 
 class MessageHomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     interface Listener {
         void onNotificationClick(NotificationMessage notification);
-
-        void onConversationClick(Conversation conversation);
     }
 
     private static final int TYPE_SECTION = 0;
     private static final int TYPE_NOTIFICATION = 1;
-    private static final int TYPE_CONVERSATION = 2;
-    private static final int TYPE_EMPTY = 3;
+    private static final int TYPE_EMPTY = 2;
 
     private final List<Row> rows = new ArrayList<>();
     private final Listener listener;
@@ -36,22 +35,14 @@ class MessageHomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.listener = listener;
     }
 
-    void submit(List<NotificationMessage> notifications, List<Conversation> conversations) {
+    void submit(List<NotificationMessage> notifications) {
         rows.clear();
-        rows.add(Row.section("通知", true));
+        rows.add(Row.section("通知"));
         if (notifications == null || notifications.isEmpty()) {
             rows.add(Row.empty("暂无通知"));
         } else {
             for (NotificationMessage notification : notifications) {
                 rows.add(Row.notification(notification));
-            }
-        }
-        rows.add(Row.section("消息", false));
-        if (conversations == null || conversations.isEmpty()) {
-            rows.add(Row.empty("暂无消息"));
-        } else {
-            for (Conversation conversation : conversations) {
-                rows.add(Row.conversation(conversation));
             }
         }
         notifyDataSetChanged();
@@ -72,9 +63,6 @@ class MessageHomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (viewType == TYPE_NOTIFICATION) {
             return new NotificationHolder(inflater.inflate(R.layout.item_notification, parent, false));
         }
-        if (viewType == TYPE_CONVERSATION) {
-            return new ConversationHolder(inflater.inflate(R.layout.item_conversation, parent, false));
-        }
         return new EmptyHolder(inflater.inflate(R.layout.item_message_section_empty, parent, false));
     }
 
@@ -85,8 +73,6 @@ class MessageHomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             bindSection((SectionHolder) holder, row);
         } else if (holder instanceof NotificationHolder) {
             bindNotification((NotificationHolder) holder, row.notification);
-        } else if (holder instanceof ConversationHolder) {
-            bindConversation((ConversationHolder) holder, row.conversation);
         } else if (holder instanceof EmptyHolder) {
             ((EmptyHolder) holder).text.setText(row.text);
         }
@@ -99,11 +85,8 @@ class MessageHomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private void bindSection(SectionHolder holder, Row row) {
         holder.title.setText(row.text);
-        holder.title.setBackgroundResource(row.notificationSection ? R.drawable.bg_pill_ok : R.drawable.bg_pill_warn);
-        holder.title.setTextColor(ContextCompat.getColor(
-                holder.title.getContext(),
-                row.notificationSection ? R.color.doyu_mint_deep : R.color.doyu_warn
-        ));
+        holder.title.setBackgroundResource(R.drawable.bg_pill_ok);
+        holder.title.setTextColor(ContextCompat.getColor(holder.title.getContext(), R.color.doyu_mint_deep));
     }
 
     private void bindNotification(NotificationHolder holder, NotificationMessage notification) {
@@ -120,23 +103,6 @@ class MessageHomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         });
     }
 
-    private void bindConversation(ConversationHolder holder, Conversation conversation) {
-        holder.title.setText(ConversationAdapter.peerName(conversation));
-        holder.subtitle.setText(lastMessage(conversation));
-        holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onConversationClick(conversation);
-            }
-        });
-    }
-
-    private static String lastMessage(Conversation conversation) {
-        if (conversation.lastMessage != null && !conversation.lastMessage.trim().isEmpty()) {
-            return conversation.lastMessage;
-        }
-        return "暂无消息";
-    }
-
     private static String safe(String value, String fallback) {
         return value == null || value.trim().isEmpty() ? fallback : value;
     }
@@ -144,32 +110,24 @@ class MessageHomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final class Row {
         final int type;
         final String text;
-        final boolean notificationSection;
         final NotificationMessage notification;
-        final Conversation conversation;
 
-        private Row(int type, String text, boolean notificationSection, NotificationMessage notification, Conversation conversation) {
+        private Row(int type, String text, NotificationMessage notification) {
             this.type = type;
             this.text = text;
-            this.notificationSection = notificationSection;
             this.notification = notification;
-            this.conversation = conversation;
         }
 
-        static Row section(String text, boolean notificationSection) {
-            return new Row(TYPE_SECTION, text, notificationSection, null, null);
+        static Row section(String text) {
+            return new Row(TYPE_SECTION, text, null);
         }
 
         static Row empty(String text) {
-            return new Row(TYPE_EMPTY, text, false, null, null);
+            return new Row(TYPE_EMPTY, text, null);
         }
 
         static Row notification(NotificationMessage notification) {
-            return new Row(TYPE_NOTIFICATION, null, false, notification, null);
-        }
-
-        static Row conversation(Conversation conversation) {
-            return new Row(TYPE_CONVERSATION, null, false, null, conversation);
+            return new Row(TYPE_NOTIFICATION, null, notification);
         }
     }
 
@@ -194,17 +152,6 @@ class MessageHomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             title = itemView.findViewById(R.id.notification_title);
             content = itemView.findViewById(R.id.notification_content);
             meta = itemView.findViewById(R.id.notification_meta);
-        }
-    }
-
-    static final class ConversationHolder extends RecyclerView.ViewHolder {
-        final TextView title;
-        final TextView subtitle;
-
-        ConversationHolder(@NonNull View itemView) {
-            super(itemView);
-            title = itemView.findViewById(R.id.conversation_title);
-            subtitle = itemView.findViewById(R.id.conversation_subtitle);
         }
     }
 

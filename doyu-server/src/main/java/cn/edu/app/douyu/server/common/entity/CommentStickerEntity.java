@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * CommentSticker 实体：映射 `comment_stickers` 表，保存评论贴纸关系。
+ */
 @Entity
 @Table(name = "comment_stickers")
 public class CommentStickerEntity {

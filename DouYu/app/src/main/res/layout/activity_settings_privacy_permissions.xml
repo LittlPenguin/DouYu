@@ -140,20 +140,6 @@
                 android:textSize="15sp" />
 
             <CheckBox
-                android:id="@+id/settings_allow_stranger_messages"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_card"
-                android:buttonTint="@color/doyu_petal_deep"
-                android:gravity="center_vertical"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:text="允许陌生人私信前三条"
-                android:textColor="@color/doyu_text"
-                android:textSize="15sp" />
-
-            <CheckBox
                 android:id="@+id/settings_allow_favorites"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"

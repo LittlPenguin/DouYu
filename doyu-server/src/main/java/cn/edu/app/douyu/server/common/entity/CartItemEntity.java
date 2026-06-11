@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * CartItem 实体：映射 `cart_items` 表，保存用户购物车条目。
+ */
 @Entity
 @Table(name = "cart_items")
 public class CartItemEntity {

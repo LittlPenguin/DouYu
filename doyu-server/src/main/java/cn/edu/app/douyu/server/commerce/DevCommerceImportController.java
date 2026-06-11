@@ -19,6 +19,9 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * 开发导入接口：为开发环境导入真实商品数据，避免客户端 mock 商品。
+ */
 @Profile("dev")
 @RestController
 @RequestMapping("/api/v1/dev/commerce")

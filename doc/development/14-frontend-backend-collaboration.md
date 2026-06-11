@@ -1,32 +1,50 @@
-# 14. Frontend Backend Collaboration
+# Frontend Backend Collaboration
 
-## Local Environment
+## Current API Base
 
-- `.env` in the repository root is the local configuration source.
-- Android `DOUYU_ANDROID_API_BASE_URL` must point to the current backend host.
-- `DOUYU_STORAGE_BASE_URL`, `DOUYU_OSS_PROVIDER` and Aliyun OSS template values remain part of the supported upload/OSS workflow.
+Android calls retained backend APIs under `/api/v1` through Retrofit + Gson.
 
-## Retained Integration Flows
+## Retained Integration Points
 
-- Login/register/session.
-- Upload presign -> PUT -> confirm.
-- Community feed, post detail, comments and post compose.
-- Commerce categories/products/cart/orders/address.
-- Messages, notifications and conversation.
-- Profile and settings.
+- Auth: register/login.
+- User/profile/follow/settings.
+- Upload: presign, direct PUT, confirm.
+- Community: posts, comments, topics, stickers, likes, favorites.
+- Search: posts, products, users, topics.
+- Commerce: products, categories, cart, create order.
+- Notifications: list and mark read.
 
-## Collaboration Rules
+## Removed Integration Points
 
-- Frontend must not fabricate backend rows, fake orders or fake success states.
-- Backend empty responses must be treated as valid.
-- OSS-backed image storage remains the image path for runtime assets.
-- Address management remains in scope without requiring map/location.
+Do not add Android calls or backend controllers for:
 
-## Removed Integration Areas
+- Token refresh or account cancellation.
+- Private-message or conversation APIs.
+- Checkin, reward or badge APIs.
+- Report, moderation or admin APIs.
+- address book APIs
+- order list/detail/cancel APIs
+- AI, payment, map/location, SMS or full compliance APIs.
 
-- AI Provider, visual model, content safety and cost controls.
-- Payment SDK/API, refund, reconciliation and production callback integration.
-- Map/location Provider integration.
-- Real SMS Provider integration.
-- Production rate limiting and production risk control.
-- Full compliance document workflow.
+## Local Logout
+
+Android logout is local session cleanup:
+
+1. User taps logout.
+2. Android shows confirmation.
+3. Android clears `SessionStore`.
+4. Protected screens return to login boundaries.
+
+No server logout or refresh-token revoke call is expected.
+
+## Notifications
+
+New registration must create three default `SYSTEM` notifications. The messages tab lists notifications only and opens notification detail without object jumps.
+
+## Orders
+
+Order creation requires user-entered address snapshot fields. Android must not send `addressId` and must not provide order-center navigation.
+
+## Verification
+
+When changing either side, update API contracts, run the focused tests first, then run the full Android/backend gates listed in `10-testing-acceptance.md`.

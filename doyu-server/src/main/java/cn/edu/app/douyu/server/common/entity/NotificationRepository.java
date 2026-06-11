@@ -7,13 +7,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
+/**
+ * Notification Repository：访问 `notifications` 表，提供用户通知记录的 JPA 查询。
+ */
 
 public interface NotificationRepository extends JpaRepository<NotificationEntity, String> {
     List<NotificationEntity> findByUserIdOrderByCreatedAtDesc(String userId);
-    List<NotificationEntity> findByConversationIdOrderByCreatedAtAsc(String conversationId);
-    Optional<NotificationEntity> findFirstByConversationIdOrderByCreatedAtDesc(String conversationId);
-    long countByConversationIdAndSenderId(String conversationId, String senderId);
 
     @Modifying
     @Transactional

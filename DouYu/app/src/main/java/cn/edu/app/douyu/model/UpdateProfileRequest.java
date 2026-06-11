@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.model;
+/**
+ * 资料更新请求 DTO：承载昵称、简介、地区和头像文件。
+ */
 
 public class UpdateProfileRequest {
     public String nickname;

@@ -1,6 +1,9 @@
 package cn.edu.app.douyu.server.common;
 
 import java.util.List;
+/**
+ * 分页响应 record：承载列表数据、页码、每页数量和总数。
+ */
 
 public record PageResult<T>(
         List<T> items,

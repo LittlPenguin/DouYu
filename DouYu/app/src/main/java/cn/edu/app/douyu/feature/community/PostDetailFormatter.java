@@ -11,6 +11,9 @@ import cn.edu.app.douyu.model.CommentMention;
 import cn.edu.app.douyu.model.CommentSticker;
 import cn.edu.app.douyu.model.CommentTopicRef;
 import cn.edu.app.douyu.model.Post;
+/**
+ * 帖子详情格式工具：把帖子和评论数据转换成页面展示文本。
+ */
 
 final class PostDetailFormatter {
     private static final String COMMENT_EMPTY_TEXT = "还没有评论。登录后可以留下拼豆建议或材料清单。";

@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * FileAsset 实体：映射 `file_assets` 表，保存上传文件元数据。
+ */
 @Entity
 @Table(name = "file_assets")
 public class FileAssetEntity {

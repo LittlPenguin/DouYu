@@ -13,6 +13,9 @@ import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.UserProfile;
 import cn.edu.app.douyu.ui.LoadState;
 import cn.edu.app.douyu.ui.XmlPageActivity;
+/**
+ * 关注/粉丝页：根据入口加载关注或粉丝用户列表。
+ */
 
 public class ProfileUsersActivity extends XmlPageActivity {
     public static final String EXTRA_MODE = "profile_user_mode";

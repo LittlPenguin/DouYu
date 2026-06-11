@@ -6,6 +6,9 @@ import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductSku;
 
 import java.util.Locale;
+/**
+ * 购买表单状态：保存商品详情页和购物车下单时的收货信息输入。
+ */
 
 final class PurchaseFormState {
     private PurchaseFormState() {

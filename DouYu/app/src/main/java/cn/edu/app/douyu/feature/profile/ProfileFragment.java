@@ -32,6 +32,7 @@ import cn.edu.app.douyu.DoyuApplication;
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.auth.AuthGate;
 import cn.edu.app.douyu.auth.LoginActivity;
+import cn.edu.app.douyu.auth.SessionStore;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.core.UiCopy;
 import cn.edu.app.douyu.data.DoyuRepository;
@@ -40,6 +41,9 @@ import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.UserProfile;
 import cn.edu.app.douyu.ui.LoadState;
+/**
+ * 个人主页 Tab：展示当前用户资料、统计、作品入口和登录状态。
+ */
 
 public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Listener {
     private static final int TAB_LIKED = 0;
@@ -74,14 +78,12 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         super.onCreate(savedInstanceState);
         editLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK) {
-                loadProfile();
-                loadAssets(activeTab);
+                refreshForCurrentSession();
             }
         });
         loginLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK) {
-                loadProfile();
-                loadAssets(activeTab);
+                refreshForCurrentSession();
                 if (result.getData() != null
                         && AuthGate.RETURN_ACTION_PROFILE_EDIT.equals(result.getData().getStringExtra(LoginActivity.EXTRA_RETURN_ACTION))) {
                     editLauncher.launch(new Intent(requireContext(), ProfileEditActivity.class));
@@ -126,12 +128,16 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
                 startActivity(new Intent(requireContext(), ProfilePostsActivity.class)));
         view.findViewById(R.id.stat_following_cell).setOnClickListener(v -> openUsers(ProfileUsersActivity.MODE_FOLLOWING));
         view.findViewById(R.id.stat_followers_cell).setOnClickListener(v -> openUsers(ProfileUsersActivity.MODE_FOLLOWERS));
-        retry.setOnClickListener(v -> loadAssets(activeTab));
+        retry.setOnClickListener(v -> loadAssets(activeTab, currentAccessToken()));
 
         applyTabStyle();
-        loadProfile();
-        loadAssets(activeTab);
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshForCurrentSession();
     }
 
     @Override
@@ -169,7 +175,7 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         }
         activeTab = index;
         applyTabStyle();
-        loadAssets(index);
+        loadAssets(index, currentAccessToken());
     }
 
     private void applyTabStyle() {
@@ -186,6 +192,27 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         return ((DoyuApplication) requireActivity().getApplication()).repository();
     }
 
+    private void refreshForCurrentSession() {
+        if (!isAdded() || nickname == null) {
+            return;
+        }
+        String accessToken = currentAccessToken();
+        if (accessToken.isEmpty()) {
+            bindLoggedOut(LoadState.LOGIN_REQUIRED);
+            if (adapter != null) {
+                adapter.submit(null);
+            }
+            showState(LoadState.EMPTY, null);
+            return;
+        }
+        loadProfile(accessToken);
+        loadAssets(activeTab, accessToken);
+    }
+
+    private String currentAccessToken() {
+        return new SessionStore(requireContext()).accessToken();
+    }
+
     private void showLikesSourceDialog() {
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("获赞来源")
@@ -200,15 +227,25 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         startActivity(intent);
     }
 
-    private void loadProfile() {
+    private void loadProfile(String expectedAccessToken) {
         DoyuRepository repository = repository();
         executor.execute(() -> {
             try {
                 UserProfile me = repository.me();
-                runOnUi(() -> bindProfile(me));
+                runOnUi(() -> {
+                    if (!expectedAccessToken.equals(currentAccessToken())) {
+                        return;
+                    }
+                    bindProfile(me);
+                });
             } catch (Exception e) {
                 LoadState state = LoadState.from(e);
-                runOnUi(() -> bindLoggedOut(state));
+                runOnUi(() -> {
+                    if (!expectedAccessToken.equals(currentAccessToken())) {
+                        return;
+                    }
+                    bindLoggedOut(state);
+                });
             }
         });
     }
@@ -250,13 +287,24 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
         avatar.setBackgroundResource(R.drawable.bg_avatar_circle);
     }
 
-    private void loadAssets(int tab) {
+    private void loadAssets(int tab, String expectedAccessToken) {
+        if (expectedAccessToken == null || expectedAccessToken.isEmpty()) {
+            bindLoggedOut(LoadState.LOGIN_REQUIRED);
+            if (adapter != null) {
+                adapter.submit(null);
+            }
+            showState(LoadState.EMPTY, null);
+            return;
+        }
         showState(LoadState.LOADING, null);
         DoyuRepository repository = repository();
         executor.execute(() -> {
             try {
                 List<AssetCard> cards = loadCards(repository, tab);
                 runOnUi(() -> {
+                    if (!expectedAccessToken.equals(currentAccessToken())) {
+                        return;
+                    }
                     if (tab != activeTab || adapter == null) {
                         return;
                     }
@@ -271,6 +319,9 @@ public class ProfileFragment extends Fragment implements ProfileAssetAdapter.Lis
                 LoadState state = LoadState.from(e);
                 String message = e.getMessage();
                 runOnUi(() -> {
+                    if (!expectedAccessToken.equals(currentAccessToken())) {
+                        return;
+                    }
                     if (tab == activeTab) {
                         showState(state, message);
                     }

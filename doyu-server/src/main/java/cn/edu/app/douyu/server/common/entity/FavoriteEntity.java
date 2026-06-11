@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Favorite 实体：映射 `favorites` 表，保存通用收藏关系。
+ */
 @Entity
 @Table(name = "favorites")
 public class FavoriteEntity {

@@ -1,9 +1,11 @@
 package cn.edu.app.douyu.server.common;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+/**
+ * API 模型集合：集中定义后端 Controller 返回给 Android 的轻量 record。
+ */
 
 public final class Models {
     private Models() {
@@ -11,15 +13,9 @@ public final class Models {
 
     public record User(String id, String phone, String email, String nickname, String avatarFileId, String bio,
                        String region, String ageGroup, boolean isMinor, String realNameStatus, String accountStatus,
-                       boolean allowRecommendation, boolean allowStrangerMessages, boolean allowFavorites,
-                       boolean notifyMessages, boolean notifyInteractions, boolean notifyPublish, boolean notifySystem,
+                       boolean allowRecommendation, boolean allowFavorites,
+                       boolean notifyInteractions, boolean notifyPublish, boolean notifySystem,
                        Instant createdAt, Instant updatedAt) {
-    }
-
-    public record RefreshTokenRecord(String id, String userId, String tokenHash, boolean revoked, Instant expiresAt) {
-    }
-
-    public record AdminUser(String id, String username, String passwordHash, String status) {
     }
 
     public record FileAsset(String id, String ownerId, String usage, String storageKey, String mimeType,
@@ -63,24 +59,4 @@ public final class Models {
                                Instant createdAt) {
     }
 
-    public record Conversation(String id, String userAId, String userBId, Instant createdAt) {
-    }
-
-    public record RewardAccount(String id, String userId, int points, int experience, String levelCode) {
-    }
-
-    public record CheckinRecord(String id, String userId, LocalDate checkinDate) {
-    }
-
-    public record Report(String id, String reporterId, String targetType, String targetId, String reason,
-                         String description, String status, Instant createdAt) {
-    }
-
-    public record ModerationRecord(String id, String targetType, String targetId, String result, String reason,
-                                   String operatorType, Instant createdAt) {
-    }
-
-    public record AdminOperationLog(String id, String adminId, String action, String targetType, String targetId,
-                                    String beforeState, String afterState, String reason, Instant createdAt) {
-    }
 }

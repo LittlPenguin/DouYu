@@ -34,6 +34,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import cn.edu.app.douyu.MainActivity;
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.auth.AuthGate;
 import cn.edu.app.douyu.auth.LoginActivity;
@@ -50,6 +51,9 @@ import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
 import cn.edu.app.douyu.ui.LoadState;
 import cn.edu.app.douyu.ui.XmlPageActivity;
+/**
+ * 帖子详情页：展示帖子、评论、点赞收藏状态，并提交评论互动。
+ */
 
 public class PostDetailActivity extends XmlPageActivity {
     private static final int MAX_COMMENT_IMAGES = 9;
@@ -193,6 +197,10 @@ public class PostDetailActivity extends XmlPageActivity {
     }
 
     private void bindBackHandler() {
+        View back = findViewById(R.id.back_button);
+        if (back != null) {
+            back.setOnClickListener(v -> finishOrReturnToCommunity());
+        }
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -200,9 +208,27 @@ public class PostDetailActivity extends XmlPageActivity {
                     collapseCommentInput();
                     return;
                 }
-                finish();
+                finishOrReturnToCommunity();
             }
         });
+    }
+
+    private void finishOrReturnToCommunity() {
+        if (!returnToCommunityIfRequested()) {
+            finish();
+        }
+    }
+
+    private boolean returnToCommunityIfRequested() {
+        if (!IntentExtras.SECTION_COMMUNITY.equals(extra(IntentExtras.RETURN_TO))) {
+            return false;
+        }
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra(IntentExtras.SECTION, IntentExtras.SECTION_COMMUNITY);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(intent);
+        finish();
+        return true;
     }
 
     private void bindStaticActions() {

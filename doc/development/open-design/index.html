@@ -1,73 +1,57 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>豆屿 Doyu - 第六轮 Open Design 总览</title>
+  <title>豆屿 Doyu - Open Design 当前入口</title>
   <link rel="stylesheet" href="doyu-open-design.css">
 </head>
 <body>
   <main class="board">
     <section class="hero">
       <div class="hero-card">
-        <div class="eyebrow">豆屿 Doyu / Open Design 项目入口</div>
-        <h1 class="title">当前 A 方向 UI 规则与页面设计稿</h1>
-        <p class="lead">当前 Open Design 用于校准 Android Java/XML 的 UI 结构、页面状态和不可用能力边界；底部导航固定为社区、商城、上传、消息、我的，已落地路由和接口事实以当前代码与 current-status.md 为准。</p>
+        <div class="eyebrow">豆屿 Doyu / 当前完成版本</div>
+        <h1 class="title">保留已闭环页面，删除过期入口。</h1>
+        <p class="lead">这些 Open Design 文件是当前 Android Java/XML UI 的结构、层级和文案依据。当前范围保留登录注册、社区、上传、搜索、商城浏览、购物车、创建订单、资料设置和通知。</p>
         <div class="chips">
-          <span class="chip">设计参考 + 实现对齐</span>
-          <span class="chip">部分 Android 已落地</span>
-          <span class="chip">上传底部 action</span>
-          <span class="chip">不恢复 Stitch</span>
+          <span class="chip">Java/XML</span>
+          <span class="chip">后端驱动</span>
+          <span class="chip">OSS 上传</span>
+          <span class="chip">通知中心</span>
         </div>
       </div>
       <div class="side-facts">
-        <div class="fact"><b>当前项目</b><span>Open Design 项目：SpellBean；入口文件：index.html；仓库副本：doc/development/open-design/。</span></div>
-        <div class="fact"><b>统一框架</b><span>主页面顶部统一为：设置 icon - 页面标题 - 搜索 icon；底部导航统一为社区、商城、上传、消息、我的。</span></div>
-        <div class="fact"><b>当前边界</b><span>只展示保留页面和已定义接口边界；超出当前范围的能力不作为页面入口。</span></div>
+        <div class="fact"><b>删除范围</b><span>私信、会话、奖励、签到、徽章、举报、后台、账号注销、refresh、地址簿、订单中心、通知跳转、AI、支付、地图和完整合规页面都不是当前版本入口。</span></div>
+        <div class="fact"><b>数据原则</b><span>页面只渲染后端返回数据；空结果展示空态，不使用本地示例内容。</span></div>
       </div>
     </section>
 
     <section class="section">
       <div class="section-head">
-        <h2>核心页面</h2>
-        <p>这些页面用于指导 Android Java/XML 落地和人工设计审查；当前 Android 已落地其中一部分，具体完成度以代码、current-status.md 和测试验收记录为准。</p>
+        <h2>保留页面</h2>
+        <p>每个页面必须对应真实 Android Java/XML 页面、真实 API 或明确的空/登录/错误状态。</p>
       </div>
       <div class="page-grid">
-        <a class="page-card" href="index-logged-out.html"><h3>未登录版索引</h3><p>登录、注册、未登录边界和受保护动作确认弹窗。</p></a>
-        <a class="page-card" href="login-a.html"><h3>登录</h3><p>邮箱密码登录。</p></a>
-        <a class="page-card" href="register-a.html"><h3>注册</h3><p>邮箱、昵称、年龄段、密码和确认密码，成功后直接登录。</p></a>
-        <a class="page-card" href="doyu-design-directions.html"><h3>方向总览</h3><p>A 方向已选，B/C 只作为未来参考。</p></a>
-        <a class="page-card" href="community-home-a.html"><h3>社区首页</h3><p>小红书式双列瀑布流、图片高度上限、设置/搜索顶栏和底部 Logo 导航。</p></a>
-        <a class="page-card" href="post-detail-comment-toolbar-a.html"><h3>作品详情 / 评论</h3><p>图片优先详情结构、静态输入框内点赞评论收藏、真实输入框、键盘状态、完整评论区和清晰 carousel。</p></a>
-        <a class="page-card" href="post-compose-a.html"><h3>上传帖子</h3><p>从底部“上传”进入；选图、拍照、OSS 上传、失败重试、话题选择和发布成功状态。</p></a>
-        <a class="page-card" href="search-a.html"><h3>Search 搜索页</h3><p>作品、商品、用户、话题的 UI-only 搜索结构和状态。</p></a>
-        <a class="page-card" href="commerce-home-a.html"><h3>商城首页</h3><p>自营商品、玩家商品边界、订单提交 UI-only 不误导。</p></a>
-        <a class="page-card" href="messages-a.html"><h3>消息首页</h3><p>私信和通知分区，通知不再出现会话输入状态。</p></a>
-        <a class="page-card" href="message-conversation-a.html"><h3>私信对话详情</h3><p>互关可发送、未互关 3 条限制、超过后输入禁用。</p></a>
-        <a class="page-card" href="notification-detail-a.html"><h3>通知详情</h3><p>评论、点赞、发布和系统通知的详情结构。</p></a>
-        <a class="page-card" href="profile-a.html"><h3>我的页</h3><p>统计区为获赞、作品、关注、粉丝；点赞作品、收藏作品合并 Tab。</p></a>
-        <a class="page-card" href="profile-edit-a.html"><h3>编辑资料</h3><p>头像、昵称、简介、手动城市/地区和保存失败状态；Android 保存真实资料字段。</p></a>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <h2>Settings</h2>
-        <p>Settings 覆盖必要内部页；当前只保留账号、安全、权限、通知和帮助入口。</p>
-      </div>
-      <div class="page-grid">
-        <a class="page-card" href="settings-home-a.html"><h3>Settings 首页</h3><p>账号、安全、隐私、权限、通知、帮助、退出登录和注销。</p></a>
-        <a class="page-card" href="settings-account-security-a.html"><h3>账号与安全</h3><p>邮箱、登录设备、注销账号和退出登录状态。</p></a>
-        <a class="page-card" href="settings-privacy-permissions-a.html"><h3>隐私与权限</h3><p>相机、相册、通知、地区资料，以及隐私开关。</p></a>
-        <a class="page-card" href="settings-notifications-a.html"><h3>通知设置</h3><p>私信、评论、点赞收藏、系统通知分组控制。</p></a>
-        <a class="page-card" href="settings-home-a.html"><h3>帮助与关于</h3><p>帮助、版本与反馈入口。</p></a>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="state-grid">
-        <div class="state"><h3>禁止误导</h3><p>不宣称超出当前接口范围的能力或玩家交易闭环已完成。</p><div class="state-bar"><span class="state-dot bad">禁假成功</span><span class="state-dot warn">边界清楚标注</span></div></div>
-        <div class="state"><h3>设计资产口径</h3><p>历史 Stitch 目录处于删除状态时不恢复；当前设计入口以本目录和 Open Design SpellBean 为准。</p><div class="state-bar"><span class="state-dot good">SpellBean</span><span class="state-dot warn">Stitch 不恢复</span></div></div>
+        <a class="page-card" href="index-logged-out.html"><h3>未登录边界</h3><p>受保护动作登录引导。</p></a>
+        <a class="page-card" href="login-a.html"><h3>登录</h3><p>邮箱密码登录，只保存 accessToken。</p></a>
+        <a class="page-card" href="register-a.html"><h3>注册</h3><p>注册成功后直接登录，并获得默认系统通知。</p></a>
+        <a class="page-card" href="doyu-design-directions.html"><h3>方向总览</h3><p>当前完成版本的信息架构。</p></a>
+        <a class="page-card" href="community-home-a.html"><h3>社区首页</h3><p>后端作品流、话题和互动入口。</p></a>
+        <a class="page-card" href="post-compose-a.html"><h3>上传帖子</h3><p>选图、拍照、OSS 上传和发布。</p></a>
+        <a class="page-card" href="post-detail-comment-toolbar-a.html"><h3>作品详情</h3><p>详情、评论、点赞、收藏和关注。</p></a>
+        <a class="page-card" href="search-a.html"><h3>搜索</h3><p>作品、商品、用户和话题搜索。</p></a>
+        <a class="page-card" href="commerce-home-a.html"><h3>商城</h3><p>商品浏览、购物车和创建订单。</p></a>
+        <a class="page-card" href="messages-a.html"><h3>通知中心</h3><p>只展示通知列表，不展示私信。</p></a>
+        <a class="page-card" href="notification-detail-a.html"><h3>通知详情</h3><p>纯标题、内容、时间和类型详情。</p></a>
+        <a class="page-card" href="profile-a.html"><h3>我的</h3><p>资料、作品、点赞和收藏。</p></a>
+        <a class="page-card" href="profile-edit-a.html"><h3>编辑资料</h3><p>头像、昵称、简介和手填地区。</p></a>
+        <a class="page-card" href="profile-posts-a.html"><h3>我的作品</h3><p>后端作品列表。</p></a>
+        <a class="page-card" href="profile-following-a.html"><h3>关注</h3><p>后端关注列表。</p></a>
+        <a class="page-card" href="profile-followers-a.html"><h3>粉丝</h3><p>后端粉丝列表。</p></a>
+        <a class="page-card" href="settings-home-a.html"><h3>设置首页</h3><p>账号、权限、通知和帮助入口。</p></a>
+        <a class="page-card" href="settings-account-security-a.html"><h3>账号与安全</h3><p>账号信息和本地退出登录。</p></a>
+        <a class="page-card" href="settings-privacy-permissions-a.html"><h3>隐私与权限</h3><p>系统权限和保留偏好。</p></a>
+        <a class="page-card" href="settings-notifications-a.html"><h3>通知设置</h3><p>互动、发布和系统通知偏好。</p></a>
       </div>
     </section>
   </main>

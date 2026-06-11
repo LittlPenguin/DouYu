@@ -16,6 +16,9 @@ import java.util.List;
 
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.model.Post;
+/**
+ * 社区帖子列表适配器：把帖子 Feed 数据渲染成首页卡片并处理点击。
+ */
 
 class CommunityPostAdapter extends RecyclerView.Adapter<CommunityPostAdapter.Holder> {
     interface Listener {

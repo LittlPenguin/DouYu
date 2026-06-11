@@ -24,10 +24,7 @@ import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.IntentExtras;
 
 /**
- * 全屏作品/评论图查看器. Shows a real gallery / carousel for the image URLs handed in by
- * 作品详情: big image, page count, prev/next arrows, thumbnail strip with a selected
- * border. URLs come from the post or a comment's mediaAssets; this screen does not
- * fetch or fake any content.
+ * 图片预览页：展示帖子或评论图片，并支持多图浏览。
  */
 public class PhotoViewerActivity extends AppCompatActivity {
     private final List<String> images = new ArrayList<>();

@@ -4,7 +4,6 @@ import cn.edu.app.douyu.server.common.BizException;
 import cn.edu.app.douyu.server.common.CurrentUser;
 import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
-import cn.edu.app.douyu.server.common.PageResult;
 import cn.edu.app.douyu.server.common.entity.CartItemEntity;
 import cn.edu.app.douyu.server.common.entity.CartItemRepository;
 import cn.edu.app.douyu.server.common.entity.IdempotencyRecordEntity;
@@ -28,13 +27,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
@@ -43,10 +39,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "Orders", description = "Create, list, inspect, and cancel orders")
+/**
+ * 订单接口 Controller：创建订单、消费购物车、锁定 SKU 库存并处理幂等请求。
+ */
+@Tag(name = "Orders", description = "Create orders")
 @RestController
 @RequestMapping("/api/v1/orders")
 public class OrderController {
+    // 订单、订单项、购物车、SKU 和幂等记录分别由对应 Repository 持久化。
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CartItemRepository cartItemRepository;
@@ -80,12 +80,14 @@ public class OrderController {
     })
     @Transactional
     @PostMapping
+    // 创建订单：支持购物车 itemIds 和立即购买 items，并用 Idempotency-Key 防重复下单。
     Map<String, Object> create(Authentication authentication,
                                @RequestHeader("Idempotency-Key") String idempotencyKey,
                                @Valid @RequestBody CreateOrderRequest request) throws JsonProcessingException {
         String userId = CurrentUser.userId(authentication);
         var existing = idempotencyRepository.findByUserIdAndIdempotencyKeyAndOperation(userId, idempotencyKey, "ORDER");
         if (existing.isPresent()) {
+            // 同一用户同一幂等 key 的重复请求直接返回首次响应。
             return readMap(existing.get().getResponseBody());
         }
 
@@ -98,6 +100,7 @@ public class OrderController {
         Instant now = Instant.now();
         int total = 0;
         for (ResolvedOrderLine line : lines) {
+            // 下单前逐行校验商品可买，并锁定库存。
             requirePurchasableSku(line.sku(), line.product());
             lockStock(line.sku(), line.quantity());
             total += line.sku().getPriceCent() * line.quantity();
@@ -141,73 +144,7 @@ public class OrderController {
         return response;
     }
 
-    @Operation(summary = "Order list")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
-    })
-    @GetMapping
-    PageResult<Map<String, Object>> orders(Authentication authentication,
-                                          @RequestParam(defaultValue = "1") int page,
-                                          @RequestParam(defaultValue = "20") int size) {
-        String userId = CurrentUser.userId(authentication);
-        List<Map<String, Object>> items = orderRepository.findByBuyerIdOrderByCreatedAtDesc(userId).stream()
-                .map(this::orderView)
-                .toList();
-        return PageResult.of(slice(items, page, size), page, size, items.size());
-    }
-
-    @Operation(summary = "Order detail")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "OK"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Forbidden"),
-            @ApiResponse(responseCode = "404", description = "Order not found")
-    })
-    @GetMapping("/{orderId}")
-    Map<String, Object> order(Authentication authentication, @PathVariable String orderId) {
-        String userId = CurrentUser.userId(authentication);
-        OrderEntity order = requireOrder(orderId);
-        if (!order.getBuyerId().equals(userId)) {
-            throw new BizException(ErrorCode.FORBIDDEN, "Cannot view this order");
-        }
-        return orderView(order);
-    }
-
-    @Operation(summary = "Cancel order")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Canceled"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Forbidden"),
-            @ApiResponse(responseCode = "404", description = "Order not found"),
-            @ApiResponse(responseCode = "409", description = "Order cannot be canceled")
-    })
-    @Transactional
-    @PostMapping("/{orderId}/cancel")
-    Map<String, Object> cancel(Authentication authentication, @PathVariable String orderId) {
-        String userId = CurrentUser.userId(authentication);
-        OrderEntity order = requireOrder(orderId);
-        if (!order.getBuyerId().equals(userId)) {
-            throw new BizException(ErrorCode.FORBIDDEN, "Cannot cancel this order");
-        }
-        if (!"CREATED".equals(order.getStatus())) {
-            throw new BizException(ErrorCode.CONFLICT, "Order cannot be canceled in this status");
-        }
-
-        for (OrderItemEntity item : orderItemRepository.findByOrderId(order.getId())) {
-            SkuEntity sku = skuRepository.findById(item.getSkuId()).orElse(null);
-            if (sku != null) {
-                sku.setLockedStock(Math.max(0, sku.getLockedStock() - item.getQuantity()));
-                sku.setUpdatedAt(Instant.now());
-                skuRepository.save(sku);
-            }
-        }
-        order.setStatus("CANCELED");
-        order.setUpdatedAt(Instant.now());
-        orderRepository.save(order);
-        return orderView(order);
-    }
-
+    // 把购物车 itemIds 或立即购买 items 解析成统一的订单行。
     private List<ResolvedOrderLine> resolveLines(String userId, CreateOrderRequest request) {
         List<ResolvedOrderLine> lines = new ArrayList<>();
         if (request.itemIds() != null) {
@@ -234,6 +171,7 @@ public class OrderController {
         return lines;
     }
 
+    // 地址快照随订单保存，后续用户修改地址不会影响历史订单。
     private Map<String, Object> resolveAddressSnapshot(CreateOrderRequest request) {
         if (request.addressSnapshot() != null && !request.addressSnapshot().isEmpty()) {
             Map<String, Object> snapshot = new LinkedHashMap<>(request.addressSnapshot());
@@ -243,12 +181,10 @@ public class OrderController {
             requireAddressField(snapshot, "detail");
             return snapshot;
         }
-        if (!isBlank(request.addressId())) {
-            return Map.of("addressId", request.addressId().trim());
-        }
         throw new BizException(ErrorCode.INVALID_ARGUMENT, "Address snapshot is required");
     }
 
+    // 地址必填字段统一 trim 并校验非空。
     private void requireAddressField(Map<String, Object> snapshot, String fieldName) {
         Object value = snapshot.get(fieldName);
         if (!(value instanceof String text) || text.trim().isEmpty()) {
@@ -257,11 +193,13 @@ public class OrderController {
         snapshot.put(fieldName, text.trim());
     }
 
+    // SKU 是订单行的购买单位，找不到时返回 404。
     private SkuEntity requireSku(String skuId) {
         return skuRepository.findById(skuId)
                 .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "SKU not found"));
     }
 
+    // 订单当前只允许购买自营、上架、审核通过且 SKU 在售的商品。
     private void requirePurchasableSku(SkuEntity sku, ProductEntity product) {
         if (product == null || !"ON_SALE".equals(product.getStatus()) || !"PASS".equals(product.getAuditStatus())) {
             throw new BizException(ErrorCode.NOT_FOUND, "Product is unavailable");
@@ -274,6 +212,7 @@ public class OrderController {
         }
     }
 
+    // 锁库存使用 synchronized 保护本进程内并发，写入 lockedStock 后保存 SKU。
     private synchronized void lockStock(SkuEntity sku, int quantity) {
         if (sku.getAvailableStock() < quantity) {
             throw new BizException(ErrorCode.INVENTORY_NOT_ENOUGH, "Inventory is not enough");
@@ -283,11 +222,7 @@ public class OrderController {
         skuRepository.save(sku);
     }
 
-    private OrderEntity requireOrder(String orderId) {
-        return orderRepository.findById(orderId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Order not found"));
-    }
-
+    // 订单视图：返回金额、地址快照和订单项，供 Android 下单结果页展示。
     private Map<String, Object> orderView(OrderEntity order) {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("orderId", order.getId());
@@ -316,6 +251,7 @@ public class OrderController {
         return view;
     }
 
+    // 地址快照从 JSON 还原成 Map，解析失败时保留 raw 内容便于排查。
     private Map<String, Object> fromJson(String json) {
         if (json == null) {
             return Map.of();
@@ -328,15 +264,10 @@ public class OrderController {
         }
     }
 
+    // 幂等记录里保存的是首次响应 JSON，重复请求时反序列化返回。
     private Map<String, Object> readMap(String json) throws JsonProcessingException {
         return objectMapper.readValue(json, objectMapper.getTypeFactory()
                 .constructMapType(LinkedHashMap.class, String.class, Object.class));
-    }
-
-    private <T> List<T> slice(List<T> items, int page, int size) {
-        int from = Math.max(0, (page - 1) * size);
-        int to = Math.min(items.size(), from + size);
-        return from >= items.size() ? List.of() : items.subList(from, to);
     }
 
     private boolean isBlank(String value) {
@@ -346,7 +277,6 @@ public class OrderController {
     public record CreateOrderRequest(
             List<@NotBlank String> itemIds,
             List<@Valid OrderLineRequest> items,
-            String addressId,
             Map<String, Object> addressSnapshot,
             String remark
     ) {

@@ -1,6 +1,9 @@
 package cn.edu.app.douyu.model;
 
 import java.util.List;
+/**
+ * 创建订单请求 DTO：承载立即购买或购物车下单的商品和地址快照。
+ */
 
 public class CreateOrderRequest {
     public List<String> itemIds;

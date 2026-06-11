@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Topic 实体：映射 `topics` 表，保存社区话题。
+ */
 @Entity
 @Table(name = "topics")
 public class TopicEntity {

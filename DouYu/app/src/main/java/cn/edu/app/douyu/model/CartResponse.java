@@ -2,6 +2,9 @@ package cn.edu.app.douyu.model;
 
 import java.util.ArrayList;
 import java.util.List;
+/**
+ * 购物车响应 DTO：承载购物车条目、商品、SKU 和数量信息。
+ */
 
 public class CartResponse {
     public List<Item> items = new ArrayList<>();

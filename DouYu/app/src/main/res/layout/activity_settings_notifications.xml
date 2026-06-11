@@ -25,7 +25,7 @@
                 android:background="@drawable/bg_state_card"
                 android:lineSpacingExtra="3dp"
                 android:padding="16dp"
-                android:text="通知偏好保存到后端；关闭提醒不删除消息页历史记录。"
+                android:text="通知偏好保存到后端；关闭提醒不删除通知中心历史记录。"
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
@@ -39,20 +39,6 @@
                 android:text="正在读取通知偏好"
                 android:textColor="@color/doyu_text_muted"
                 android:textSize="13sp" />
-
-            <CheckBox
-                android:id="@+id/settings_notify_messages"
-                android:layout_width="match_parent"
-                android:layout_height="58dp"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_card"
-                android:buttonTint="@color/doyu_petal_deep"
-                android:gravity="center_vertical"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:text="私信提醒"
-                android:textColor="@color/doyu_text"
-                android:textSize="15sp" />
 
             <CheckBox
                 android:id="@+id/settings_notify_interactions"
@@ -103,7 +89,7 @@
                 android:background="@drawable/bg_card"
                 android:lineSpacingExtra="3dp"
                 android:padding="14dp"
-                android:text="私信提醒只控制提醒偏好，不改变互关或发送限制。"
+                android:text="通知设置只控制保留通知偏好，不代表生产推送服务已完成。"
                 android:textColor="@color/doyu_text_muted"
                 android:textSize="13sp" />
         </LinearLayout>

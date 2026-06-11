@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * 搜索接口 Controller：聚合社区、商品等保留业务的搜索结果。
+ */
 @Tag(name = "Search", description = "Global search for public posts, products, users, and topics")
 @RestController
 @RequestMapping("/api/v1")

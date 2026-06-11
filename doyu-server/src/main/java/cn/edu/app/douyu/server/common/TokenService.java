@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * JWT Token 服务：签发和解析访问令牌。
+ */
 @Service
 public class TokenService {
     private final JwtEncoder encoder;
@@ -22,14 +25,13 @@ public class TokenService {
 
     public String accessToken(String subject, String type) {
         Instant now = Instant.now();
-        List<String> roles = "ADMIN".equals(type) ? List.of("ADMIN") : List.of("USER");
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(properties.jwt().issuer())
                 .issuedAt(now)
                 .expiresAt(now.plus(properties.jwt().accessTokenTtl()))
                 .subject(subject)
                 .claim("typ", type)
-                .claim("roles", roles)
+                .claim("roles", List.of("USER"))
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();

@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.model;
+/**
+ * 登录请求 DTO：承载邮箱和密码。
+ */
 
 public class LoginRequest {
     public final String email;

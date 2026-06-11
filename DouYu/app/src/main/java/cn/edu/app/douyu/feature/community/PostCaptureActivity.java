@@ -29,6 +29,9 @@ import java.util.concurrent.Executor;
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.core.SystemBarInsets;
+/**
+ * 拍摄上传页：使用 CameraX 拍照并把结果带回发帖流程。
+ */
 
 public class PostCaptureActivity extends AppCompatActivity {
     private PreviewView previewView;

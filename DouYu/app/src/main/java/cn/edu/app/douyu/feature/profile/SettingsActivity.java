@@ -27,6 +27,9 @@ import cn.edu.app.douyu.model.UserProfile;
 import cn.edu.app.douyu.model.UserSettings;
 import cn.edu.app.douyu.ui.LoadState;
 import cn.edu.app.douyu.ui.XmlPageActivity;
+/**
+ * 设置页：展示账号、安全、隐私、通知和关于信息，并保存真实设置。
+ */
 
 public class SettingsActivity extends XmlPageActivity {
     private static final String ACCOUNT_SECURITY = "account_security";
@@ -122,10 +125,6 @@ public class SettingsActivity extends XmlPageActivity {
         if (login != null) {
             login.setOnClickListener(v -> openLogin());
         }
-        View cancelAccount = findViewById(R.id.settings_cancel_account_action);
-        if (cancelAccount != null) {
-            cancelAccount.setOnClickListener(v -> confirmCancelAccount());
-        }
         loadAccountSecurity();
     }
 
@@ -156,25 +155,23 @@ public class SettingsActivity extends XmlPageActivity {
         setText(R.id.settings_account_email, "邮箱账号\n登录后显示邮箱账号");
         setText(R.id.settings_account_session, "本机会话\n当前没有有效登录态");
         setText(R.id.settings_account_device, deviceSummary());
-        setText(R.id.settings_account_message, "登录后可以退出登录或申请注销账号。");
+        setText(R.id.settings_account_message, "登录后可以查看账号信息并退出登录。");
         setVisible(R.id.settings_login_action, true);
         setVisible(R.id.settings_logout_action, false);
-        setVisible(R.id.settings_cancel_account_action, false);
     }
 
     private void renderAccountProfile(UserProfile profile) {
         setText(R.id.settings_account_status, "账号状态：" + valueOrFallback(profile.accountStatus, "ACTIVE"));
         setText(R.id.settings_account_email, "邮箱账号\n" + valueOrFallback(profile.email, "未返回邮箱"));
-        setText(R.id.settings_account_session, "本机会话\n本机已保存 accessToken 和 refreshToken");
+        setText(R.id.settings_account_session, "本机会话\n本机已保存 accessToken");
         setText(R.id.settings_account_device, deviceSummary());
-        setText(R.id.settings_account_message, "账号注销会提交后端申请，成功后本机登录态会被清理。");
+        setText(R.id.settings_account_message, "退出登录只会清理本机登录态。");
         setVisible(R.id.settings_login_action, false);
         setVisible(R.id.settings_logout_action, true);
-        setVisible(R.id.settings_cancel_account_action, true);
     }
 
     private String deviceSummary() {
-        return "当前设备\n" + Build.MANUFACTURER + " " + Build.MODEL + " · Android " + Build.VERSION.RELEASE;
+        return "当前设备\n" + Build.MANUFACTURER + " " + Build.MODEL + " / Android " + Build.VERSION.RELEASE;
     }
 
     private void bindPrivacyPermissions() {
@@ -202,20 +199,20 @@ public class SettingsActivity extends XmlPageActivity {
     private void renderPermissionState() {
         setText(R.id.settings_camera_permission, "相机\n" + permissionLabel(Manifest.permission.CAMERA, "用于拍摄拼豆作品或参考图"));
         setText(R.id.settings_notification_permission, "系统通知\n" + notificationPermissionLabel());
-        setText(R.id.settings_photo_permission, "相册访问\n发帖图片使用系统图片选择器按次授权，不需要常驻相册权限");
+        setText(R.id.settings_photo_permission, "相册访问\n发布图片使用系统图片选择器按次授权，不需要常驻相册权限");
         setText(R.id.settings_region_permission, "地区资料\n由地区资料编辑页手动维护");
     }
 
     private String permissionLabel(String permission, String usage) {
         boolean granted = ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED;
-        return (granted ? "已允许" : "未允许") + " · " + usage;
+        return (granted ? "已允许" : "未允许") + " / " + usage;
     }
 
     private String notificationPermissionLabel() {
         if (Build.VERSION.SDK_INT < 33) {
-            return "由系统通知开关管理 · 当前 Android 版本不需要运行时通知权限";
+            return "由系统通知开关管理 / 当前 Android 版本不需要运行时通知权限";
         }
-        return permissionLabel(Manifest.permission.POST_NOTIFICATIONS, "用于私信、互动、发布结果和系统提醒");
+        return permissionLabel(Manifest.permission.POST_NOTIFICATIONS, "用于互动、发布结果和系统提醒");
     }
 
     private void requestCameraPermission() {
@@ -256,12 +253,10 @@ public class SettingsActivity extends XmlPageActivity {
 
     private void bindPrivacySwitches() {
         bindSettingCheckbox(R.id.settings_allow_recommendation, "allowRecommendation", R.id.settings_privacy_status);
-        bindSettingCheckbox(R.id.settings_allow_stranger_messages, "allowStrangerMessages", R.id.settings_privacy_status);
         bindSettingCheckbox(R.id.settings_allow_favorites, "allowFavorites", R.id.settings_privacy_status);
     }
 
     private void bindNotifications() {
-        bindSettingCheckbox(R.id.settings_notify_messages, "notifyMessages", R.id.settings_notifications_status);
         bindSettingCheckbox(R.id.settings_notify_interactions, "notifyInteractions", R.id.settings_notifications_status);
         bindSettingCheckbox(R.id.settings_notify_publish, "notifyPublish", R.id.settings_notifications_status);
         bindSettingCheckbox(R.id.settings_notify_system, "notifySystem", R.id.settings_notifications_status);
@@ -313,16 +308,12 @@ public class SettingsActivity extends XmlPageActivity {
     private void renderSettings(UserSettings settings) {
         bindingSettings = true;
         setChecked(R.id.settings_allow_recommendation, settings != null && settings.allowRecommendation);
-        setChecked(R.id.settings_allow_stranger_messages, settings != null && settings.allowStrangerMessages);
         setChecked(R.id.settings_allow_favorites, settings != null && settings.allowFavorites);
-        setChecked(R.id.settings_notify_messages, settings != null && settings.notifyMessages);
         setChecked(R.id.settings_notify_interactions, settings != null && settings.notifyInteractions);
         setChecked(R.id.settings_notify_publish, settings != null && settings.notifyPublish);
         setChecked(R.id.settings_notify_system, settings != null && settings.notifySystem);
         setEnabled(R.id.settings_allow_recommendation, settings != null);
-        setEnabled(R.id.settings_allow_stranger_messages, settings != null);
         setEnabled(R.id.settings_allow_favorites, settings != null);
-        setEnabled(R.id.settings_notify_messages, settings != null);
         setEnabled(R.id.settings_notify_interactions, settings != null);
         setEnabled(R.id.settings_notify_publish, settings != null);
         setEnabled(R.id.settings_notify_system, settings != null);
@@ -332,9 +323,7 @@ public class SettingsActivity extends XmlPageActivity {
     private void saveSetting(String field, boolean checked, CheckBox checkBox, int statusId) {
         setText(statusId, "正在保存设置");
         setEnabled(R.id.settings_allow_recommendation, false);
-        setEnabled(R.id.settings_allow_stranger_messages, false);
         setEnabled(R.id.settings_allow_favorites, false);
-        setEnabled(R.id.settings_notify_messages, false);
         setEnabled(R.id.settings_notify_interactions, false);
         setEnabled(R.id.settings_notify_publish, false);
         setEnabled(R.id.settings_notify_system, false);
@@ -360,12 +349,8 @@ public class SettingsActivity extends XmlPageActivity {
     private void setRequestField(UpdateUserSettingsRequest request, String field, boolean checked) {
         if ("allowRecommendation".equals(field)) {
             request.allowRecommendation = checked;
-        } else if ("allowStrangerMessages".equals(field)) {
-            request.allowStrangerMessages = checked;
         } else if ("allowFavorites".equals(field)) {
             request.allowFavorites = checked;
-        } else if ("notifyMessages".equals(field)) {
-            request.notifyMessages = checked;
         } else if ("notifyInteractions".equals(field)) {
             request.notifyInteractions = checked;
         } else if ("notifyPublish".equals(field)) {
@@ -447,71 +432,11 @@ public class SettingsActivity extends XmlPageActivity {
     }
 
     private void performLogout(SessionStore store) {
-        String refreshToken = store.refreshToken();
-        if (refreshToken.isEmpty()) {
-            store.clear();
-            bindLogoutAction();
+        store.clear();
+        bindLogoutAction();
+        if (ACCOUNT_SECURITY.equals(section())) {
             loadAccountSecurity();
-            return;
         }
-        loadDetail(
-                repository -> {
-                    repository.logout(refreshToken);
-                    return true;
-                },
-                ignored -> {
-                    store.clear();
-                    bindLogoutAction();
-                    loadAccountSecurity();
-                },
-                (state, message) -> {
-                    if (state == LoadState.LOGIN_REQUIRED) {
-                        store.clear();
-                        bindLogoutAction();
-                        loadAccountSecurity();
-                    } else {
-                        new MaterialAlertDialogBuilder(this)
-                                .setTitle("退出失败")
-                                .setMessage(message == null || message.isEmpty()
-                                        ? "暂时无法退出，请稍后重试。"
-                                        : message)
-                                .setPositiveButton("知道了", null)
-                                .show();
-                    }
-                }
-        );
-    }
-
-    private void confirmCancelAccount() {
-        if (!new SessionStore(this).isLoggedIn()) {
-            openLogin();
-            return;
-        }
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("申请注销账号？")
-                .setMessage("提交后账号状态会变为注销处理中，本机登录态会被清理。")
-                .setNegativeButton("取消", null)
-                .setPositiveButton("提交申请", (dialog, which) -> performCancelAccount())
-                .show();
-    }
-
-    private void performCancelAccount() {
-        SessionStore store = new SessionStore(this);
-        setText(R.id.settings_account_message, "正在提交注销申请");
-        loadDetail(
-                repository -> {
-                    repository.cancelAccount();
-                    return true;
-                },
-                ignored -> {
-                    store.clear();
-                    bindLogoutAction();
-                    renderLoggedOutAccount();
-                    setText(R.id.settings_account_message, "注销申请已提交，本机登录态已清理。");
-                },
-                (state, message) -> setText(R.id.settings_account_message,
-                        message == null || message.isEmpty() ? "注销申请失败，请重试。" : message)
-        );
     }
 
     private void setVisible(int id, boolean visible) {

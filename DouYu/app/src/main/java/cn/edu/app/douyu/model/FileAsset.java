@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.model;
+/**
+ * 文件资源 DTO：承载上传确认后返回的文件、OSS URL 和尺寸信息。
+ */
 
 public class FileAsset {
     public String fileId;

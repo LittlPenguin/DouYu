@@ -35,10 +35,6 @@ douyu:
     issuer: douyu
     secret: ${DOUYU_JWT_SECRET:dev-secret-dev-secret-dev-secret-dev-secret}
     access-token-ttl: PT2H
-    refresh-token-ttl: P30D
-  admin:
-    bootstrap-username: ${DOUYU_ADMIN_BOOTSTRAP_USERNAME:admin}
-    bootstrap-password: ${DOUYU_ADMIN_BOOTSTRAP_PASSWORD:admin123}
   oss:
     provider: ${DOUYU_OSS_PROVIDER:local}
     aliyun:

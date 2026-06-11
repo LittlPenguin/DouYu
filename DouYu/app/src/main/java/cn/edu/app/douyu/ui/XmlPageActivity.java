@@ -17,6 +17,9 @@ import cn.edu.app.douyu.core.SystemBarInsets;
 import cn.edu.app.douyu.core.UiCopy;
 import cn.edu.app.douyu.data.DoyuRepository;
 import cn.edu.app.douyu.ui.LoadState;
+/**
+ * XML 页面基类：为二级页面统一设置布局和基础视图行为。
+ */
 
 public abstract class XmlPageActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();

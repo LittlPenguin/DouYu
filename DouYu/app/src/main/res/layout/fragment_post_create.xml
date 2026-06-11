@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/post_create_scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/doyu_page"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="18dp">
+
+        <TextView
+            android:id="@+id/post_publish_top"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_gravity="end"
+            android:background="@drawable/bg_pill_ok"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:minWidth="54dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:text="&#21457;&#24067;"
+            android:textColor="@color/doyu_mint_deep"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/post_login_band"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_warning_band"
+            android:padding="14dp"
+            android:text="&#30331;&#24405;&#21518;&#21487;&#19978;&#20256;&#24086;&#23376;"
+            android:textColor="@color/doyu_text_muted"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/post_title_input"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_input_line"
+            android:hint="&#26631;&#39064;"
+            android:inputType="textCapSentences"
+            android:maxLength="80"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:singleLine="true"
+            android:textColor="@color/doyu_text"
+            android:textColorHint="@color/doyu_text_muted"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/post_body_input"
+            android:layout_width="match_parent"
+            android:layout_height="132dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_input_line"
+            android:gravity="top"
+            android:hint="&#35760;&#24405;&#20320;&#30340;&#25340;&#35910;&#36807;&#31243;&#12289;&#37197;&#33394;&#21644;&#32463;&#39564;"
+            android:inputType="textMultiLine|textCapSentences"
+            android:maxLength="2000"
+            android:padding="16dp"
+            android:textColor="@color/doyu_text"
+            android:textColorHint="@color/doyu_text_muted"
+            android:textSize="14sp"
+            android:lineSpacingExtra="3dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/post_pick_image"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="&#36873;&#25321;&#22270;&#29255;"
+                android:textAllCaps="false"
+                android:textColor="@color/doyu_petal_deep"
+                app:strokeColor="@color/doyu_open_line" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/post_capture_image"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="&#25293;&#29031;"
+                android:textAllCaps="false"
+                android:textColor="@color/doyu_petal_deep"
+                app:strokeColor="@color/doyu_open_line" />
+        </LinearLayout>
+
+        <GridLayout
+            android:id="@+id/post_image_grid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:columnCount="3"
+            android:useDefaultMargins="true" />
+
+        <TextView
+            android:id="@+id/post_image_count"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_pill_warn"
+            android:gravity="center"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:text="0/9"
+            android:textColor="@color/doyu_warn"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/post_topic_state"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="&#27491;&#22312;&#21152;&#36733;&#35805;&#39064;"
+            android:textColor="@color/doyu_text_muted"
+            android:textSize="12sp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/post_topic_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="8dp"
+            app:singleSelection="false" />
+
+        <LinearLayout
+            android:id="@+id/post_preview_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_state_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="26dp"
+                android:background="@drawable/bg_pill_ok"
+                android:gravity="center"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="&#39044;&#35272;"
+                android:textColor="@color/doyu_mint_deep"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/post_preview_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="&#21457;&#24067;&#21069;&#39044;&#35272;"
+                android:textColor="@color/doyu_text"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/post_preview_body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="&#36755;&#20837;&#26631;&#39064;&#12289;&#27491;&#25991;&#12289;&#22270;&#29255;&#21644;&#35805;&#39064;&#21518;&#22312;&#27492;&#39044;&#35272;&#12290;"
+                android:textColor="@color/doyu_text_muted"
+                android:textSize="12sp"
+                android:lineSpacingExtra="2dp" />
+
+            <TextView
+                android:id="@+id/post_preview_meta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="0 &#24352;&#22270;&#29255; - 0 &#20010;&#35805;&#39064;"
+                android:textColor="@color/doyu_text_muted"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/post_status_band"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_warning_band"
+            android:padding="14dp"
+            android:text="&#19978;&#20256;&#20013;&#31105;&#29992;&#21457;&#24067;&#65307;&#22833;&#36133;&#20445;&#30041;&#32553;&#30053;&#22270;&#24182;&#25552;&#20379;&#37325;&#35797;&#25110;&#21024;&#38500;&#12290;"
+            android:textColor="@color/doyu_text_muted"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/post_publish_button"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="16dp"
+            android:text="&#21457;&#24067;"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/doyu_petal_deep"
+            app:cornerRadius="18dp" />
+
+        <LinearLayout
+            android:id="@+id/post_success_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/post_back_community"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:text="&#36820;&#22238;&#31038;&#21306;"
+                android:textAllCaps="false"
+                android:textColor="@color/doyu_text_muted"
+                app:strokeColor="@color/doyu_open_line" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/post_view_profile"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="&#26597;&#30475;&#25105;&#30340;"
+                android:textAllCaps="false"
+                android:textColor="@color/doyu_text_muted"
+                app:strokeColor="@color/doyu_open_line" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

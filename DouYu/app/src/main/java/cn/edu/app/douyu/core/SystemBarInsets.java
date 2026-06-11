@@ -10,6 +10,9 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import java.util.WeakHashMap;
+/**
+ * 系统栏适配工具：为 XML 页面处理状态栏和导航栏内边距。
+ */
 
 public final class SystemBarInsets {
     private static final WeakHashMap<View, Padding> ORIGINAL_PADDING = new WeakHashMap<>();

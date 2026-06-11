@@ -22,10 +22,8 @@ import java.io.IOException;
 
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.feature.commerce.ProductDetailActivity;
-import cn.edu.app.douyu.feature.community.PostCreateActivity;
 import cn.edu.app.douyu.feature.community.PostDetailActivity;
 import cn.edu.app.douyu.feature.community.SearchActivity;
-import cn.edu.app.douyu.feature.message.ConversationActivity;
 import cn.edu.app.douyu.feature.message.NotificationDetailActivity;
 import cn.edu.app.douyu.feature.profile.ProfileEditActivity;
 import cn.edu.app.douyu.feature.profile.SettingsActivity;
@@ -40,13 +38,10 @@ public class VisualSmokeInstrumentedTest {
         File outputDir = prepareOutputDir();
         captureMainTabs(outputDir);
         captureActivity(outputDir, "search", new Intent(targetContext, SearchActivity.class));
-        captureActivity(outputDir, "post_create", new Intent(targetContext, PostCreateActivity.class));
         captureActivity(outputDir, "post_detail", new Intent(targetContext, PostDetailActivity.class)
                 .putExtra(IntentExtras.POST_ID, "post_visual_check"));
         captureActivity(outputDir, "product_detail", new Intent(targetContext, ProductDetailActivity.class)
                 .putExtra(IntentExtras.PRODUCT_ID, "product_visual_check"));
-        captureActivity(outputDir, "conversation", new Intent(targetContext, ConversationActivity.class)
-                .putExtra(IntentExtras.CONVERSATION_ID, "conv_visual_check"));
         captureActivity(outputDir, "notification_detail", new Intent(targetContext, NotificationDetailActivity.class)
                 .putExtra(IntentExtras.NOTIFICATION_ID, "notif_visual_check")
                 .putExtra(IntentExtras.TITLE, "通知事件")
@@ -68,7 +63,7 @@ public class VisualSmokeInstrumentedTest {
             waitForNetworkBoundary();
             takeScreenshot(outputDir, "main_community");
             captureTab(scenario, outputDir, "main_commerce", R.id.tab_commerce);
-            takeScreenshot(outputDir, "main_upload_action_visible");
+            captureTab(scenario, outputDir, "post_create", R.id.tab_upload);
             captureTab(scenario, outputDir, "main_messages", R.id.tab_messages);
             captureTab(scenario, outputDir, "main_profile", R.id.tab_profile);
         }

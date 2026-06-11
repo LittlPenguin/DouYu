@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Comment 实体：映射 `comments` 表，保存帖子评论。
+ */
 @Entity
 @Table(name = "comments")
 public class CommentEntity {

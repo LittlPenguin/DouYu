@@ -29,19 +29,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * 社区接口 Controller：提供帖子、评论、话题、点赞、收藏和通知创建链路。
+ */
 @Tag(name = "社区", description = "帖子 CRUD、点赞、收藏、评论、举报")
 @RestController
 @RequestMapping("/api/v1")
 public class CommunityController {
+    // 公开列表只展示可见帖子，删除或审核外状态不会进入客户端 Feed。
     private static final List<String> PUBLIC_POST_STATUSES = List.of("VISIBLE");
 
+    // 各 Repository 直接读写社区相关表，Controller 负责组装接口返回视图。
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
     private final FavoriteRepository favoriteRepository;
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
-    private final RewardAccountRepository rewardAccountRepository;
     private final FileAssetRepository fileAssetRepository;
     private final TopicRepository topicRepository;
     private final CommentMentionRepository commentMentionRepository;
@@ -55,7 +59,7 @@ public class CommunityController {
     public CommunityController(PostRepository postRepository, CommentRepository commentRepository,
                                LikeRepository likeRepository, FavoriteRepository favoriteRepository,
                                UserRepository userRepository, FollowRepository followRepository,
-                               RewardAccountRepository rewardAccountRepository, FileAssetRepository fileAssetRepository,
+                               FileAssetRepository fileAssetRepository,
                                TopicRepository topicRepository, CommentMentionRepository commentMentionRepository,
                                CommentTopicRepository commentTopicRepository, StickerPackRepository stickerPackRepository,
                                StickerRepository stickerRepository, CommentStickerRepository commentStickerRepository,
@@ -67,7 +71,6 @@ public class CommunityController {
         this.favoriteRepository = favoriteRepository;
         this.userRepository = userRepository;
         this.followRepository = followRepository;
-        this.rewardAccountRepository = rewardAccountRepository;
         this.fileAssetRepository = fileAssetRepository;
         this.topicRepository = topicRepository;
         this.commentMentionRepository = commentMentionRepository;
@@ -82,6 +85,7 @@ public class CommunityController {
     @Operation(summary = "推荐 Feed", description = "获取推荐帖子列表（公开接口）")
     @ApiResponse(responseCode = "200", description = "成功")
     @GetMapping("/posts/feed")
+    // 推荐 Feed：匿名可读，登录用户会额外返回 likedByMe/favoritedByMe 等个人状态。
     PageResult<Map<String, Object>> feed(Authentication authentication, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         String userId = optionalUserId(authentication);
         List<PostEntity> visible = postRepository.findByStatusInOrderByPinnedDescCreatedAtDesc(PUBLIC_POST_STATUSES);
@@ -95,6 +99,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "401", description = "未登录")
     })
     @GetMapping("/posts/following")
+    // 关注 Feed：先查关注作者，再取这些作者的可见帖子。
     PageResult<Map<String, Object>> following(Authentication authentication, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         String userId = CurrentUser.userId(authentication);
         List<String> followed = followRepository.findByUserId(userId).stream()
@@ -112,6 +117,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "401", description = "未登录")
     })
     @PostMapping("/posts")
+    // 发帖：保存标题、正文、已确认上传的 mediaFileIds 和 topicIds，首图作为封面。
     Map<String, Object> createPost(Authentication authentication, @Valid @RequestBody PostRequest request) {
         String userId = CurrentUser.userId(authentication);
         Instant now = Instant.now();
@@ -129,6 +135,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "404", description = "帖子不存在")
     })
     @GetMapping("/posts/{postId}")
+    // 帖子详情：公开读取，按当前用户补充互动状态。
     Map<String, Object> post(Authentication authentication, @PathVariable String postId) {
         return postView(requirePost(postId), optionalUserId(authentication));
     }
@@ -141,6 +148,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "404", description = "帖子不存在")
     })
     @PatchMapping("/posts/{postId}")
+    // 编辑帖子：只允许作者更新内容、图片和话题，并重新计算封面。
     Map<String, Object> updatePost(Authentication authentication, @PathVariable String postId, @RequestBody PostRequest request) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
@@ -167,6 +175,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "404", description = "帖子不存在")
     })
     @DeleteMapping("/posts/{postId}")
+    // 删除帖子：软删除为 DELETED，避免历史引用直接丢失。
     Map<String, Object> deletePost(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
@@ -185,6 +194,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "404", description = "帖子不存在")
     })
     @PostMapping("/posts/{postId}/like")
+    // 点赞：使用 LikeRepository 记录用户互动，并同步帖子 likeCount。
     Map<String, Object> like(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
@@ -204,6 +214,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "401", description = "未登录")
     })
     @DeleteMapping("/posts/{postId}/like")
+    // 取消点赞：删除互动记录，并在确实点过赞时扣减计数。
     Map<String, Object> unlike(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
@@ -223,6 +234,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "404", description = "帖子不存在")
     })
     @PostMapping("/posts/{postId}/favorite")
+    // 收藏：使用 FavoriteRepository 保存收藏关系，并同步帖子收藏计数。
     Map<String, Object> favorite(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
@@ -242,6 +254,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "401", description = "未登录")
     })
     @DeleteMapping("/posts/{postId}/favorite")
+    // 取消收藏：删除收藏关系，并在确实收藏过时扣减计数。
     Map<String, Object> unfavorite(Authentication authentication, @PathVariable String postId) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
@@ -260,6 +273,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "404", description = "帖子不存在")
     })
     @GetMapping("/posts/{postId}/comments")
+    // 评论列表：只返回未删除评论，按创建时间升序给客户端展示。
     PageResult<Map<String, Object>> comments(@PathVariable String postId, @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
         requirePost(postId);
         List<CommentEntity> entities = commentRepository.findByPostIdAndStatusNotOrderByCreatedAtAsc(postId, "DELETED");
@@ -275,6 +289,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "404", description = "帖子不存在")
     })
     @PostMapping("/posts/{postId}/comments")
+    // 发评论：支持正文、图片、@用户、#话题和贴纸，并给被提及用户创建通知。
     Map<String, Object> comment(Authentication authentication, @PathVariable String postId, @Valid @RequestBody CommentRequest request) {
         String userId = CurrentUser.userId(authentication);
         PostEntity post = requirePost(postId);
@@ -295,8 +310,6 @@ public class CommunityController {
                 NotificationEntity notification = new NotificationEntity();
                 notification.setId(idGenerator.next("ntf"));
                 notification.setUserId(mentionedUserId);
-                notification.setSenderId(userId);
-                notification.setRecipientId(mentionedUserId);
                 notification.setType("MENTION");
                 notification.setTitle("有人在评论中提到了你");
                 notification.setContent(content.isBlank() ? "你被一条贴纸/图片评论提及" : content);
@@ -324,6 +337,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "404", description = "评论不存在")
     })
     @DeleteMapping("/comments/{commentId}")
+    // 删除评论：只允许作者软删除自己的评论。
     Map<String, Object> deleteComment(Authentication authentication, @PathVariable String commentId) {
         String userId = CurrentUser.userId(authentication);
         CommentEntity comment = commentRepository.findById(commentId)
@@ -338,6 +352,7 @@ public class CommunityController {
 
     @Operation(summary = "话题列表")
     @GetMapping("/topics")
+    // 话题列表：支持 keyword 过滤，返回给 Android 渲染话题 chip。
     PageResult<Map<String, Object>> topics(@RequestParam(defaultValue = "") String keyword,
                                            @RequestParam(defaultValue = "1") int page,
                                            @RequestParam(defaultValue = "20") int size) {
@@ -359,6 +374,7 @@ public class CommunityController {
 
     @Operation(summary = "话题作品列表")
     @GetMapping("/topics/{topicId}/posts")
+    // 话题作品：校验话题存在后，查询 topicIds 包含该话题的可见帖子。
     PageResult<Map<String, Object>> topicPosts(Authentication authentication,
                                                @PathVariable String topicId,
                                                @RequestParam(defaultValue = "1") int page,
@@ -374,6 +390,7 @@ public class CommunityController {
 
     @Operation(summary = "内置贴纸表情包")
     @GetMapping("/sticker-packs")
+    // 贴纸包：返回包和贴纸列表，供评论输入区选择。
     PageResult<Map<String, Object>> stickerPacks() {
         List<Map<String, Object>> items = stickerPackRepository.findAllByOrderBySortOrderAsc().stream()
                 .map(pack -> {
@@ -389,6 +406,7 @@ public class CommunityController {
         return PageResult.of(items, 1, items.size(), items.size());
     }
 
+    // 统一读取帖子并排除已删除状态，找不到时返回业务 404。
     private PostEntity requirePost(String postId) {
         PostEntity post = postRepository.findById(postId).orElse(null);
         if (post == null || "DELETED".equals(post.getStatus())) {
@@ -397,6 +415,7 @@ public class CommunityController {
         return post;
     }
 
+    // 组装帖子返回视图：作者、图片、话题、互动计数和当前用户状态都在这里补齐。
     public Map<String, Object> postView(PostEntity post, String currentUserId) {
         Map<String, Object> view = new java.util.LinkedHashMap<>();
         view.put("postId", post.getId());
@@ -430,6 +449,7 @@ public class CommunityController {
         return view;
     }
 
+    // 点赞/收藏接口只返回互动状态和计数，避免客户端重新拉整篇帖子。
     private Map<String, Object> postInteractionView(PostEntity post, String currentUserId, Boolean liked, Boolean favorited) {
         boolean likedByMe = currentUserId != null
                 && likeRepository.findByUserIdAndTargetTypeAndTargetId(currentUserId, "POST", post.getId()).isPresent();
@@ -449,17 +469,17 @@ public class CommunityController {
         return view;
     }
 
+    // 根据用户 id 组装作者信息，头像通过 FileAsset 的 publicUrl 返回。
     private Map<String, Object> authorInfo(String userId) {
         return userRepository.findById(userId).map(u -> {
             long following = followRepository.countByUserId(userId);
             long followers = followRepository.countByTargetUserId(userId);
-            var reward = rewardAccountRepository.findByUserId(userId).orElse(null);
             Map<String, Object> m = new java.util.LinkedHashMap<>();
             m.put("userId", u.getId());
             m.put("nickname", u.getNickname() == null ? "" : u.getNickname());
             m.put("avatarUrl", avatarUrl(u.getAvatarFileId()));
             m.put("bio", u.getBio() == null ? "" : u.getBio());
-            m.put("level", reward != null ? reward.getLevel() : 1);
+            m.put("level", 1);
             m.put("isMinor", u.isMinor());
             m.put("followingCount", (int) following);
             m.put("followerCount", (int) followers);
@@ -478,6 +498,7 @@ public class CommunityController {
         });
     }
 
+    // 组装评论视图：正文、图片资产、提及用户、话题和贴纸都在这里展开。
     private Map<String, Object> commentView(CommentEntity comment) {
         Map<String, Object> view = new java.util.LinkedHashMap<>();
         view.put("commentId", comment.getId());
@@ -512,6 +533,7 @@ public class CommunityController {
         return view;
     }
 
+    // 把评论图片 fileId 展开成客户端可加载的 FileAsset 信息。
     private Map<String, Object> commentMediaAssetView(String fileId) {
         FileAssetEntity file = fileAssetRepository.findById(fileId).orElse(null);
         Map<String, Object> view = new java.util.LinkedHashMap<>();
@@ -532,6 +554,7 @@ public class CommunityController {
         return view;
     }
 
+    // 评论入库前校验内容、图片归属、提及用户、话题和贴纸是否有效。
     private void validateCommentPayload(String userId, String content, List<String> mediaFileIds,
                                         List<String> mentionUserIds, List<String> topicIds, List<String> stickerIds) {
         if (content.isBlank() && mediaFileIds.isEmpty() && stickerIds.isEmpty()) {
@@ -568,17 +591,20 @@ public class CommunityController {
         }
     }
 
+    // 校验话题存在，供话题列表过滤和评论话题绑定复用。
     private TopicEntity requireTopic(String topicId) {
         return topicRepository.findById(topicId)
                 .orElseThrow(() -> new BizException(ErrorCode.INVALID_ARGUMENT, "话题不存在"));
     }
 
+    // 简单内存分页，用于当前 Controller 已取出的列表视图。
     private <T> List<T> slice(List<T> items, int page, int size) {
         int from = Math.max(0, (page - 1) * size);
         int to = Math.min(items.size(), from + size);
         return from >= items.size() ? List.of() : items.subList(from, to);
     }
 
+    // 数据库存储多个 id 时用逗号分隔，接口出入参仍保持 List。
     private String joinList(List<String> list) {
         return list == null || list.isEmpty() ? null : String.join(",", list);
     }
@@ -588,6 +614,7 @@ public class CommunityController {
         return Arrays.asList(csv.split(","));
     }
 
+    // 清理空 id 并去重，避免无效关联写入数据库。
     private List<String> normalizedIds(List<String> ids) {
         if (ids == null) return List.of();
         return ids.stream().filter(id -> id != null && !id.isBlank()).distinct().toList();
@@ -606,6 +633,7 @@ public class CommunityController {
         }
     }
 
+    // 话题接口的轻量返回视图。
     private Map<String, Object> topicView(TopicEntity topic) {
         Map<String, Object> view = new java.util.LinkedHashMap<>();
         view.put("topicId", topic.getId());
@@ -615,6 +643,7 @@ public class CommunityController {
         return view;
     }
 
+    // 使用第一张已上传图片作为帖子封面，并保存尺寸供瀑布流布局使用。
     private void applyCoverFromMedia(PostEntity post) {
         List<String> mediaFileIds = splitList(post.getMediaFileIds());
         if (mediaFileIds.isEmpty()) {
@@ -631,6 +660,7 @@ public class CommunityController {
         post.setCoverHeight(file.getHeight());
     }
 
+    // 将帖子保存的图片 fileId 列表转换成 publicUrl 列表给 Android 展示。
     private List<String> postImageUrls(List<String> mediaFileIds) {
         if (mediaFileIds == null || mediaFileIds.isEmpty()) {
             return List.of();
@@ -643,6 +673,7 @@ public class CommunityController {
                 .toList();
     }
 
+    // 优先使用帖子封面字段；缺失时回退到首张 FileAsset。
     private CoverAsset coverAsset(PostEntity post) {
         String coverUrl = post.getCoverImageUrl() == null ? "" : post.getCoverImageUrl();
         Integer coverWidth = post.getCoverWidth();

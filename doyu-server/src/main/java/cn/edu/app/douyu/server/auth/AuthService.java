@@ -6,70 +6,78 @@ import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
 import cn.edu.app.douyu.server.common.Models.User;
 import cn.edu.app.douyu.server.common.TokenService;
-import cn.edu.app.douyu.server.common.entity.FollowRepository;
 import cn.edu.app.douyu.server.common.entity.FileAssetEntity;
 import cn.edu.app.douyu.server.common.entity.FileAssetRepository;
-import cn.edu.app.douyu.server.common.entity.RefreshTokenEntity;
-import cn.edu.app.douyu.server.common.entity.RefreshTokenRepository;
-import cn.edu.app.douyu.server.common.entity.RewardAccountRepository;
+import cn.edu.app.douyu.server.common.entity.FollowRepository;
+import cn.edu.app.douyu.server.common.entity.NotificationEntity;
+import cn.edu.app.douyu.server.common.entity.NotificationRepository;
 import cn.edu.app.douyu.server.common.entity.UserEntity;
 import cn.edu.app.douyu.server.common.entity.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.Instant;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
+/**
+ * 认证业务服务：处理用户创建、密码校验、Token 生成和用户视图组装。
+ */
 @Service
 public class AuthService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
     private static final int MIN_PASSWORD_LENGTH = 8;
     private static final int MAX_PASSWORD_LENGTH = 64;
+    private static final List<DefaultNotification> DEFAULT_NOTIFICATIONS = List.of(
+            new DefaultNotification("欢迎来到豆屿", "你可以浏览作品、搜索话题，也可以上传自己的拼豆作品。"),
+            new DefaultNotification("上传作品提示", "底部“上传”可以发布作品；图片会先通过 OSS 上传，成功后再发布。"),
+            new DefaultNotification("商城下单提示", "商城支持商品浏览、购物车和创建订单；当前不提供支付服务。")
+    );
 
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
     private final FollowRepository followRepository;
-    private final RewardAccountRepository rewardAccountRepository;
     private final FileAssetRepository fileAssetRepository;
+    private final NotificationRepository notificationRepository;
     private final IdGenerator idGenerator;
     private final TokenService tokenService;
     private final DouyuProperties properties;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
-                       FollowRepository followRepository, RewardAccountRepository rewardAccountRepository,
+    public AuthService(UserRepository userRepository,
+                       FollowRepository followRepository,
                        FileAssetRepository fileAssetRepository,
-                       IdGenerator idGenerator, TokenService tokenService, DouyuProperties properties,
+                       NotificationRepository notificationRepository,
+                       IdGenerator idGenerator,
+                       TokenService tokenService,
+                       DouyuProperties properties,
                        PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
         this.followRepository = followRepository;
-        this.rewardAccountRepository = rewardAccountRepository;
         this.fileAssetRepository = fileAssetRepository;
+        this.notificationRepository = notificationRepository;
         this.idGenerator = idGenerator;
         this.tokenService = tokenService;
         this.properties = properties;
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     public Map<String, Object> register(AuthController.RegisterRequest request) {
         String email = normalizeEmail(request.email());
         validateEmail(email);
         validatePassword(request.password());
         if (!request.password().equals(request.confirmPassword())) {
-            throw new BizException(ErrorCode.INVALID_ARGUMENT, "密码和确认密码不一致");
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "Password and confirmation do not match");
         }
         if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new BizException(ErrorCode.CONFLICT, "邮箱已注册");
+            throw new BizException(ErrorCode.CONFLICT, "Email is already registered");
         }
         UserEntity user = createEmailUser(email, request);
+        createDefaultNotifications(user.getId());
         return tokenPayload(toModel(user));
     }
 
@@ -77,72 +85,32 @@ public class AuthService {
         String email = normalizeEmail(request.email());
         validateEmail(email);
         UserEntity user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new BizException(ErrorCode.UNAUTHORIZED, "邮箱或密码错误"));
+                .orElseThrow(() -> new BizException(ErrorCode.UNAUTHORIZED, "Email or password is incorrect"));
         String passwordHash = user.getPasswordHash();
         if (passwordHash == null || passwordHash.isBlank()
                 || !passwordEncoder.matches(request.password(), passwordHash)) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, "邮箱或密码错误");
+            throw new BizException(ErrorCode.UNAUTHORIZED, "Email or password is incorrect");
         }
         ensureLoginAllowed(user);
         return tokenPayload(toModel(user));
     }
 
-    public Map<String, Object> refresh(String refreshToken) {
-        String hash = hash(refreshToken);
-        RefreshTokenEntity record = refreshTokenRepository.findByTokenHash(hash)
-                .orElse(null);
-        if (record == null || record.isRevoked() || record.getExpiresAt().isBefore(Instant.now())) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, "refresh token 已失效");
-        }
-        UserEntity user = userRepository.findById(record.getUserId()).orElse(null);
-        if (user == null) {
-            throw new BizException(ErrorCode.UNAUTHORIZED, "用户不存在");
-        }
-        ensureLoginAllowed(user);
-        return Map.of(
-                "accessToken", tokenService.accessToken(user.getId(), "USER"),
-                "refreshToken", refreshToken,
-                "expiresIn", properties.jwt().accessTokenTtl().toSeconds(),
-                "user", userView(toModel(user))
-        );
-    }
-
-    public void logout(String userId, String refreshToken) {
-        String hash = hash(refreshToken);
-        refreshTokenRepository.findByTokenHash(hash).ifPresent(record -> {
-            if (record.getUserId().equals(userId)) {
-                record.setRevoked(true);
-                refreshTokenRepository.save(record);
-            }
-        });
-    }
-
-    public Map<String, Object> cancelAccount(String userId) {
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
-        user.setAccountStatus("CANCELING");
-        user.setUpdatedAt(Instant.now());
-        userRepository.save(user);
-        return Map.of("accountStatus", user.getAccountStatus());
-    }
-
     public User requireUser(String userId) {
         UserEntity entity = userRepository.findById(userId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "User not found"));
         return toModel(entity);
     }
 
     public Map<String, Object> userView(User user) {
         long following = followRepository.countByUserId(user.id());
         long followers = followRepository.countByTargetUserId(user.id());
-        var reward = rewardAccountRepository.findByUserId(user.id()).orElse(null);
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("userId", user.id());
         view.put("nickname", user.nickname() == null ? "" : user.nickname());
         view.put("avatarUrl", avatarUrl(user.avatarFileId()));
         view.put("bio", user.bio() == null ? "" : user.bio());
         view.put("region", user.region() == null ? "" : user.region());
-        view.put("level", reward != null ? reward.getLevel() : 1);
+        view.put("level", 1);
         view.put("isMinor", user.isMinor());
         view.put("followingCount", (int) following);
         view.put("followerCount", (int) followers);
@@ -158,9 +126,7 @@ public class AuthService {
     public Map<String, Object> settingsView(User user) {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("allowRecommendation", user.allowRecommendation());
-        view.put("allowStrangerMessages", user.allowStrangerMessages());
         view.put("allowFavorites", user.allowFavorites());
-        view.put("notifyMessages", user.notifyMessages());
         view.put("notifyInteractions", user.notifyInteractions());
         view.put("notifyPublish", user.notifyPublish());
         view.put("notifySystem", user.notifySystem());
@@ -179,17 +145,30 @@ public class AuthService {
         return userRepository.save(user);
     }
 
+    private void createDefaultNotifications(String userId) {
+        Instant now = Instant.now();
+        for (DefaultNotification item : DEFAULT_NOTIFICATIONS) {
+            NotificationEntity notification = new NotificationEntity();
+            notification.setId(idGenerator.next("ntf"));
+            notification.setUserId(userId);
+            notification.setType("SYSTEM");
+            notification.setTitle(item.title());
+            notification.setContent(item.content());
+            notification.setCreatedAt(now);
+            notification.setUpdatedAt(now);
+            notificationRepository.save(notification);
+        }
+    }
+
     private void ensureLoginAllowed(UserEntity user) {
-        if ("BANNED".equals(user.getAccountStatus())
-                || "CANCELING".equals(user.getAccountStatus())
-                || "CANCELED".equals(user.getAccountStatus())) {
-            throw new BizException(ErrorCode.FORBIDDEN, "账号状态不可登录");
+        if ("BANNED".equals(user.getAccountStatus()) || "CANCELED".equals(user.getAccountStatus())) {
+            throw new BizException(ErrorCode.FORBIDDEN, "Account status does not allow login");
         }
     }
 
     private void validateAgeGroup(String ageGroup) {
         if (!"AGE_16_17".equals(ageGroup) && !"AGE_18_PLUS".equals(ageGroup)) {
-            throw new BizException(ErrorCode.INVALID_ARGUMENT, "ageGroup 仅支持 AGE_16_17 或 AGE_18_PLUS");
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "ageGroup only supports AGE_16_17 or AGE_18_PLUS");
         }
     }
 
@@ -199,27 +178,19 @@ public class AuthService {
 
     private void validateEmail(String email) {
         if (email.isBlank() || email.length() > 160 || !EMAIL_PATTERN.matcher(email).matches()) {
-            throw new BizException(ErrorCode.INVALID_ARGUMENT, "邮箱格式不正确");
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "Invalid email format");
         }
     }
 
     private void validatePassword(String password) {
         if (password == null || password.length() < MIN_PASSWORD_LENGTH || password.length() > MAX_PASSWORD_LENGTH) {
-            throw new BizException(ErrorCode.INVALID_ARGUMENT, "密码长度必须为 8-64 位");
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "Password length must be 8-64 characters");
         }
     }
 
     private Map<String, Object> tokenPayload(User user) {
-        String refreshToken = "rt_" + UUID.randomUUID().toString().replace("-", "");
-        String hash = hash(refreshToken);
-        Instant now = Instant.now();
-        RefreshTokenEntity entity = new RefreshTokenEntity(
-                idGenerator.next("rt"), user.id(), hash, false,
-                now.plus(properties.jwt().refreshTokenTtl()), now, now);
-        refreshTokenRepository.save(entity);
         return Map.of(
                 "accessToken", tokenService.accessToken(user.id(), "USER"),
-                "refreshToken", refreshToken,
                 "expiresIn", properties.jwt().accessTokenTtl().toSeconds(),
                 "user", userView(user)
         );
@@ -229,8 +200,8 @@ public class AuthService {
         return new User(entity.getId(), entity.getPhone(), entity.getEmail(), entity.getNickname(),
                 entity.getAvatarFileId(), entity.getBio(), entity.getRegion(), entity.getAgeGroup(), entity.isMinor(),
                 entity.getRealNameStatus(), entity.getAccountStatus(),
-                entity.isAllowRecommendation(), entity.isAllowStrangerMessages(), entity.isAllowFavorites(),
-                entity.isNotifyMessages(), entity.isNotifyInteractions(), entity.isNotifyPublish(), entity.isNotifySystem(),
+                entity.isAllowRecommendation(), entity.isAllowFavorites(),
+                entity.isNotifyInteractions(), entity.isNotifyPublish(), entity.isNotifySystem(),
                 entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
@@ -254,12 +225,6 @@ public class AuthService {
         return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
     }
 
-    private String hash(String value) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception ex) {
-            throw new IllegalStateException(ex);
-        }
+    private record DefaultNotification(String title, String content) {
     }
 }

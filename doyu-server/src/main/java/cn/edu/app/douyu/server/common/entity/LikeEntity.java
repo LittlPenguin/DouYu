@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Like 实体：映射 `likes` 表，保存通用点赞关系。
+ */
 @Entity
 @Table(name = "likes")
 public class LikeEntity {

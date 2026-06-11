@@ -25,8 +25,10 @@ public class SettingsContractTest {
         assertTrue(settingsActivity.contains("repository.me()"));
         assertTrue(settingsActivity.contains("repository.userSettings()"));
         assertTrue(settingsActivity.contains("repository.updateUserSettings"));
-        assertTrue(settingsActivity.contains("repository.cancelAccount()"));
-        assertTrue(settingsActivity.contains("repository.logout(refreshToken)"));
+        assertTrue(settingsActivity.contains("store.clear()"));
+        assertFalse(settingsActivity.contains("repository.cancelAccount()"));
+        assertFalse(settingsActivity.contains("repository.logout("));
+        assertFalse(settingsActivity.contains("refreshToken"));
         assertTrue(settingsActivity.contains("Manifest.permission.CAMERA"));
         assertTrue(settingsActivity.contains("Manifest.permission.POST_NOTIFICATIONS"));
         assertTrue(settingsActivity.contains("requestPermissions(new String[]{Manifest.permission.CAMERA}"));
@@ -37,18 +39,22 @@ public class SettingsContractTest {
         assertTrue(settingsActivity.contains("BuildConfig.API_BASE_URL"));
         assertTrue(repository.contains("UserSettings userSettings()"));
         assertTrue(repository.contains("updateUserSettings(UpdateUserSettingsRequest request)"));
-        assertTrue(repository.contains("cancelAccount()"));
+        assertFalse(repository.contains("cancelAccount()"));
+        assertFalse(repository.contains("logout("));
         assertTrue(api.contains("@GET(\"/api/v1/users/me/settings\")"));
         assertTrue(api.contains("@PATCH(\"/api/v1/users/me/settings\")"));
-        assertTrue(api.contains("@POST(\"/api/v1/auth/account/cancel\")"));
+        assertFalse(api.contains("/api/v1/auth/account/cancel"));
+        assertFalse(api.contains("/api/v1/auth/refresh"));
 
         assertTrue(accountXml.contains("@+id/settings_account_email"));
-        assertTrue(accountXml.contains("@+id/settings_cancel_account_action"));
+        assertFalse(accountXml.contains("@+id/settings_cancel_account_action"));
+        assertFalse(accountXml.contains("账号注销"));
         assertTrue(privacyXml.contains("@+id/settings_allow_recommendation"));
         assertTrue(privacyXml.contains("@+id/settings_request_camera_permission"));
         assertTrue(privacyXml.contains("@+id/settings_request_notification_permission"));
         assertTrue(privacyXml.contains("@+id/settings_open_permission_settings"));
-        assertTrue(notificationsXml.contains("@+id/settings_notify_messages"));
+        assertFalse(notificationsXml.contains("@+id/settings_notify_messages"));
+        assertFalse(notificationsXml.contains("私信"));
         assertTrue(aboutXml.contains("@+id/settings_copy_diagnostics"));
 
         assertFalse(surface.contains("UI-only"));

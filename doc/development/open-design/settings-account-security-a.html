@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -10,14 +10,14 @@
   <main class="board">
     <section class="hero">
       <div class="hero-card">
-        <div class="eyebrow">豆笃 Doyu / Settings 内页</div>
+        <div class="eyebrow">豆屿 Doyu / Settings 内页</div>
         <h1 class="title">账号与安全</h1>
-        <p class="lead">账号页只保留当前开发态能解释的安全信息：邮箱、登录状态、设备提示、退出登录和注销账号。敏感操作必须二次确认。</p>
-        <div class="chips"><span class="chip">邮箱账号</span><span class="chip">登录设备</span><span class="chip">退出登录</span><span class="chip">账号注销</span></div>
+        <p class="lead">账号页只保留邮箱账号、登录状态、当前设备提示和本地退出登录。当前版本不提供 refresh token、服务端登出或账号注销入口。</p>
+        <div class="chips"><span class="chip">邮箱账号</span><span class="chip">accessToken</span><span class="chip">本地退出</span><span class="chip">无注销</span></div>
       </div>
       <div class="side-facts">
         <div class="fact"><b>登录方式</b><span>用户侧只使用邮箱 + 密码注册登录；注册成功后直接登录。</span></div>
-        <div class="fact"><b>边界</b><span>不设计实名、多设备管理完成态或找回密码流程。</span></div>
+        <div class="fact"><b>退出登录</b><span>退出登录只清理本机登录态，受保护页面回到登录引导。</span></div>
       </div>
     </section>
     <section class="section">
@@ -27,11 +27,10 @@
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar"><a class="icon-btn" href="settings-home-a.html"><span class="icon back"></span></a><div class="top-title">账号与安全</div><a class="icon-btn" href="search-a.html"><span class="icon search"></span></a></div>
             <div class="scroll no-nav">
-              <div class="hero-strip"><span class="pill ok">已登录</span><h3>账号状态正常</h3><p>邮箱 doyu@example.com · 当前使用邮箱密码登录。</p></div>
+              <div class="hero-strip"><span class="pill ok">已登录</span><h3>账号状态正常</h3><p>邮箱 doyu@example.com · 当前本机已保存 accessToken。</p></div>
               <div class="list">
-                <div class="row"><span class="round-icon"><span class="icon lock"></span></span><div class="row-main"><div class="row-title">邮箱登录</div><div class="row-sub">登录会话由 accessToken 和 refreshToken 维护</div></div><span class="pill ok">已绑定</span></div>
-                <div class="row"><span class="round-icon"><span class="icon settings"></span></span><div class="row-main"><div class="row-title">登录设备</div><div class="row-sub">仅展示当前设备，不承诺设备管理已完成</div></div><span class="pill warn">开发态</span></div>
-                <div class="row"><span class="round-icon"><span class="icon lock"></span></span><div class="row-main"><div class="row-title">账号注销</div><div class="row-sub">注销前展示数据影响与二次确认</div></div><span class="pill stop">谨慎</span></div>
+                <div class="row"><span class="round-icon"><span class="icon lock"></span></span><div class="row-main"><div class="row-title">邮箱登录</div><div class="row-sub">登录会话只保存 accessToken</div></div><span class="pill ok">已登录</span></div>
+                <div class="row"><span class="round-icon"><span class="icon settings"></span></span><div class="row-main"><div class="row-title">当前设备</div><div class="row-sub">仅展示设备信息，不提供设备管理</div></div><span class="pill warn">只读</span></div>
               </div>
               <div class="hero-strip"><span class="pill stop">确认弹层示意</span><h3>确认退出登录？</h3><p>退出后会清理本机登录态，受保护页面回到登录引导。</p><div class="tool-row"><span class="button ghost">取消</span><span class="button petal">退出</span></div></div>
             </div>
@@ -39,10 +38,10 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>账号状态</h3><ul><li>已登录：展示邮箱、登录方式、当前设备。</li><li>未登录：只展示登录按钮和基础说明。</li><li>过期：引导重新登录，不能吞成空白。</li></ul></div>
-            <div class="spec"><h3>危险操作</h3><ul><li>退出登录：二次确认，调用 logout，成功后清理本地 token。</li><li>注销账号：说明影响，要求确认。</li><li>失败时保留当前状态并提示重试。</li></ul></div>
-            <div class="state"><h3>不做</h3><p>不展示实名完成、多设备踢下线、交易保护或账号保护已完成。</p><div class="state-bar"><span class="state-dot warn">后续任务</span><span class="state-dot bad">禁伪完成</span></div></div>
-            <div class="state"><h3>登录契约</h3><p>用户侧登录唯一入口为邮箱 + 密码；手机号只作为历史兼容字段保留。</p><div class="state-bar"><span class="state-dot good">邮箱密码</span></div></div>
+            <div class="spec"><h3>账号状态</h3><ul><li>已登录：展示邮箱、账号状态、当前设备。</li><li>未登录：只展示登录/注册按钮和基础说明。</li><li>401：清理本机登录态并回到未登录状态。</li></ul></div>
+            <div class="spec"><h3>操作范围</h3><ul><li>退出登录：二次确认后本地清理。</li><li>不调用 refresh、logout 或 cancel-account 接口。</li><li>失败时不伪造服务端状态。</li></ul></div>
+            <div class="state"><h3>不做</h3><p>不展示账号注销、多设备管理、实名保护、交易保护或找回密码完成态。</p><div class="state-bar"><span class="state-dot good">范围收敛</span><span class="state-dot bad">禁过期入口</span></div></div>
+            <div class="state"><h3>登录契约</h3><p>登录/注册响应只有 accessToken、expiresIn 和 user。</p><div class="state-bar"><span class="state-dot good">邮箱密码</span></div></div>
           </div>
         </div>
       </div>

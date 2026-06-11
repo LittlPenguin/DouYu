@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.model;
+/**
+ * 订单地址快照 DTO：承载创建订单时提交的收货人、电话和地址。
+ */
 
 public class AddressSnapshot {
     public String recipient;

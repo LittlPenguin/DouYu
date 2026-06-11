@@ -12,6 +12,9 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * 安全错误处理器：把未登录和无权限请求转换成统一 JSON 响应。
+ */
 @Component
 public class SecurityErrorHandlers implements AuthenticationEntryPoint, AccessDeniedHandler {
     private final ObjectMapper objectMapper;

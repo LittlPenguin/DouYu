@@ -7,8 +7,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 
 /**
- * 本地文件存储 Provider，用于开发环境。
- * 文件存储在本地目录，通过 LocalOssController 提供上传和访问。
+ * 本地 OSS 实现：开发环境生成本地上传地址和公开访问 URL。
  */
 public class LocalOssProvider implements OssProvider {
 

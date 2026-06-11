@@ -8,6 +8,9 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
+/**
+ * 统一响应包装配置：把 Controller 返回值转换成标准 ApiResponse。
+ */
 @ControllerAdvice
 public class ApiResponseAdvice implements ResponseBodyAdvice<Object> {
     @Override

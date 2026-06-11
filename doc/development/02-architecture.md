@@ -2,40 +2,42 @@
 
 ## Architecture Position
 
-SpellBean currently uses an Android Java/XML client, Spring Boot backend, PostgreSQL, Redis where configured, and OSS-backed image storage. Runtime data must come from backend APIs; empty results render explicit empty states.
+SpellBean keeps the completed Java/XML Android client, Spring Boot backend, PostgreSQL, Redis where configured, and OSS-backed image storage. Runtime data must come from backend APIs; empty results render explicit empty states.
 
 ## Client Layers
 
-- `MainActivity`: retained app shell, top actions, retained bottom tabs and fragment host.
-- Feature fragments/activities: community, commerce, messages, profile, settings, auth, post compose/detail.
+- `MainActivity`: app shell with retained bottom tabs and fragment host.
+- Feature screens: community, upload, search, post detail, commerce, cart, notifications, profile, settings, auth.
 - Repositories: Retrofit + Gson API calls only.
 - UI adapters: RecyclerView lists and grids.
 - Upload transport: backend presign URL, direct PUT, backend confirm.
 
 ## Backend Layers
 
-- Auth/session.
-- User/profile/follow.
+- Auth: email/password register and login only.
+- User/profile/follow and persisted settings.
 - Upload/OSS object storage.
-- Community posts/comments/topics/stickers.
-- Commerce products/cart/order/address.
-- Messages/notifications.
-- Admin/report/reward where retained.
+- Community posts, comments, topics and stickers.
+- Commerce products, cart and order creation with manual address snapshots.
+- Notifications.
 
 ## Provider Boundaries
 
 | Provider | Scope |
 |---|---|
 | OSS Provider | Local / Aliyun OSS retained for object images and upload flow |
-| Verification code | Fixed development code retained for local login; no real SMS Provider |
 
 Removed from current runtime architecture:
 
-- AI/pattern generation modules and Provider wiring.
+- Refresh-token API and account cancellation workflow.
+- Private messages, conversations, message sending and mutual-follow send limits.
+- Reward, checkin and badge modules.
+- Report, moderation, admin API and admin bootstrap.
+- Address book and order center modules.
+- AI/pattern generation modules and provider wiring.
 - Payment modules, channel SDK/API, callbacks, refunds and reconciliation.
-- Map/location modules and Provider wiring.
-- Production rate limiting/risk control modules.
-- Full compliance document modules/pages.
+- Map/location modules and provider wiring.
+- Real SMS, production rate limiting/risk control, and full compliance pages.
 
 ## Upload Flow
 
@@ -46,16 +48,18 @@ Removed from current runtime architecture:
 
 Android must not store OSS keys and must not fake successful uploads.
 
-## Commerce / Order / Address
+## Commerce / Order
 
 - Product/category data comes from backend.
-- Cart and order confirmation use backend state.
-- Address management and manual address fields are retained.
-- Map selection and automatic location fill are not current architecture.
+- Cart uses backend state and inventory validation.
+- Order creation consumes cart item ids or immediate purchase items.
+- Order creation requires a manual address snapshot entered by the user.
+- The current Android product detail and cart pages display created order status only.
+- There is no order center, order detail page, order cancellation UI, address book, default address, or address selection module.
 - Payment state is not part of current architecture.
 
 ## Explicit Non-goals
 
 - Fake runtime data.
 - Kotlin/Compose implementation.
-- AI, payment, map/location, real SMS, production risk control, or full compliance surfaces.
+- AI, payment, map/location, real SMS, production risk control, full compliance, admin, report, reward, private-message, address-book, order-center, refresh-token, or account-cancellation surfaces.

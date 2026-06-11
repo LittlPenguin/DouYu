@@ -7,6 +7,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
+/**
+ * Favorite Repository：访问 `favorites` 表，提供通用收藏关系的 JPA 查询。
+ */
 
 public interface FavoriteRepository extends JpaRepository<FavoriteEntity, String> {
     Optional<FavoriteEntity> findByUserIdAndTargetTypeAndTargetId(String userId, String targetType, String targetId);

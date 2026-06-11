@@ -55,9 +55,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
+                    android:lineSpacingExtra="2dp"
                     android:textColor="@color/doyu_text_muted"
-                    android:textSize="13sp"
-                    android:lineSpacingExtra="2dp" />
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -98,7 +98,7 @@
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
                         android:singleLine="true"
-                        android:text="事件"
+                        android:text="通知类型"
                         android:textColor="@color/doyu_text"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -108,7 +108,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="事件详情"
+                        android:text="系统通知"
                         android:textColor="@color/doyu_text_muted"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -130,47 +130,6 @@
                 android:layout_marginTop="10dp"
                 android:text="标为已读"
                 android:textColor="@color/doyu_text" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_card"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_pill_stop"
-                    android:gravity="center"
-                    android:minHeight="26dp"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
-                    android:text="不可回复"
-                    android:textColor="@color/doyu_danger"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="通知详情不是私信会话；如需沟通，进入作者资料或私信会话。"
-                    android:textColor="@color/doyu_text_muted"
-                    android:textSize="13sp" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/notification_boundary_note"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_card"
-                android:padding="16dp"
-                android:text="查看作品等对象跳转，待后端返回关联对象后接入（当前为 UI-only 边界，不放无目标的假入口）。"
-                android:textColor="@color/doyu_text_muted"
-                android:textSize="12sp" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

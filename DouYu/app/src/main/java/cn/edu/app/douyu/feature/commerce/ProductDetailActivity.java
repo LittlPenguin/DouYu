@@ -25,6 +25,9 @@ import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductSku;
 import cn.edu.app.douyu.ui.LoadState;
 import cn.edu.app.douyu.ui.XmlPageActivity;
+/**
+ * 商品详情页：展示商品、SKU、库存和购买入口，并发起加购或下单。
+ */
 
 public class ProductDetailActivity extends XmlPageActivity {
     private Product currentProduct;

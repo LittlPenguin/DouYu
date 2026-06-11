@@ -4,22 +4,20 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
+/**
+ * 后端配置属性：绑定应用密钥、Token 过期时间和 OSS 等配置。
+ */
 @ConfigurationProperties(prefix = "douyu")
 public record DouyuProperties(
         Jwt jwt,
-        Admin admin,
         Storage storage,
         Oss oss
 ) {
     public record Jwt(
             String issuer,
             String secret,
-            Duration accessTokenTtl,
-            Duration refreshTokenTtl
+            Duration accessTokenTtl
     ) {
-    }
-
-    public record Admin(String bootstrapUsername, String bootstrapPassword) {
     }
 
     public record Storage(String localPath, String baseUrl) {

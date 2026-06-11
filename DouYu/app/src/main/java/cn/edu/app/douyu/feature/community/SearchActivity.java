@@ -23,6 +23,9 @@ import cn.edu.app.douyu.feature.commerce.ProductDetailActivity;
 import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.SearchResult;
 import cn.edu.app.douyu.ui.XmlPageActivity;
+/**
+ * 搜索页：调用后端搜索接口，展示社区、商品和用户等结果。
+ */
 
 public class SearchActivity extends XmlPageActivity {
     private static final long SEARCH_DEBOUNCE_MS = 300L;

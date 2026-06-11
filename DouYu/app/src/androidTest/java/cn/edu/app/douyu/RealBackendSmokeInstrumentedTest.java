@@ -34,9 +34,8 @@ import java.util.UUID;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.data.DoyuRepository;
 import cn.edu.app.douyu.feature.commerce.ProductDetailActivity;
-import cn.edu.app.douyu.feature.community.PostCreateActivity;
+import cn.edu.app.douyu.feature.community.PostCreateFragment;
 import cn.edu.app.douyu.feature.community.PostDetailActivity;
-import cn.edu.app.douyu.feature.message.ConversationActivity;
 import cn.edu.app.douyu.feature.message.NotificationDetailActivity;
 import cn.edu.app.douyu.network.DoyuApiClient;
 
@@ -57,22 +56,23 @@ public class RealBackendSmokeInstrumentedTest {
             postId = createPost(baseUrl, token);
         }
         String productId = createProduct(baseUrl, token);
-        String fixture = createMessageFixture(baseUrl, token);
-        String conversationId = new JSONObject(fixture).getJSONObject("data").getString("conversationId");
-        String notificationId = new JSONObject(fixture).getJSONObject("data").getString("notificationId");
-        String notificationTitle = new JSONObject(fixture).getJSONObject("data").getString("notificationTitle");
-        String notificationBody = new JSONObject(fixture).getJSONObject("data").getString("notificationBody");
+        JSONObject notification = firstNotification(baseUrl, token);
+        String notificationId = notification.getString("notificationId");
+        String notificationTitle = notification.getString("title");
+        String notificationBody = notification.getString("content");
+        String notificationType = notification.optString("type", "SYSTEM");
+        String notificationCreatedAt = notification.optString("createdAt", "");
 
         createComment(baseUrl, token, postId, "真实后端预置评论：用于验证评论列表能从 API 渲染。");
         capturePostDetailCommentFlow(outputDir, postId);
         captureActivity(outputDir, "real_product_detail", new Intent(targetContext, ProductDetailActivity.class)
                 .putExtra(IntentExtras.PRODUCT_ID, productId));
-        captureActivity(outputDir, "real_conversation", new Intent(targetContext, ConversationActivity.class)
-                .putExtra(IntentExtras.CONVERSATION_ID, conversationId));
         captureActivity(outputDir, "real_notification_detail", new Intent(targetContext, NotificationDetailActivity.class)
                 .putExtra(IntentExtras.NOTIFICATION_ID, notificationId)
                 .putExtra(IntentExtras.TITLE, notificationTitle)
-                .putExtra(IntentExtras.BODY, notificationBody));
+                .putExtra(IntentExtras.BODY, notificationBody)
+                .putExtra(IntentExtras.TYPE, notificationType)
+                .putExtra(IntentExtras.CREATED_AT, notificationCreatedAt));
     }
 
     @Test
@@ -135,18 +135,21 @@ public class RealBackendSmokeInstrumentedTest {
         persistToken(token);
         Uri imageUri = fileProviderImageUri();
 
-        Intent intent = new Intent(targetContext, PostCreateActivity.class)
+        Intent intent = new Intent(targetContext, MainActivity.class)
+                .putExtra(IntentExtras.SECTION, IntentExtras.SECTION_UPLOAD)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try (ActivityScenario<PostCreateActivity> scenario = ActivityScenario.launch(intent)) {
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(intent)) {
             waitForScreen();
             scenario.onActivity(activity -> {
-                activity.testAddImage(imageUri);
-                assertEquals(1, activity.testPendingMediaCount());
+                PostCreateFragment fragment = currentPostCreateFragment(activity);
+                fragment.testAddImage(imageUri);
+                assertEquals(1, fragment.testPendingMediaCount());
             });
             waitForPostCreateUpload(scenario);
             scenario.onActivity(activity -> {
-                assertEquals(1, activity.testDoneMediaCount());
-                assertEquals(0, activity.testFailedMediaCount());
+                PostCreateFragment fragment = currentPostCreateFragment(activity);
+                assertEquals(1, fragment.testDoneMediaCount());
+                assertEquals(0, fragment.testFailedMediaCount());
             });
         }
     }
@@ -232,8 +235,11 @@ public class RealBackendSmokeInstrumentedTest {
         post(apiUrl(baseUrl, "/api/v1/posts/" + postId + "/comments"), body.toString(), token);
     }
 
-    private String createMessageFixture(String baseUrl, String token) throws Exception {
-        return post(apiUrl(baseUrl, "/api/v1/qa-empty/fixtures/message-thread"), "", token);
+    private JSONObject firstNotification(String baseUrl, String token) throws Exception {
+        JSONObject response = getJson(apiUrl(baseUrl, "/api/v1/notifications?page=1&size=1"), token);
+        JSONArray items = response.getJSONObject("data").getJSONArray("items");
+        assertTrue("Registered user should have default notifications", items.length() > 0);
+        return items.getJSONObject(0);
     }
 
     private String apiUrl(String baseUrl, String path) {
@@ -528,13 +534,14 @@ public class RealBackendSmokeInstrumentedTest {
         throw new IllegalStateException("Comment image upload did not finish in time");
     }
 
-    private void waitForPostCreateUpload(ActivityScenario<PostCreateActivity> scenario) throws InterruptedException {
+    private void waitForPostCreateUpload(ActivityScenario<MainActivity> scenario) throws InterruptedException {
         for (int i = 0; i < 40; i++) {
             final boolean[] finished = new boolean[1];
             final boolean[] failed = new boolean[1];
             scenario.onActivity(activity -> {
-                finished[0] = activity.testDoneMediaCount() >= 1;
-                failed[0] = activity.testFailedMediaCount() >= 1;
+                PostCreateFragment fragment = currentPostCreateFragment(activity);
+                finished[0] = fragment.testDoneMediaCount() >= 1;
+                failed[0] = fragment.testFailedMediaCount() >= 1;
             });
             if (finished[0]) {
                 return;
@@ -546,6 +553,14 @@ public class RealBackendSmokeInstrumentedTest {
             instrumentation.waitForIdleSync();
         }
         throw new IllegalStateException("Post create image upload did not finish in time");
+    }
+
+    private PostCreateFragment currentPostCreateFragment(MainActivity activity) {
+        androidx.fragment.app.Fragment fragment = activity.getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (!(fragment instanceof PostCreateFragment)) {
+            throw new IllegalStateException("Upload tab did not show PostCreateFragment");
+        }
+        return (PostCreateFragment) fragment;
     }
 
     private Uri fileProviderImageUri() throws Exception {

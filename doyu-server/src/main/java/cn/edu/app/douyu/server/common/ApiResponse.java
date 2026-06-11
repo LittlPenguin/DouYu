@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.server.common;
+/**
+ * 统一 API 响应 record：包装业务数据、错误码、消息和 traceId。
+ */
 
 public record ApiResponse<T>(
         String code,

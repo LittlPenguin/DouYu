@@ -1,6 +1,9 @@
 package cn.edu.app.douyu.model;
 
 import java.util.List;
+/**
+ * 商品响应 DTO：承载商城商品、图片、分类和 SKU 列表。
+ */
 
 public class Product {
     public String productId;

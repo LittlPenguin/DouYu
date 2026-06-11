@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.model;
+/**
+ * 注册请求 DTO：承载邮箱、密码和昵称。
+ */
 
 public class RegisterRequest {
     public final String email;

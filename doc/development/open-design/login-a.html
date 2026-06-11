@@ -10,18 +10,17 @@
   <main class="board">
     <section class="hero">
       <div class="hero-card">
-        <div class="eyebrow">豆笃 Doyu / Auth</div>
+        <div class="eyebrow">豆屿 Doyu / Auth</div>
         <h1 class="title">登录</h1>
-        <p class="lead">邮箱和密码登录。登录成功后写入真实 session token，再回到触发登录的受保护动作。</p>
-        <div class="chips"><span class="chip">邮箱</span><span class="chip">密码</span><span class="chip">加载/错误</span><span class="chip">注册互跳</span></div>
+        <p class="lead">邮箱和密码登录。登录成功后只保存 accessToken，并返回触发登录的受保护动作。</p>
+        <div class="chips"><span class="chip">邮箱</span><span class="chip">密码</span><span class="chip">accessToken</span><span class="chip">注册互跳</span></div>
       </div>
       <div class="side-facts">
         <div class="fact"><b>接口</b><span>POST /api/v1/auth/login</span></div>
-        <div class="fact"><b>边界</b><span>只使用邮箱密码登录。</span></div>
-        <div class="fact"><b>返回</b><span>AuthSession: accessToken, refreshToken, expiresIn, user。</span></div>
+        <div class="fact"><b>返回</b><span>AuthSession: accessToken, expiresIn, user。</span></div>
+        <div class="fact"><b>删除项</b><span>没有 refreshToken、refresh API 或服务端 logout。</span></div>
       </div>
     </section>
-
     <section class="section">
       <div class="canvas">
         <div class="phone">
@@ -29,13 +28,13 @@
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar"><a class="icon-btn" href="index-logged-out.html"><span class="icon back"></span></a><div class="top-title">登录</div><span class="icon-btn"></span></div>
             <div class="scroll no-nav">
-              <div class="hero-strip"><span class="pill ok">邮箱登录</span><h3>继续使用豆笃</h3><p>登录后可以编辑资料、上传作品、评论和查看个人数据。</p></div>
+              <div class="hero-strip"><span class="pill ok">邮箱登录</span><h3>继续使用豆屿</h3><p>登录后可以上传作品、评论、购物车下单和查看个人数据。</p></div>
               <div class="form-stack">
                 <label>邮箱</label>
                 <div class="input-line">name@example.com</div>
                 <label>密码</label>
-                <div class="input-line">••••••••</div>
-                <div class="warning-band">邮箱或密码错误时显示在这里；网络失败保留表单内容。</div>
+                <div class="input-line">8-64 位密码</div>
+                <div class="warning-band">邮箱或密码错误时在这里提示；网络失败保留表单内容。</div>
                 <button class="button petal">登录</button>
                 <a class="button ghost" href="register-a.html">还没有账号，去注册</a>
               </div>
@@ -44,8 +43,8 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>状态</h3><ul><li>提交中禁用邮箱、密码和登录按钮。</li><li>登录成功保存 token 并返回来源动作。</li><li>401 显示“邮箱或密码错误”。</li></ul></div>
-            <div class="spec"><h3>来源动作</h3><ul><li>个人资料：登录后进入编辑资料。</li><li>上传作品：登录后进入上传作品。</li><li>评论：登录后回到作品详情并展开评论输入。</li></ul></div>
+            <div class="spec"><h3>状态</h3><ul><li>提交中禁用邮箱、密码和登录按钮。</li><li>登录成功保存 accessToken。</li><li>401 显示“邮箱或密码错误”。</li></ul></div>
+            <div class="spec"><h3>来源动作</h3><ul><li>上传、评论、购物车和资料编辑都可触发登录引导。</li><li>登录成功后回到来源动作。</li><li>取消登录返回上一页。</li></ul></div>
           </div>
         </div>
       </div>

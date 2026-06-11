@@ -40,6 +40,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 用户接口 Controller：提供当前用户资料、关注关系、设置和用户资源接口。
+ */
 @Tag(name = "用户", description = "用户资料、关注/取关、实名认证")
 @RestController
 @RequestMapping("/api/v1/users")
@@ -231,9 +234,7 @@ public class UserController {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
         if (request.allowRecommendation() != null) user.setAllowRecommendation(request.allowRecommendation());
-        if (request.allowStrangerMessages() != null) user.setAllowStrangerMessages(request.allowStrangerMessages());
         if (request.allowFavorites() != null) user.setAllowFavorites(request.allowFavorites());
-        if (request.notifyMessages() != null) user.setNotifyMessages(request.notifyMessages());
         if (request.notifyInteractions() != null) user.setNotifyInteractions(request.notifyInteractions());
         if (request.notifyPublish() != null) user.setNotifyPublish(request.notifyPublish());
         if (request.notifySystem() != null) user.setNotifySystem(request.notifySystem());
@@ -305,8 +306,8 @@ public class UserController {
         return new User(entity.getId(), entity.getPhone(), entity.getEmail(), entity.getNickname(), entity.getAvatarFileId(),
                 entity.getBio(), entity.getRegion(), entity.getAgeGroup(), entity.isMinor(), entity.getRealNameStatus(),
                 entity.getAccountStatus(),
-                entity.isAllowRecommendation(), entity.isAllowStrangerMessages(), entity.isAllowFavorites(),
-                entity.isNotifyMessages(), entity.isNotifyInteractions(), entity.isNotifyPublish(), entity.isNotifySystem(),
+                entity.isAllowRecommendation(), entity.isAllowFavorites(),
+                entity.isNotifyInteractions(), entity.isNotifyPublish(), entity.isNotifySystem(),
                 entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
@@ -338,9 +339,7 @@ public class UserController {
     }
 
     public record UpdateSettingsRequest(Boolean allowRecommendation,
-                                        Boolean allowStrangerMessages,
                                         Boolean allowFavorites,
-                                        Boolean notifyMessages,
                                         Boolean notifyInteractions,
                                         Boolean notifyPublish,
                                         Boolean notifySystem) {

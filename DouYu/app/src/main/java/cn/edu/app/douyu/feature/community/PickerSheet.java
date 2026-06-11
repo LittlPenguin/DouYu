@@ -30,9 +30,7 @@ import cn.edu.app.douyu.data.DoyuRepository;
 import cn.edu.app.douyu.ui.LoadState;
 
 /**
- * 评论工具条的 @ 用户 / # 话题选择面板. Loads real data from the backend (user search or
- * topic list), renders empty and error states, and returns the chosen item to the
- * caller. No recommended/operational topic feed and no fake users are added here.
+ * 底部选择弹窗：为发帖流程提供相册、拍摄等操作入口。
  */
 public class PickerSheet extends BottomSheetDialog {
 

@@ -7,6 +7,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
+/**
+ * Like Repository：访问 `likes` 表，提供通用点赞关系的 JPA 查询。
+ */
 
 public interface LikeRepository extends JpaRepository<LikeEntity, String> {
     Optional<LikeEntity> findByUserIdAndTargetTypeAndTargetId(String userId, String targetType, String targetId);

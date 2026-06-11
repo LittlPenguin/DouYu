@@ -14,6 +14,9 @@ import java.util.List;
 
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.model.NotificationMessage;
+/**
+ * 通知列表适配器：把后端通知记录渲染成消息列表项。
+ */
 
 class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.Holder> {
     interface Listener {

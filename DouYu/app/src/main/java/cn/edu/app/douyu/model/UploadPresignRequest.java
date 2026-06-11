@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.model;
+/**
+ * 上传预签名请求 DTO：承载用途、文件类型、大小和尺寸。
+ */
 
 public class UploadPresignRequest {
     public String usage;

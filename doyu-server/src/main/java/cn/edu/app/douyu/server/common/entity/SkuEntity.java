@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Sku 实体：映射 `skus` 表，保存商品 SKU 库存和价格。
+ */
 @Entity
 @Table(name = "skus")
 public class SkuEntity {

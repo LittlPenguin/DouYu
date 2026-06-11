@@ -6,7 +6,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-import cn.edu.app.douyu.model.ConversationDetail;
 import cn.edu.app.douyu.model.Comment;
 import cn.edu.app.douyu.model.CommentRequest;
 import cn.edu.app.douyu.model.PageResponse;
@@ -19,6 +18,8 @@ import cn.edu.app.douyu.model.CartResponse;
 import cn.edu.app.douyu.model.CartItemRequest;
 import cn.edu.app.douyu.model.CreateOrderRequest;
 import cn.edu.app.douyu.model.Order;
+import cn.edu.app.douyu.model.NotificationMessage;
+import cn.edu.app.douyu.model.ReadReceipt;
 import cn.edu.app.douyu.model.SearchResult;
 import cn.edu.app.douyu.model.UpdateCartRequest;
 import cn.edu.app.douyu.model.UpdateUserSettingsRequest;
@@ -41,11 +42,14 @@ import static org.junit.Assert.assertTrue;
 
 public class DoyuApiDetailContractTest {
     @Test
-    public void conversationDetailUsesBackendDetailEnvelope() throws Exception {
-        Method method = DoyuApi.class.getMethod("conversation", String.class);
+    public void notificationApisUseCurrentBackendEndpoints() throws Exception {
+        Method notifications = DoyuApi.class.getMethod("notifications", int.class, int.class);
+        Method markRead = DoyuApi.class.getMethod("markNotificationsRead");
 
-        assertEquals("/api/v1/messages/conversations/{conversationId}", method.getAnnotation(GET.class).value());
-        assertCallDataType(method, ConversationDetail.class);
+        assertEquals("/api/v1/notifications", notifications.getAnnotation(GET.class).value());
+        assertPageItemType(notifications, NotificationMessage.class);
+        assertEquals("/api/v1/notifications/read", markRead.getAnnotation(POST.class).value());
+        assertCallDataType(markRead, ReadReceipt.class);
     }
 
     @Test
@@ -108,13 +112,11 @@ public class DoyuApiDetailContractTest {
     public void userSettingsApisUseBackendSettingsEndpoints() throws Exception {
         Method getSettings = DoyuApi.class.getMethod("userSettings");
         Method updateSettings = DoyuApi.class.getMethod("updateUserSettings", UpdateUserSettingsRequest.class);
-        Method cancelAccount = DoyuApi.class.getMethod("cancelAccount");
 
         assertEquals("/api/v1/users/me/settings", getSettings.getAnnotation(GET.class).value());
         assertCallDataType(getSettings, UserSettings.class);
         assertEquals("/api/v1/users/me/settings", updateSettings.getAnnotation(PATCH.class).value());
         assertCallDataType(updateSettings, UserSettings.class);
-        assertEquals("/api/v1/auth/account/cancel", cancelAccount.getAnnotation(POST.class).value());
     }
 
     @Test

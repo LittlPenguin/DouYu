@@ -36,7 +36,7 @@
                     android:gravity="center"
                     android:paddingStart="10dp"
                     android:paddingEnd="10dp"
-                    android:text="&#35774;&#32622;"
+                    android:text="设置"
                     android:textColor="@color/doyu_warn"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -45,7 +45,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="&#36134;&#21495;&#19982;&#24212;&#29992;&#35774;&#32622;"
+                    android:text="账号与应用设置"
                     android:textColor="@color/doyu_text"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -55,7 +55,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:lineSpacingExtra="2dp"
-                    android:text="&#20445;&#30041;&#21487;&#29992;&#30340;&#36134;&#21495;&#12289;&#26435;&#38480;&#12289;&#36890;&#30693;&#21644;&#24110;&#21161;&#20837;&#21475;&#12290;"
+                    android:text="保留可用的账号、权限、通知和帮助入口。"
                     android:textColor="@color/doyu_text_muted"
                     android:textSize="12sp" />
             </LinearLayout>

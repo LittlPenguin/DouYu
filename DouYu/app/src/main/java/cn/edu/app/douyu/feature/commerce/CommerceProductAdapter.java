@@ -17,6 +17,9 @@ import java.util.List;
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.MoneyFormatter;
 import cn.edu.app.douyu.model.Product;
+/**
+ * 商城商品列表适配器：把后端商品数据渲染成首页商品卡片。
+ */
 
 class CommerceProductAdapter extends RecyclerView.Adapter<CommerceProductAdapter.Holder> {
     interface Listener {

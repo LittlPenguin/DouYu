@@ -16,6 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.edu.app.douyu.R;
+/**
+ * 个人主页作品适配器：渲染用户发布、点赞或收藏的作品卡片。
+ */
 
 public class ProfileAssetAdapter extends RecyclerView.Adapter<ProfileAssetAdapter.Holder> {
     public interface Listener {

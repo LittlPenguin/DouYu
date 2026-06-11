@@ -1,6 +1,5 @@
 package cn.edu.app.douyu.server;
 
-import cn.edu.app.douyu.server.common.entity.ConversationRepository;
 import cn.edu.app.douyu.server.common.entity.NotificationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -36,30 +35,24 @@ class DevMessageFixtureContractTests {
     ObjectMapper objectMapper;
 
     @Autowired
-    ConversationRepository conversationRepository;
-
-    @Autowired
     NotificationRepository notificationRepository;
 
     @Test
-    void devProfileExposesExplicitMessageFixtureForRealDeviceSmoke() throws Exception {
-        org.assertj.core.api.Assertions.assertThat(conversationRepository.count()).isZero();
+    void devProfileDoesNotExposePrivateMessageFixture() throws Exception {
         org.assertj.core.api.Assertions.assertThat(notificationRepository.count()).isZero();
 
         String token = login("13900001003");
-        String userId = getMeUserId(token);
 
         mockMvc.perform(post("/api/v1/qa-empty/fixtures/message-thread")
                         .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/notifications")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.conversationId").isNotEmpty())
-                .andExpect(jsonPath("$.data.notificationId").isNotEmpty())
-                .andExpect(jsonPath("$.data.userAId", equalTo(userId)))
-                .andExpect(jsonPath("$.data.notificationTitle", equalTo("验收通知")))
-                .andExpect(jsonPath("$.data.notificationBody", equalTo("真实后端通知详情内容")));
+                .andExpect(jsonPath("$.data.total", equalTo(3)))
+                .andExpect(jsonPath("$.data.items[0].type", equalTo("SYSTEM")));
 
-        org.assertj.core.api.Assertions.assertThat(conversationRepository.count()).isEqualTo(1);
-        org.assertj.core.api.Assertions.assertThat(notificationRepository.count()).isEqualTo(2);
+        org.assertj.core.api.Assertions.assertThat(notificationRepository.count()).isEqualTo(3);
     }
 
     private String login(String phone) throws Exception {
@@ -73,15 +66,5 @@ class DevMessageFixtureContractTests {
                 .getResponse()
                 .getContentAsString();
         return objectMapper.readTree(response).at("/data/accessToken").asText();
-    }
-
-    private String getMeUserId(String token) throws Exception {
-        String response = mockMvc.perform(get("/api/v1/users/me")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        return objectMapper.readTree(response).at("/data/userId").asText();
     }
 }

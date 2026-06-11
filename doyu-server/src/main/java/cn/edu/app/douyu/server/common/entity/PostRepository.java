@@ -4,6 +4,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+/**
+ * Post Repository：访问 `posts` 表，提供社区帖子的 JPA 查询。
+ */
 
 public interface PostRepository extends JpaRepository<PostEntity, String> {
     List<PostEntity> findByStatusOrderByPinnedDescCreatedAtDesc(String status);

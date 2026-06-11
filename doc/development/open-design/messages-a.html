@@ -3,35 +3,31 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>消息页 A 方向</title>
+  <title>通知中心 A 方向</title>
   <link rel="stylesheet" href="doyu-open-design.css">
 </head>
 <body>
   <main class="board">
     <section class="hero">
       <div class="hero-card">
-        <div class="eyebrow">豆屿 Doyu / A 方向页面级设计稿</div>
-        <h1 class="title">消息页：通知优先，消息随后</h1>
-        <p class="lead">消息首页按用户处理顺序组织内容。通知列表放在上方，帮助用户先看到评论、发布和系统事件；消息列表放在下方，进入真实私信会话。首页只承担入口和摘要，不展示会话发送规则。</p>
+        <div class="eyebrow">豆屿 Doyu / 当前保留范围</div>
+        <h1 class="title">消息：通知中心</h1>
+        <p class="lead">消息 Tab 只展示后端通知列表。私信、会话、发送框和互关发送限制不属于当前版本；空结果展示通知空态，不用本地假消息填充。</p>
         <div class="chips">
-          <span class="chip">通知在上</span>
-          <span class="chip">消息在下</span>
-          <span class="chip">进入通知详情</span>
-          <span class="chip">进入消息详情</span>
+          <span class="chip">系统通知</span>
+          <span class="chip">互动通知</span>
+          <span class="chip">发布结果</span>
+          <span class="chip">无私信入口</span>
         </div>
       </div>
       <div class="side-facts">
-        <div class="fact"><b>点击去向</b><span>通知行进入 notification-detail-a.html；消息行进入 message-conversation-a.html。</span></div>
-        <div class="fact"><b>首页边界</b><span>首页只显示后端返回的通知摘要和消息摘要；不使用本地示例内容补齐列表。</span></div>
-        <div class="fact"><b>上传入口</b><span>底部“上传”位于商城和消息之间，点击后走登录门禁进入发帖页。</span></div>
+        <div class="fact"><b>接口</b><span>GET /api/v1/notifications；POST /api/v1/notifications/read。</span></div>
+        <div class="fact"><b>注册默认</b><span>新注册账户默认有 3 条系统通知，提示欢迎、上传和商城下单边界。</span></div>
+        <div class="fact"><b>点击去向</b><span>通知行只进入通知详情页，不跳作品、商品或会话。</span></div>
       </div>
     </section>
 
     <section class="section">
-      <div class="section-head">
-        <h2>首屏蓝图</h2>
-        <p>主体列表按固定顺序展示两个 section。通知区保留真实时间；消息区只保留头像、昵称和最后一条消息摘要。</p>
-      </div>
       <div class="canvas">
         <div class="phone">
           <div class="screen">
@@ -44,15 +40,9 @@
             <div class="scroll">
               <div class="chips-row"><span class="pill ok">通知</span></div>
               <div class="list" style="padding-top:0">
-                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">收到新评论</div><div class="row-sub">你的作品有新的拼豆建议</div></div><span class="row-meta">刚刚</span></a>
-                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon compose"></span></span><div class="row-main"><div class="row-title">作品发布成功</div><div class="row-sub">草莓小熊杯垫已展示到作品列表</div></div><span class="row-meta">12:30</span></a>
-                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon at"></span></span><div class="row-main"><div class="row-title">@ 提及</div><div class="row-sub">阿澄在评论里提到了你</div></div><span class="row-meta">昨天</span></a>
-              </div>
-              <div class="chips-row tight" style="padding-left:14px;padding-right:14px"><span class="pill warn">消息</span></div>
-              <div class="list" style="padding-top:0">
-                <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">阿澄</div><div class="row-sub">晚上一起拼杯垫吗</div></div></a>
-                <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">知知</div><div class="row-sub">对方刚发来新消息</div></div></a>
-                <a class="row" href="message-conversation-a.html"><span class="avatar"></span><div class="row-main"><div class="row-title">小岛摊主</div><div class="row-sub">这套珠盒明天补货</div></div></a>
+                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">欢迎来到豆屿</div><div class="row-sub">你可以浏览作品、搜索话题，也可以上传自己的拼豆作品。</div></div><span class="row-meta">刚刚</span></a>
+                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon upload"></span></span><div class="row-main"><div class="row-title">上传作品提示</div><div class="row-sub">底部“上传”可以发布作品；图片会先通过 OSS 上传，成功后再发布。</div></div><span class="row-meta">刚刚</span></a>
+                <a class="row" href="notification-detail-a.html"><span class="round-icon"><span class="icon shop"></span></span><div class="row-main"><div class="row-title">商城下单提示</div><div class="row-sub">商城支持商品浏览、购物车和创建订单；当前不提供支付服务。</div></div><span class="row-meta">刚刚</span></a>
               </div>
             </div>
             <div class="bottom-nav">
@@ -66,10 +56,10 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>列表顺序</h3><ul><li>通知 section 始终在消息 section 上方。</li><li>通知行展示图标、标题、内容和真实时间。</li><li>消息行展示头像、昵称和最后一条消息摘要。</li><li>两类列表都必须有空态、失败态和未登录态。</li></ul></div>
-            <div class="spec"><h3>点击规则</h3><ul><li>通知行进入通知详情。</li><li>消息行进入消息详情。</li><li>不存在的入口必须禁用或标注开发态。</li><li>搜索入口仍按全局搜索边界处理。</li></ul></div>
-            <div class="state"><h3>首页状态</h3><p>首页不承载发送规则，只显示真实摘要、加载、空、错和登录边界。</p><div class="state-bar"><span class="state-dot good">入口清楚</span><span class="state-dot warn">不造数据</span></div></div>
-            <div class="state"><h3>通知边界</h3><p>通知只负责事件详情和跳转，不承载聊天输入、草稿或发送反馈。</p><div class="state-bar"><span class="state-dot good">信息清楚</span><span class="state-dot bad">不混聊天</span></div></div>
+            <div class="spec"><h3>列表规则</h3><ul><li>只渲染后端返回的通知。</li><li>每行展示类型图标、标题、内容摘要和时间。</li><li>未登录显示登录引导，空结果显示通知空态。</li><li>不请求会话列表，不展示消息发送入口。</li></ul></div>
+            <div class="spec"><h3>已读规则</h3><ul><li>通知详情可触发标记已读接口。</li><li>列表不伪造未读数字。</li><li>接口失败时保留当前列表并提示重试。</li></ul></div>
+            <div class="state"><h3>删除范围</h3><p>私信会话、发送框、互关三条限制、聊天气泡和会话详情页都不在当前版本。</p><div class="state-bar"><span class="state-dot good">范围清楚</span><span class="state-dot bad">禁假入口</span></div></div>
+            <div class="state"><h3>空态</h3><p>当前账户没有通知时显示“暂无通知”，不生成本地示例内容。</p><div class="state-bar"><span class="state-dot warn">可为空</span><span class="state-dot good">后端驱动</span></div></div>
           </div>
         </div>
       </div>

@@ -7,6 +7,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
+/**
+ * Follow Repository：访问 `follows` 表，提供用户关注关系的 JPA 查询。
+ */
 
 public interface FollowRepository extends JpaRepository<FollowEntity, String> {
     Optional<FollowEntity> findByUserIdAndTargetUserId(String userId, String targetUserId);

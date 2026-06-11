@@ -4,6 +4,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
+/**
+ * User Repository：访问 `users` 表，提供用户账号、资料和设置的 JPA 查询。
+ */
 
 public interface UserRepository extends JpaRepository<UserEntity, String> {
     Optional<UserEntity> findByPhone(String phone);

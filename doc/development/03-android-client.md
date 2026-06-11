@@ -7,10 +7,9 @@ Maintain the Android app as a traditional Android Java + Activity/Fragment + XML
 ## Target Architecture
 
 - `MainActivity.java` hosts the top bar, Fragment content container, and bottom navigation.
-- Current main tabs: Community, Commerce, Messages, Profile. A publish entry may be exposed through the top action or shell shortcut.
+- Current main tabs: Community, Commerce, Upload, Messages, Profile.
 - Secondary screens use Activities with explicit Intent extras.
 - XML files own layout structure. Java classes bind views, state, navigation, API calls, and click handlers.
-- Each retained Open Design main tab and major flow screen has a dedicated XML layout.
 - RecyclerView adapters render lists and grids.
 - CameraX PreviewView handles camera capture only for retained post/image capture flows.
 
@@ -20,6 +19,7 @@ Main tabs:
 
 - `community-home-a.html` -> `fragment_community_home.xml`
 - `commerce-home-a.html` -> `fragment_commerce_home.xml`
+- `post-compose-a.html` -> `fragment_post_create.xml`
 - `messages-a.html` -> `fragment_messages_home.xml`
 - `profile-a.html` -> `fragment_profile_home.xml`
 
@@ -28,9 +28,7 @@ Flow screens:
 - `login-a.html` -> `activity_login.xml`
 - `register-a.html` -> `activity_register.xml`
 - `search-a.html` -> `activity_search.xml`
-- `post-compose-a.html` -> `activity_post_create.xml`
 - `post-detail-comment-toolbar-a.html` -> `activity_post_detail.xml`
-- `message-conversation-a.html` -> `activity_conversation.xml`
 - `notification-detail-a.html` -> `activity_notification_detail.xml`
 - `profile-edit-a.html` -> `activity_profile_edit.xml`
 - `profile-posts-a.html` -> `activity_profile_posts.xml`
@@ -40,6 +38,11 @@ Flow screens:
 - `settings-privacy-permissions-a.html` -> `activity_settings_privacy_permissions.xml`
 - `settings-notifications-a.html` -> `activity_settings_notifications.xml`
 - `doyu-design-directions.html` -> documented design authority; not an app runtime page.
+
+Removed mappings:
+
+- Private-message and conversation screens.
+- Any AI, payment, map, compliance, address book, order center, reward, report or admin screen.
 
 ## Required Java Packages
 
@@ -58,69 +61,53 @@ Flow screens:
 - Kotlin serialization, Kotlin coroutines, Kotlin DataStore.
 - Runtime `MockData`, mock repositories, fake cards, fake orders, fake payment parameters.
 - Empty click handlers and fake success Toasts.
-- AI page, AI flow, payment boundary, map/location provider, production compliance page, or production provider completion claims.
+- AI, payment, map/location, compliance, private-message, account-cancel, reward, report, admin, address-book or order-center pages.
 
 ## Navigation Contract
 
 Navigation uses Intent extras and Fragment tab state.
 
-- Main bottom navigation is unified around section ids:
-  - `community`
-  - `commerce`
-  - `messages`
-  - `profile`
-- `MainActivity` owns the section-to-tab mapping and must handle both first
-  launch and reused-instance navigation via `onNewIntent`.
-- `社区`, `商城`, `消息`, and `我的` switch content inside the same
-  `MainActivity` shell.
-- `上传` is an action item. It opens `PostCreateActivity` after login and does
-  not replace the current main Fragment.
-- When `PostCreateActivity` routes back to a main section, it must send
-  `IntentExtras.SECTION` with `FLAG_ACTIVITY_CLEAR_TOP` and
-  `FLAG_ACTIVITY_SINGLE_TOP` so the existing `MainActivity` instance handles the
-  target section consistently.
+- Main bottom navigation section ids: `community`, `commerce`, `upload`, `messages`, `profile`.
+- `MainActivity` owns the section-to-tab mapping and must handle first launch and reused-instance navigation via `onNewIntent`.
+- `上传` is a main-shell `PostCreateFragment` tab.
+- After a successful post publish, `PostCreateFragment` clears the upload draft before opening `PostDetailActivity`.
+- Publish-success detail launches carry `returnTo=community`; back/up from that detail returns to the `MainActivity` community tab instead of the upload tab.
 
 Keep these extra names for retained flows:
 
 - `postId`
 - `productId`
-- `conversationId`
 - `notificationId`
 - `uploadedFileId`
 - `returnTo`
 
-Do not introduce AI job/pattern extras, payment result extras, or map/location extras for current runtime flows.
+Do not introduce conversation, AI job/pattern, payment result, map/location, reward, report or admin extras for current runtime flows.
 
 ## Data Contract
 
-The backend API remains under `/api/v1`. Java DTO field names must match the existing API. Empty list responses are valid and must render empty states.
-
-Address fields and address management requirements remain in scope for commerce/order flows. Removing map/location does not remove manual address fields.
+The backend API remains under `/api/v1`. Java DTO field names must match the API. Empty list responses are valid and must render empty states.
 
 OSS-backed image storage, upload presign/confirm, Alibaba OSS configuration and backend upload/oss provider remain in scope.
-Android must normalize backend image URLs that point at loopback/local OSS hosts before rendering them on a device. This applies to post images, comment media and user `avatarUrl`; a backend `localhost` URL must be rewritten to the configured API host when the API host is a device-reachable address.
+
+Android must normalize backend image URLs that point at loopback/local OSS hosts before rendering them on a device. This applies to post images, comment media and user `avatarUrl`.
 
 Settings is a real account and device-state surface:
 
 - `GET /api/v1/users/me` drives account/security identity fields such as email, account status and manual profile region.
-- `GET /api/v1/users/me/settings` and `PATCH /api/v1/users/me/settings` persist privacy and notification preferences. Android must not store these business settings only in local preferences.
-- System permission rows read real Android permission state for camera and notifications, provide direct runtime permission requests where Android supports them, and open the OS app settings page when the user needs to change a denied permission manually.
-- Notification preferences only control app reminder preferences. They do not delete message history, bypass private-message limits, or claim that a push provider is complete.
-- Account cancellation uses `POST /api/v1/auth/account/cancel`; Android must show confirmation and wait for the backend response before clearing local session.
-- Help/About shows real build and API information, not placeholder completion claims.
+- `GET /api/v1/users/me/settings` and `PATCH /api/v1/users/me/settings` persist privacy and notification preferences.
+- System permission rows read real Android permission state for camera and notifications.
+- Notification preferences only control app reminder preferences. They do not delete notification records or claim that a push provider is complete.
+- Logout clears local session state.
+- Help/About shows real build and API information.
 
-商品购买数据必须以后端为准：
+Commerce purchase data must come from backend:
 
-- 商品详情页从 `/api/v1/products/{productId}` 读取 `Product` 和 SKU 数据。
-- 数量选择必须限制在可用 SKU 库存内。
-- 加入购物车使用 `POST /api/v1/cart/items`；后端响应成功前不得展示本地购物车成功状态。
-- 立即下单使用 `POST /api/v1/orders`，请求包含立即购买商品和用户输入字段生成的手动地址快照。
-- 创建订单后可以展示返回的订单 ID 和 `CREATED` 状态，但不得展示支付页、支付结果、渠道跳转或虚假成功状态。
-- 商品详情、购物车、数量、收货信息和订单创建相关 UI 文案必须使用自然中文；API 字段名和后端枚举值保持英文契约。
-
-## UI Contract
-
-Open Design HTML is authoritative for retained pages. Java/XML screens must match the retained Open Design structure and state model. Empty, loading, error, not logged in, disabled, and UI-only states must be implemented explicitly.
+- Product detail loads `/api/v1/products/{productId}`.
+- Quantity selection is limited to available SKU stock.
+- Add-to-cart uses `POST /api/v1/cart/items`.
+- Immediate order uses `POST /api/v1/orders` with real selected SKU and manual address snapshot fields.
+- Cart order uses selected backend cart item ids and manual address snapshot fields.
+- Created orders may display order ID and `CREATED` status, but must not display payment, refund, order-center, order-detail or cancellation claims.
 
 ## Verification
 

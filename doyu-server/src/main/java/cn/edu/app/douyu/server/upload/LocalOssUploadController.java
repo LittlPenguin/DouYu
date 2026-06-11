@@ -18,6 +18,9 @@ import java.nio.file.Paths;
  */
 @RestController
 @ConditionalOnProperty(prefix = "douyu.oss", name = "provider", havingValue = "local", matchIfMissing = true)
+/**
+ * 本地 OSS 上传接口：开发环境接收预签名 PUT 文件并写入本地存储。
+ */
 public class LocalOssUploadController {
 
     private final Path uploadDir;

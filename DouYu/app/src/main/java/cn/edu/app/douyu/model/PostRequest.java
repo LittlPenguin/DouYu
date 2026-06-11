@@ -1,6 +1,9 @@
 package cn.edu.app.douyu.model;
 
 import java.util.List;
+/**
+ * 发帖请求 DTO：承载标题、正文、媒体文件和话题。
+ */
 
 public class PostRequest {
     public final String title;

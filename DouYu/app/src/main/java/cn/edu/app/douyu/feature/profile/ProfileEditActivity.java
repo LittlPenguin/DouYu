@@ -25,11 +25,7 @@ import cn.edu.app.douyu.model.UserProfile;
 import cn.edu.app.douyu.ui.XmlPageActivity;
 
 /**
- * 编辑资料. Restores profile-edit-a.html. Nickname and bio are saved through the
- * real PATCH /api/v1/users/me; the avatar uses the real presign -> PUT -> confirm
- * upload flow. Empty nickname disables save, a failed avatar upload keeps the old
- * avatar with a retry, and a failed save keeps the draft on this page. City/region
- * is saved as a manual profile field without map/location providers.
+ * 资料编辑页：修改昵称、简介、地区和头像等用户资料。
  */
 public class ProfileEditActivity extends XmlPageActivity {
     private static final String[] REGION_CHOICES = {"杭州", "上海", "广州", "深圳", "成都", "北京"};

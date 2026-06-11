@@ -12,6 +12,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
+/**
+ * TraceId 过滤器：为每个 HTTP 请求生成或传递 traceId。
+ */
 @Component
 public class TraceIdFilter extends OncePerRequestFilter {
     private static final DateTimeFormatter DATE = DateTimeFormatter.BASIC_ISO_DATE;

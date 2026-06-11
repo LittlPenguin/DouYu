@@ -25,6 +25,9 @@ import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.SystemBarInsets;
 import cn.edu.app.douyu.data.DoyuRepository;
 import cn.edu.app.douyu.model.AuthSession;
+/**
+ * 登录页：校验邮箱和密码，通过 Repository 调用后端登录并保存会话。
+ */
 
 public class LoginActivity extends AppCompatActivity {
     public static final String EXTRA_RETURN_ACTION = "returnAction";

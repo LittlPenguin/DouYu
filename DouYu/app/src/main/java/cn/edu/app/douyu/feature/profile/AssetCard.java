@@ -1,6 +1,8 @@
 package cn.edu.app.douyu.feature.profile;
 
-/** Lightweight view model for one card backed by a real backend post. */
+/**
+ * 作品卡片模型：承载个人主页中由真实后端帖子生成的卡片数据。
+ */
 public class AssetCard {
     public static final String TYPE_POST = "post";
 

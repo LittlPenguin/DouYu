@@ -10,18 +10,17 @@
   <main class="board">
     <section class="hero">
       <div class="hero-card">
-        <div class="eyebrow">豆笃 Doyu / Auth</div>
+        <div class="eyebrow">豆屿 Doyu / Auth</div>
         <h1 class="title">注册</h1>
-        <p class="lead">邮箱、昵称、年龄段、密码和确认密码。注册成功后直接登录。</p>
-        <div class="chips"><span class="chip">邮箱唯一</span><span class="chip">密码确认</span><span class="chip">年龄段</span><span class="chip">直接登录</span></div>
+        <p class="lead">邮箱、昵称、年龄段、密码和确认密码。注册成功后直接登录，并由后端写入 3 条默认系统通知。</p>
+        <div class="chips"><span class="chip">邮箱唯一</span><span class="chip">密码确认</span><span class="chip">默认通知</span><span class="chip">直接登录</span></div>
       </div>
       <div class="side-facts">
         <div class="fact"><b>接口</b><span>POST /api/v1/auth/register</span></div>
-        <div class="fact"><b>校验</b><span>邮箱格式、邮箱未注册、密码 8-64 位、确认密码一致。</span></div>
-        <div class="fact"><b>返回</b><span>AuthSession，保存后按来源动作继续。</span></div>
+        <div class="fact"><b>返回</b><span>AuthSession: accessToken, expiresIn, user。</span></div>
+        <div class="fact"><b>默认通知</b><span>欢迎、上传提示、商城下单提示。</span></div>
       </div>
     </section>
-
     <section class="section">
       <div class="canvas">
         <div class="phone">
@@ -29,7 +28,7 @@
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar"><a class="icon-btn" href="login-a.html"><span class="icon back"></span></a><div class="top-title">注册</div><span class="icon-btn"></span></div>
             <div class="scroll no-nav">
-              <div class="hero-strip"><span class="pill warn">邮箱注册</span><h3>创建豆笃账号</h3><p>注册成功后保存真实登录态，继续原来的受保护操作。</p></div>
+              <div class="hero-strip"><span class="pill warn">邮箱注册</span><h3>创建豆屿账号</h3><p>注册成功后保存真实登录态，继续原来的受保护操作。</p></div>
               <div class="form-stack">
                 <label>邮箱</label>
                 <div class="input-line">name@example.com</div>
@@ -49,7 +48,7 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>注册成功</h3><ul><li>返回 AuthSession。</li><li>保存 accessToken 和 refreshToken。</li><li>按来源动作继续执行。</li></ul></div>
+            <div class="spec"><h3>注册成功</h3><ul><li>返回 AuthSession。</li><li>保存 accessToken。</li><li>后端创建 3 条 SYSTEM 通知。</li><li>按来源动作继续执行。</li></ul></div>
             <div class="spec"><h3>错误</h3><ul><li>400：本地或服务端参数错误。</li><li>409：邮箱已注册。</li><li>网络错误：保留表单内容。</li></ul></div>
           </div>
         </div>

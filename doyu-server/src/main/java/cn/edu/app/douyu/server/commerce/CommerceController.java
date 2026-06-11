@@ -36,10 +36,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 商城接口 Controller：提供商品分类、商品列表、商品详情和购物车接口。
+ */
 @Tag(name = "Commerce", description = "Products, categories, and cart")
 @RestController
 @RequestMapping("/api/v1")
 public class CommerceController {
+    // 商品、SKU 和购物车分别落在不同表，Controller 负责组合客户端需要的视图。
     private final ProductRepository productRepository;
     private final SkuRepository skuRepository;
     private final CartItemRepository cartItemRepository;
@@ -58,6 +62,7 @@ public class CommerceController {
     @Operation(summary = "Product list")
     @ApiResponse(responseCode = "200", description = "OK")
     @GetMapping("/products")
+    // 商品列表：只返回上架且审核通过的真实商品，可按分类过滤。
     PageResult<Map<String, Object>> products(@RequestParam(defaultValue = "1") int page,
                                              @RequestParam(defaultValue = "20") int size,
                                              @RequestParam(required = false) String categoryId) {
@@ -74,6 +79,7 @@ public class CommerceController {
     @Operation(summary = "Product categories")
     @ApiResponse(responseCode = "200", description = "OK")
     @GetMapping("/product-categories")
+    // 商品分类：从当前可售商品实时统计分类数量，不依赖前端静态列表。
     Map<String, Object> productCategories() {
         Map<String, CategoryCount> counts = new LinkedHashMap<>();
         for (ProductEntity product : productRepository.findByStatusAndAuditStatus("ON_SALE", "PASS")) {
@@ -101,6 +107,7 @@ public class CommerceController {
             @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @GetMapping("/products/{productId}")
+    // 商品详情：返回商品基础信息和 SKU 列表。
     Map<String, Object> product(@PathVariable String productId) {
         ProductEntity product = productRepository.findById(productId)
                 .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Product not found"));
@@ -115,6 +122,7 @@ public class CommerceController {
             @ApiResponse(responseCode = "403", description = "Forbidden")
     })
     @PostMapping("/products")
+    // 玩家商品创建：当前进入草稿和人工审核状态，未直接上架。
     Map<String, Object> createPlayerProduct(Authentication authentication, @Valid @RequestBody ProductRequest request) {
         String userId = CurrentUser.userId(authentication);
         User user = authService.requireUser(userId);
@@ -156,6 +164,7 @@ public class CommerceController {
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @GetMapping("/cart")
+    // 购物车：按当前登录用户返回购物车行，并补充商品和 SKU 信息。
     Map<String, Object> cart(Authentication authentication) {
         String userId = CurrentUser.userId(authentication);
         List<Map<String, Object>> items = cartItemRepository.findByUserId(userId).stream()
@@ -172,6 +181,7 @@ public class CommerceController {
             @ApiResponse(responseCode = "409", description = "Unavailable product or inventory")
     })
     @PostMapping("/cart/items")
+    // 加入购物车：相同 SKU 会累加数量，并校验商品可买和库存充足。
     Map<String, Object> addCart(Authentication authentication, @Valid @RequestBody CartItemRequest request) {
         String userId = CurrentUser.userId(authentication);
         SkuEntity sku = requireSku(request.skuId());
@@ -206,6 +216,7 @@ public class CommerceController {
             @ApiResponse(responseCode = "404", description = "Cart item not found")
     })
     @PatchMapping("/cart/items/{itemId}")
+    // 修改购物车数量：只允许操作自己的购物车行，并重新校验库存。
     Map<String, Object> updateCart(Authentication authentication, @PathVariable String itemId,
                                    @Valid @RequestBody UpdateCartRequest request) {
         String userId = CurrentUser.userId(authentication);
@@ -228,6 +239,7 @@ public class CommerceController {
             @ApiResponse(responseCode = "404", description = "Cart item not found")
     })
     @DeleteMapping("/cart/items/{itemId}")
+    // 删除购物车行：校验归属后直接删除。
     Map<String, Object> deleteCart(Authentication authentication, @PathVariable String itemId) {
         String userId = CurrentUser.userId(authentication);
         requireCartItem(userId, itemId);
@@ -235,6 +247,7 @@ public class CommerceController {
         return Map.of("deleted", true);
     }
 
+    // 购物车行视图：合并 CartItem、SKU、Product，并计算行金额和可购买状态。
     private Map<String, Object> cartItemView(CartItemEntity item) {
         SkuEntity sku = skuRepository.findById(item.getSkuId()).orElse(null);
         ProductEntity product = sku != null ? productRepository.findById(sku.getProductId()).orElse(null) : null;
@@ -257,6 +270,7 @@ public class CommerceController {
         return itemData;
     }
 
+    // 校验购物车行属于当前用户，避免越权操作。
     private CartItemEntity requireCartItem(String userId, String itemId) {
         CartItemEntity item = cartItemRepository.findById(itemId).orElse(null);
         if (item == null || !item.getUserId().equals(userId)) {
@@ -265,11 +279,13 @@ public class CommerceController {
         return item;
     }
 
+    // SKU 是购物车和订单的实际购买单位。
     private SkuEntity requireSku(String skuId) {
         return skuRepository.findById(skuId)
                 .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "SKU not found"));
     }
 
+    // 标准购物车只支持自营、上架、审核通过且 SKU 在售的商品。
     private void requirePurchasableSku(SkuEntity sku, ProductEntity product) {
         if (product == null || !"ON_SALE".equals(product.getStatus()) || !"PASS".equals(product.getAuditStatus())) {
             throw new BizException(ErrorCode.NOT_FOUND, "Product is unavailable");
@@ -282,6 +298,7 @@ public class CommerceController {
         }
     }
 
+    // 只读判断，用于购物车列表展示当前行是否仍可购买。
     private boolean isPurchasableSelfOperatedProduct(ProductEntity product) {
         return product != null
                 && "SELF_OPERATED".equals(product.getType())
@@ -289,12 +306,14 @@ public class CommerceController {
                 && "PASS".equals(product.getAuditStatus());
     }
 
+    // 库存校验使用 availableStock，避免用户加入超过可售库存的数量。
     private void requireQuantityWithinStock(SkuEntity sku, int quantity) {
         if (sku.getAvailableStock() < quantity) {
             throw new BizException(ErrorCode.INVENTORY_NOT_ENOUGH, "Inventory is not enough");
         }
     }
 
+    // 商品视图：补充分类名、首个 SKU 价格、总可售库存和 SKU 列表。
     private Map<String, Object> productView(ProductEntity product) {
         List<SkuEntity> productSkus = skuRepository.findByProductId(product.getId());
         Map<String, Object> view = new LinkedHashMap<>();

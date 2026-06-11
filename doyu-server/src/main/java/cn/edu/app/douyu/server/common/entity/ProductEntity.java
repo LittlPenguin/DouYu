@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Product 实体：映射 `products` 表，保存商城商品主数据。
+ */
 @Entity
 @Table(name = "products")
 public class ProductEntity {

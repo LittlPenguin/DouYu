@@ -1,6 +1,9 @@
 package cn.edu.app.douyu.server.common;
 
 import org.springframework.http.HttpStatus;
+/**
+ * 错误码枚举：集中定义接口错误状态和默认提示。
+ */
 
 public enum ErrorCode {
     OK(HttpStatus.OK),

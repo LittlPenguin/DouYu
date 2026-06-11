@@ -19,10 +19,6 @@ douyu:
     issuer: douyu-test
     secret: test-secret-test-secret-test-secret-test-secret
     access-token-ttl: PT2H
-    refresh-token-ttl: P30D
-  admin:
-    bootstrap-username: admin
-    bootstrap-password: admin123
   storage:
     local-path: ./target/doyu-test-storage
     base-url: http://10.64.241.153:8081

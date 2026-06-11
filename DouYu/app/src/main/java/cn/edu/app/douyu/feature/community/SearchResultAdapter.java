@@ -16,6 +16,9 @@ import java.util.List;
 
 import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.model.SearchResult;
+/**
+ * 搜索结果适配器：渲染搜索页返回的帖子、商品或用户结果。
+ */
 
 class SearchResultAdapter extends RecyclerView.Adapter<SearchResultAdapter.Holder> {
     interface Listener {

@@ -33,6 +33,9 @@ import cn.edu.app.douyu.model.CartResponse;
 import cn.edu.app.douyu.model.Order;
 import cn.edu.app.douyu.ui.LoadState;
 import cn.edu.app.douyu.ui.XmlPageActivity;
+/**
+ * 购物车页：加载真实购物车商品，选择数量和地址后创建订单。
+ */
 
 public class CartActivity extends XmlPageActivity {
     private final CartAdapter adapter = new CartAdapter(new CartAdapter.Listener() {

@@ -3,8 +3,7 @@ package cn.edu.app.douyu.server.upload.oss;
 import java.util.Map;
 
 /**
- * 对象存储抽象接口。
- * 当前实现：LocalOssProvider（本地开发/测试）、AliyunOssProvider（生产）。
+ * OSS Provider 接口：统一本地存储和阿里云 OSS 的预签名上传能力。
  */
 public interface OssProvider {
 

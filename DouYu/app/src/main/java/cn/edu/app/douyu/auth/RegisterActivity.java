@@ -23,6 +23,9 @@ import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.SystemBarInsets;
 import cn.edu.app.douyu.data.DoyuRepository;
 import cn.edu.app.douyu.model.AuthSession;
+/**
+ * 注册页：采集邮箱、密码和昵称，通过后端注册接口创建真实用户。
+ */
 
 public class RegisterActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();

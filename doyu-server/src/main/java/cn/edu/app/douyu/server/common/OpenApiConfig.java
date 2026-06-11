@@ -8,6 +8,9 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * OpenAPI 配置：配置 Swagger/OpenAPI 文档标题和接口说明。
+ */
 @Configuration
 public class OpenApiConfig {
     @Bean

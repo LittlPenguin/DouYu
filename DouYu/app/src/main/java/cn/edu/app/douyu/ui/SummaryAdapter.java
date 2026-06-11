@@ -15,6 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.edu.app.douyu.R;
+/**
+ * 摘要列表适配器：渲染通用图文摘要卡片。
+ */
 
 public class SummaryAdapter extends RecyclerView.Adapter<SummaryAdapter.Holder> {
     public interface Listener {

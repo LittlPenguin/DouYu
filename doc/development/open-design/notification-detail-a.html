@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -10,15 +10,15 @@
   <main class="board">
     <section class="hero">
       <div class="hero-card">
-        <div class="eyebrow">豆屿 Doyu / 消息补全设计稿</div>
-        <h1 class="title">通知详情：事件、对象与跳转</h1>
-        <p class="lead">通知详情只展示事件内容和关联对象，不承载聊天输入。评论互动、点赞收藏、@ 提及、发帖状态和系统通知都用一致结构表达。</p>
-        <div class="chips"><span class="chip">通知详情</span><span class="chip">无输入框</span><span class="chip">可跳转对象</span><span class="chip">系统边界</span></div>
+        <div class="eyebrow">豆屿 Doyu / 当前保留范围</div>
+        <h1 class="title">通知详情</h1>
+        <p class="lead">通知详情是纯文本事件页，只展示类型、标题、内容和时间。当前版本不做关联对象跳转、不做回复、不进入作品或会话链路。</p>
+        <div class="chips"><span class="chip">标题</span><span class="chip">内容</span><span class="chip">时间</span><span class="chip">类型</span></div>
       </div>
       <div class="side-facts">
-        <div class="fact"><b>点击来源</b><span>从消息页通知列表进入，返回后保持通知 Tab。</span></div>
-        <div class="fact"><b>禁止</b><span>不出现会话输入状态、不展示剩余私信条数、不假装可回复系统通知。</span></div>
-        <div class="fact"><b>动作</b><span>只保留查看作品、重新加载、标为已读等可解释动作。</span></div>
+        <div class="fact"><b>来源</b><span>从消息 Tab 的通知列表进入。</span></div>
+        <div class="fact"><b>动作</b><span>只保留返回和标记已读；无跳转 CTA。</span></div>
+        <div class="fact"><b>边界</b><span>缺少通知 ID 时展示普通空态，不使用 fixture 内容。</span></div>
       </div>
     </section>
 
@@ -29,22 +29,21 @@
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar"><a class="icon-btn" href="messages-a.html"><span class="icon back"></span></a><div class="top-title">通知详情</div><a class="icon-btn" href="search-a.html"><span class="icon search"></span></a></div>
             <div class="scroll no-nav">
-              <div class="hero-strip"><span class="pill ok">互动通知</span><h3>收到新评论</h3><p>你的作品有新的拼豆建议，可以前往详情查看。</p></div>
+              <div class="hero-strip"><span class="pill ok">系统通知</span><h3>欢迎来到豆屿</h3><p>你可以浏览作品、搜索话题，也可以上传自己的拼豆作品。</p></div>
               <div class="list">
-                <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">关联作品</div><div class="row-sub">草莓小熊杯垫</div></div><span class="pill">查看</span></div>
-                <div class="row"><span class="round-icon"><span class="icon at"></span></span><div class="row-main"><div class="row-title">@ 提及</div><div class="row-sub">阿澄在评论里提到了你</div></div><span class="row-meta">12:30</span></div>
-                <div class="row"><span class="round-icon"><span class="icon upload"></span></span><div class="row-main"><div class="row-title">作品发布通过</div><div class="row-sub">薄荷小岛挂件已展示在作品列表</div></div><span class="pill ok">完成</span></div>
+                <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">通知类型</div><div class="row-sub">SYSTEM</div></div></div>
+                <div class="row"><span class="round-icon"><span class="icon settings"></span></span><div class="row-main"><div class="row-title">创建时间</div><div class="row-sub">刚刚</div></div></div>
               </div>
-              <div class="hero-strip"><span class="pill stop">不可回复</span><p>通知详情不是私信会话；如需沟通，进入作者资料或私信会话。</p></div>
+              <div class="tool-row" style="padding:14px"><span class="button petal">标为已读</span></div>
             </div>
           </div>
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>通知类型</h3><ul><li>互动：点赞、收藏、评论、@ 提及。</li><li>发布：作品发布成功或失败。</li><li>系统：账号、帮助、版本或安全提示。</li></ul></div>
-            <div class="spec"><h3>详情结构</h3><ul><li>顶部返回 + 标题。</li><li>事件摘要、发生时间、关联对象卡。</li><li>可解释动作：查看作品、标为已读、重试加载。</li><li>无输入框、无私信限制状态。</li></ul></div>
-            <div class="state"><h3>空/错状态</h3><p>通知不存在或加载失败时展示重试，不吞成空白，不暴露技术堆栈。</p><div class="state-bar"><span class="state-dot warn">可重试</span><span class="state-dot bad">禁空白</span></div></div>
-            <div class="state"><h3>边界说明</h3><p>发布通知只说明帖子状态；评论成功不进入通知详情输入链路。</p><div class="state-bar"><span class="state-dot warn">状态清楚</span><span class="state-dot bad">禁伪装私信</span></div></div>
+            <div class="spec"><h3>详情字段</h3><ul><li>通知类型。</li><li>通知标题。</li><li>通知内容。</li><li>创建时间。</li></ul></div>
+            <div class="spec"><h3>删除字段</h3><ul><li>不展示关联对象卡。</li><li>不展示查看作品/商品按钮。</li><li>不展示聊天输入或回复入口。</li><li>不展示私信限制状态。</li></ul></div>
+            <div class="state"><h3>失败状态</h3><p>标记已读失败时提示错误并恢复按钮；不改变本地状态制造成功。</p><div class="state-bar"><span class="state-dot warn">可重试</span><span class="state-dot bad">禁假成功</span></div></div>
+            <div class="state"><h3>通知范围</h3><p>通知是保留能力；私信不是保留能力。</p><div class="state-bar"><span class="state-dot good">通知保留</span><span class="state-dot bad">私信删除</span></div></div>
           </div>
         </div>
       </div>

@@ -26,13 +26,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * 上传接口 Controller：提供 presign 和 confirm，完成 OSS 上传后的文件归属落库。
+ */
 @Tag(name = "上传", description = "预签名上传、确认上传完成")
 @RestController
 @RequestMapping("/api/v1/uploads")
 public class UploadController {
+    // 后端允许的业务用途，客户端必须按这些 usage 上传图片或视频。
     private static final Set<String> USAGES = Set.of("AVATAR", "POST_IMAGE", "POST_VIDEO", "PRODUCT_IMAGE", "TRADE_IMAGE");
     private static final long PRESIGN_EXPIRES_SECONDS = 900;
 
+    // FileAssetRepository 负责落库，OssProvider 负责对象存储签名和确认。
     private final FileAssetRepository fileAssetRepository;
     private final OssProvider ossProvider;
     private final IdGenerator idGenerator;
@@ -50,6 +55,7 @@ public class UploadController {
             @ApiResponse(responseCode = "401", description = "未登录")
     })
     @PostMapping("/presign")
+    // 第一步：校验登录、用途、类型和大小，返回客户端可直接 PUT 的临时上传地址。
     Map<String, Object> presign(Authentication authentication, @Valid @RequestBody PresignRequest request) {
         CurrentUser.userId(authentication);
         validateUsage(request.usage());
@@ -59,6 +65,7 @@ public class UploadController {
         if (request.sizeBytes() > 20 * 1024 * 1024L) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "文件大小超限");
         }
+        // fileKey 按用途分目录，避免不同业务图片混在同一路径下。
         String fileKey = "assets/" + request.usage().toLowerCase(Locale.ROOT) + "/" + idGenerator.next("file") + "/" + safeFileName(request.fileName());
         OssProvider.PresignResult result = ossProvider.presign(fileKey, request.mimeType(), PRESIGN_EXPIRES_SECONDS);
         Map<String, Object> response = new java.util.LinkedHashMap<>();
@@ -76,6 +83,7 @@ public class UploadController {
             @ApiResponse(responseCode = "401", description = "未登录")
     })
     @PostMapping("/confirm")
+    // 第三步：客户端 PUT 完成后确认对象存在，并创建可被业务引用的 FileAsset。
     Map<String, Object> confirm(Authentication authentication, @Valid @RequestBody ConfirmRequest request) {
         String userId = CurrentUser.userId(authentication);
         validateUsage(request.usage());
@@ -83,6 +91,7 @@ public class UploadController {
         validateFileKeyMatchesUsage(request.fileKey(), request.usage());
         FileAssetEntity existing = fileAssetRepository.findByStorageKey(request.fileKey()).orElse(null);
         if (existing != null) {
+            // confirm 支持幂等重试，但重复请求的参数必须与首次确认一致。
             validateExistingAssetMatchesConfirm(existing, userId, request);
             return fileResponse(existing);
         }
@@ -92,6 +101,7 @@ public class UploadController {
         } catch (OssProvider.UploadNotCompletedException e) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "上传文件未完成或大小不匹配");
         }
+        // FileAsset 保存归属、用途、尺寸和 publicUrl，后续发帖/头像只引用 fileId。
         Instant now = Instant.now();
         FileAssetEntity file = new FileAssetEntity();
         file.setId(idGenerator.next("file"));
@@ -110,6 +120,7 @@ public class UploadController {
         return fileResponse(file);
     }
 
+    // 返回给 Android 的文件资产视图，字段名与客户端 FileAsset model 对齐。
     private Map<String, Object> fileResponse(FileAssetEntity file) {
         Map<String, Object> response = new java.util.LinkedHashMap<>();
         response.put("fileId", file.getId());
@@ -126,12 +137,14 @@ public class UploadController {
         return response;
     }
 
+    // 校验 usage，避免客户端把文件绑定到未开放的业务场景。
     private void validateUsage(String usage) {
         if (!USAGES.contains(usage)) {
             throw new BizException(ErrorCode.INVALID_ARGUMENT, "文件用途不支持");
         }
     }
 
+    // 清理文件名中的路径和特殊字符，只保留对象存储安全字符。
     private String safeFileName(String fileName) {
         String candidate = fileName == null ? "" : fileName.trim().replace('\\', '/');
         candidate = candidate.replace("..", "");
@@ -148,6 +161,7 @@ public class UploadController {
         return candidate;
     }
 
+    // fileKey 必须是相对对象路径，不能包含回退目录或重复分隔符。
     private void validateFileKey(String fileKey) {
         if (fileKey == null || fileKey.isBlank()
                 || fileKey.startsWith("/")
@@ -158,6 +172,7 @@ public class UploadController {
         }
     }
 
+    // fileKey 前缀必须和 usage 对应，防止跨业务复用上传地址。
     private void validateFileKeyMatchesUsage(String fileKey, String usage) {
         String expectedPrefix = "assets/" + usage.toLowerCase(Locale.ROOT) + "/";
         if (!fileKey.startsWith(expectedPrefix)) {
@@ -165,6 +180,7 @@ public class UploadController {
         }
     }
 
+    // 已确认文件只能由同一用户以同一参数重复确认，保证 confirm 幂等且不串号。
     private void validateExistingAssetMatchesConfirm(FileAssetEntity file, String userId, ConfirmRequest request) {
         if (!Objects.equals(file.getOwnerId(), userId)
                 || !Objects.equals(file.getUsage(), request.usage())

@@ -3,6 +3,9 @@ package cn.edu.app.douyu.server.common.entity;
 import jakarta.persistence.*;
 import java.time.Instant;
 
+/**
+ * IdempotencyRecord 实体：映射 `idempotency_records` 表，保存幂等请求记录。
+ */
 @Entity
 @Table(name = "idempotency_records")
 public class IdempotencyRecordEntity {

@@ -10,35 +10,28 @@
   <main class="board">
     <section class="hero">
       <div class="hero-card">
-        <div class="eyebrow">豆屿 Doyu / A 方向页面级设计稿</div>
-        <h1 class="title">商城首页：可信材料购买</h1>
-        <p class="lead">商城首页由真实商品接口驱动，顶部分类切换请求对应商品；自营商品走购买与地址边界，玩家二手/定制只展示咨询边界，不使用本地假商品撑满页面。</p>
-        <div class="chips"><span class="chip">真实分类</span><span class="chip">OSS 商品图</span><span class="chip">不等高商品卡</span><span class="chip">地址管理保留</span></div>
+        <div class="eyebrow">豆屿 Doyu / 商城</div>
+        <h1 class="title">商城：浏览、购物车、创建订单</h1>
+        <p class="lead">商城只保留商品浏览、购物车和创建订单。下单时由用户手填收货人、电话、地区和详细地址；当前不做地址簿、订单中心或支付。</p>
+        <div class="chips"><span class="chip">真实分类</span><span class="chip">OSS 商品图</span><span class="chip">购物车</span><span class="chip">创建订单</span></div>
       </div>
       <div class="side-facts">
-        <div class="fact"><b>框架统一</b><span>顶部使用设置 - 商城 - 搜索，底部使用社区、商城、上传、消息、我的。</span></div>
-        <div class="fact"><b>订单边界</b><span>保留购物车、订单确认和地址管理；不展示正式支付成功态。</span></div>
-        <div class="fact"><b>玩家商品</b><span>玩家二手/定制不进入标准购物车，不承诺平台担保或资金闭环。</span></div>
+        <div class="fact"><b>接口</b><span>products、product-categories、cart、orders。</span></div>
+        <div class="fact"><b>地址</b><span>手填地址快照，不使用 addressId。</span></div>
+        <div class="fact"><b>边界</b><span>不展示支付、订单中心、订单详情或取消订单。</span></div>
       </div>
     </section>
-
     <section class="section">
       <div class="canvas">
         <div class="phone">
           <div class="screen">
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
-            <div class="topbar">
-              <a class="icon-btn" href="settings-home-a.html"><span class="icon settings"></span></a>
-              <div class="top-title">商城</div>
-              <a class="icon-btn" href="search-a.html"><span class="icon search"></span></a>
-            </div>
+            <div class="topbar"><a class="icon-btn" href="settings-home-a.html"><span class="icon settings"></span></a><div class="top-title">商城</div><a class="icon-btn" href="search-a.html"><span class="icon search"></span></a></div>
             <div class="scroll">
-              <div class="tabs"><span class="tab on">精选</span><span class="tab">豆子</span><span class="tab">板子</span><span class="tab">工具</span><span class="tab">套装</span><span class="tab">玩家</span></div>
-              <div class="masonry">
-                <a class="product-card" href="commerce-home-a.html"><div class="thumb sky h-sm"></div><div class="card-body"><span class="pill ok">豆子</span><div class="mini-title">雾粉拼豆补充包</div><div class="meta"><span>¥18</span><span>库存 42</span></div></div></a>
-                <a class="product-card" href="commerce-home-a.html"><div class="thumb h-md"></div><div class="card-body"><span class="pill ok">板子</span><div class="mini-title">透明方板套装</div><div class="meta"><span>¥26</span><span>库存 18</span></div></div></a>
-                <a class="product-card" href="commerce-home-a.html"><div class="thumb coral h-tall"></div><div class="card-body"><span class="pill ok">工具</span><div class="mini-title">镊子和离型纸组合</div><div class="meta"><span>¥32</span><span>库存 9</span></div></div></a>
-                <a class="product-card" href="commerce-home-a.html"><div class="thumb mint h-md"></div><div class="card-body"><span class="pill warn">玩家</span><div class="mini-title">玩家闲置混色豆</div><div class="meta"><span>¥12</span><span>咨询边界</span></div></div></a>
+              <div class="chips-row"><span class="pill ok">推荐</span><span class="pill">珠盒</span><span class="pill">模板</span></div>
+              <div class="product-grid">
+                <a class="product-card" href="#"><div class="product-art"></div><h3>透明分格珠盒</h3><p>¥29.90 · 库存 18</p></a>
+                <a class="product-card" href="#"><div class="product-art tall"></div><h3>奶油色拼豆套装</h3><p>¥68.00 · 库存 6</p></a>
               </div>
             </div>
             <div class="bottom-nav">
@@ -52,10 +45,10 @@
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>首屏结构</h3><ul><li>顶部只保留真实品类 Chip 和商品瀑布流。</li><li>商品卡展示 OSS 图片、标题、类型标签、价格、库存和边界信息。</li><li>空库、空分类和网络失败必须展示明确状态，不显示本地假商品。</li></ul></div>
-            <div class="spec"><h3>类型规则</h3><ul><li>SELF_OPERATED：可进入标准购物车和订单链路。</li><li>PLAYER_SECOND_HAND：只展示信息和直连边界。</li><li>PLAYER_CUSTOM_SERVICE：只展示定制沟通边界，不进入标准购物车。</li></ul></div>
-            <div class="state"><h3>订单确认</h3><p>地址管理保留；地址缺口必须展示并禁用伪下单，金额以服务端为准。</p><div class="state-bar"><span class="state-dot bad">禁伪地址</span><span class="state-dot warn">地址边界</span></div></div>
-            <div class="state"><h3>范围说明</h3><p>不展示正式渠道支付成功态；当前商城页只表达商品、购物车、订单确认和地址管理。</p><div class="state-bar"><span class="state-dot good">OSS 保留</span><span class="state-dot bad">禁假成功</span></div></div>
+            <div class="spec"><h3>商品规则</h3><ul><li>商品、分类和 SKU 都来自后端。</li><li>商品为空时显示空态。</li><li>商品图片来自 OSS URL。</li></ul></div>
+            <div class="spec"><h3>下单规则</h3><ul><li>商品详情和购物车均可创建订单。</li><li>请求必须携带用户手填地址快照。</li><li>不发送 addressId。</li></ul></div>
+            <div class="state"><h3>删除范围</h3><p>地址簿、默认地址、订单列表、订单详情、取消订单、支付、退款和对账都不在当前版本。</p><div class="state-bar"><span class="state-dot good">范围收敛</span><span class="state-dot bad">禁假入口</span></div></div>
+            <div class="state"><h3>成功状态</h3><p>只在后端创建订单成功后展示订单号和 CREATED 状态。</p><div class="state-bar"><span class="state-dot good">后端确认</span><span class="state-dot bad">禁假成功</span></div></div>
           </div>
         </div>
       </div>

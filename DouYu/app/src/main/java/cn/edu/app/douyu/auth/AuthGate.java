@@ -6,6 +6,9 @@ import android.content.Intent;
 import androidx.activity.result.ActivityResultLauncher;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+/**
+ * 登录拦截工具：在需要登录的页面前检查会话，没有登录时跳转登录页。
+ */
 
 public final class AuthGate {
     public static final String RETURN_ACTION_PROFILE_EDIT = "profile_edit";

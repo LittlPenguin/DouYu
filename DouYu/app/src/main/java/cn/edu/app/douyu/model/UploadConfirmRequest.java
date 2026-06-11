@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.model;
+/**
+ * 上传确认请求 DTO：承载预签名上传完成后的文件元数据。
+ */
 
 public class UploadConfirmRequest {
     public String fileKey;

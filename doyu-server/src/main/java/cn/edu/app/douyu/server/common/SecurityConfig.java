@@ -23,10 +23,14 @@ import org.springframework.security.web.SecurityFilterChain;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * 安全配置：定义公开接口、JWT 鉴权、权限边界和密码编码器。
+ */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    // 主安全链：关闭 CSRF、使用无状态 JWT，并明确哪些 /api/v1 接口允许匿名访问。
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityErrorHandlers securityErrorHandlers) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
@@ -39,8 +43,6 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/login",
-                                "/api/v1/auth/refresh",
-                                "/api/v1/admin/auth/login",
                                 "/api/v1/search",
                                 "/api/v1/posts/feed",
                                 "/api/v1/posts/following",
@@ -54,7 +56,6 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/*").permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint(securityErrorHandlers)
@@ -63,6 +64,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // 把 JWT 里的 roles claim 转成 Spring Security 的 ROLE_* 权限。
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -73,11 +75,13 @@ public class SecurityConfig {
         return converter;
     }
 
+    // 使用配置里的共享密钥签发 HS256 JWT。
     @Bean
     JwtEncoder jwtEncoder(DouyuProperties properties) {
         return new NimbusJwtEncoder(new ImmutableSecret<>(properties.jwt().secret().getBytes(StandardCharsets.UTF_8)));
     }
 
+    // 使用同一共享密钥校验客户端带来的 Bearer token。
     @Bean
     JwtDecoder jwtDecoder(DouyuProperties properties) {
         byte[] secret = properties.jwt().secret().getBytes(StandardCharsets.UTF_8);
@@ -85,6 +89,7 @@ public class SecurityConfig {
         return NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
     }
 
+    // BCrypt 用于注册和登录时的密码哈希校验，不保存明文密码。
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * OrderItem 实体：映射 `order_items` 表，保存订单明细。
+ */
 @Entity
 @Table(name = "order_items")
 public class OrderItemEntity {

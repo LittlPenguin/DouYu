@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.server.common;
+/**
+ * TraceId 上下文工具：在当前请求线程保存和清理 traceId。
+ */
 
 public final class TraceContext {
     private static final ThreadLocal<String> TRACE_ID = new ThreadLocal<>();

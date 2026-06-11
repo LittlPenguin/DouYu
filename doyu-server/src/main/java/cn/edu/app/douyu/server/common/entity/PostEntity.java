@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Post 实体：映射 `posts` 表，保存社区帖子。
+ */
 @Entity
 @Table(name = "posts")
 public class PostEntity {

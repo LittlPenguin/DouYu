@@ -1,7 +1,5 @@
 package cn.edu.app.douyu.server;
 
-import cn.edu.app.douyu.server.common.AdminBootstrapRunner;
-import cn.edu.app.douyu.server.common.entity.AdminUserRepository;
 import cn.edu.app.douyu.server.common.entity.PostRepository;
 import cn.edu.app.douyu.server.common.entity.ProductRepository;
 import cn.edu.app.douyu.server.common.entity.StickerPackRepository;
@@ -37,9 +35,6 @@ class DefaultRuntimeNoSeedContractTests {
     MockMvc mockMvc;
 
     @Autowired
-    AdminUserRepository adminUserRepository;
-
-    @Autowired
     PostRepository postRepository;
 
     @Autowired
@@ -51,17 +46,14 @@ class DefaultRuntimeNoSeedContractTests {
     @Autowired
     StickerPackRepository stickerPackRepository;
 
-    @Autowired
+    @Autowired(required = false)
     Map<String, ApplicationRunner> applicationRunners;
 
     @Test
-    void defaultRuntimeKeepsAdminBootstrapButDoesNotRegisterSeedOrDemoInitializers() {
-        org.assertj.core.api.Assertions.assertThat(adminUserRepository.findByUsername("admin")).isPresent();
-        org.assertj.core.api.Assertions.assertThat(applicationRunners.values())
-                .anySatisfy(runner -> org.assertj.core.api.Assertions.assertThat(runner)
-                        .isInstanceOf(AdminBootstrapRunner.class));
-        org.assertj.core.api.Assertions.assertThat(applicationRunners.values())
-                .allSatisfy(runner -> org.assertj.core.api.Assertions.assertThat(runner.getClass().getSimpleName())
+    void defaultRuntimeDoesNotRegisterAdminSeedOrDemoInitializers() {
+        org.assertj.core.api.Assertions.assertThat(applicationRunners == null ? Map.<String, ApplicationRunner>of() : applicationRunners)
+                .allSatisfy((name, runner) -> org.assertj.core.api.Assertions.assertThat(runner.getClass().getSimpleName())
+                        .doesNotContain("AdminBootstrap")
                         .doesNotContain("DataInitializer")
                         .doesNotContain("Seed")
                         .doesNotContain("Demo"));

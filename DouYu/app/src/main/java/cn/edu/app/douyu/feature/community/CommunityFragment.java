@@ -36,9 +36,14 @@ import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.ui.LoadState;
 
+/**
+ * 社区首页 Tab：加载真实帖子 Feed、话题筛选和发帖入口。
+ */
 public class CommunityFragment extends Fragment {
+    // 空字符串代表推荐 Feed；非空值代表某个话题下的帖子列表。
     private static final String RECOMMEND_ID = "";
 
+    // 网络请求放到单线程后台执行，结果再切回主线程更新 UI。
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final List<Topic> topics = new ArrayList<>();
     private CommunityPostAdapter adapter;
@@ -93,6 +98,7 @@ public class CommunityFragment extends Fragment {
         executor.shutdownNow();
     }
 
+    // 首屏同时尝试加载话题和推荐帖子；话题失败不阻断核心 Feed。
     private void loadTopicsAndPosts() {
         show(LoadState.LOADING, null);
         DoyuRepository repository = repository();
@@ -107,6 +113,7 @@ public class CommunityFragment extends Fragment {
                 // Topic chips are optional for first render; feed still shows the core community content.
             }
             try {
+                // 推荐 Feed 是社区首页的核心内容，必须来自后端真实接口。
                 PageResponse<Post> posts = repository.feed();
                 runOnUi(() -> {
                     topics.clear();
@@ -121,6 +128,7 @@ public class CommunityFragment extends Fragment {
         });
     }
 
+    // 根据当前选中的话题加载帖子；推荐态走 feed，话题态走 topicPosts。
     private void loadPosts() {
         show(LoadState.LOADING, null);
         DoyuRepository repository = repository();
@@ -137,6 +145,7 @@ public class CommunityFragment extends Fragment {
         });
     }
 
+    // 根据后端返回结果切换内容态或空态，不使用本地假帖子填屏。
     private void renderPosts(List<Post> posts) {
         if (adapter == null) {
             return;
@@ -150,6 +159,7 @@ public class CommunityFragment extends Fragment {
         show(LoadState.CONTENT, null);
     }
 
+    // 渲染推荐 chip 和后端话题 chip，点击后重新请求对应帖子列表。
     private void renderChips() {
         if (chipGroup == null) {
             return;
@@ -164,6 +174,7 @@ public class CommunityFragment extends Fragment {
         chipGroup.setVisibility(View.VISIBLE);
     }
 
+    // 用 Material Chip 表示话题筛选项，选中态通过颜色区分。
     private void addChip(String text, String topicId) {
         Chip chip = new Chip(requireContext());
         chip.setText(text);
@@ -192,6 +203,7 @@ public class CommunityFragment extends Fragment {
         chipGroup.addView(chip);
     }
 
+    // 打开帖子详情页，只传 postId，由详情页重新请求真实详情。
     private void openPost(Post post) {
         if (post == null || post.postId == null || post.postId.isEmpty()) {
             return;
@@ -201,6 +213,7 @@ public class CommunityFragment extends Fragment {
         startActivity(intent);
     }
 
+    // 统一控制加载、内容、空态和错误态的可见性。
     private void show(LoadState state, String message) {
         if (loading == null) {
             return;
@@ -216,6 +229,7 @@ public class CommunityFragment extends Fragment {
         retry.setText(UiCopy.RETRY);
     }
 
+    // 空态文案区分推荐 Feed 和话题筛选，强调空结果不是异常。
     private String emptyText() {
         if (selectedTopicId == null || selectedTopicId.isEmpty()) {
             return UiCopy.COMMUNITY_EMPTY;
@@ -223,6 +237,7 @@ public class CommunityFragment extends Fragment {
         return "这个分类还没有作品。分类只展示后端返回的真实帖子。";
     }
 
+    // 把异常转换成用户能理解的错误文案，同时保留真实错误态。
     private String userFacingError(LoadState state, String message) {
         if (state == LoadState.LOGIN_REQUIRED) {
             return UiCopy.LOGIN_REQUIRED;
@@ -236,10 +251,12 @@ public class CommunityFragment extends Fragment {
         return UiCopy.ERROR_PREFIX + message;
     }
 
+    // 从 Application 获取全局 Repository，避免 Fragment 自己创建网络层。
     private DoyuRepository repository() {
         return ((DoyuApplication) requireActivity().getApplication()).repository();
     }
 
+    // 后台线程完成后必须切回 UI 线程，并确认 Fragment 仍然挂载。
     private void runOnUi(Runnable action) {
         Activity activity = getActivity();
         if (activity == null || !isAdded()) {

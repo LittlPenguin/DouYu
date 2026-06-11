@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -12,12 +12,12 @@
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / Settings 内页</div>
         <h1 class="title">隐私与权限</h1>
-        <p class="lead">权限页用于说明相机、相册、通知和地区资料的授权状态。地区资料仅为手动填写展示，不请求自动位置能力。</p>
-        <div class="chips"><span class="chip">相机</span><span class="chip">相册</span><span class="chip">通知</span><span class="chip">地区 UI-only</span></div>
+        <p class="lead">隐私与权限只展示当前真实能力：相机、系统通知、系统图片选择器、地区资料和公开推荐/收藏偏好。不提供私信权限、地图定位或自动地址能力。</p>
+        <div class="chips"><span class="chip">相机</span><span class="chip">通知权限</span><span class="chip">地区资料</span><span class="chip">无地图定位</span></div>
       </div>
       <div class="side-facts">
-        <div class="fact"><b>权限原则</b><span>权限被拒绝时说明影响并提供系统设置路径，不制造假授权。</span></div>
-        <div class="fact"><b>地区边界</b><span>地区资料手动维护；不请求自动位置能力。</span></div>
+        <div class="fact"><b>系统权限</b><span>相机和 Android 13+ 通知权限使用系统授权流程。</span></div>
+        <div class="fact"><b>后端偏好</b><span>推荐和收藏偏好通过用户设置接口保存。</span></div>
       </div>
     </section>
     <section class="section">
@@ -27,22 +27,21 @@
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar"><a class="icon-btn" href="settings-home-a.html"><span class="icon back"></span></a><div class="top-title">隐私与权限</div><a class="icon-btn" href="search-a.html"><span class="icon search"></span></a></div>
             <div class="scroll no-nav">
-              <div class="hero-strip"><span class="pill warn">最小授权</span><h3>只在使用时请求权限</h3><p>上传作品、拍照、通知提醒和手动地区各自独立说明。</p></div>
+              <div class="hero-strip"><span class="pill ok">真实权限</span><h3>权限来自系统</h3><p>相机用于拍摄作品，图片选择使用系统选择器。</p></div>
               <div class="list">
-                <div class="row"><span class="round-icon"><span class="icon image"></span></span><div class="row-main"><div class="row-title">相册访问</div><div class="row-sub">用于上传帖子图片</div></div><span class="pill ok">已允许</span></div>
-                <div class="row"><span class="round-icon"><span class="icon image"></span></span><div class="row-main"><div class="row-title">相机</div><div class="row-sub">用于拍摄拼豆作品或参考图</div></div><span class="pill warn">询问</span></div>
-                <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">通知</div><div class="row-sub">私信、评论、发布和任务结果</div></div><span class="toggle"></span></div>
-                <div class="row"><span class="round-icon"><span class="icon map"></span></span><div class="row-main"><div class="row-title">地区</div><div class="row-sub">手动填写和展示，不自动获取</div></div><span class="pill warn">手动</span></div>
+                <div class="row"><span class="round-icon"><span class="icon compose"></span></span><div class="row-main"><div class="row-title">相机</div><div class="row-sub">用于拍摄拼豆作品</div></div><span class="pill ok">可申请</span></div>
+                <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">系统通知</div><div class="row-sub">用于通知中心提醒偏好</div></div><span class="pill ok">可申请</span></div>
+                <div class="row"><span class="round-icon"><span class="icon settings"></span></span><div class="row-main"><div class="row-title">地区资料</div><div class="row-sub">由资料页手动维护</div></div><span class="pill warn">手填</span></div>
               </div>
             </div>
           </div>
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>权限状态</h3><ul><li>已允许：展示用途和关闭路径。</li><li>询问：在真实动作触发时请求。</li><li>拒绝：说明影响并提供去系统设置。</li><li>地区资料：只手动填写和展示。</li></ul></div>
-            <div class="spec"><h3>隐私开关</h3><ul><li>允许被推荐。</li><li>允许陌生人私信前三条。</li><li>允许作品被收藏。</li><li>未接后端时标注开发态。</li></ul></div>
-            <div class="state"><h3>拒绝态</h3><p>权限拒绝后按钮文案用“去系统设置”，不循环弹权限框，不写假成功。</p><div class="state-bar"><span class="state-dot warn">去系统设置</span><span class="state-dot bad">禁假授权</span></div></div>
-            <div class="state"><h3>地区资料</h3><p>地区资料只作为用户手动填写字段；地址管理仍在保留范围内。</p><div class="state-bar"><span class="state-dot warn">手动填写</span><span class="state-dot good">地址保留</span></div></div>
+            <div class="spec"><h3>保留能力</h3><ul><li>相机权限申请。</li><li>Android 通知权限申请。</li><li>打开系统应用设置。</li><li>推荐和收藏偏好保存。</li></ul></div>
+            <div class="spec"><h3>删除能力</h3><ul><li>陌生人私信权限。</li><li>地图定位。</li><li>自动地址填充。</li><li>位置 Provider。</li></ul></div>
+            <div class="state"><h3>未登录</h3><p>未登录时只展示系统权限状态；后端偏好开关禁用并提示登录。</p><div class="state-bar"><span class="state-dot warn">需登录</span></div></div>
+            <div class="state"><h3>失败处理</h3><p>保存偏好失败时回滚开关，不显示假成功。</p><div class="state-bar"><span class="state-dot bad">禁假成功</span></div></div>
           </div>
         </div>
       </div>

@@ -19,7 +19,6 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -44,9 +43,6 @@ class DouyuBackendContractTests {
 
     @Autowired
     RequestMappingHandlerMapping requestMappingHandlerMapping;
-
-    @Autowired
-    ConversationRepository conversationRepository;
 
     @Autowired
     PostRepository postRepository;
@@ -104,7 +100,17 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/me/posts")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/me/following")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/me/followers")).isTrue();
-        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/admin/auth/login")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/admin/auth/login")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/refresh")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/logout")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/auth/account/cancel")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/notifications")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/messages/notifications")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/messages/conversations")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/checkins")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/rewards/me")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/badges/me")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/reports")).isFalse();
         org.assertj.core.api.Assertions.assertThat(documentedApiPaths).containsAll(mappedApiPaths);
 
         String token = login("13800000000", "AGE_18_PLUS");
@@ -135,12 +141,12 @@ class DouyuBackendContractTests {
     }
 
     @Test
-    void emailRegisterLoginRefreshAndLogoutUseUnifiedResponseAndRevokeRefreshToken() throws Exception {
+    void emailRegisterAndLoginUseUnifiedResponseWithoutRefreshToken() throws Exception {
         JsonNode registered = postJson("/api/v1/auth/register", """
                 {"email":" Test.User+Minor@Example.COM ","password":"password123","confirmPassword":"password123","ageGroup":"AGE_16_17","nickname":"娴嬭瘯鐢ㄦ埛"}
                 """);
         String accessToken = registered.at("/data/accessToken").asText();
-        String refreshToken = registered.at("/data/refreshToken").asText();
+        org.assertj.core.api.Assertions.assertThat(registered.at("/data/refreshToken").isMissingNode()).isTrue();
         org.assertj.core.api.Assertions.assertThat(registered.at("/data/user/email").asText())
                 .isEqualTo("test.user+minor@example.com");
 
@@ -148,6 +154,7 @@ class DouyuBackendContractTests {
                 {"email":"test.user+minor@example.com","password":"password123"}
                 """);
         org.assertj.core.api.Assertions.assertThat(login.at("/data/accessToken").asText()).isNotBlank();
+        org.assertj.core.api.Assertions.assertThat(login.at("/data/refreshToken").isMissingNode()).isTrue();
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -172,22 +179,15 @@ class DouyuBackendContractTests {
                 .andExpect(jsonPath("$.data.isMinor", equalTo(true)));
 
         mockMvc.perform(post("/api/v1/auth/refresh")
+                        .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.accessToken", notNullValue()));
-
+                        .content("{\"refreshToken\":\"rt_removed\"}"))
+                .andExpect(status().isNotFound());
         mockMvc.perform(post("/api/v1/auth/logout")
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(post("/api/v1/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")));
+                        .content("{\"refreshToken\":\"rt_removed\"}"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -234,7 +234,7 @@ class DouyuBackendContractTests {
     }
 
     @Test
-    void userSettingsDefaultToTruePatchPartiallyAndAccountCancelChangesStatus() throws Exception {
+    void userSettingsDefaultToTruePatchPartiallyAndDoNotExposePrivateMessagePreferences() throws Exception {
         JsonNode registered = postJson("/api/v1/auth/register", """
                 {"email":"settings-user@example.com","password":"password123","confirmPassword":"password123","ageGroup":"AGE_18_PLUS","nickname":"设置用户"}
                 """);
@@ -242,42 +242,39 @@ class DouyuBackendContractTests {
 
         JsonNode defaults = getJsonWithToken("/api/v1/users/me/settings", token);
         org.assertj.core.api.Assertions.assertThat(defaults.at("/data/allowRecommendation").asBoolean()).isTrue();
-        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/allowStrangerMessages").asBoolean()).isTrue();
         org.assertj.core.api.Assertions.assertThat(defaults.at("/data/allowFavorites").asBoolean()).isTrue();
-        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/notifyMessages").asBoolean()).isTrue();
         org.assertj.core.api.Assertions.assertThat(defaults.at("/data/notifyInteractions").asBoolean()).isTrue();
         org.assertj.core.api.Assertions.assertThat(defaults.at("/data/notifyPublish").asBoolean()).isTrue();
         org.assertj.core.api.Assertions.assertThat(defaults.at("/data/notifySystem").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/allowStrangerMessages").isMissingNode()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/notifyMessages").isMissingNode()).isTrue();
 
         JsonNode patched = patchJsonWithToken("/api/v1/users/me/settings", token, """
-                {"allowRecommendation":false,"notifyMessages":false,"notifySystem":false}
+                {"allowRecommendation":false,"allowStrangerMessages":false,"notifyMessages":false,"notifySystem":false}
                 """);
         org.assertj.core.api.Assertions.assertThat(patched.at("/data/allowRecommendation").asBoolean()).isFalse();
-        org.assertj.core.api.Assertions.assertThat(patched.at("/data/allowStrangerMessages").asBoolean()).isTrue();
         org.assertj.core.api.Assertions.assertThat(patched.at("/data/allowFavorites").asBoolean()).isTrue();
-        org.assertj.core.api.Assertions.assertThat(patched.at("/data/notifyMessages").asBoolean()).isFalse();
         org.assertj.core.api.Assertions.assertThat(patched.at("/data/notifyInteractions").asBoolean()).isTrue();
         org.assertj.core.api.Assertions.assertThat(patched.at("/data/notifyPublish").asBoolean()).isTrue();
         org.assertj.core.api.Assertions.assertThat(patched.at("/data/notifySystem").asBoolean()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(patched.at("/data/allowStrangerMessages").isMissingNode()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(patched.at("/data/notifyMessages").isMissingNode()).isTrue();
 
         JsonNode me = getJsonWithToken("/api/v1/users/me", token);
         org.assertj.core.api.Assertions.assertThat(me.at("/data/allowRecommendation").asBoolean()).isFalse();
-        org.assertj.core.api.Assertions.assertThat(me.at("/data/notifyMessages").asBoolean()).isFalse();
         org.assertj.core.api.Assertions.assertThat(me.at("/data/notifySystem").asBoolean()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/allowStrangerMessages").isMissingNode()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/notifyMessages").isMissingNode()).isTrue();
 
-        JsonNode canceled = postJsonWithToken("/api/v1/auth/account/cancel", token, "{}");
-        org.assertj.core.api.Assertions.assertThat(canceled.at("/data/accountStatus").asText()).isEqualTo("CANCELING");
-        mockMvc.perform(post("/api/v1/auth/login")
+        mockMvc.perform(post("/api/v1/auth/account/cancel")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"email":"settings-user@example.com","password":"password123"}
-                                """))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")));
+                        .content("{}"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void orderCreationIsIdempotentAndGuardsInventoryAndCancelState() throws Exception {
+    void orderCreationIsIdempotentAndDoesNotExposeOrderCenterEndpoints() throws Exception {
         String token = login("13800000004", "AGE_18_PLUS");
         String skuId = ensureSelfOperatedSku("fixture-product-order-red", "fixture-sku-order-red",
                 "https://fixture.local/assets/order-red.png", 100);
@@ -288,30 +285,45 @@ class DouyuBackendContractTests {
         String cartItemId = cartAdd.at("/data/itemId").asText();
 
         String orderPayload = """
-                {"itemIds":["%s"],"addressId":"addr_test_1"}
+                {"itemIds":["%s"],"addressSnapshot":{"recipient":"Tester","phone":"13800000000","region":"Hangzhou","detail":"Road 1"}}
                 """.formatted(cartItemId);
         JsonNode first = postJsonWithIdempotency("/api/v1/orders", token, "order-key-1", orderPayload);
         JsonNode second = postJsonWithIdempotency("/api/v1/orders", token, "order-key-1", orderPayload);
         String orderId = first.at("/data/orderId").asText();
 
         org.assertj.core.api.Assertions.assertThat(second.at("/data/orderId").asText()).isEqualTo(orderId);
-        org.assertj.core.api.Assertions.assertThat(first.at("/data/addressSnapshot/addressId").asText()).isEqualTo("addr_test_1");
+        org.assertj.core.api.Assertions.assertThat(first.at("/data/addressSnapshot/recipient").asText()).isEqualTo("Tester");
         org.assertj.core.api.Assertions.assertThat(first.at("/data/status").asText()).isEqualTo("CREATED");
 
+        mockMvc.perform(get("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/orders/{orderId}", orderId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNotFound());
         mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", orderId)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status", equalTo("CANCELED")));
+                .andExpect(status().isNotFound());
 
         mockMvc.perform(post("/api/v1/orders")
                         .header("Authorization", "Bearer " + token)
                         .header("Idempotency-Key", "order-key-2")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"items":[{"skuId":"%s","quantity":999999}],"addressId":"addr_test_1"}
+                                {"items":[{"skuId":"%s","quantity":999999}],"addressSnapshot":{"recipient":"Tester","phone":"13800000000","region":"Hangzhou","detail":"Road 1"}}
                                 """.formatted(skuId)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code", equalTo("INVENTORY_NOT_ENOUGH")));
+
+        mockMvc.perform(post("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .header("Idempotency-Key", "order-key-address-id")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"items":[{"skuId":"%s","quantity":1}],"addressId":"addr_removed"}
+                                """.formatted(skuId)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
     }
     @Test
     void playerProductCannotEnterStandardCartOrOrder() throws Exception {
@@ -340,44 +352,33 @@ class DouyuBackendContractTests {
                         .header("Idempotency-Key", "order-player-boundary")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"itemIds":["missing_player_cart_item","%s"],"addressId":"addr_test_1"}
+                                {"itemIds":["missing_player_cart_item","%s"],"addressSnapshot":{"recipient":"Tester","phone":"13800000000","region":"Hangzhou","detail":"Road 1"}}
                                 """.formatted(cartItemId)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
     }
 
     @Test
-    void adminApisRequireAdminTokenAndAdminProcessingWritesOperationLog() throws Exception {
+    void adminAndReportApisAreRemoved() throws Exception {
         String userToken = login("13800000005", "AGE_18_PLUS");
 
         mockMvc.perform(get("/api/v1/admin/users")
                         .header("Authorization", "Bearer " + userToken))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")));
-
-        JsonNode adminLogin = postJson("/api/v1/admin/auth/login", """
-                {"username":"admin","password":"admin123"}
-                """);
-        String adminToken = adminLogin.at("/data/accessToken").asText();
-
-        JsonNode report = postJsonWithToken("/api/v1/reports", userToken, """
-                {"targetType":"POST","targetId":"post_missing","reason":"SPAM","description":"test report"}
-                """);
-        String reportId = report.at("/data/reportId").asText();
-
-        mockMvc.perform(post("/api/v1/admin/reports/{reportId}/process", reportId)
-                        .header("Authorization", "Bearer " + adminToken)
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/admin/auth/login")
+                        .header("Authorization", "Bearer " + userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"status":"RESOLVED","reason":"processed"}
+                                {"username":"admin","password":"admin123"}
                                 """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status", equalTo("RESOLVED")));
-
-        mockMvc.perform(get("/api/v1/admin/operation-logs")
-                        .header("Authorization", "Bearer " + adminToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0]", hasKey("targetId")));
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/reports")
+                        .header("Authorization", "Bearer " + userToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"targetType":"POST","targetId":"post_missing","reason":"SPAM","description":"test report"}
+                                """))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -559,7 +560,7 @@ class DouyuBackendContractTests {
                 {"email":"contract-user@example.com","password":"password123","confirmPassword":"password123","ageGroup":"AGE_18_PLUS","nickname":"contract-user"}
                 """);
         org.assertj.core.api.Assertions.assertThat(login.at("/data/accessToken").asText()).isNotBlank();
-        org.assertj.core.api.Assertions.assertThat(login.at("/data/refreshToken").asText()).isNotBlank();
+        org.assertj.core.api.Assertions.assertThat(login.at("/data/refreshToken").isMissingNode()).isTrue();
         org.assertj.core.api.Assertions.assertThat(login.at("/data/expiresIn").asLong()).isGreaterThan(0);
         org.assertj.core.api.Assertions.assertThat(login.at("/data/user/avatarUrl").isMissingNode()).isFalse();
         org.assertj.core.api.Assertions.assertThat(login.at("/data/user/avatarFileId").isMissingNode()).isTrue();
@@ -742,124 +743,89 @@ class DouyuBackendContractTests {
     }
 
     @Test
-    void rewardCheckinAndStatusWork() throws Exception {
+    void rewardCheckinAndBadgeApisAreRemoved() throws Exception {
         String token = login("13800000013", "AGE_18_PLUS");
 
         mockMvc.perform(post("/api/v1/checkins")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.checkedToday", equalTo(true)))
-                .andExpect(jsonPath("$.data.alreadyChecked", equalTo(false)))
-                .andExpect(jsonPath("$.data.streakDays", equalTo(1)))
-                .andExpect(jsonPath("$.data.rewardPoints", equalTo(5)))
-                .andExpect(jsonPath("$.data.points", equalTo(5)));
-
-        mockMvc.perform(post("/api/v1/checkins")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.alreadyChecked", equalTo(true)))
-                .andExpect(jsonPath("$.data.streakDays", equalTo(1)))
-                .andExpect(jsonPath("$.data.rewardPoints", equalTo(0)));
-
+                .andExpect(status().isNotFound());
         mockMvc.perform(get("/api/v1/checkins/status")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.checkedToday", equalTo(true)));
-
+                .andExpect(status().isNotFound());
         mockMvc.perform(get("/api/v1/rewards/me")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.points", equalTo(5)))
-                .andExpect(jsonPath("$.data.levelCode", equalTo("LV1")));
-
+                .andExpect(status().isNotFound());
         mockMvc.perform(get("/api/v1/badges/me")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].badgeId", equalTo("badge_newbie")));
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void messageNotificationAndConversationFlow() throws Exception {
+    void registerCreatesDefaultNotificationsAndCanMarkThemRead() throws Exception {
         String token = login("13800000014", "AGE_18_PLUS");
 
-        mockMvc.perform(get("/api/v1/messages/notifications")
+        String response = mockMvc.perform(get("/api/v1/notifications")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.items").isArray())
+                .andExpect(jsonPath("$.data.total", equalTo(3)))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode notifications = objectMapper.readTree(response).at("/data/items");
+        org.assertj.core.api.Assertions.assertThat(notifications)
+                .anySatisfy(item -> {
+                    org.assertj.core.api.Assertions.assertThat(item.path("type").asText()).isEqualTo("SYSTEM");
+                    org.assertj.core.api.Assertions.assertThat(item.path("title").asText()).isEqualTo("欢迎来到豆屿");
+                    org.assertj.core.api.Assertions.assertThat(item.path("content").asText())
+                            .isEqualTo("你可以浏览作品、搜索话题，也可以上传自己的拼豆作品。");
+                    org.assertj.core.api.Assertions.assertThat(item.path("unread").asBoolean()).isTrue();
+                })
+                .anySatisfy(item -> {
+                    org.assertj.core.api.Assertions.assertThat(item.path("type").asText()).isEqualTo("SYSTEM");
+                    org.assertj.core.api.Assertions.assertThat(item.path("title").asText()).isEqualTo("上传作品提示");
+                    org.assertj.core.api.Assertions.assertThat(item.path("content").asText())
+                            .isEqualTo("底部“上传”可以发布作品；图片会先通过 OSS 上传，成功后再发布。");
+                    org.assertj.core.api.Assertions.assertThat(item.path("unread").asBoolean()).isTrue();
+                })
+                .anySatisfy(item -> {
+                    org.assertj.core.api.Assertions.assertThat(item.path("type").asText()).isEqualTo("SYSTEM");
+                    org.assertj.core.api.Assertions.assertThat(item.path("title").asText()).isEqualTo("商城下单提示");
+                    org.assertj.core.api.Assertions.assertThat(item.path("content").asText())
+                            .isEqualTo("商城支持商品浏览、购物车和创建订单；当前不提供支付服务。");
+                    org.assertj.core.api.Assertions.assertThat(item.path("unread").asBoolean()).isTrue();
+                });
 
-        mockMvc.perform(post("/api/v1/messages/notifications/read")
+        mockMvc.perform(post("/api/v1/notifications/read")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.read", equalTo(true)));
 
-        mockMvc.perform(get("/api/v1/messages/conversations")
+        mockMvc.perform(get("/api/v1/notifications")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray());
+                .andExpect(jsonPath("$.data.items[0].unread", equalTo(false)))
+                .andExpect(jsonPath("$.data.items[1].unread", equalTo(false)))
+                .andExpect(jsonPath("$.data.items[2].unread", equalTo(false)));
     }
 
     @Test
-    void nonMutualConversationAllowsThreeMessagesThenRequiresMutualFollow() throws Exception {
+    void privateMessageConversationApisAreRemoved() throws Exception {
         String tokenA = login("13800000024", "AGE_18_PLUS");
-        String tokenB = login("13800000025", "AGE_18_PLUS");
-        String userAId = getJsonWithToken("/api/v1/users/me", tokenA).at("/data/userId").asText();
-        String userBId = getJsonWithToken("/api/v1/users/me", tokenB).at("/data/userId").asText();
 
-        ConversationEntity conversation = new ConversationEntity();
-        conversation.setId("conv_contract_non_mutual_limit");
-        conversation.setUserAId(userAId);
-        conversation.setUserBId(userBId);
-        conversation.setCreatedAt(Instant.now());
-        conversation.setUpdatedAt(Instant.now());
-        conversationRepository.save(conversation);
-
-        for (int i = 1; i <= 3; i++) {
-            mockMvc.perform(post("/api/v1/messages/conversations/{conversationId}", conversation.getId())
-                            .header("Authorization", "Bearer " + tokenA)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("""
-                                    {"content":"hello %d"}
-                                    """.formatted(i)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.mine", equalTo(true)))
-                    .andExpect(jsonPath("$.data.senderId", equalTo(userAId)));
-        }
-
-        mockMvc.perform(post("/api/v1/messages/conversations/{conversationId}", conversation.getId())
+        mockMvc.perform(get("/api/v1/messages/conversations")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/messages/conversations/{conversationId}", "conv_removed")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/messages/conversations/{conversationId}", "conv_removed")
                         .header("Authorization", "Bearer " + tokenA)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"content":"blocked"}
+                                {"content":"removed"}
                                 """))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code", equalTo("NON_MUTUAL_MESSAGE_LIMIT_EXCEEDED")));
-
-        mockMvc.perform(post("/api/v1/users/{userId}/follow", userBId)
-                        .header("Authorization", "Bearer " + tokenA))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.followedByMe", equalTo(true)));
-        mockMvc.perform(post("/api/v1/users/{userId}/follow", userAId)
-                        .header("Authorization", "Bearer " + tokenB))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.mutualFollow", equalTo(true)));
-
-        mockMvc.perform(post("/api/v1/messages/conversations/{conversationId}", conversation.getId())
-                        .header("Authorization", "Bearer " + tokenA)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"content":"mutual follow message"}
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content", equalTo("mutual follow message")));
-
-        mockMvc.perform(get("/api/v1/messages/conversations/{conversationId}", conversation.getId())
-                        .header("Authorization", "Bearer " + tokenA))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.conversation.mutualFollow", equalTo(true)))
-                .andExpect(jsonPath("$.data.conversation.canSend", equalTo(true)))
-                .andExpect(jsonPath("$.data.conversation.lastMessage", equalTo("mutual follow message")))
-                .andExpect(jsonPath("$.data.messages[0].content", equalTo("hello 1")))
-                .andExpect(jsonPath("$.data.messages[3].content", equalTo("mutual follow message")));
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -899,8 +865,7 @@ class DouyuBackendContractTests {
                         .content("""
                                 {"targetType":"INVALID","targetId":"x","reason":"SPAM"}
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code", equalTo("INVALID_ARGUMENT")));
+                .andExpect(status().isNotFound());
 
         // Malformed JSON body 鈫?400 INVALID_ARGUMENT
         mockMvc.perform(post("/api/v1/auth/register")
@@ -921,8 +886,7 @@ class DouyuBackendContractTests {
         // Nonexistent order 鈫?404 NOT_FOUND
         mockMvc.perform(get("/api/v1/orders/nonexistent_order")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code", equalTo("NOT_FOUND")));
+                .andExpect(status().isNotFound());
 
         // Nonexistent comment 鈫?404 NOT_FOUND
         mockMvc.perform(delete("/api/v1/comments/nonexistent_comment")
@@ -1079,11 +1043,14 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/posts/{postId}")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/posts/{postId}/like")).isTrue();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/posts/{postId}/comments")).isTrue();
-        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/checkins")).isTrue();
-        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/messages/notifications")).isTrue();
-        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/messages/conversations")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/checkins")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/notifications")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/notifications/read")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/messages/notifications")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/messages/conversations")).isFalse();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/users/{userId}/follow")).isTrue();
-        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/reports")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/reports")).isFalse();
+        org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/admin/auth/login")).isFalse();
         org.assertj.core.api.Assertions.assertThat(paths.has("/api/v1/refunds")).isFalse();
     }
 
@@ -1217,7 +1184,7 @@ class DouyuBackendContractTests {
         org.assertj.core.api.Assertions.assertThat(comment.at("/data/topics/0/topicId").asText()).isEqualTo(topicId);
         org.assertj.core.api.Assertions.assertThat(comment.at("/data/stickers/0/stickerId").asText()).isEqualTo(stickerId);
 
-        mockMvc.perform(get("/api/v1/messages/notifications")
+        mockMvc.perform(get("/api/v1/notifications")
                         .header("Authorization", "Bearer " + mentionedToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].type", equalTo("MENTION")));
@@ -1361,11 +1328,12 @@ class DouyuBackendContractTests {
         String minorToken = login("13800000006", "AGE_16_17");
 
         mockMvc.perform(post("/api/v1/admin/auth/login")
+                        .header("Authorization", "Bearer " + minorToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"username":"admin","password":"wrong"}
                                 """))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isNotFound());
 
         mockMvc.perform(post("/api/v1/products")
                         .header("Authorization", "Bearer " + minorToken)

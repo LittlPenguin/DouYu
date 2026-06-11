@@ -3,11 +3,8 @@ package cn.edu.app.douyu.network;
 import cn.edu.app.douyu.model.AuthSession;
 import cn.edu.app.douyu.model.CartItemRequest;
 import cn.edu.app.douyu.model.CartResponse;
-import cn.edu.app.douyu.model.ChatMessage;
 import cn.edu.app.douyu.model.Comment;
 import cn.edu.app.douyu.model.CommentRequest;
-import cn.edu.app.douyu.model.Conversation;
-import cn.edu.app.douyu.model.ConversationDetail;
 import cn.edu.app.douyu.model.CreateOrderRequest;
 import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.NotificationMessage;
@@ -20,10 +17,8 @@ import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductCategory;
 import cn.edu.app.douyu.model.LoginRequest;
 import cn.edu.app.douyu.model.ReadReceipt;
-import cn.edu.app.douyu.model.RefreshRequest;
 import cn.edu.app.douyu.model.RegisterRequest;
 import cn.edu.app.douyu.model.SearchResult;
-import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
 import cn.edu.app.douyu.model.UpdateCartRequest;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
@@ -44,7 +39,11 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
+/**
+ * Retrofit 接口总表：声明 Android 访问 /api/v1 后端的全部业务 endpoint。
+ */
 public interface DoyuApi {
+    // 社区与搜索：Feed、话题、帖子详情、评论和互动。
     @GET("/api/v1/posts/feed")
     Call<ApiResponse<PageResponse<Post>>> feed(@Query("page") int page, @Query("size") int size);
 
@@ -84,6 +83,7 @@ public interface DoyuApi {
     @DELETE("/api/v1/posts/{postId}/favorite")
     Call<ApiResponse<PostInteraction>> unfavoritePost(@Path("postId") String postId);
 
+    // 商城与订单：商品、分类、购物车和下单接口。
     @GET("/api/v1/products")
     Call<ApiResponse<PageResponse<Product>>> products(@Query("page") int page, @Query("size") int size);
 
@@ -111,21 +111,14 @@ public interface DoyuApi {
     @POST("/api/v1/orders")
     Call<ApiResponse<Order>> createOrder(@Header("Idempotency-Key") String idempotencyKey, @Body CreateOrderRequest request);
 
-    @GET("/api/v1/messages/notifications")
+    // 消息通知：拉取通知列表并标记已读。
+    @GET("/api/v1/notifications")
     Call<ApiResponse<PageResponse<NotificationMessage>>> notifications(@Query("page") int page, @Query("size") int size);
 
-    @GET("/api/v1/messages/conversations")
-    Call<ApiResponse<PageResponse<Conversation>>> conversations(@Query("page") int page, @Query("size") int size);
-
-    @GET("/api/v1/messages/conversations/{conversationId}")
-    Call<ApiResponse<ConversationDetail>> conversation(@Path("conversationId") String conversationId);
-
-    @POST("/api/v1/messages/conversations/{conversationId}")
-    Call<ApiResponse<ChatMessage>> sendMessage(@Path("conversationId") String conversationId, @Body SendMessageRequest request);
-
-    @POST("/api/v1/messages/notifications/read")
+    @POST("/api/v1/notifications/read")
     Call<ApiResponse<ReadReceipt>> markNotificationsRead();
 
+    // 用户/Profile：当前用户、设置、关注关系和个人作品列表。
     @GET("/api/v1/users/me")
     Call<ApiResponse<UserProfile>> me();
 
@@ -162,24 +155,17 @@ public interface DoyuApi {
     @GET("/api/v1/users/me/favorite-posts")
     Call<ApiResponse<PageResponse<Post>>> favoritePosts(@Query("page") int page, @Query("size") int size);
 
+    // 上传：先 presign 拿临时上传地址，再 confirm 生成可绑定业务的 FileAsset。
     @POST("/api/v1/uploads/presign")
     Call<ApiResponse<UploadPresignResponse>> uploadPresign(@Body UploadPresignRequest request);
 
     @POST("/api/v1/uploads/confirm")
     Call<ApiResponse<FileAsset>> uploadConfirm(@Body UploadConfirmRequest request);
 
+    // 认证：注册和登录返回 AuthSession，token 后续由 OkHttp 拦截器带上。
     @POST("/api/v1/auth/register")
     Call<ApiResponse<AuthSession>> register(@Body RegisterRequest request);
 
     @POST("/api/v1/auth/login")
     Call<ApiResponse<AuthSession>> login(@Body LoginRequest request);
-
-    @POST("/api/v1/auth/logout")
-    Call<ApiResponse<java.util.Map<String, Object>>> logout(@Body RefreshRequest request);
-
-    @POST("/api/v1/auth/account/cancel")
-    Call<ApiResponse<java.util.Map<String, Object>>> cancelAccount();
-
-    @GET("/api/v1/auth/session")
-    Call<ApiResponse<AuthSession>> session();
 }

@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * CommentMention 实体：映射 `comment_mentions` 表，保存评论提及用户关系。
+ */
 @Entity
 @Table(name = "comment_mentions")
 public class CommentMentionEntity {

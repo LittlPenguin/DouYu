@@ -12,6 +12,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 @ConditionalOnProperty(prefix = "douyu.oss", name = "provider", havingValue = "local", matchIfMissing = true)
+/**
+ * 本地 OSS Web 配置：把本地上传目录映射成可访问的静态资源。
+ */
 public class LocalOssWebConfig implements WebMvcConfigurer {
 
     @Value("${douyu.storage.local-path:./doyu-storage}")

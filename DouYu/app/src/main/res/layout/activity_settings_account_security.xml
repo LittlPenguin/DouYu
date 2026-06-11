@@ -98,16 +98,6 @@
                 android:textAllCaps="false"
                 android:textColor="@color/doyu_danger"
                 app:cornerRadius="8dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/settings_cancel_account_action"
-                android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:layout_marginTop="10dp"
-                android:text="申请注销账号"
-                android:textAllCaps="false"
-                android:textColor="@color/doyu_danger"
-                app:cornerRadius="8dp" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

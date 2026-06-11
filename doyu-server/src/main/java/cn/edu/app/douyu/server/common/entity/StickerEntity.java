@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Sticker 实体：映射 `stickers` 表，保存贴纸。
+ */
 @Entity
 @Table(name = "stickers")
 public class StickerEntity {

@@ -1,4 +1,7 @@
 package cn.edu.app.douyu.core;
+/**
+ * 页面文案常量：集中维护 Android 页面可复用的中文提示文本。
+ */
 
 public final class UiCopy {
     public static final String COMMUNITY_EMPTY = "暂无社区帖子。后端空结果保持空态，不使用本地假内容。";

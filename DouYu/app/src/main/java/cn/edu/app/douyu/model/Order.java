@@ -2,6 +2,9 @@ package cn.edu.app.douyu.model;
 
 import java.util.ArrayList;
 import java.util.List;
+/**
+ * 订单响应 DTO：承载订单号、状态、金额、地址和明细。
+ */
 
 public class Order {
     public String orderId;

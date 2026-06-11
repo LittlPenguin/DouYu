@@ -105,7 +105,7 @@ class CommercePurchaseContractTests {
     }
 
     @Test
-    void immediateOrderCreatesCreatedOrderWithAddressSnapshotAndLocksStock() throws Exception {
+    void immediateOrderCreatesCreatedOrderWithAddressSnapshotAndDoesNotExposeDetailEndpoint() throws Exception {
         String token = registerUser();
         String skuId = upsertProductAndSku("prod_buy_now", "sku_buy_now", "SELF_OPERATED", 1200, 5);
 
@@ -135,20 +135,21 @@ class CommercePurchaseContractTests {
                 """.formatted(skuId));
 
         assertThat(replay.at("/data/orderId").asText()).isEqualTo(order.at("/data/orderId").asText());
+        assertThat(order.at("/data/status").asText()).isEqualTo("CREATED");
+        assertThat(order.at("/data/totalAmountCent").asInt()).isEqualTo(2400);
+        assertThat(order.at("/data/payableAmountCent").asInt()).isEqualTo(2400);
+        assertThat(order.at("/data/addressSnapshot/recipient").asText()).isEqualTo("Bean Buyer");
+        assertThat(order.at("/data/addressSnapshot/phone").asText()).isEqualTo("13800001111");
+        assertThat(order.at("/data/addressSnapshot/region").asText()).isEqualTo("Hangzhou");
+        assertThat(order.at("/data/addressSnapshot/detail").asText()).isEqualTo("No. 1 Bean Street");
+        assertThat(order.at("/data/items/0/skuId").asText()).isEqualTo(skuId);
+        assertThat(order.at("/data/items/0/quantity").asInt()).isEqualTo(2);
+        assertThat(order.at("/data/items/0/rowAmountCent").asInt()).isEqualTo(2400);
+        assertThat(order.at("/data/payment").isMissingNode()).isTrue();
+
         mockMvc.perform(get("/api/v1/orders/{orderId}", order.at("/data/orderId").asText())
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status", equalTo("CREATED")))
-                .andExpect(jsonPath("$.data.totalAmountCent", equalTo(2400)))
-                .andExpect(jsonPath("$.data.payableAmountCent", equalTo(2400)))
-                .andExpect(jsonPath("$.data.addressSnapshot.recipient", equalTo("Bean Buyer")))
-                .andExpect(jsonPath("$.data.addressSnapshot.phone", equalTo("13800001111")))
-                .andExpect(jsonPath("$.data.addressSnapshot.region", equalTo("Hangzhou")))
-                .andExpect(jsonPath("$.data.addressSnapshot.detail", equalTo("No. 1 Bean Street")))
-                .andExpect(jsonPath("$.data.items[0].skuId", equalTo(skuId)))
-                .andExpect(jsonPath("$.data.items[0].quantity", equalTo(2)))
-                .andExpect(jsonPath("$.data.items[0].rowAmountCent", equalTo(2400)))
-                .andExpect(jsonPath("$.data.payment").doesNotExist());
+                .andExpect(status().isNotFound());
 
         assertThat(skuRepository.findById(skuId).orElseThrow().getLockedStock()).isEqualTo(2);
         assertThat(orderRepository.count()).isEqualTo(1);
@@ -156,7 +157,7 @@ class CommercePurchaseContractTests {
     }
 
     @Test
-    void cartCheckoutRemovesCartItemsAndCancelReleasesLockedStock() throws Exception {
+    void cartCheckoutRemovesCartItemsAndDoesNotExposeCancelEndpoint() throws Exception {
         String token = registerUser();
         String skuId = upsertProductAndSku("prod_cart_checkout", "sku_cart_checkout", "SELF_OPERATED", 1500, 4);
         JsonNode cartAdd = postJsonWithToken("/api/v1/cart/items", token, """
@@ -181,17 +182,15 @@ class CommercePurchaseContractTests {
 
         mockMvc.perform(post("/api/v1/orders/{orderId}/cancel", orderId)
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.status", equalTo("CANCELED")))
-                .andExpect(jsonPath("$.data.items[0].rowAmountCent", equalTo(4500)));
+                .andExpect(status().isNotFound());
 
         SkuEntity sku = skuRepository.findById(skuId).orElseThrow();
         assertThat(sku.getStock()).isEqualTo(4);
-        assertThat(sku.getLockedStock()).isZero();
+        assertThat(sku.getLockedStock()).isEqualTo(3);
         mockMvc.perform(get("/api/v1/products/prod_cart_checkout"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.stock", equalTo(4)))
-                .andExpect(jsonPath("$.data.skus[0].stock", equalTo(4)));
+                .andExpect(jsonPath("$.data.stock", equalTo(1)))
+                .andExpect(jsonPath("$.data.skus[0].stock", equalTo(1)));
     }
 
     @Test

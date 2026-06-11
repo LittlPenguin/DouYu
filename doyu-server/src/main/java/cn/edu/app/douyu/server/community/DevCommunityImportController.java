@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Instant;
 import java.util.Map;
 
+/**
+ * 开发导入接口：为开发环境导入真实社区帖子和资源数据。
+ */
 @Profile("dev")
 @RestController
 @RequestMapping("/api/v1/dev/community")

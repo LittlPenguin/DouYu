@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -12,12 +12,12 @@
       <div class="hero-card">
         <div class="eyebrow">豆屿 Doyu / Settings 内页</div>
         <h1 class="title">通知设置</h1>
-        <p class="lead">通知设置按私信、互动、发布和系统通知分组。它只控制通知展示偏好，不改变后端发布或私信限制。</p>
-        <div class="chips"><span class="chip">私信</span><span class="chip">评论互动</span><span class="chip">发布</span><span class="chip">系统通知</span></div>
+        <p class="lead">通知设置只保留互动、发布和系统通知偏好。它不代表推送服务完成，也不包含私信提醒或会话权限。</p>
+        <div class="chips"><span class="chip">互动</span><span class="chip">发布</span><span class="chip">系统</span><span class="chip">无私信</span></div>
       </div>
       <div class="side-facts">
-        <div class="fact"><b>关系</b><span>通知设置不等于私信权限；未互关 3 条限制仍由消息规则控制。</span></div>
-        <div class="fact"><b>未接入</b><span>如果后端尚无偏好接口，设计上标注为开发态，不保存假成功。</span></div>
+        <div class="fact"><b>接口</b><span>偏好通过 PATCH /api/v1/users/me/settings 保存。</span></div>
+        <div class="fact"><b>边界</b><span>关闭偏好不删除通知历史，也不承诺系统推送。</span></div>
       </div>
     </section>
     <section class="section">
@@ -27,23 +27,21 @@
             <div class="status"><span>9:41</span><div class="dotrow"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>
             <div class="topbar"><a class="icon-btn" href="settings-home-a.html"><span class="icon back"></span></a><div class="top-title">通知设置</div><a class="icon-btn" href="search-a.html"><span class="icon search"></span></a></div>
             <div class="scroll no-nav">
-              <div class="hero-strip"><span class="pill ok">分组控制</span><h3>选择你想收到的提醒</h3><p>关闭后仍可在消息页查看相关历史记录。</p></div>
+              <div class="hero-strip"><span class="pill ok">后端同步</span><h3>通知偏好</h3><p>保存后影响通知偏好，不删除通知中心历史记录。</p></div>
               <div class="list">
-                <div class="row"><span class="round-icon"><span class="icon message"></span></span><div class="row-main"><div class="row-title">私信提醒</div><div class="row-sub">互关与未互关会话新消息</div></div><span class="toggle"></span></div>
-                <div class="row"><span class="round-icon"><span class="icon at"></span></span><div class="row-main"><div class="row-title">@ 提及和评论</div><div class="row-sub">评论、回复、@ 你</div></div><span class="toggle"></span></div>
-                <div class="row"><span class="round-icon"><span class="icon upload"></span></span><div class="row-main"><div class="row-title">发布提醒</div><div class="row-sub">发布成功、失败和重试建议</div></div><span class="toggle"></span></div>
-                <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">系统通知</div><div class="row-sub">账号、安全、帮助和系统提醒</div></div><span class="toggle off"></span></div>
+                <div class="row"><span class="round-icon"><span class="icon at"></span></span><div class="row-main"><div class="row-title">互动通知</div><div class="row-sub">评论、回复、@、点赞收藏</div></div><span class="toggle on"></span></div>
+                <div class="row"><span class="round-icon"><span class="icon upload"></span></span><div class="row-main"><div class="row-title">发布通知</div><div class="row-sub">作品发布结果</div></div><span class="toggle on"></span></div>
+                <div class="row"><span class="round-icon"><span class="icon bell"></span></span><div class="row-main"><div class="row-title">系统通知</div><div class="row-sub">账号、安全和帮助提示</div></div><span class="toggle on"></span></div>
               </div>
-              <div class="hero-strip"><span class="pill warn">开发态保存</span><p>若偏好接口未接入，切换后只展示“该设置仍在开发中”，不写保存成功。</p></div>
             </div>
           </div>
         </div>
         <div class="stack">
           <div class="spec-grid">
-            <div class="spec"><h3>通知类别</h3><ul><li>私信：新对话、新消息。</li><li>互动：评论、回复、@、点赞收藏。</li><li>发布：成功、失败、重试建议。</li><li>系统：账号、安全、帮助。</li></ul></div>
-            <div class="spec"><h3>保存规则</h3><ul><li>有后端接口时展示保存中/成功/失败。</li><li>无接口时禁用或标注开发态。</li><li>失败时回滚开关或保留并提示重试。</li></ul></div>
-            <div class="state"><h3>私信限制不变</h3><p>关闭私信通知不解除互关限制；超过 3 条仍禁用发送。</p><div class="state-bar"><span class="state-dot warn">规则独立</span><span class="state-dot bad">禁误导</span></div></div>
-            <div class="state"><h3>系统通知</h3><p>关键安全/系统通知可提示不可关闭或仅关闭推送，不删除消息页记录。</p><div class="state-bar"><span class="state-dot good">可解释</span><span class="state-dot warn">需后续实现</span></div></div>
+            <div class="spec"><h3>保留开关</h3><ul><li>互动通知。</li><li>发布通知。</li><li>系统通知。</li></ul></div>
+            <div class="spec"><h3>删除开关</h3><ul><li>私信提醒。</li><li>会话新消息。</li><li>陌生人消息限制。</li></ul></div>
+            <div class="state"><h3>保存失败</h3><p>保存失败时回滚开关并展示重试提示，不显示假成功。</p><div class="state-bar"><span class="state-dot warn">回滚</span><span class="state-dot bad">禁假成功</span></div></div>
+            <div class="state"><h3>通知历史</h3><p>偏好不删除通知列表，历史由后端返回结果决定。</p><div class="state-bar"><span class="state-dot good">后端驱动</span></div></div>
           </div>
         </div>
       </div>

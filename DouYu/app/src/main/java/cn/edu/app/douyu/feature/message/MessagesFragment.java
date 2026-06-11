@@ -26,16 +26,13 @@ import cn.edu.app.douyu.R;
 import cn.edu.app.douyu.core.IntentExtras;
 import cn.edu.app.douyu.core.UiCopy;
 import cn.edu.app.douyu.data.DoyuRepository;
-import cn.edu.app.douyu.model.Conversation;
 import cn.edu.app.douyu.model.NotificationMessage;
 import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.ui.LoadState;
-
 /**
- * Messages home renders backend notifications first and private conversations second.
- * Private-message send limits are intentionally kept out of this list and handled only
- * by the conversation detail screen.
+ * 消息 Tab：加载通知列表和未读状态，进入通知详情。
  */
+
 public class MessagesFragment extends Fragment {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private MessageHomeAdapter adapter;
@@ -57,17 +54,7 @@ public class MessagesFragment extends Fragment {
         error = view.findViewById(R.id.error_text);
         retry = view.findViewById(R.id.retry_button);
 
-        adapter = new MessageHomeAdapter(new MessageHomeAdapter.Listener() {
-            @Override
-            public void onNotificationClick(NotificationMessage notification) {
-                openNotification(notification);
-            }
-
-            @Override
-            public void onConversationClick(Conversation conversation) {
-                openConversation(conversation);
-            }
-        });
+        adapter = new MessageHomeAdapter(this::openNotification);
         list.setLayoutManager(new LinearLayoutManager(requireContext()));
         list.setItemAnimator(null);
         list.setAdapter(adapter);
@@ -101,37 +88,25 @@ public class MessagesFragment extends Fragment {
         executor.execute(() -> {
             try {
                 PageResponse<NotificationMessage> notificationPage = repository.notifications();
-                PageResponse<Conversation> conversationPage = repository.conversations();
                 List<NotificationMessage> notifications = items(notificationPage);
-                List<Conversation> conversations = items(conversationPage);
-                runOnUi(() -> render(notifications, conversations));
+                runOnUi(() -> render(notifications));
             } catch (Exception e) {
                 runOnUi(() -> show(LoadState.from(e), e.getMessage()));
             }
         });
     }
 
-    private void render(List<NotificationMessage> notifications, List<Conversation> conversations) {
+    private void render(List<NotificationMessage> notifications) {
         if (adapter == null) {
             return;
         }
-        if (notifications.isEmpty() && conversations.isEmpty()) {
-            adapter.submit(List.of(), List.of());
+        if (notifications.isEmpty()) {
+            adapter.submit(List.of());
             show(LoadState.EMPTY, null);
             return;
         }
-        adapter.submit(notifications, conversations);
+        adapter.submit(notifications);
         show(LoadState.CONTENT, null);
-    }
-
-    private void openConversation(Conversation conversation) {
-        if (conversation == null || conversation.conversationId == null || conversation.conversationId.isEmpty()) {
-            return;
-        }
-        Intent intent = new Intent(requireContext(), ConversationActivity.class);
-        intent.putExtra(IntentExtras.CONVERSATION_ID, conversation.conversationId);
-        intent.putExtra(IntentExtras.PEER_NAME, ConversationAdapter.peerName(conversation));
-        startActivity(intent);
     }
 
     private void openNotification(NotificationMessage notification) {
@@ -157,7 +132,7 @@ public class MessagesFragment extends Fragment {
         errorBox.setVisibility(state == LoadState.ERROR || state == LoadState.LOGIN_REQUIRED ? View.VISIBLE : View.GONE);
         error.setVisibility(state == LoadState.ERROR || state == LoadState.LOGIN_REQUIRED ? View.VISIBLE : View.GONE);
         retry.setVisibility(state == LoadState.ERROR ? View.VISIBLE : View.GONE);
-        empty.setText(UiCopy.MESSAGES_EMPTY);
+        empty.setText("暂无通知。");
         error.setText(userFacingError(state, message));
         retry.setText(UiCopy.RETRY);
     }
@@ -170,7 +145,7 @@ public class MessagesFragment extends Fragment {
             return UiCopy.ERROR_PREFIX + "服务暂时不可用，请稍后重试。";
         }
         if (message.contains("connect") || message.contains("timeout") || message.contains("Unable to resolve host")) {
-            return UiCopy.ERROR_PREFIX + "暂时无法连接服务。页面保留真实错误态，不使用本地假内容。";
+            return UiCopy.ERROR_PREFIX + "暂时无法连接服务。页面保留真实错误状态，不使用本地假内容。";
         }
         return UiCopy.ERROR_PREFIX + message;
     }

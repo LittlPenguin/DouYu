@@ -1,19 +1,23 @@
 package cn.edu.app.douyu.server.common;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import java.util.stream.Collectors;
 
+/**
+ * 全局异常处理器：把参数校验、业务异常和系统异常转换成统一响应。
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -32,37 +36,42 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     ResponseEntity<ApiResponse<Object>> handleAuth(AuthenticationException ex) {
-        return ResponseEntity.status(ErrorCode.UNAUTHORIZED.status()).body(ApiResponse.error(ErrorCode.UNAUTHORIZED, "未登录或 token 失效"));
+        return ResponseEntity.status(ErrorCode.UNAUTHORIZED.status())
+                .body(ApiResponse.error(ErrorCode.UNAUTHORIZED, "未登录或 token 失效"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     ResponseEntity<ApiResponse<Object>> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(ErrorCode.FORBIDDEN.status()).body(ApiResponse.error(ErrorCode.FORBIDDEN, "无权限"));
+        return ResponseEntity.status(ErrorCode.FORBIDDEN.status())
+                .body(ApiResponse.error(ErrorCode.FORBIDDEN, "无权访问"));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ResponseEntity<ApiResponse<Object>> handleNotReadable(HttpMessageNotReadableException ex) {
-        return ResponseEntity.badRequest().body(ApiResponse.error(ErrorCode.INVALID_ARGUMENT, "请求体格式错误"));
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(ErrorCode.INVALID_ARGUMENT, "请求体格式错误"));
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     ResponseEntity<ApiResponse<Object>> handleMissingParam(MissingServletRequestParameterException ex) {
-        return ResponseEntity.badRequest().body(ApiResponse.error(ErrorCode.INVALID_ARGUMENT, "缺少参数: " + ex.getParameterName()));
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(ErrorCode.INVALID_ARGUMENT, "缺少参数: " + ex.getParameterName()));
     }
 
-    @ExceptionHandler(NoHandlerFoundException.class)
-    ResponseEntity<ApiResponse<Object>> handleNoHandler(NoHandlerFoundException ex) {
-        return ResponseEntity.status(ErrorCode.NOT_FOUND.status()).body(ApiResponse.error(ErrorCode.NOT_FOUND, "接口不存在"));
-    }
-
-    @ExceptionHandler(NoResourceFoundException.class)
-    ResponseEntity<ApiResponse<Object>> handleNoResource(NoResourceFoundException ex) {
-        return ResponseEntity.status(ErrorCode.NOT_FOUND.status()).body(ApiResponse.error(ErrorCode.NOT_FOUND, "接口不存在"));
+    @ExceptionHandler({
+            NoHandlerFoundException.class,
+            NoResourceFoundException.class,
+            HttpRequestMethodNotSupportedException.class
+    })
+    ResponseEntity<ApiResponse<Object>> handleNotFound(Exception ex) {
+        return ResponseEntity.status(ErrorCode.NOT_FOUND.status())
+                .body(ApiResponse.error(ErrorCode.NOT_FOUND, "接口不存在"));
     }
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiResponse<Object>> handleUnknown(Exception ex) {
-        return ResponseEntity.status(ErrorCode.INTERNAL_ERROR.status()).body(ApiResponse.error(ErrorCode.INTERNAL_ERROR, "服务端错误"));
+        return ResponseEntity.status(ErrorCode.INTERNAL_ERROR.status())
+                .body(ApiResponse.error(ErrorCode.INTERNAL_ERROR, "服务端错误"));
     }
 
     private String fieldMessage(FieldError error) {

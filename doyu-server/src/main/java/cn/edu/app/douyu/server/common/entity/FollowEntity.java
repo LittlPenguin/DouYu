@@ -6,6 +6,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/**
+ * Follow 实体：映射 `follows` 表，保存用户关注关系。
+ */
 @Entity
 @Table(name = "follows")
 public class FollowEntity {
