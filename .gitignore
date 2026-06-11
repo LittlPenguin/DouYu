@@ -19,8 +19,7 @@ local.properties
 *.key
 .codex/
 .claude/
-CLAUDE.md
-AGENTS.md
+
 .aionrs/
 .cache/
 .tmp/
@@ -66,3 +65,9 @@ temp/
 .qa-output/
 do.md
 .playwright-cli/
+
+
+.understand-anything/
+doc/
+CLAUDE.md
+AGENTS.md
