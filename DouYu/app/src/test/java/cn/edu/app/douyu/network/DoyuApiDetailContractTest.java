@@ -15,7 +15,15 @@ import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostRequest;
 import cn.edu.app.douyu.model.Product;
 import cn.edu.app.douyu.model.ProductCategory;
+import cn.edu.app.douyu.model.CartResponse;
+import cn.edu.app.douyu.model.CartItemRequest;
+import cn.edu.app.douyu.model.CreateOrderRequest;
+import cn.edu.app.douyu.model.Order;
+import cn.edu.app.douyu.model.SearchResult;
+import cn.edu.app.douyu.model.UpdateCartRequest;
+import cn.edu.app.douyu.model.UpdateUserSettingsRequest;
 import cn.edu.app.douyu.model.Topic;
+import cn.edu.app.douyu.model.UserSettings;
 import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.UploadConfirmRequest;
 import cn.edu.app.douyu.model.UploadPresignRequest;
@@ -23,6 +31,8 @@ import cn.edu.app.douyu.model.UploadPresignResponse;
 import retrofit2.Call;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
+import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
@@ -72,6 +82,49 @@ public class DoyuApiDetailContractTest {
         assertEquals("/api/v1/products", products.getAnnotation(GET.class).value());
         assertPageItemType(products, Product.class);
         assertEquals("categoryId", products.getParameters()[2].getAnnotation(Query.class).value());
+    }
+
+    @Test
+    public void commerceCartAndOrderApisUseBackendPurchaseEndpoints() throws Exception {
+        Method cart = DoyuApi.class.getMethod("cart");
+        Method addCartItem = DoyuApi.class.getMethod("addCartItem", CartItemRequest.class);
+        Method updateCartItem = DoyuApi.class.getMethod("updateCartItem", String.class, UpdateCartRequest.class);
+        Method deleteCartItem = DoyuApi.class.getMethod("deleteCartItem", String.class);
+        Method createOrder = DoyuApi.class.getMethod("createOrder", String.class, CreateOrderRequest.class);
+
+        assertEquals("/api/v1/cart", cart.getAnnotation(GET.class).value());
+        assertCallDataType(cart, CartResponse.class);
+        assertEquals("/api/v1/cart/items", addCartItem.getAnnotation(POST.class).value());
+        assertCallDataType(addCartItem, CartResponse.Item.class);
+        assertEquals("/api/v1/cart/items/{itemId}", updateCartItem.getAnnotation(PATCH.class).value());
+        assertCallDataType(updateCartItem, CartResponse.Item.class);
+        assertEquals("/api/v1/cart/items/{itemId}", deleteCartItem.getAnnotation(DELETE.class).value());
+        assertEquals("/api/v1/orders", createOrder.getAnnotation(POST.class).value());
+        assertEquals("Idempotency-Key", createOrder.getParameters()[0].getAnnotation(Header.class).value());
+        assertCallDataType(createOrder, Order.class);
+    }
+
+    @Test
+    public void userSettingsApisUseBackendSettingsEndpoints() throws Exception {
+        Method getSettings = DoyuApi.class.getMethod("userSettings");
+        Method updateSettings = DoyuApi.class.getMethod("updateUserSettings", UpdateUserSettingsRequest.class);
+        Method cancelAccount = DoyuApi.class.getMethod("cancelAccount");
+
+        assertEquals("/api/v1/users/me/settings", getSettings.getAnnotation(GET.class).value());
+        assertCallDataType(getSettings, UserSettings.class);
+        assertEquals("/api/v1/users/me/settings", updateSettings.getAnnotation(PATCH.class).value());
+        assertCallDataType(updateSettings, UserSettings.class);
+        assertEquals("/api/v1/auth/account/cancel", cancelAccount.getAnnotation(POST.class).value());
+    }
+
+    @Test
+    public void searchApiUsesBackendSearchEndpoint() throws Exception {
+        Method search = DoyuApi.class.getMethod("search", String.class, String.class, int.class, int.class);
+
+        assertEquals("/api/v1/search", search.getAnnotation(GET.class).value());
+        assertEquals("keyword", search.getParameters()[0].getAnnotation(Query.class).value());
+        assertEquals("type", search.getParameters()[1].getAnnotation(Query.class).value());
+        assertPageItemType(search, SearchResult.class);
     }
 
     @Test

@@ -34,6 +34,14 @@ The current scope does not include:
 - Production rate limiting and production risk-control plumbing.
 - Full compliance document endpoints/pages.
 
+## Commerce Purchase Runtime
+
+- Product, SKU, cart, and order data are persisted in the database and returned through `/api/v1`.
+- Cart create/update validates product type, product visibility, SKU sale status, and available stock.
+- Order creation can consume cart item ids or immediate purchase items, requires an address snapshot, locks SKU stock, and returns a `CREATED` order.
+- Canceling a created order releases the locked SKU stock for its order items.
+- Payment controllers, payment callbacks, refunds, reconciliation, and channel SDK/API integrations must not be reintroduced for this flow.
+
 ## Seed / Demo Policy
 
 - Runtime seed/demo content must not be reintroduced.

@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:name=".DoyuApplication"
@@ -26,6 +27,7 @@
         <activity android:name=".feature.message.NotificationDetailActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.message.ConversationActivity" android:screenOrientation="portrait" />
         <activity android:name=".feature.commerce.ProductDetailActivity" android:screenOrientation="portrait" />
+        <activity android:name=".feature.commerce.CartActivity" android:screenOrientation="portrait" />
         <activity
             android:name=".feature.community.PostDetailActivity"
             android:screenOrientation="portrait"

@@ -41,6 +41,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh",
                                 "/api/v1/admin/auth/login",
+                                "/api/v1/search",
                                 "/api/v1/posts/feed",
                                 "/api/v1/posts/following",
                                 "/api/v1/topics",
@@ -51,6 +52,7 @@ public class SecurityConfig {
                                 "/api/v1/products/*",
                                 "/uploads/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/*/comments").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/*").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated())

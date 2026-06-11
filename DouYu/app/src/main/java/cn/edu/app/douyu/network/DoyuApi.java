@@ -1,13 +1,17 @@
 package cn.edu.app.douyu.network;
 
 import cn.edu.app.douyu.model.AuthSession;
+import cn.edu.app.douyu.model.CartItemRequest;
+import cn.edu.app.douyu.model.CartResponse;
 import cn.edu.app.douyu.model.ChatMessage;
 import cn.edu.app.douyu.model.Comment;
 import cn.edu.app.douyu.model.CommentRequest;
 import cn.edu.app.douyu.model.Conversation;
 import cn.edu.app.douyu.model.ConversationDetail;
+import cn.edu.app.douyu.model.CreateOrderRequest;
 import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.NotificationMessage;
+import cn.edu.app.douyu.model.Order;
 import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
@@ -18,18 +22,23 @@ import cn.edu.app.douyu.model.LoginRequest;
 import cn.edu.app.douyu.model.ReadReceipt;
 import cn.edu.app.douyu.model.RefreshRequest;
 import cn.edu.app.douyu.model.RegisterRequest;
+import cn.edu.app.douyu.model.SearchResult;
 import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
+import cn.edu.app.douyu.model.UpdateCartRequest;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
+import cn.edu.app.douyu.model.UpdateUserSettingsRequest;
 import cn.edu.app.douyu.model.UploadConfirmRequest;
 import cn.edu.app.douyu.model.UploadPresignRequest;
 import cn.edu.app.douyu.model.UploadPresignResponse;
 import cn.edu.app.douyu.model.UserProfile;
+import cn.edu.app.douyu.model.UserSettings;
 import cn.edu.app.douyu.model.FollowResult;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
@@ -41,6 +50,12 @@ public interface DoyuApi {
 
     @GET("/api/v1/topics")
     Call<ApiResponse<PageResponse<Topic>>> topics(@Query("page") int page, @Query("size") int size);
+
+    @GET("/api/v1/search")
+    Call<ApiResponse<PageResponse<SearchResult>>> search(@Query("keyword") String keyword,
+                                                         @Query("type") String type,
+                                                         @Query("page") int page,
+                                                         @Query("size") int size);
 
     @GET("/api/v1/topics/{topicId}/posts")
     Call<ApiResponse<PageResponse<Post>>> topicPosts(@Path("topicId") String topicId, @Query("page") int page, @Query("size") int size);
@@ -81,6 +96,21 @@ public interface DoyuApi {
     @GET("/api/v1/products/{productId}")
     Call<ApiResponse<Product>> product(@Path("productId") String productId);
 
+    @GET("/api/v1/cart")
+    Call<ApiResponse<CartResponse>> cart();
+
+    @POST("/api/v1/cart/items")
+    Call<ApiResponse<CartResponse.Item>> addCartItem(@Body CartItemRequest request);
+
+    @PATCH("/api/v1/cart/items/{itemId}")
+    Call<ApiResponse<CartResponse.Item>> updateCartItem(@Path("itemId") String itemId, @Body UpdateCartRequest request);
+
+    @DELETE("/api/v1/cart/items/{itemId}")
+    Call<ApiResponse<java.util.Map<String, Object>>> deleteCartItem(@Path("itemId") String itemId);
+
+    @POST("/api/v1/orders")
+    Call<ApiResponse<Order>> createOrder(@Header("Idempotency-Key") String idempotencyKey, @Body CreateOrderRequest request);
+
     @GET("/api/v1/messages/notifications")
     Call<ApiResponse<PageResponse<NotificationMessage>>> notifications(@Query("page") int page, @Query("size") int size);
 
@@ -111,6 +141,12 @@ public interface DoyuApi {
     @PATCH("/api/v1/users/me")
     Call<ApiResponse<UserProfile>> updateMe(@Body UpdateProfileRequest request);
 
+    @GET("/api/v1/users/me/settings")
+    Call<ApiResponse<UserSettings>> userSettings();
+
+    @PATCH("/api/v1/users/me/settings")
+    Call<ApiResponse<UserSettings>> updateUserSettings(@Body UpdateUserSettingsRequest request);
+
     @GET("/api/v1/users/me/posts")
     Call<ApiResponse<PageResponse<Post>>> myPosts(@Query("page") int page, @Query("size") int size);
 
@@ -140,6 +176,9 @@ public interface DoyuApi {
 
     @POST("/api/v1/auth/logout")
     Call<ApiResponse<java.util.Map<String, Object>>> logout(@Body RefreshRequest request);
+
+    @POST("/api/v1/auth/account/cancel")
+    Call<ApiResponse<java.util.Map<String, Object>>> cancelAccount();
 
     @GET("/api/v1/auth/session")
     Call<ApiResponse<AuthSession>> session();

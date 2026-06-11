@@ -211,6 +211,72 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void profileUpdatePersistsManualRegionAndReturnsResolvedAvatarUrl() throws Exception {
+        String token = login("13800000003", "AGE_18_PLUS");
+        String avatarFileId = confirmedFile(token, "AVATAR", 96, 96);
+
+        JsonNode updated = patchJsonWithToken("/api/v1/users/me", token, """
+                {"nickname":"region user","bio":"region bio","avatarFileId":"%s","region":"杭州"}
+                """.formatted(avatarFileId));
+        org.assertj.core.api.Assertions.assertThat(updated.at("/data/region").asText()).isEqualTo("杭州");
+        org.assertj.core.api.Assertions.assertThat(updated.at("/data/avatarUrl").asText())
+                .contains("/uploads/assets/avatar/")
+                .isNotEqualTo(avatarFileId);
+
+        JsonNode me = getJsonWithToken("/api/v1/users/me", token);
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/nickname").asText()).isEqualTo("region user");
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/bio").asText()).isEqualTo("region bio");
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/region").asText()).isEqualTo("杭州");
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/avatarUrl").asText())
+                .contains("/uploads/assets/avatar/")
+                .isNotEqualTo(avatarFileId);
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/avatarFileId").isMissingNode()).isTrue();
+    }
+
+    @Test
+    void userSettingsDefaultToTruePatchPartiallyAndAccountCancelChangesStatus() throws Exception {
+        JsonNode registered = postJson("/api/v1/auth/register", """
+                {"email":"settings-user@example.com","password":"password123","confirmPassword":"password123","ageGroup":"AGE_18_PLUS","nickname":"设置用户"}
+                """);
+        String token = registered.at("/data/accessToken").asText();
+
+        JsonNode defaults = getJsonWithToken("/api/v1/users/me/settings", token);
+        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/allowRecommendation").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/allowStrangerMessages").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/allowFavorites").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/notifyMessages").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/notifyInteractions").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/notifyPublish").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(defaults.at("/data/notifySystem").asBoolean()).isTrue();
+
+        JsonNode patched = patchJsonWithToken("/api/v1/users/me/settings", token, """
+                {"allowRecommendation":false,"notifyMessages":false,"notifySystem":false}
+                """);
+        org.assertj.core.api.Assertions.assertThat(patched.at("/data/allowRecommendation").asBoolean()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(patched.at("/data/allowStrangerMessages").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(patched.at("/data/allowFavorites").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(patched.at("/data/notifyMessages").asBoolean()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(patched.at("/data/notifyInteractions").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(patched.at("/data/notifyPublish").asBoolean()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(patched.at("/data/notifySystem").asBoolean()).isFalse();
+
+        JsonNode me = getJsonWithToken("/api/v1/users/me", token);
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/allowRecommendation").asBoolean()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/notifyMessages").asBoolean()).isFalse();
+        org.assertj.core.api.Assertions.assertThat(me.at("/data/notifySystem").asBoolean()).isFalse();
+
+        JsonNode canceled = postJsonWithToken("/api/v1/auth/account/cancel", token, "{}");
+        org.assertj.core.api.Assertions.assertThat(canceled.at("/data/accountStatus").asText()).isEqualTo("CANCELING");
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"settings-user@example.com","password":"password123"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", equalTo("FORBIDDEN")));
+    }
+
+    @Test
     void orderCreationIsIdempotentAndGuardsInventoryAndCancelState() throws Exception {
         String token = login("13800000004", "AGE_18_PLUS");
         String skuId = ensureSelfOperatedSku("fixture-product-order-red", "fixture-sku-order-red",
@@ -237,18 +303,13 @@ class DouyuBackendContractTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status", equalTo("CANCELED")));
 
-        JsonNode cartAdd2 = postJsonWithToken("/api/v1/cart/items", token, """
-                {"skuId":"%s","quantity":999999}
-                """.formatted(skuId));
-        String cartItemId2 = cartAdd2.at("/data/itemId").asText();
-
         mockMvc.perform(post("/api/v1/orders")
                         .header("Authorization", "Bearer " + token)
                         .header("Idempotency-Key", "order-key-2")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"itemIds":["%s"],"addressId":"addr_test_1"}
-                                """.formatted(cartItemId2)))
+                                {"items":[{"skuId":"%s","quantity":999999}],"addressId":"addr_test_1"}
+                                """.formatted(skuId)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code", equalTo("INVENTORY_NOT_ENOUGH")));
     }
@@ -387,35 +448,109 @@ class DouyuBackendContractTests {
     }
 
     @Test
+    void anonymousUsersCanReadPostDetailAndCommentsButCannotMutateInteractions() throws Exception {
+        String token = login("13800000062", "AGE_18_PLUS");
+
+        JsonNode created = postJsonWithToken("/api/v1/posts", token, """
+                {"title":"anonymous readable post","content":"public detail and comments"}
+                """);
+        String postId = created.at("/data/postId").asText();
+        JsonNode comment = postJsonWithPath("/api/v1/posts/{postId}/comments", token, """
+                {"content":"public comment"}
+                """, postId);
+        String commentId = comment.at("/data/commentId").asText();
+
+        mockMvc.perform(get("/api/v1/posts/{postId}", postId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.postId", equalTo(postId)))
+                .andExpect(jsonPath("$.data.likeCount", equalTo(0)))
+                .andExpect(jsonPath("$.data.favoriteCount", equalTo(0)))
+                .andExpect(jsonPath("$.data.likedByMe", equalTo(false)))
+                .andExpect(jsonPath("$.data.favoritedByMe", equalTo(false)))
+                .andExpect(jsonPath("$.data.followedAuthorByMe", equalTo(false)));
+
+        mockMvc.perform(get("/api/v1/posts/{postId}/comments", postId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].commentId", equalTo(commentId)))
+                .andExpect(jsonPath("$.data.items[0].status", equalTo("VISIBLE")));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/like", postId))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/favorite", postId))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")));
+
+        mockMvc.perform(post("/api/v1/posts/{postId}/comments", postId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"content":"anonymous mutation"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code", equalTo("UNAUTHORIZED")));
+    }
+
+    @Test
     void publishedCommunityPostAppearsInFeedWithTopicNamesAndCoverDimensions() throws Exception {
         String token = login("13800000061", "AGE_18_PLUS");
         String topicId = ensureTopic("fixture-topic-cover-dimensions", "cover dimensions");
         String fileId = confirmedFile(token, "POST_IMAGE", 480, 720);
+        String secondFileId = confirmedFile(token, "POST_IMAGE", 320, 240);
 
         JsonNode created = postJsonWithToken("/api/v1/posts", token, """
-                {"title":"ratio cover post","content":"post with real cover dimensions","mediaFileIds":["%s"],"topicIds":["%s"]}
-                """.formatted(fileId, topicId));
+                {"title":"ratio cover post","content":"post with real cover dimensions","mediaFileIds":["%s","%s"],"topicIds":["%s"]}
+                """.formatted(fileId, secondFileId, topicId));
         String postId = created.at("/data/postId").asText();
         org.assertj.core.api.Assertions.assertThat(created.at("/data/status").asText()).isEqualTo("VISIBLE");
+        org.assertj.core.api.Assertions.assertThat(created.at("/data/imageUrls").isArray()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(created.at("/data/imageUrls").size()).isEqualTo(2);
+        String firstImageUrl = created.at("/data/imageUrls/0").asText();
+        String secondImageUrl = created.at("/data/imageUrls/1").asText();
+        org.assertj.core.api.Assertions.assertThat(firstImageUrl).contains("/uploads/assets/post_image/");
+        org.assertj.core.api.Assertions.assertThat(secondImageUrl).contains("/uploads/assets/post_image/");
+        org.assertj.core.api.Assertions.assertThat(secondImageUrl).isNotEqualTo(firstImageUrl);
+        org.assertj.core.api.Assertions.assertThat(created.at("/data/coverImageUrl").asText()).isEqualTo(firstImageUrl);
 
-        mockMvc.perform(get("/api/v1/posts/{postId}", postId))
+        String detailContent = mockMvc.perform(get("/api/v1/posts/{postId}", postId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status", equalTo("VISIBLE")))
                 .andExpect(jsonPath("$.data.coverImageUrl", org.hamcrest.Matchers.containsString("/uploads/assets/post_image/")))
                 .andExpect(jsonPath("$.data.coverWidth", equalTo(480)))
                 .andExpect(jsonPath("$.data.coverHeight", equalTo(720)))
-                .andExpect(jsonPath("$.data.topicNames[0]", equalTo("cover dimensions")));
+                .andExpect(jsonPath("$.data.topicNames[0]", equalTo("cover dimensions")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode detail = objectMapper.readTree(detailContent).path("data");
+        org.assertj.core.api.Assertions.assertThat(detail.at("/imageUrls").size()).isEqualTo(2);
+        org.assertj.core.api.Assertions.assertThat(detail.at("/imageUrls/0").asText()).isEqualTo(firstImageUrl);
+        org.assertj.core.api.Assertions.assertThat(detail.at("/imageUrls/1").asText()).isEqualTo(secondImageUrl);
 
-        mockMvc.perform(get("/api/v1/posts/feed"))
+        String feedContent = mockMvc.perform(get("/api/v1/posts/feed"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].postId", equalTo(postId)))
                 .andExpect(jsonPath("$.data.items[0].coverWidth", equalTo(480)))
-                .andExpect(jsonPath("$.data.items[0].coverHeight", equalTo(720)));
+                .andExpect(jsonPath("$.data.items[0].coverHeight", equalTo(720)))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode feedPost = objectMapper.readTree(feedContent).at("/data/items/0");
+        org.assertj.core.api.Assertions.assertThat(feedPost.at("/imageUrls").size()).isEqualTo(2);
+        org.assertj.core.api.Assertions.assertThat(feedPost.at("/imageUrls/0").asText()).isEqualTo(firstImageUrl);
+        org.assertj.core.api.Assertions.assertThat(feedPost.at("/imageUrls/1").asText()).isEqualTo(secondImageUrl);
 
-        mockMvc.perform(get("/api/v1/topics/{topicId}/posts", topicId))
+        String topicContent = mockMvc.perform(get("/api/v1/topics/{topicId}/posts", topicId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].postId", equalTo(postId)))
-                .andExpect(jsonPath("$.data.items[0].topicNames[0]", equalTo("cover dimensions")));
+                .andExpect(jsonPath("$.data.items[0].topicNames[0]", equalTo("cover dimensions")))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        JsonNode topicPost = objectMapper.readTree(topicContent).at("/data/items/0");
+        org.assertj.core.api.Assertions.assertThat(topicPost.at("/imageUrls").size()).isEqualTo(2);
+        org.assertj.core.api.Assertions.assertThat(topicPost.at("/imageUrls/0").asText()).isEqualTo(firstImageUrl);
+        org.assertj.core.api.Assertions.assertThat(topicPost.at("/imageUrls/1").asText()).isEqualTo(secondImageUrl);
     }
 
     @Test
@@ -1282,6 +1417,46 @@ class DouyuBackendContractTests {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void globalSearchReturnsRealRetainedResultsAndHonorsFilters() throws Exception {
+        String token = login("13800000038", "AGE_18_PLUS");
+        String userId = getJsonWithToken("/api/v1/users/me", token).at("/data/userId").asText();
+        String topicId = ensureTopic("fixture-topic-search-strawberry", "草莓色卡");
+        String postId = ensureVisiblePost("fixture-post-search-strawberry", userId, topicId, null);
+        PostEntity post = postRepository.findById(postId).orElseThrow();
+        post.setTitle("草莓小熊杯垫");
+        post.setContent("适合新手的草莓色拼豆作品");
+        postRepository.save(post);
+
+        ensureSearchProduct("fixture-product-search-strawberry", "草莓拼豆套装", "透明板和草莓色豆子", "kit", "材料套装", "ON_SALE", "PASS");
+        ensureSearchProduct("fixture-product-search-hidden", "草莓隐藏商品", "不应出现在搜索", "kit", "材料套装", "DRAFT", "PASS");
+
+        mockMvc.perform(get("/api/v1/search")
+                        .queryParam("keyword", "草莓")
+                        .queryParam("type", "all")
+                        .queryParam("page", "1")
+                        .queryParam("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[?(@.resultType=='POST' && @.targetId=='%s')]".formatted(postId)).exists())
+                .andExpect(jsonPath("$.data.items[?(@.resultType=='PRODUCT' && @.targetId=='fixture-product-search-strawberry')]").exists())
+                .andExpect(jsonPath("$.data.items[?(@.resultType=='TOPIC' && @.targetId=='%s')]".formatted(topicId)).exists())
+                .andExpect(jsonPath("$.data.items[?(@.targetId=='fixture-product-search-hidden')]").doesNotExist());
+
+        mockMvc.perform(get("/api/v1/search")
+                        .queryParam("keyword", "草莓")
+                        .queryParam("type", "products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].resultType", equalTo("PRODUCT")))
+                .andExpect(jsonPath("$.data.items[0].targetId", equalTo("fixture-product-search-strawberry")));
+
+        mockMvc.perform(get("/api/v1/search")
+                .queryParam("keyword", "")
+                .queryParam("type", "all"))
+        .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items", org.hamcrest.Matchers.hasSize(0)))
+                .andExpect(jsonPath("$.data.total", equalTo(0)));
+    }
+
     private JsonNode postJson(String path, String body) throws Exception {
         String content = mockMvc.perform(post(path)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -1295,6 +1470,18 @@ class DouyuBackendContractTests {
 
     private JsonNode postJsonWithToken(String path, String token, String body) throws Exception {
         String content = mockMvc.perform(post(path)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().is2xxSuccessful())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return objectMapper.readTree(content);
+    }
+
+    private JsonNode patchJsonWithToken(String path, String token, String body) throws Exception {
+        String content = mockMvc.perform(patch(path)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -1340,6 +1527,27 @@ class DouyuBackendContractTests {
         product.setCategoryId("fixture");
         product.setStatus("ON_SALE");
         product.setAuditStatus("PASS");
+        product.setUpdatedAt(now);
+        productRepository.save(product);
+    }
+
+    private void ensureSearchProduct(String productId, String title, String description, String categoryId,
+                                     String categoryName, String status, String auditStatus) {
+        Instant now = Instant.now();
+        ProductEntity product = productRepository.findById(productId).orElseGet(ProductEntity::new);
+        if (product.getId() == null) {
+            product.setId(productId);
+            product.setCreatedAt(now);
+        }
+        product.setType("SELF_OPERATED");
+        product.setSellerId(null);
+        product.setTitle(title);
+        product.setDescription(description);
+        product.setImageUrl(null);
+        product.setCategoryId(categoryId);
+        product.setCategoryName(categoryName);
+        product.setStatus(status);
+        product.setAuditStatus(auditStatus);
         product.setUpdatedAt(now);
         productRepository.save(product);
     }

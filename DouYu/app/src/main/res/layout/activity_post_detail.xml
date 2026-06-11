@@ -53,14 +53,15 @@
                         android:id="@+id/post_gallery_frame"
                         android:layout_width="match_parent"
                         android:layout_height="255dp"
-                        android:background="@drawable/bg_thumb_petal">
+                        android:background="@drawable/bg_thumb_petal"
+                        android:clipToOutline="true">
 
                         <ImageView
                             android:id="@+id/post_gallery_image"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:contentDescription="作品图片"
-                            android:scaleType="centerCrop"
+                            android:scaleType="fitCenter"
                             android:visibility="gone" />
 
                         <TextView
@@ -134,6 +135,7 @@
                     </FrameLayout>
 
                     <HorizontalScrollView
+                        android:id="@+id/post_thumbnail_scroll"
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
                         android:layout_marginTop="10dp"

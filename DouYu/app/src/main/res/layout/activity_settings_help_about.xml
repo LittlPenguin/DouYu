@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/doyu_page"
@@ -20,23 +21,70 @@
             android:padding="16dp">
 
             <TextView
+                android:id="@+id/settings_about_version"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_card"
+                android:background="@drawable/bg_state_card"
+                android:lineSpacingExtra="3dp"
                 android:padding="16dp"
-                android:text="SpellBean / development build&#10;The current app keeps Java/XML Android screens, backend data loading, account flow, community, commerce browsing, messages, profile, address management, and OSS-backed image upload."
+                android:text="SpellBean"
                 android:textColor="@color/doyu_text"
-                android:textSize="16sp" />
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/settings_about_api"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
+                android:lineSpacingExtra="3dp"
                 android:padding="16dp"
-                android:text="Production-only pages are not shown in this build. Empty backend results remain empty and do not use local demo content."
+                android:text="服务地址&#10;正在读取"
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/settings_about_session"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:lineSpacingExtra="3dp"
+                android:padding="16dp"
+                android:text="登录状态&#10;正在读取"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/settings_about_diagnostics"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:lineSpacingExtra="3dp"
+                android:padding="16dp"
+                android:text="诊断信息会基于当前版本、接口地址和登录状态生成。"
+                android:textColor="@color/doyu_text_muted"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_copy_diagnostics"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="16dp"
+                android:text="复制诊断信息"
+                android:textAllCaps="false"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_open_app_settings"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="10dp"
+                android:text="打开系统应用信息"
+                android:textAllCaps="false"
+                app:cornerRadius="8dp" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

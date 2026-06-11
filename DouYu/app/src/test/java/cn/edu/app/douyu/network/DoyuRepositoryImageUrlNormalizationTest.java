@@ -10,6 +10,8 @@ import cn.edu.app.douyu.model.Comment;
 import cn.edu.app.douyu.model.CommentMediaAsset;
 import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.Post;
+import cn.edu.app.douyu.model.UpdateProfileRequest;
+import cn.edu.app.douyu.model.UserProfile;
 import retrofit2.Response;
 
 import static org.junit.Assert.assertEquals;
@@ -67,6 +69,30 @@ public class DoyuRepositoryImageUrlNormalizationTest {
                 response.items.get(0).mediaAssets.get(0).publicUrl);
     }
 
+    @Test
+    public void userProfileRewritesLoopbackAvatarUrlsToApiHost() throws Exception {
+        UserProfile profile = new UserProfile();
+        profile.avatarUrl = "http://localhost:8081/uploads/assets/avatar/file_1/avatar.png";
+        DoyuRepository repository = new DoyuRepository(fakeApi("me", profile), null, API_BASE_URL);
+
+        UserProfile response = repository.me();
+
+        assertEquals("http://10.64.241.153:8081/uploads/assets/avatar/file_1/avatar.png",
+                response.avatarUrl);
+    }
+
+    @Test
+    public void updateMeRewritesLoopbackAvatarUrlReturnedAfterSave() throws Exception {
+        UserProfile profile = new UserProfile();
+        profile.avatarUrl = "http://127.0.0.1:8081/uploads/assets/avatar/file_1/avatar.png";
+        DoyuRepository repository = new DoyuRepository(fakeApi("updateMe", profile), null, API_BASE_URL);
+
+        UserProfile response = repository.updateMe("豆友", "bio", "file_1", "杭州");
+
+        assertEquals("http://10.64.241.153:8081/uploads/assets/avatar/file_1/avatar.png",
+                response.avatarUrl);
+    }
+
     private static DoyuApi fakeApi(String expectedMethodName, Object value) {
         return (DoyuApi) Proxy.newProxyInstance(
                 DoyuApi.class.getClassLoader(),
@@ -76,6 +102,9 @@ public class DoyuRepositoryImageUrlNormalizationTest {
                         return "FakeImageUrlApi";
                     }
                     if (expectedMethodName.equals(method.getName())) {
+                        if ("updateMe".equals(method.getName()) && !(args[0] instanceof UpdateProfileRequest)) {
+                            throw new AssertionError("Expected UpdateProfileRequest");
+                        }
                         return new SingleResponseCall<>(Response.success(ok(value)));
                     }
                     throw new AssertionError("Unexpected API call: " + method);

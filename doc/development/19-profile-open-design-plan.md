@@ -26,10 +26,10 @@ profile plan.
 
 | Area | API | Current behavior |
 | --- | --- | --- |
-| Profile summary | `GET /api/v1/users/me` | Real nickname, avatar file id, bio, stats, age group, and follow counts. |
+| Profile summary | `GET /api/v1/users/me` | Real nickname, resolved avatar URL, bio, region, stats, age group, and follow counts. |
 | Liked posts | `GET /api/v1/users/me/liked-posts` | Real paged `Post` list. |
 | Favorite posts | `GET /api/v1/users/me/favorite-posts` | Real paged `Post` list. |
-| Avatar upload | `POST /uploads/presign -> PUT uploadUrl -> POST /uploads/confirm -> PATCH /me {avatarFileId}` | Uses the retained OSS-backed upload flow. Android never stores OSS credentials. |
+| Avatar upload | `POST /uploads/presign -> PUT uploadUrl -> POST /uploads/confirm -> PATCH /me {avatarFileId}` | Uses the retained OSS-backed upload flow. Backend resolves `avatarFileId` into `avatarUrl` for display. Android never stores OSS credentials. |
 
 ## Profile Page Structure
 
@@ -47,9 +47,9 @@ states.
 1. Avatar picker uses the retained OSS upload flow.
 2. Nickname validates non-empty text before save.
 3. Bio is saved through the profile update API.
-4. Age group is display-only.
-5. City/region and interest chips are UI-only boundaries when present; they do
-   not call map/location providers and are not sent as fake backend success.
+4. City/region is a real manual profile field. Android provides common choices
+   and free text, then saves the selected value through the profile update API.
+5. Age group and interest chips are not shown in profile edit.
 
 ## Removed From This Plan
 

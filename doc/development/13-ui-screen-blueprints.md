@@ -10,6 +10,11 @@ Bottom navigation order is `社区 / 商城 / 上传 / 消息 / 我的`.
 
 - `社区`, `商城`, `消息`, and `我的` are content tabs backed by Fragment screens.
 - `上传` is an action item. It opens `PostCreateActivity` after the login gate and must not replace the current Fragment.
+- Content-tab routing is centralized in `MainActivity`: first launch and
+  `onNewIntent` both consume `IntentExtras.SECTION` and select the same tab.
+- From `PostCreateActivity`, bottom navigation uses
+  `FLAG_ACTIVITY_CLEAR_TOP | FLAG_ACTIVITY_SINGLE_TOP` with
+  `IntentExtras.SECTION` to return to the existing main shell.
 
 ### Community
 

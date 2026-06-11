@@ -11,6 +11,8 @@ public final class AuthGate {
     public static final String RETURN_ACTION_PROFILE_EDIT = "profile_edit";
     public static final String RETURN_ACTION_POST_CREATE = "post_create";
     public static final String RETURN_ACTION_COMMENT = "comment";
+    public static final String RETURN_ACTION_CART = "cart";
+    public static final String RETURN_ACTION_PURCHASE = "purchase";
 
     private AuthGate() {
     }

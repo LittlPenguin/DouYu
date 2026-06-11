@@ -21,41 +21,92 @@
             android:padding="16dp">
 
             <TextView
+                android:id="@+id/settings_account_status"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_card"
+                android:background="@drawable/bg_state_card"
+                android:lineSpacingExtra="3dp"
                 android:padding="16dp"
-                android:text="Account state&#10;Signed-in users see email login state and the current local session. Signed-out users see the login action."
+                android:text="正在读取账号状态"
                 android:textColor="@color/doyu_text"
-                android:textSize="15sp" />
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/settings_account_email"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
+                android:lineSpacingExtra="3dp"
                 android:padding="16dp"
-                android:text="Session actions&#10;Logout requires confirmation and clears local tokens only after the backend request succeeds or the session is already invalid."
+                android:text="邮箱账号&#10;正在读取"
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
             <TextView
+                android:id="@+id/settings_account_session"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_card"
+                android:lineSpacingExtra="3dp"
                 android:padding="16dp"
-                android:text="Unavailable items are hidden instead of being described as completed production services."
+                android:text="本机会话&#10;正在读取"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/settings_account_device"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:lineSpacingExtra="3dp"
+                android:padding="16dp"
+                android:text="当前设备&#10;仅展示本机型号和系统版本"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/settings_account_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:lineSpacingExtra="3dp"
+                android:padding="16dp"
+                android:text="账号操作需要真实登录态。"
                 android:textColor="@color/doyu_text_muted"
                 android:textSize="14sp" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_login_action"
                 android:layout_width="match_parent"
                 android:layout_height="54dp"
-                android:layout_marginTop="18dp"
-                android:enabled="false"
-                android:text="Logout requires a real session"
+                android:layout_marginTop="16dp"
+                android:text="登录 / 注册"
                 android:textAllCaps="false"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_logout_action"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="10dp"
+                android:text="退出登录"
+                android:textAllCaps="false"
+                android:textColor="@color/doyu_danger"
+                app:cornerRadius="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_cancel_account_action"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="10dp"
+                android:text="申请注销账号"
+                android:textAllCaps="false"
+                android:textColor="@color/doyu_danger"
                 app:cornerRadius="8dp" />
         </LinearLayout>
     </ScrollView>

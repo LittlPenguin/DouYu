@@ -29,10 +29,10 @@ import cn.edu.app.douyu.ui.XmlPageActivity;
  * real PATCH /api/v1/users/me; the avatar uses the real presign -> PUT -> confirm
  * upload flow. Empty nickname disables save, a failed avatar upload keeps the old
  * avatar with a retry, and a failed save keeps the draft on this page. City/region
- * and interest tags stay UI-only and are never sent to the backend.
+ * is saved as a manual profile field without map/location providers.
  */
 public class ProfileEditActivity extends XmlPageActivity {
-    private static final String[] INTEREST_TAGS = {"杯垫", "色卡", "挂件", "新手教程"};
+    private static final String[] REGION_CHOICES = {"杭州", "上海", "广州", "深圳", "成都", "北京"};
     private static final long MAX_AVATAR_BYTES = 20L * 1024 * 1024;
 
     private ImageView avatar;
@@ -43,7 +43,7 @@ public class ProfileEditActivity extends XmlPageActivity {
     private EditText nicknameInput;
     private TextView nicknameBand;
     private EditText bioInput;
-    private TextView ageValue;
+    private EditText regionInput;
     private TextView saveButton;
     private TextView saveBand;
 
@@ -75,7 +75,7 @@ public class ProfileEditActivity extends XmlPageActivity {
         nicknameInput = findViewById(R.id.nickname_input);
         nicknameBand = findViewById(R.id.nickname_band);
         bioInput = findViewById(R.id.bio_input);
-        ageValue = findViewById(R.id.age_value);
+        regionInput = findViewById(R.id.region_input);
         saveButton = findViewById(R.id.save_button);
         saveBand = findViewById(R.id.save_band);
 
@@ -116,19 +116,20 @@ public class ProfileEditActivity extends XmlPageActivity {
             }
         });
 
-        bindInterestTags();
+        bindRegionChoices();
         updateSaveEnabled();
         loadProfile();
     }
 
-    private void bindInterestTags() {
-        ChipGroup group = findViewById(R.id.interest_tags);
-        for (String tag : INTEREST_TAGS) {
+    private void bindRegionChoices() {
+        ChipGroup group = findViewById(R.id.region_choices);
+        for (String region : REGION_CHOICES) {
             Chip chip = new Chip(this);
-            chip.setText(tag);
+            chip.setText(region);
             chip.setCheckable(false);
-            chip.setClickable(false);
+            chip.setClickable(true);
             chip.setTextSize(12);
+            chip.setOnClickListener(v -> regionInput.setText(region));
             group.addView(chip);
         }
     }
@@ -150,7 +151,7 @@ public class ProfileEditActivity extends XmlPageActivity {
         currentAvatarUrl = me.avatarUrl;
         nicknameInput.setText(me.nickname == null ? "" : me.nickname);
         bioInput.setText(me.bio == null ? "" : me.bio);
-        ageValue.setText(ageLabel(me.ageGroup));
+        regionInput.setText(me.region == null ? "" : me.region);
         renderAvatar(currentAvatarUrl);
         updateSaveEnabled();
     }
@@ -205,8 +206,9 @@ public class ProfileEditActivity extends XmlPageActivity {
         saveBand.setVisibility(View.GONE);
         updateSaveEnabled();
         String bio = bioInput.getText().toString();
+        String region = regionInput.getText().toString().trim();
         String avatarFileId = pendingAvatarFileId;
-        loadDetail(repository -> repository.updateMe(nickname, bio, avatarFileId), updated -> {
+        loadDetail(repository -> repository.updateMe(nickname, bio, avatarFileId, region), updated -> {
             setResult(Activity.RESULT_OK);
             finish();
         }, (state, message) -> {
@@ -264,13 +266,6 @@ public class ProfileEditActivity extends XmlPageActivity {
         Integer width = options.outWidth > 0 ? options.outWidth : null;
         Integer height = options.outHeight > 0 ? options.outHeight : null;
         return new AvatarBytes(bytes, mimeType, "avatar" + extension, width, height);
-    }
-
-    private static String ageLabel(String ageGroup) {
-        if ("AGE_18_PLUS".equals(ageGroup)) {
-            return "18+";
-        }
-        return "16+";
     }
 
     private static final class AvatarBytes {

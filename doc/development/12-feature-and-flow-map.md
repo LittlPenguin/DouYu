@@ -15,6 +15,11 @@
 
 底部导航视觉顺序固定为 `社区 / 商城 / 上传 / 消息 / 我的`。其中社区、商城、消息、我的是四个内容 Tab；`上传` 是 action item，点击后通过登录门禁进入全屏 `PostCreateActivity`，不替换当前 Fragment。AI 不再是当前主 Tab。
 
+所有底部入口使用同一套 section 导航规则：`MainActivity` 负责
+`IntentExtras.SECTION` 到内容 Tab 的映射，并在 `onCreate` 与
+`onNewIntent` 中都能切换到目标 section。上传页返回社区、商城、消息或我的时
+复用现有 `MainActivity`，不重新定义一套不一致的跳转语义。
+
 ## 登录态主链路
 
 1. 未登录用户可浏览公开 Feed、作品详情、话题、贴纸、商品列表和商品详情。
@@ -73,13 +78,16 @@ Java/XML 页面：
 
 ## Search
 
-当前没有全局搜索后端 API。当前可用相关接口：
+`SearchActivity` 对照 `search-a.html`，但不再保留 UI-only 文案。搜索页真实能力范围：
 
-- 用户搜索：`GET /users/search`
-- 话题搜索：`GET /topics?keyword=...`
-- 商品列表：`GET /products`
-
-`SearchActivity` 对照 `search-a.html`。如果实现本地筛选，必须在 UI 和文档中写清范围。
+- `GET /search?keyword=&type=all|posts|products|users|topics` 聚合保留业务的搜索结果。
+- 全部：展示作品、商品、用户、话题四类混合结果，不做个性化热榜或推荐。
+- 作品：搜索公开可见帖子标题、正文和话题名称，结果进入 `PostDetailActivity`。
+- 商品：搜索上架且审核通过商品的标题、名称、描述、分类和类型，结果进入 `ProductDetailActivity`。
+- 用户：复用 `GET /users/search` 的真实用户资料结果。
+- 话题：复用 `GET /topics?keyword=...` 的真实话题结果；点击话题在搜索页内切到作品筛选并以话题名作为关键词查询相关作品。
+- 空关键词只展示输入引导，不填充本地假热榜。
+- 加载中、空结果、加载失败、清空、取消和范围筛选都必须有明确状态。
 
 ## 消息、通知与私信
 
@@ -127,12 +135,12 @@ Java/XML 页面：
 - 点击 `作品` 进入 `GET /users/me/posts` 驱动的当前用户作品列表。
 - 点击 `关注` 进入 `GET /users/me/following` 驱动的关注用户列表。
 - 点击 `粉丝` 进入 `GET /users/me/followers` 驱动的粉丝用户列表。
-- 编辑资料入口进入 `profile-edit-a.html`。
+- 编辑资料入口进入 `profile-edit-a.html`，保存头像、昵称、简介和手动城市/地区。
 
 边界：
 
-- 城市/地区只能作为手动资料字段或 UI-only 展示，不接地图 API。
-- Profile Edit 只保存当前后端已有资料字段。
+- 城市/地区是手动资料字段：可以从常用地区选择或自行填写，保存到后端，不接地图 API 或定位 Provider。
+- Profile Edit 不展示或保存年龄段、兴趣标签。
 - 未登录时显示登录引导，不用 mock 用户。
 
 ## 商城、订单与地址
@@ -168,11 +176,20 @@ Settings 首页包含：
 - 退出登录。
 - 账号注销。
 
+真实功能：
+
+- 账号与安全读取 `GET /users/me`，展示邮箱、账号状态、本机登录状态；退出登录调用 `/auth/logout`，账号注销申请调用 `/auth/account/cancel`。
+- 隐私与权限读取系统相机、通知和相册能力状态；相机和 Android 13+ 通知支持直接发起运行时授权请求；地区资料只跳转手动资料编辑。
+- 隐私偏好 `allowRecommendation`、`allowStrangerMessages`、`allowFavorites` 通过 `GET/PATCH /users/me/settings` 持久化。
+- 通知偏好 `notifyMessages`、`notifyInteractions`、`notifyPublish`、`notifySystem` 通过 `GET/PATCH /users/me/settings` 持久化。
+- 帮助与关于展示真实版本、构建号、API 地址和登录状态，并提供复制诊断信息或打开系统应用信息等可执行动作。
+
 边界：
 
 - 不提供完整合规材料页面。
 - 不把隐私政策、用户协议、备案、SDK 清单、版权投诉写成已完成。
 - 账号注销后端申请接口存在时仍需把完整流程、冷静期、人工处理和合规闭环标为未完成。
+- 通知偏好不删除历史通知、不解除私信限制、不承诺生产推送服务已完成。
 
 ## Removed From Current Scope
 

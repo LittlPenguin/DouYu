@@ -10,7 +10,9 @@ public final class Models {
     }
 
     public record User(String id, String phone, String email, String nickname, String avatarFileId, String bio,
-                       String ageGroup, boolean isMinor, String realNameStatus, String accountStatus,
+                       String region, String ageGroup, boolean isMinor, String realNameStatus, String accountStatus,
+                       boolean allowRecommendation, boolean allowStrangerMessages, boolean allowFavorites,
+                       boolean notifyMessages, boolean notifyInteractions, boolean notifyPublish, boolean notifySystem,
                        Instant createdAt, Instant updatedAt) {
     }
 

@@ -3,6 +3,7 @@ package cn.edu.app.douyu.feature.community;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -236,7 +237,7 @@ public class PostCreateActivity extends XmlPageActivity {
 
     private void openMainSection(String section) {
         Intent intent = new Intent(this, cn.edu.app.douyu.MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.putExtra(IntentExtras.SECTION, section);
         startActivity(intent);
         finish();
@@ -290,7 +291,7 @@ public class PostCreateActivity extends XmlPageActivity {
             chip.setText("#" + valueOrFallback(topic.name, topic.topicId));
             chip.setCheckable(true);
             chip.setCheckedIconVisible(false);
-            chip.setTextColor(ContextCompat.getColor(this, R.color.doyu_text_muted));
+            styleTopicChip(chip);
             chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked) {
                     selectedTopics.put(topic.topicId, valueOrFallback(topic.name, topic.topicId));
@@ -305,6 +306,40 @@ public class PostCreateActivity extends XmlPageActivity {
             topicState.setText("暂无可选话题，仍可发布无话题帖子。");
         }
         renderPreview();
+    }
+
+    private void styleTopicChip(Chip chip) {
+        chip.setTextSize(13);
+        chip.setChipMinHeight(dp(34));
+        chip.setChipCornerRadius(dp(17));
+        chip.setChipStrokeWidth(dp(1));
+        chip.setChipBackgroundColor(topicChipBackgroundColor());
+        chip.setTextColor(topicChipTextColor());
+        chip.setChipStrokeColor(topicChipStrokeColor());
+    }
+
+    private ColorStateList topicChipBackgroundColor() {
+        return topicChipStateList(R.color.doyu_petal_deep, R.color.doyu_surface);
+    }
+
+    private ColorStateList topicChipTextColor() {
+        return topicChipStateList(R.color.white, R.color.doyu_text_muted);
+    }
+
+    private ColorStateList topicChipStrokeColor() {
+        return topicChipStateList(R.color.doyu_petal_deep, R.color.doyu_open_line);
+    }
+
+    private ColorStateList topicChipStateList(int checkedColorRes, int uncheckedColorRes) {
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{android.R.attr.state_checked},
+                        new int[]{-android.R.attr.state_checked}
+                },
+                new int[]{
+                        ContextCompat.getColor(this, checkedColorRes),
+                        ContextCompat.getColor(this, uncheckedColorRes)
+                });
     }
 
     private void pickImage() {
@@ -561,12 +596,23 @@ public class PostCreateActivity extends XmlPageActivity {
 
     private void renderPublished(Post post) {
         publishing = false;
+        if (post != null && post.postId != null && !post.postId.trim().isEmpty()) {
+            openCreatedPost(post);
+            return;
+        }
         published = true;
         showStatus("帖子发布成功，已同步到社区。", false);
         successActions.setVisibility(View.VISIBLE);
         renderLoginBoundary();
         renderImages();
         updatePublishState();
+    }
+
+    private void openCreatedPost(Post post) {
+        Intent intent = new Intent(this, PostDetailActivity.class);
+        intent.putExtra(IntentExtras.POST_ID, post.postId);
+        startActivity(intent);
+        finish();
     }
 
     private void renderPreview() {

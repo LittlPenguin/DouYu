@@ -31,6 +31,9 @@ public class UserEntity {
     @Column(name = "bio", length = 500)
     private String bio;
 
+    @Column(name = "region", length = 80)
+    private String region;
+
     @Column(name = "age_group", length = 32, nullable = false)
     private String ageGroup;
 
@@ -42,6 +45,27 @@ public class UserEntity {
 
     @Column(name = "account_status", length = 32, nullable = false)
     private String accountStatus;
+
+    @Column(name = "allow_recommendation", nullable = false)
+    private boolean allowRecommendation = true;
+
+    @Column(name = "allow_stranger_messages", nullable = false)
+    private boolean allowStrangerMessages = true;
+
+    @Column(name = "allow_favorites", nullable = false)
+    private boolean allowFavorites = true;
+
+    @Column(name = "notify_messages", nullable = false)
+    private boolean notifyMessages = true;
+
+    @Column(name = "notify_interactions", nullable = false)
+    private boolean notifyInteractions = true;
+
+    @Column(name = "notify_publish", nullable = false)
+    private boolean notifyPublish = true;
+
+    @Column(name = "notify_system", nullable = false)
+    private boolean notifySystem = true;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -60,6 +84,7 @@ public class UserEntity {
         this.nickname = nickname;
         this.avatarFileId = avatarFileId;
         this.bio = bio;
+        this.region = "";
         this.ageGroup = ageGroup;
         this.isMinor = isMinor;
         this.realNameStatus = realNameStatus;
@@ -82,6 +107,8 @@ public class UserEntity {
     public void setAvatarFileId(String avatarFileId) { this.avatarFileId = avatarFileId; }
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
+    public String getRegion() { return region; }
+    public void setRegion(String region) { this.region = region; }
     public String getAgeGroup() { return ageGroup; }
     public void setAgeGroup(String ageGroup) { this.ageGroup = ageGroup; }
     public boolean isMinor() { return isMinor; }
@@ -90,6 +117,20 @@ public class UserEntity {
     public void setRealNameStatus(String realNameStatus) { this.realNameStatus = realNameStatus; }
     public String getAccountStatus() { return accountStatus; }
     public void setAccountStatus(String accountStatus) { this.accountStatus = accountStatus; }
+    public boolean isAllowRecommendation() { return allowRecommendation; }
+    public void setAllowRecommendation(boolean allowRecommendation) { this.allowRecommendation = allowRecommendation; }
+    public boolean isAllowStrangerMessages() { return allowStrangerMessages; }
+    public void setAllowStrangerMessages(boolean allowStrangerMessages) { this.allowStrangerMessages = allowStrangerMessages; }
+    public boolean isAllowFavorites() { return allowFavorites; }
+    public void setAllowFavorites(boolean allowFavorites) { this.allowFavorites = allowFavorites; }
+    public boolean isNotifyMessages() { return notifyMessages; }
+    public void setNotifyMessages(boolean notifyMessages) { this.notifyMessages = notifyMessages; }
+    public boolean isNotifyInteractions() { return notifyInteractions; }
+    public void setNotifyInteractions(boolean notifyInteractions) { this.notifyInteractions = notifyInteractions; }
+    public boolean isNotifyPublish() { return notifyPublish; }
+    public void setNotifyPublish(boolean notifyPublish) { this.notifyPublish = notifyPublish; }
+    public boolean isNotifySystem() { return notifySystem; }
+    public void setNotifySystem(boolean notifySystem) { this.notifySystem = notifySystem; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

@@ -5,11 +5,14 @@ import android.content.Intent;
 import android.net.Uri;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -51,12 +54,17 @@ import cn.edu.app.douyu.ui.XmlPageActivity;
 public class PostDetailActivity extends XmlPageActivity {
     private static final int MAX_COMMENT_IMAGES = 9;
     private static final long MAX_IMAGE_BYTES = 20L * 1024 * 1024;
+    private static final int GALLERY_SWIPE_MIN_DISTANCE_DP = 48;
+    private static final int GALLERY_SWIPE_MAX_OFF_AXIS_DP = 80;
 
     private String postId;
     private Post currentPost;
     private String currentUserId;
     private final List<String> galleryImages = new ArrayList<>();
     private int galleryIndex;
+    private float galleryTouchStartX;
+    private float galleryTouchStartY;
+    private boolean gallerySwipeHandled;
     private boolean submittingComment;
     private boolean followPending;
     private boolean imeWasVisibleWhileInputOpen;
@@ -66,11 +74,13 @@ public class PostDetailActivity extends XmlPageActivity {
     private final Map<String, String> selectedTopics = new LinkedHashMap<>();
 
     private ScrollView scrollView;
+    private View galleryFrame;
     private ImageView galleryImage;
     private TextView galleryPlaceholder;
     private TextView carouselCount;
     private TextView galleryPrev;
     private TextView galleryNext;
+    private HorizontalScrollView thumbnailScroll;
     private LinearLayout thumbnailStrip;
     private LinearLayout topicChips;
     private TextView authorFollow;
@@ -155,11 +165,13 @@ public class PostDetailActivity extends XmlPageActivity {
 
     private void bindViewFields() {
         scrollView = findViewById(R.id.post_detail_scroll);
+        galleryFrame = findViewById(R.id.post_gallery_frame);
         galleryImage = findViewById(R.id.post_gallery_image);
         galleryPlaceholder = findViewById(R.id.post_gallery_placeholder);
         carouselCount = findViewById(R.id.post_carousel_count);
         galleryPrev = findViewById(R.id.post_gallery_prev);
         galleryNext = findViewById(R.id.post_gallery_next);
+        thumbnailScroll = findViewById(R.id.post_thumbnail_scroll);
         thumbnailStrip = findViewById(R.id.post_thumbnail_strip);
         topicChips = findViewById(R.id.post_topic_chips);
         authorFollow = findViewById(R.id.post_author_follow);
@@ -199,6 +211,7 @@ public class PostDetailActivity extends XmlPageActivity {
         galleryPrev.setOnClickListener(v -> moveGallery(-1));
         galleryNext.setOnClickListener(v -> moveGallery(1));
         galleryImage.setOnClickListener(v -> openGalleryViewer());
+        bindGallerySwipe();
         authorFollow.setOnClickListener(v -> toggleFollow());
         findViewById(R.id.post_static_comment_trigger).setOnClickListener(v -> focusCommentInput());
         findViewById(R.id.post_comment_action).setOnClickListener(v -> focusCommentInput());
@@ -224,6 +237,41 @@ public class PostDetailActivity extends XmlPageActivity {
             }
         });
         updateSendEnabled();
+    }
+
+    private void bindGallerySwipe() {
+        View.OnTouchListener listener = (view, event) -> handleGalleryTouch(event);
+        galleryFrame.setOnTouchListener(listener);
+        galleryImage.setOnTouchListener(listener);
+        galleryPlaceholder.setOnTouchListener(listener);
+    }
+
+    private boolean handleGalleryTouch(MotionEvent event) {
+        if (event == null || galleryImages.size() <= 1) {
+            return false;
+        }
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            galleryTouchStartX = event.getX();
+            galleryTouchStartY = event.getY();
+            gallerySwipeHandled = false;
+            return true;
+        }
+        if (event.getAction() != MotionEvent.ACTION_UP && event.getAction() != MotionEvent.ACTION_CANCEL) {
+            return true;
+        }
+        float dx = event.getX() - galleryTouchStartX;
+        float dy = event.getY() - galleryTouchStartY;
+        int minDistance = dp(GALLERY_SWIPE_MIN_DISTANCE_DP);
+        int maxOffAxis = dp(GALLERY_SWIPE_MAX_OFF_AXIS_DP);
+        if (!gallerySwipeHandled && Math.abs(dx) >= minDistance && Math.abs(dy) <= maxOffAxis) {
+            gallerySwipeHandled = true;
+            moveGallery(dx < 0 ? 1 : -1);
+            return true;
+        }
+        if (event.getAction() == MotionEvent.ACTION_UP && Math.abs(dx) < minDistance && Math.abs(dy) < minDistance) {
+            openGalleryViewer();
+        }
+        return true;
     }
 
     private void loadPost() {
@@ -369,28 +417,58 @@ public class PostDetailActivity extends XmlPageActivity {
     private void renderThumbnails() {
         thumbnailStrip.removeAllViews();
         for (int i = 0; i < galleryImages.size(); i++) {
-            final int index = i;
-            ImageView thumb = new ImageView(this);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(42), dp(42));
-            if (i > 0) {
-                params.setMarginStart(dp(7));
-            }
-            thumb.setLayoutParams(params);
-            thumb.setPadding(dp(2), dp(2), dp(2), dp(2));
-            thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            thumb.setBackgroundResource(index == galleryIndex ? R.drawable.bg_thumbnail_selected : R.drawable.bg_image_placeholder);
-            thumb.setContentDescription("作品缩略图 " + (index + 1));
-            thumb.setOnClickListener(v -> {
-                galleryIndex = index;
-                renderGallery();
-            });
-            Glide.with(thumb)
-                    .load(galleryImages.get(index))
-                    .placeholder(R.drawable.bg_image_placeholder)
-                    .error(R.drawable.bg_image_placeholder)
-                    .into(thumb);
-            thumbnailStrip.addView(thumb);
+            thumbnailStrip.addView(buildGalleryThumbnail(i));
         }
+        scrollSelectedThumbnailIntoView();
+    }
+
+    private View buildGalleryThumbnail(int index) {
+        FrameLayout container = new FrameLayout(this);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(42), dp(42));
+        if (index > 0) {
+            params.setMarginStart(dp(7));
+        }
+        container.setLayoutParams(params);
+        container.setPadding(dp(3), dp(3), dp(3), dp(3));
+        container.setBackgroundResource(index == galleryIndex ? R.drawable.bg_thumbnail_selected : R.drawable.bg_image_placeholder);
+        container.setClipToOutline(true);
+        container.setContentDescription("作品缩略图 " + (index + 1));
+
+        ImageView thumb = new ImageView(this);
+        FrameLayout.LayoutParams imageParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT);
+        thumb.setLayoutParams(imageParams);
+        thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        thumb.setBackgroundResource(R.drawable.bg_image_placeholder);
+        thumb.setClipToOutline(true);
+        container.addView(thumb);
+
+        container.setOnClickListener(v -> {
+            galleryIndex = index;
+            renderGallery();
+        });
+        Glide.with(thumb)
+                .load(galleryImages.get(index))
+                .placeholder(R.drawable.bg_image_placeholder)
+                .error(R.drawable.bg_image_placeholder)
+                .into(thumb);
+        return container;
+    }
+
+    private void scrollSelectedThumbnailIntoView() {
+        if (thumbnailScroll == null || thumbnailStrip.getChildCount() == 0
+                || galleryIndex < 0 || galleryIndex >= thumbnailStrip.getChildCount()) {
+            return;
+        }
+        thumbnailScroll.post(() -> {
+            View selected = thumbnailStrip.getChildAt(galleryIndex);
+            if (selected == null) {
+                return;
+            }
+            int scrollX = Math.max(0, selected.getLeft() - dp(14));
+            thumbnailScroll.smoothScrollTo(scrollX, 0);
+        });
     }
 
     private void moveGallery(int delta) {

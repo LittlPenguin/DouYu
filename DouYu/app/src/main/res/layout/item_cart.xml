@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_card"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/cart_item_selected"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:buttonTint="@color/doyu_petal_deep"
+            android:contentDescription="选择购物车商品" />
+
+        <ImageView
+            android:id="@+id/cart_item_image"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_image_placeholder"
+            android:contentDescription="@null"
+            android:scaleType="centerCrop" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/cart_item_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="@color/doyu_text"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/cart_item_spec"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/doyu_text_muted"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/cart_item_price"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/doyu_petal_deep"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/cart_item_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/doyu_text"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cart_item_quantity_decrease"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:minWidth="0dp"
+            android:text="-"
+            android:textAllCaps="false"
+            android:textColor="@color/doyu_petal_deep"
+            android:textSize="18sp"
+            app:strokeColor="@color/doyu_open_line" />
+
+        <TextView
+            android:id="@+id/cart_item_quantity"
+            android:layout_width="48dp"
+            android:layout_height="42dp"
+            android:gravity="center"
+            android:text="0"
+            android:textColor="@color/doyu_text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cart_item_quantity_increase"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:minWidth="0dp"
+            android:text="+"
+            android:textAllCaps="false"
+            android:textColor="@color/doyu_petal_deep"
+            android:textSize="18sp"
+            app:strokeColor="@color/doyu_open_line" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cart_item_delete"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="86dp"
+            android:layout_height="42dp"
+            android:text="删除"
+            android:textAllCaps="false"
+            android:textColor="@color/doyu_danger"
+            android:textSize="12sp"
+            app:strokeColor="@color/doyu_open_line" />
+    </LinearLayout>
+</LinearLayout>

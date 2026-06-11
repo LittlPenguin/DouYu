@@ -404,7 +404,9 @@ public class CommunityController {
         view.put("author", authorInfo(post.getAuthorId()));
         view.put("title", post.getTitle() == null ? "" : post.getTitle());
         view.put("content", post.getContent());
-        view.put("mediaFileIds", splitList(post.getMediaFileIds()));
+        List<String> mediaFileIds = splitList(post.getMediaFileIds());
+        view.put("mediaFileIds", mediaFileIds);
+        view.put("imageUrls", postImageUrls(mediaFileIds));
         CoverAsset cover = coverAsset(post);
         view.put("coverImageUrl", cover.url());
         view.put("coverWidth", cover.width());
@@ -455,7 +457,7 @@ public class CommunityController {
             Map<String, Object> m = new java.util.LinkedHashMap<>();
             m.put("userId", u.getId());
             m.put("nickname", u.getNickname() == null ? "" : u.getNickname());
-            m.put("avatarUrl", u.getAvatarFileId() == null ? "" : u.getAvatarFileId());
+            m.put("avatarUrl", avatarUrl(u.getAvatarFileId()));
             m.put("bio", u.getBio() == null ? "" : u.getBio());
             m.put("level", reward != null ? reward.getLevel() : 1);
             m.put("isMinor", u.isMinor());
@@ -493,7 +495,7 @@ public class CommunityController {
                             Map<String, Object> mentionView = new java.util.LinkedHashMap<>();
                             mentionView.put("userId", user.getId());
                             mentionView.put("nickname", user.getNickname() == null ? "" : user.getNickname());
-                            mentionView.put("avatarUrl", user.getAvatarFileId() == null ? "" : user.getAvatarFileId());
+                            mentionView.put("avatarUrl", avatarUrl(user.getAvatarFileId()));
                             return mentionView;
                         })
                         .orElseGet(() -> Map.of("userId", mention.getUserId(), "nickname", "", "avatarUrl", "")))
@@ -629,6 +631,18 @@ public class CommunityController {
         post.setCoverHeight(file.getHeight());
     }
 
+    private List<String> postImageUrls(List<String> mediaFileIds) {
+        if (mediaFileIds == null || mediaFileIds.isEmpty()) {
+            return List.of();
+        }
+        return mediaFileIds.stream()
+                .map(fileId -> fileAssetRepository.findById(fileId)
+                        .map(FileAssetEntity::getPublicUrl)
+                        .orElse(""))
+                .filter(url -> url != null && !url.isBlank())
+                .toList();
+    }
+
     private CoverAsset coverAsset(PostEntity post) {
         String coverUrl = post.getCoverImageUrl() == null ? "" : post.getCoverImageUrl();
         Integer coverWidth = post.getCoverWidth();
@@ -666,6 +680,16 @@ public class CommunityController {
         view.put("imageUrl", sticker.getImageUrl() == null ? "" : sticker.getImageUrl());
         view.put("emojiText", sticker.getEmojiText() == null ? "" : sticker.getEmojiText());
         return view;
+    }
+
+    private String avatarUrl(String avatarFileId) {
+        if (avatarFileId == null || avatarFileId.isBlank()) {
+            return "";
+        }
+        return fileAssetRepository.findById(avatarFileId)
+                .map(FileAssetEntity::getPublicUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .orElse("");
     }
 
     public record PostRequest(String title, @NotBlank String content,

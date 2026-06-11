@@ -245,7 +245,10 @@ public class AdminController {
 
     private User toModel(UserEntity e) {
         return new User(e.getId(), e.getPhone(), e.getEmail(), e.getNickname(), e.getAvatarFileId(), e.getBio(),
-                e.getAgeGroup(), e.isMinor(), e.getRealNameStatus(), e.getAccountStatus(), e.getCreatedAt(), e.getUpdatedAt());
+                e.getRegion(), e.getAgeGroup(), e.isMinor(), e.getRealNameStatus(), e.getAccountStatus(),
+                e.isAllowRecommendation(), e.isAllowStrangerMessages(), e.isAllowFavorites(),
+                e.isNotifyMessages(), e.isNotifyInteractions(), e.isNotifyPublish(), e.isNotifySystem(),
+                e.getCreatedAt(), e.getUpdatedAt());
     }
 
     private Map<String, Object> mapOf(Object... values) {

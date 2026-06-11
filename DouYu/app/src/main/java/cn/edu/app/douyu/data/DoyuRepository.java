@@ -4,17 +4,23 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import cn.edu.app.douyu.model.AddressSnapshot;
 import cn.edu.app.douyu.model.AuthSession;
+import cn.edu.app.douyu.model.CartItemRequest;
+import cn.edu.app.douyu.model.CartResponse;
 import cn.edu.app.douyu.model.ChatMessage;
 import cn.edu.app.douyu.model.Comment;
 import cn.edu.app.douyu.model.CommentMediaAsset;
 import cn.edu.app.douyu.model.CommentRequest;
 import cn.edu.app.douyu.model.Conversation;
 import cn.edu.app.douyu.model.ConversationDetail;
+import cn.edu.app.douyu.model.CreateOrderRequest;
 import cn.edu.app.douyu.model.FileAsset;
 import cn.edu.app.douyu.model.NotificationMessage;
+import cn.edu.app.douyu.model.Order;
 import cn.edu.app.douyu.model.PageResponse;
 import cn.edu.app.douyu.model.Post;
 import cn.edu.app.douyu.model.PostInteraction;
@@ -25,13 +31,17 @@ import cn.edu.app.douyu.model.LoginRequest;
 import cn.edu.app.douyu.model.ReadReceipt;
 import cn.edu.app.douyu.model.RefreshRequest;
 import cn.edu.app.douyu.model.RegisterRequest;
+import cn.edu.app.douyu.model.SearchResult;
 import cn.edu.app.douyu.model.SendMessageRequest;
 import cn.edu.app.douyu.model.Topic;
+import cn.edu.app.douyu.model.UpdateCartRequest;
 import cn.edu.app.douyu.model.UpdateProfileRequest;
+import cn.edu.app.douyu.model.UpdateUserSettingsRequest;
 import cn.edu.app.douyu.model.UploadConfirmRequest;
 import cn.edu.app.douyu.model.UploadPresignRequest;
 import cn.edu.app.douyu.model.UploadPresignResponse;
 import cn.edu.app.douyu.model.UserProfile;
+import cn.edu.app.douyu.model.UserSettings;
 import cn.edu.app.douyu.model.FollowResult;
 import cn.edu.app.douyu.network.ApiException;
 import cn.edu.app.douyu.network.ApiResponse;
@@ -76,6 +86,12 @@ public class DoyuRepository {
 
     public PageResponse<Topic> topics() throws IOException {
         return body(api.topics(FIRST_PAGE, PAGE_SIZE));
+    }
+
+    public PageResponse<SearchResult> search(String keyword, String type) throws IOException {
+        String safeKeyword = keyword == null ? "" : keyword;
+        String safeType = type == null || type.trim().isEmpty() ? "all" : type;
+        return normalizeSearchPage(body(api.search(safeKeyword, safeType, FIRST_PAGE, PAGE_SIZE)));
     }
 
     public PageResponse<Post> topicPosts(String topicId) throws IOException {
@@ -131,6 +147,34 @@ public class DoyuRepository {
 
     public Product product(String productId) throws IOException {
         return body(api.product(productId));
+    }
+
+    public CartResponse cart() throws IOException {
+        return body(api.cart());
+    }
+
+    public CartResponse.Item addCartItem(String skuId, int quantity) throws IOException {
+        return body(api.addCartItem(new CartItemRequest(skuId, quantity)));
+    }
+
+    public CartResponse.Item updateCartItem(String itemId, int quantity) throws IOException {
+        return body(api.updateCartItem(itemId, new UpdateCartRequest(quantity)));
+    }
+
+    public void deleteCartItem(String itemId) throws IOException {
+        body(api.deleteCartItem(itemId));
+    }
+
+    public Order createImmediateOrder(String skuId, int quantity, AddressSnapshot addressSnapshot, String remark) throws IOException {
+        return body(api.createOrder(
+                orderIdempotencyKey(),
+                CreateOrderRequest.immediate(skuId, quantity, addressSnapshot, remark)));
+    }
+
+    public Order createCartOrder(List<String> itemIds, AddressSnapshot addressSnapshot, String remark) throws IOException {
+        return body(api.createOrder(
+                orderIdempotencyKey(),
+                CreateOrderRequest.fromCart(itemIds, addressSnapshot, remark)));
     }
 
     public void uploadPresignedBytes(String uploadUrl, byte[] bytes, String mimeType, Map<String, String> headers) throws IOException {
@@ -199,7 +243,7 @@ public class DoyuRepository {
     }
 
     public UserProfile me() throws IOException {
-        return body(api.me());
+        return normalizeProfile(body(api.me()));
     }
 
     public UserProfile updateMe(String nickname, String bio) throws IOException {
@@ -207,7 +251,19 @@ public class DoyuRepository {
     }
 
     public UserProfile updateMe(String nickname, String bio, String avatarFileId) throws IOException {
-        return body(api.updateMe(new UpdateProfileRequest(nickname, avatarFileId, bio)));
+        return normalizeProfile(body(api.updateMe(new UpdateProfileRequest(nickname, avatarFileId, bio))));
+    }
+
+    public UserProfile updateMe(String nickname, String bio, String avatarFileId, String region) throws IOException {
+        return normalizeProfile(body(api.updateMe(new UpdateProfileRequest(nickname, avatarFileId, bio, region))));
+    }
+
+    public UserSettings userSettings() throws IOException {
+        return body(api.userSettings());
+    }
+
+    public UserSettings updateUserSettings(UpdateUserSettingsRequest request) throws IOException {
+        return body(api.updateUserSettings(request));
     }
 
     public PageResponse<Post> myPosts() throws IOException {
@@ -215,11 +271,11 @@ public class DoyuRepository {
     }
 
     public PageResponse<UserProfile> followingUsers() throws IOException {
-        return body(api.followingUsers(FIRST_PAGE, PAGE_SIZE));
+        return normalizeProfilePage(body(api.followingUsers(FIRST_PAGE, PAGE_SIZE)));
     }
 
     public PageResponse<UserProfile> followerUsers() throws IOException {
-        return body(api.followerUsers(FIRST_PAGE, PAGE_SIZE));
+        return normalizeProfilePage(body(api.followerUsers(FIRST_PAGE, PAGE_SIZE)));
     }
 
     /**
@@ -309,6 +365,35 @@ public class DoyuRepository {
         return comment;
     }
 
+    private PageResponse<UserProfile> normalizeProfilePage(PageResponse<UserProfile> page) {
+        if (page == null || page.items == null) {
+            return page;
+        }
+        for (UserProfile profile : page.items) {
+            normalizeProfile(profile);
+        }
+        return page;
+    }
+
+    private PageResponse<SearchResult> normalizeSearchPage(PageResponse<SearchResult> page) {
+        if (page == null || page.items == null) {
+            return page;
+        }
+        for (SearchResult result : page.items) {
+            if (result != null) {
+                result.imageUrl = normalizeImageUrl(result.imageUrl);
+            }
+        }
+        return page;
+    }
+
+    private UserProfile normalizeProfile(UserProfile profile) {
+        if (profile != null) {
+            profile.avatarUrl = normalizeImageUrl(profile.avatarUrl);
+        }
+        return profile;
+    }
+
     private String normalizeImageUrl(String url) {
         if (url == null || url.trim().isEmpty()) {
             return url;
@@ -316,8 +401,12 @@ public class DoyuRepository {
         return resolveLoopbackUrlToApiHost(url.trim());
     }
 
+    private static String orderIdempotencyKey() {
+        return "android-order-" + UUID.randomUUID().toString().replace("-", "");
+    }
+
     public PageResponse<UserProfile> searchUsers(String keyword) throws IOException {
-        return body(api.searchUsers(keyword == null ? "" : keyword, FIRST_PAGE, PAGE_SIZE));
+        return normalizeProfilePage(body(api.searchUsers(keyword == null ? "" : keyword, FIRST_PAGE, PAGE_SIZE)));
     }
 
     public FollowResult followUser(String userId) throws IOException {
@@ -350,6 +439,10 @@ public class DoyuRepository {
 
     public void logout(String refreshToken) throws IOException {
         body(api.logout(new RefreshRequest(refreshToken)));
+    }
+
+    public void cancelAccount() throws IOException {
+        body(api.cancelAccount());
     }
 
     public static <T> T body(Call<ApiResponse<T>> call) throws IOException {

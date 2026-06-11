@@ -64,6 +64,22 @@ Flow screens:
 
 Navigation uses Intent extras and Fragment tab state.
 
+- Main bottom navigation is unified around section ids:
+  - `community`
+  - `commerce`
+  - `messages`
+  - `profile`
+- `MainActivity` owns the section-to-tab mapping and must handle both first
+  launch and reused-instance navigation via `onNewIntent`.
+- `社区`, `商城`, `消息`, and `我的` switch content inside the same
+  `MainActivity` shell.
+- `上传` is an action item. It opens `PostCreateActivity` after login and does
+  not replace the current main Fragment.
+- When `PostCreateActivity` routes back to a main section, it must send
+  `IntentExtras.SECTION` with `FLAG_ACTIVITY_CLEAR_TOP` and
+  `FLAG_ACTIVITY_SINGLE_TOP` so the existing `MainActivity` instance handles the
+  target section consistently.
+
 Keep these extra names for retained flows:
 
 - `postId`
@@ -82,6 +98,25 @@ The backend API remains under `/api/v1`. Java DTO field names must match the exi
 Address fields and address management requirements remain in scope for commerce/order flows. Removing map/location does not remove manual address fields.
 
 OSS-backed image storage, upload presign/confirm, Alibaba OSS configuration and backend upload/oss provider remain in scope.
+Android must normalize backend image URLs that point at loopback/local OSS hosts before rendering them on a device. This applies to post images, comment media and user `avatarUrl`; a backend `localhost` URL must be rewritten to the configured API host when the API host is a device-reachable address.
+
+Settings is a real account and device-state surface:
+
+- `GET /api/v1/users/me` drives account/security identity fields such as email, account status and manual profile region.
+- `GET /api/v1/users/me/settings` and `PATCH /api/v1/users/me/settings` persist privacy and notification preferences. Android must not store these business settings only in local preferences.
+- System permission rows read real Android permission state for camera and notifications, provide direct runtime permission requests where Android supports them, and open the OS app settings page when the user needs to change a denied permission manually.
+- Notification preferences only control app reminder preferences. They do not delete message history, bypass private-message limits, or claim that a push provider is complete.
+- Account cancellation uses `POST /api/v1/auth/account/cancel`; Android must show confirmation and wait for the backend response before clearing local session.
+- Help/About shows real build and API information, not placeholder completion claims.
+
+商品购买数据必须以后端为准：
+
+- 商品详情页从 `/api/v1/products/{productId}` 读取 `Product` 和 SKU 数据。
+- 数量选择必须限制在可用 SKU 库存内。
+- 加入购物车使用 `POST /api/v1/cart/items`；后端响应成功前不得展示本地购物车成功状态。
+- 立即下单使用 `POST /api/v1/orders`，请求包含立即购买商品和用户输入字段生成的手动地址快照。
+- 创建订单后可以展示返回的订单 ID 和 `CREATED` 状态，但不得展示支付页、支付结果、渠道跳转或虚假成功状态。
+- 商品详情、购物车、数量、收货信息和订单创建相关 UI 文案必须使用自然中文；API 字段名和后端枚举值保持英文契约。
 
 ## UI Contract
 

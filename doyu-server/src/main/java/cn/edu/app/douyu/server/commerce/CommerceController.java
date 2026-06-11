@@ -7,7 +7,12 @@ import cn.edu.app.douyu.server.common.ErrorCode;
 import cn.edu.app.douyu.server.common.IdGenerator;
 import cn.edu.app.douyu.server.common.Models.User;
 import cn.edu.app.douyu.server.common.PageResult;
-import cn.edu.app.douyu.server.common.entity.*;
+import cn.edu.app.douyu.server.common.entity.CartItemEntity;
+import cn.edu.app.douyu.server.common.entity.CartItemRepository;
+import cn.edu.app.douyu.server.common.entity.ProductEntity;
+import cn.edu.app.douyu.server.common.entity.ProductRepository;
+import cn.edu.app.douyu.server.common.entity.SkuEntity;
+import cn.edu.app.douyu.server.common.entity.SkuRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -27,10 +32,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "商城", description = "商品列表、购物车、玩家商品发布")
+@Tag(name = "Commerce", description = "Products, categories, and cart")
 @RestController
 @RequestMapping("/api/v1")
 public class CommerceController {
@@ -49,8 +55,8 @@ public class CommerceController {
         this.authService = authService;
     }
 
-    @Operation(summary = "商品列表")
-    @ApiResponse(responseCode = "200", description = "成功")
+    @Operation(summary = "Product list")
+    @ApiResponse(responseCode = "200", description = "OK")
     @GetMapping("/products")
     PageResult<Map<String, Object>> products(@RequestParam(defaultValue = "1") int page,
                                              @RequestParam(defaultValue = "20") int size,
@@ -60,15 +66,16 @@ public class CommerceController {
                 : productRepository.findByStatusAndAuditStatusAndCategoryId("ON_SALE", "PASS", categoryId);
         List<Map<String, Object>> items = products.stream()
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .map(this::productView).toList();
+                .map(this::productView)
+                .toList();
         return PageResult.of(slice(items, page, size), page, size, items.size());
     }
 
-    @Operation(summary = "商品分类")
-    @ApiResponse(responseCode = "200", description = "成功")
+    @Operation(summary = "Product categories")
+    @ApiResponse(responseCode = "200", description = "OK")
     @GetMapping("/product-categories")
     Map<String, Object> productCategories() {
-        Map<String, CategoryCount> counts = new java.util.LinkedHashMap<>();
+        Map<String, CategoryCount> counts = new LinkedHashMap<>();
         for (ProductEntity product : productRepository.findByStatusAndAuditStatus("ON_SALE", "PASS")) {
             String categoryId = valueOrDefault(product.getCategoryId(), "other");
             CategoryCount count = counts.computeIfAbsent(categoryId,
@@ -78,7 +85,7 @@ public class CommerceController {
         List<Map<String, Object>> items = counts.values().stream()
                 .sorted((a, b) -> Integer.compare(categoryRank(a.categoryId), categoryRank(b.categoryId)))
                 .map(c -> {
-                    Map<String, Object> view = new java.util.LinkedHashMap<>();
+                    Map<String, Object> view = new LinkedHashMap<>();
                     view.put("categoryId", c.categoryId);
                     view.put("name", c.name);
                     view.put("productCount", c.count);
@@ -88,24 +95,24 @@ public class CommerceController {
         return Map.of("items", items);
     }
 
-    @Operation(summary = "商品详情")
+    @Operation(summary = "Product detail")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "404", description = "商品不存在")
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "404", description = "Product not found")
     })
     @GetMapping("/products/{productId}")
     Map<String, Object> product(@PathVariable String productId) {
         ProductEntity product = productRepository.findById(productId)
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "商品不存在"));
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "Product not found"));
         return productView(product);
     }
 
-    @Operation(summary = "发布玩家商品")
+    @Operation(summary = "Create player product")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "发布成功"),
-            @ApiResponse(responseCode = "400", description = "参数错误"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "403", description = "未成年或未实名")
+            @ApiResponse(responseCode = "200", description = "Created"),
+            @ApiResponse(responseCode = "400", description = "Invalid argument"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden")
     })
     @PostMapping("/products")
     Map<String, Object> createPlayerProduct(Authentication authentication, @Valid @RequestBody ProductRequest request) {
@@ -113,7 +120,7 @@ public class CommerceController {
         User user = authService.requireUser(userId);
         if (("PLAYER_SECOND_HAND".equals(request.type()) || "PLAYER_CUSTOM_SERVICE".equals(request.type()))
                 && (user.isMinor() || !"VERIFIED".equals(user.realNameStatus()))) {
-            throw new BizException(ErrorCode.FORBIDDEN, "玩家卖家和定制服务发布必须 18+ 实名");
+            throw new BizException(ErrorCode.FORBIDDEN, "Player sellers must be 18+ and verified");
         }
         Instant now = Instant.now();
         ProductEntity product = new ProductEntity();
@@ -128,6 +135,7 @@ public class CommerceController {
         product.setCreatedAt(now);
         product.setUpdatedAt(now);
         productRepository.save(product);
+
         SkuEntity sku = new SkuEntity();
         sku.setId(idGenerator.next("sku"));
         sku.setProductId(product.getId());
@@ -142,86 +150,82 @@ public class CommerceController {
         return productView(product);
     }
 
-    @Operation(summary = "购物车")
+    @Operation(summary = "Cart")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录")
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @GetMapping("/cart")
     Map<String, Object> cart(Authentication authentication) {
         String userId = CurrentUser.userId(authentication);
-        List<Map<String, Object>> items = cartItemRepository.findByUserId(userId).stream().map(item -> {
-            SkuEntity sku = skuRepository.findById(item.getSkuId()).orElse(null);
-            ProductEntity product = sku != null ? productRepository.findById(sku.getProductId()).orElse(null) : null;
-            Map<String, Object> itemData = new java.util.LinkedHashMap<>();
-            itemData.put("itemId", item.getId());
-            itemData.put("skuId", item.getSkuId());
-            itemData.put("sku", sku != null ? skuView(sku) : Map.of());
-            itemData.put("productId", sku != null ? sku.getProductId() : "");
-            itemData.put("product", product != null ? cartProductView(product) : Map.of());
-            itemData.put("quantity", item.getQuantity());
-            return itemData;
-        }).toList();
+        List<Map<String, Object>> items = cartItemRepository.findByUserId(userId).stream()
+                .map(this::cartItemView)
+                .toList();
         return Map.of("items", items);
     }
 
-    @Operation(summary = "加入购物车")
+    @Operation(summary = "Add cart item")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "404", description = "SKU 不存在"),
-            @ApiResponse(responseCode = "409", description = "玩家商品不支持加入标准购物车")
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "SKU not found"),
+            @ApiResponse(responseCode = "409", description = "Unavailable product or inventory")
     })
     @PostMapping("/cart/items")
     Map<String, Object> addCart(Authentication authentication, @Valid @RequestBody CartItemRequest request) {
         String userId = CurrentUser.userId(authentication);
-        SkuEntity sku = skuRepository.findById(request.skuId())
-                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "SKU 不存在"));
+        SkuEntity sku = requireSku(request.skuId());
         ProductEntity product = productRepository.findById(sku.getProductId()).orElse(null);
-        if (product != null && !"SELF_OPERATED".equals(product.getType())) {
-            throw new BizException(ErrorCode.CONFLICT, "玩家商品不支持加入标准购物车");
-        }
+        requirePurchasableSku(sku, product);
+
         Instant now = Instant.now();
         CartItemEntity existing = cartItemRepository.findByUserIdAndSkuId(userId, sku.getId()).orElse(null);
         CartItemEntity item;
+        int targetQuantity = request.quantity();
         if (existing == null) {
             item = new CartItemEntity();
             item.setId(idGenerator.next("cart"));
             item.setUserId(userId);
             item.setSkuId(sku.getId());
-            item.setQuantity(request.quantity());
             item.setCreatedAt(now);
-            item.setUpdatedAt(now);
         } else {
             item = existing;
-            item.setQuantity(existing.getQuantity() + request.quantity());
-            item.setUpdatedAt(now);
+            targetQuantity = existing.getQuantity() + request.quantity();
         }
+        requireQuantityWithinStock(sku, targetQuantity);
+        item.setQuantity(targetQuantity);
+        item.setUpdatedAt(now);
         cartItemRepository.save(item);
         return Map.of("itemId", item.getId(), "quantity", item.getQuantity());
     }
 
-    @Operation(summary = "修改购物车数量")
+    @Operation(summary = "Update cart item quantity")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "404", description = "购物车项不存在")
+            @ApiResponse(responseCode = "200", description = "OK"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Cart item not found")
     })
     @PatchMapping("/cart/items/{itemId}")
-    Map<String, Object> updateCart(Authentication authentication, @PathVariable String itemId, @Valid @RequestBody UpdateCartRequest request) {
+    Map<String, Object> updateCart(Authentication authentication, @PathVariable String itemId,
+                                   @Valid @RequestBody UpdateCartRequest request) {
         String userId = CurrentUser.userId(authentication);
         CartItemEntity item = requireCartItem(userId, itemId);
+        SkuEntity sku = requireSku(item.getSkuId());
+        ProductEntity product = productRepository.findById(sku.getProductId()).orElse(null);
+        requirePurchasableSku(sku, product);
+        requireQuantityWithinStock(sku, request.quantity());
+
         item.setQuantity(request.quantity());
         item.setUpdatedAt(Instant.now());
         cartItemRepository.save(item);
         return Map.of("itemId", item.getId(), "quantity", item.getQuantity());
     }
 
-    @Operation(summary = "移除购物车商品")
+    @Operation(summary = "Delete cart item")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "删除成功"),
-            @ApiResponse(responseCode = "401", description = "未登录"),
-            @ApiResponse(responseCode = "404", description = "购物车项不存在")
+            @ApiResponse(responseCode = "200", description = "Deleted"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "Cart item not found")
     })
     @DeleteMapping("/cart/items/{itemId}")
     Map<String, Object> deleteCart(Authentication authentication, @PathVariable String itemId) {
@@ -231,17 +235,69 @@ public class CommerceController {
         return Map.of("deleted", true);
     }
 
+    private Map<String, Object> cartItemView(CartItemEntity item) {
+        SkuEntity sku = skuRepository.findById(item.getSkuId()).orElse(null);
+        ProductEntity product = sku != null ? productRepository.findById(sku.getProductId()).orElse(null) : null;
+        boolean available = sku != null
+                && isPurchasableSelfOperatedProduct(product)
+                && "ON_SALE".equals(sku.getStatus())
+                && sku.getAvailableStock() >= item.getQuantity();
+        int priceCent = sku != null ? sku.getPriceCent() : 0;
+
+        Map<String, Object> itemData = new LinkedHashMap<>();
+        itemData.put("itemId", item.getId());
+        itemData.put("skuId", item.getSkuId());
+        itemData.put("sku", sku != null ? skuView(sku) : Map.of());
+        itemData.put("productId", sku != null ? sku.getProductId() : "");
+        itemData.put("product", product != null ? cartProductView(product) : Map.of());
+        itemData.put("quantity", item.getQuantity());
+        itemData.put("priceCent", priceCent);
+        itemData.put("rowAmountCent", priceCent * item.getQuantity());
+        itemData.put("available", available);
+        return itemData;
+    }
+
     private CartItemEntity requireCartItem(String userId, String itemId) {
         CartItemEntity item = cartItemRepository.findById(itemId).orElse(null);
         if (item == null || !item.getUserId().equals(userId)) {
-            throw new BizException(ErrorCode.NOT_FOUND, "购物车项不存在");
+            throw new BizException(ErrorCode.NOT_FOUND, "Cart item not found");
         }
         return item;
     }
 
+    private SkuEntity requireSku(String skuId) {
+        return skuRepository.findById(skuId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "SKU not found"));
+    }
+
+    private void requirePurchasableSku(SkuEntity sku, ProductEntity product) {
+        if (product == null || !"ON_SALE".equals(product.getStatus()) || !"PASS".equals(product.getAuditStatus())) {
+            throw new BizException(ErrorCode.NOT_FOUND, "Product is unavailable");
+        }
+        if (!"SELF_OPERATED".equals(product.getType())) {
+            throw new BizException(ErrorCode.CONFLICT, "Player products do not support standard cart");
+        }
+        if (!"ON_SALE".equals(sku.getStatus())) {
+            throw new BizException(ErrorCode.NOT_FOUND, "SKU not found");
+        }
+    }
+
+    private boolean isPurchasableSelfOperatedProduct(ProductEntity product) {
+        return product != null
+                && "SELF_OPERATED".equals(product.getType())
+                && "ON_SALE".equals(product.getStatus())
+                && "PASS".equals(product.getAuditStatus());
+    }
+
+    private void requireQuantityWithinStock(SkuEntity sku, int quantity) {
+        if (sku.getAvailableStock() < quantity) {
+            throw new BizException(ErrorCode.INVENTORY_NOT_ENOUGH, "Inventory is not enough");
+        }
+    }
+
     private Map<String, Object> productView(ProductEntity product) {
         List<SkuEntity> productSkus = skuRepository.findByProductId(product.getId());
-        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        Map<String, Object> view = new LinkedHashMap<>();
         view.put("productId", product.getId());
         view.put("type", product.getType());
         view.put("sellerId", product.getSellerId());
@@ -262,9 +318,11 @@ public class CommerceController {
     }
 
     private Map<String, Object> cartProductView(ProductEntity product) {
-        Map<String, Object> view = new java.util.LinkedHashMap<>();
+        Map<String, Object> view = new LinkedHashMap<>();
+        view.put("productId", product.getId());
         view.put("title", product.getTitle());
         view.put("imageUrl", valueOrEmpty(product.getImageUrl()));
+        view.put("type", product.getType());
         return view;
     }
 
@@ -348,7 +406,8 @@ public class CommerceController {
         }
     }
 
-    public record ProductRequest(@NotBlank String type, @NotBlank String title, String description, @Valid ProductSkuRequest sku) {
+    public record ProductRequest(@NotBlank String type, @NotBlank String title, String description,
+                                 @Valid ProductSkuRequest sku) {
     }
 
     public record ProductSkuRequest(@NotBlank String specName, @Positive int priceCent, @Positive int stock) {

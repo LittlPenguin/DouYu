@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/doyu_page"
@@ -23,39 +22,90 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_card"
+                android:background="@drawable/bg_state_card"
+                android:lineSpacingExtra="3dp"
                 android:padding="16dp"
-                android:text="分组控制&#10;私信、互动、创作、系统四类通知分组展示。关闭推送后仍可在消息页查看历史记录。"
+                android:text="通知偏好保存到后端；关闭提醒不删除消息页历史记录。"
                 android:textColor="@color/doyu_text"
                 android:textSize="15sp" />
 
             <TextView
+                android:id="@+id/settings_notifications_status"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="14dp"
                 android:background="@drawable/bg_card"
-                android:padding="16dp"
-                android:text="保存规则&#10;有后端接口时展示保存中/成功/失败；无接口时禁用或标注开发态；失败时回滚或提示重试。"
-                android:textColor="@color/doyu_text"
-                android:textSize="15sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/bg_card"
-                android:padding="16dp"
-                android:text="私信限制不变&#10;关闭私信通知不解除互关限制；超过 3 条仍禁用发送。"
+                android:padding="14dp"
+                android:text="正在读取通知偏好"
                 android:textColor="@color/doyu_text_muted"
-                android:textSize="14sp" />
+                android:textSize="13sp" />
 
-            <com.google.android.material.button.MaterialButton
+            <CheckBox
+                android:id="@+id/settings_notify_messages"
                 android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:layout_marginTop="18dp"
-                android:enabled="false"
-                android:text="通知偏好接口待接入"
-                app:cornerRadius="8dp" />
+                android:layout_height="58dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:buttonTint="@color/doyu_petal_deep"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:text="私信提醒"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <CheckBox
+                android:id="@+id/settings_notify_interactions"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:buttonTint="@color/doyu_petal_deep"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:text="@ 提及、评论、点赞收藏"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <CheckBox
+                android:id="@+id/settings_notify_publish"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:buttonTint="@color/doyu_petal_deep"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:text="发布结果提醒"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <CheckBox
+                android:id="@+id/settings_notify_system"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_card"
+                android:buttonTint="@color/doyu_petal_deep"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:text="系统与账号提醒"
+                android:textColor="@color/doyu_text"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:lineSpacingExtra="3dp"
+                android:padding="14dp"
+                android:text="私信提醒只控制提醒偏好，不改变互关或发送限制。"
+                android:textColor="@color/doyu_text_muted"
+                android:textSize="13sp" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

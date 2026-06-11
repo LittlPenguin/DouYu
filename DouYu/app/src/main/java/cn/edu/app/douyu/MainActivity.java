@@ -87,12 +87,25 @@ public class MainActivity extends AppCompatActivity {
         tabs[2].setOnClickListener(v -> openTab(2));
         tabs[3].setOnClickListener(v -> openTab(3));
         if (savedInstanceState == null) {
-            openTab(initialTab());
+            handleSectionIntent(getIntent());
         }
     }
 
-    private int initialTab() {
-        String section = getIntent().getStringExtra(IntentExtras.SECTION);
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleSectionIntent(intent);
+    }
+
+    private void handleSectionIntent(Intent intent) {
+        openTab(sectionToTabIndex(intent == null ? null : intent.getStringExtra(IntentExtras.SECTION)));
+    }
+
+    private int sectionToTabIndex(String section) {
+        if (IntentExtras.SECTION_COMMUNITY.equals(section)) {
+            return 0;
+        }
         if (IntentExtras.SECTION_COMMERCE.equals(section)) {
             return 1;
         }

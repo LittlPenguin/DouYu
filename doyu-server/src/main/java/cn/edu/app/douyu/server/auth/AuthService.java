@@ -7,6 +7,8 @@ import cn.edu.app.douyu.server.common.IdGenerator;
 import cn.edu.app.douyu.server.common.Models.User;
 import cn.edu.app.douyu.server.common.TokenService;
 import cn.edu.app.douyu.server.common.entity.FollowRepository;
+import cn.edu.app.douyu.server.common.entity.FileAssetEntity;
+import cn.edu.app.douyu.server.common.entity.FileAssetRepository;
 import cn.edu.app.douyu.server.common.entity.RefreshTokenEntity;
 import cn.edu.app.douyu.server.common.entity.RefreshTokenRepository;
 import cn.edu.app.douyu.server.common.entity.RewardAccountRepository;
@@ -35,6 +37,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final FollowRepository followRepository;
     private final RewardAccountRepository rewardAccountRepository;
+    private final FileAssetRepository fileAssetRepository;
     private final IdGenerator idGenerator;
     private final TokenService tokenService;
     private final DouyuProperties properties;
@@ -42,12 +45,14 @@ public class AuthService {
 
     public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
                        FollowRepository followRepository, RewardAccountRepository rewardAccountRepository,
+                       FileAssetRepository fileAssetRepository,
                        IdGenerator idGenerator, TokenService tokenService, DouyuProperties properties,
                        PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.followRepository = followRepository;
         this.rewardAccountRepository = rewardAccountRepository;
+        this.fileAssetRepository = fileAssetRepository;
         this.idGenerator = idGenerator;
         this.tokenService = tokenService;
         this.properties = properties;
@@ -134,8 +139,9 @@ public class AuthService {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("userId", user.id());
         view.put("nickname", user.nickname() == null ? "" : user.nickname());
-        view.put("avatarUrl", user.avatarFileId() == null ? "" : user.avatarFileId());
+        view.put("avatarUrl", avatarUrl(user.avatarFileId()));
         view.put("bio", user.bio() == null ? "" : user.bio());
+        view.put("region", user.region() == null ? "" : user.region());
         view.put("level", reward != null ? reward.getLevel() : 1);
         view.put("isMinor", user.isMinor());
         view.put("followingCount", (int) following);
@@ -145,6 +151,19 @@ public class AuthService {
         view.put("ageGroup", user.ageGroup());
         view.put("realNameStatus", user.realNameStatus());
         view.put("accountStatus", user.accountStatus());
+        view.putAll(settingsView(user));
+        return view;
+    }
+
+    public Map<String, Object> settingsView(User user) {
+        Map<String, Object> view = new LinkedHashMap<>();
+        view.put("allowRecommendation", user.allowRecommendation());
+        view.put("allowStrangerMessages", user.allowStrangerMessages());
+        view.put("allowFavorites", user.allowFavorites());
+        view.put("notifyMessages", user.notifyMessages());
+        view.put("notifyInteractions", user.notifyInteractions());
+        view.put("notifyPublish", user.notifyPublish());
+        view.put("notifySystem", user.notifySystem());
         return view;
     }
 
@@ -161,7 +180,9 @@ public class AuthService {
     }
 
     private void ensureLoginAllowed(UserEntity user) {
-        if ("BANNED".equals(user.getAccountStatus()) || "CANCELED".equals(user.getAccountStatus())) {
+        if ("BANNED".equals(user.getAccountStatus())
+                || "CANCELING".equals(user.getAccountStatus())
+                || "CANCELED".equals(user.getAccountStatus())) {
             throw new BizException(ErrorCode.FORBIDDEN, "账号状态不可登录");
         }
     }
@@ -206,8 +227,21 @@ public class AuthService {
 
     private User toModel(UserEntity entity) {
         return new User(entity.getId(), entity.getPhone(), entity.getEmail(), entity.getNickname(),
-                entity.getAvatarFileId(), entity.getBio(), entity.getAgeGroup(), entity.isMinor(),
-                entity.getRealNameStatus(), entity.getAccountStatus(), entity.getCreatedAt(), entity.getUpdatedAt());
+                entity.getAvatarFileId(), entity.getBio(), entity.getRegion(), entity.getAgeGroup(), entity.isMinor(),
+                entity.getRealNameStatus(), entity.getAccountStatus(),
+                entity.isAllowRecommendation(), entity.isAllowStrangerMessages(), entity.isAllowFavorites(),
+                entity.isNotifyMessages(), entity.isNotifyInteractions(), entity.isNotifyPublish(), entity.isNotifySystem(),
+                entity.getCreatedAt(), entity.getUpdatedAt());
+    }
+
+    private String avatarUrl(String avatarFileId) {
+        if (avatarFileId == null || avatarFileId.isBlank()) {
+            return "";
+        }
+        return fileAssetRepository.findById(avatarFileId)
+                .map(FileAssetEntity::getPublicUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .orElse("");
     }
 
     private String maskPhone(String phone) {

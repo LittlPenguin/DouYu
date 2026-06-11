@@ -10,6 +10,8 @@ import cn.edu.app.douyu.server.common.PageResult;
 import cn.edu.app.douyu.server.community.CommunityController;
 import cn.edu.app.douyu.server.common.entity.CommentRepository;
 import cn.edu.app.douyu.server.common.entity.FavoriteRepository;
+import cn.edu.app.douyu.server.common.entity.FileAssetEntity;
+import cn.edu.app.douyu.server.common.entity.FileAssetRepository;
 import cn.edu.app.douyu.server.common.entity.FollowEntity;
 import cn.edu.app.douyu.server.common.entity.FollowRepository;
 import cn.edu.app.douyu.server.common.entity.LikeRepository;
@@ -47,6 +49,7 @@ public class UserController {
     private final FollowRepository followRepository;
     private final LikeRepository likeRepository;
     private final FavoriteRepository favoriteRepository;
+    private final FileAssetRepository fileAssetRepository;
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final CommunityController communityController;
@@ -54,7 +57,8 @@ public class UserController {
 
     public UserController(AuthService authService, UserRepository userRepository,
                           FollowRepository followRepository, LikeRepository likeRepository,
-                          FavoriteRepository favoriteRepository, CommentRepository commentRepository,
+                          FavoriteRepository favoriteRepository, FileAssetRepository fileAssetRepository,
+                          CommentRepository commentRepository,
                           PostRepository postRepository, CommunityController communityController,
                           IdGenerator idGenerator) {
         this.authService = authService;
@@ -62,6 +66,7 @@ public class UserController {
         this.followRepository = followRepository;
         this.likeRepository = likeRepository;
         this.favoriteRepository = favoriteRepository;
+        this.fileAssetRepository = fileAssetRepository;
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.communityController = communityController;
@@ -202,11 +207,39 @@ public class UserController {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
         if (request.nickname() != null) user.setNickname(request.nickname());
-        if (request.avatarFileId() != null) user.setAvatarFileId(request.avatarFileId());
+        if (request.avatarFileId() != null) user.setAvatarFileId(validAvatarFileId(userId, request.avatarFileId()));
         if (request.bio() != null) user.setBio(request.bio());
+        if (request.region() != null) user.setRegion(normalizeRegion(request.region()));
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
         return authService.userView(toModel(user));
+    }
+
+    @Operation(summary = "获取当前用户设置")
+    @GetMapping("/me/settings")
+    Map<String, Object> settings(Authentication authentication) {
+        String userId = CurrentUser.userId(authentication);
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
+        return authService.settingsView(toModel(user));
+    }
+
+    @Operation(summary = "更新当前用户设置")
+    @PatchMapping("/me/settings")
+    Map<String, Object> updateSettings(Authentication authentication, @RequestBody UpdateSettingsRequest request) {
+        String userId = CurrentUser.userId(authentication);
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new BizException(ErrorCode.NOT_FOUND, "用户不存在"));
+        if (request.allowRecommendation() != null) user.setAllowRecommendation(request.allowRecommendation());
+        if (request.allowStrangerMessages() != null) user.setAllowStrangerMessages(request.allowStrangerMessages());
+        if (request.allowFavorites() != null) user.setAllowFavorites(request.allowFavorites());
+        if (request.notifyMessages() != null) user.setNotifyMessages(request.notifyMessages());
+        if (request.notifyInteractions() != null) user.setNotifyInteractions(request.notifyInteractions());
+        if (request.notifyPublish() != null) user.setNotifyPublish(request.notifyPublish());
+        if (request.notifySystem() != null) user.setNotifySystem(request.notifySystem());
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
+        return authService.settingsView(toModel(user));
     }
 
     @Operation(summary = "获取用户公开资料")
@@ -270,11 +303,47 @@ public class UserController {
 
     private User toModel(UserEntity entity) {
         return new User(entity.getId(), entity.getPhone(), entity.getEmail(), entity.getNickname(), entity.getAvatarFileId(),
-                entity.getBio(), entity.getAgeGroup(), entity.isMinor(), entity.getRealNameStatus(),
-                entity.getAccountStatus(), entity.getCreatedAt(), entity.getUpdatedAt());
+                entity.getBio(), entity.getRegion(), entity.getAgeGroup(), entity.isMinor(), entity.getRealNameStatus(),
+                entity.getAccountStatus(),
+                entity.isAllowRecommendation(), entity.isAllowStrangerMessages(), entity.isAllowFavorites(),
+                entity.isNotifyMessages(), entity.isNotifyInteractions(), entity.isNotifyPublish(), entity.isNotifySystem(),
+                entity.getCreatedAt(), entity.getUpdatedAt());
     }
 
-    public record UpdateProfileRequest(String nickname, String avatarFileId, String bio) {
+    private String validAvatarFileId(String userId, String avatarFileId) {
+        String normalized = avatarFileId == null ? "" : avatarFileId.trim();
+        if (normalized.isBlank()) {
+            return null;
+        }
+        FileAssetEntity file = fileAssetRepository.findById(normalized)
+                .orElseThrow(() -> new BizException(ErrorCode.INVALID_ARGUMENT, "头像文件不存在"));
+        if (!userId.equals(file.getOwnerId())) {
+            throw new BizException(ErrorCode.FORBIDDEN, "只能使用自己上传的头像");
+        }
+        if (!"AVATAR".equals(file.getUsage()) || file.getMimeType() == null || !file.getMimeType().startsWith("image/")) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "头像只支持 AVATAR 图片");
+        }
+        return normalized;
+    }
+
+    private String normalizeRegion(String region) {
+        String normalized = region == null ? "" : region.trim();
+        if (normalized.length() > 80) {
+            throw new BizException(ErrorCode.INVALID_ARGUMENT, "城市/地区不能超过 80 个字符");
+        }
+        return normalized;
+    }
+
+    public record UpdateProfileRequest(String nickname, String avatarFileId, String bio, String region) {
+    }
+
+    public record UpdateSettingsRequest(Boolean allowRecommendation,
+                                        Boolean allowStrangerMessages,
+                                        Boolean allowFavorites,
+                                        Boolean notifyMessages,
+                                        Boolean notifyInteractions,
+                                        Boolean notifyPublish,
+                                        Boolean notifySystem) {
     }
 
     public record RealNameRequest(String realName, String idCardNo) {
